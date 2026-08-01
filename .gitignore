@@ -1,0 +1,34 @@
+# Next.js
+publishers-house/.next/
+publishers-house/out/
+
+# Dependencies
+publishers-house/node_modules/
+
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.production
+.env.development
+publishers-house/.env
+publishers-house/.env.local
+publishers-house/.env.production
+publishers-house/.env.development
+
+# Build outputs
+publishers-house/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+
+# Vercel
+.vercel/

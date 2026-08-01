@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd publishers-house && npm run build",
+  "outputDirectory": "publishers-house/.next",
+  "installCommand": "cd publishers-house && npm install",
+  "framework": "nextjs",
+  "devCommand": "cd publishers-house && npm run dev"
+}
