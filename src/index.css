@@ -1,0 +1,43 @@
+:root {
+  --bg: #141414;
+  --bg-mid: #1c1c1c;
+  --bg-deep: #0a0a0a;
+  --text: #f4f2ed;
+  --text-soft: #bdb8ae;
+  --text-muted: #6e6a63;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Outfit', 'Segoe UI', sans-serif;
+
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%, #2a2a2a 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, #1a1814 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg-mid) 0%, var(--bg) 40%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100svh;
+}
