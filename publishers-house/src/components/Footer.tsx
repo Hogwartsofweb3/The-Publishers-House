@@ -77,15 +77,16 @@ export default function Footer() {
               </div>
               {/* TODO: Replace with official tagline/mission from AVO */}
               <p
-                style={{
-                  maxWidth: "30ch",
-                  fontSize: "var(--text-sm)",
-                  lineHeight: "var(--leading-relaxed)",
-                  color: "rgba(255,255,255,0.55)",
-                }}
-              >
-                A vibrant, Spirit-filled church family — publishing the Word of God to our generation.
-              </p>
+              style={{
+                maxWidth: "30ch",
+                fontSize: "var(--text-sm)",
+                lineHeight: "var(--leading-relaxed)",
+                color: "rgba(255,255,255,0.55)",
+              }}
+            >
+              A dynamic, teaching-focused apostolic church in Jos, Plateau State &amp; Abuja.
+              Accurate doctrine. Spirit-filled community.
+            </p>
             </div>
 
             {/* Service Times — TODO: replace with actual times */}
@@ -104,7 +105,7 @@ export default function Footer() {
                 Service Times
               </p>
               <p style={{ fontSize: "var(--text-sm)", maxWidth: "none", color: "rgba(255,255,255,0.6)" }}>
-                Sunday: [Time] · Wednesday: [Time]
+                Sunday: 9:00 AM WAT · Thursday: 5:00 PM WAT
               </p>
             </div>
 

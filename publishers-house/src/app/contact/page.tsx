@@ -28,13 +28,18 @@ export default function ContactPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
                 <div>
                   <p className="overline" style={{ marginBottom: "var(--space-2)" }}>Address</p>
-                  {/* TODO: Replace with actual address from AVO */}
-                  <p style={{ maxWidth: "none" }}>[Church Address — from Patricia/AVO]</p>
+                  <p style={{ maxWidth: "none" }}>
+                    The House of Bread, Korinjoh House<br />
+                    British, Jos, Plateau State, Nigeria<br />
+                    <em style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>+ Outreach: Abuja</em>
+                  </p>
                 </div>
                 <div>
                   <p className="overline" style={{ marginBottom: "var(--space-2)" }}>Service Times</p>
-                  {/* TODO: Replace with actual service times from AVO */}
-                  <p style={{ maxWidth: "none" }}>Sunday: [Time]<br />Wednesday: [Time]</p>
+                  <p style={{ maxWidth: "none" }}>
+                    Sunday: 9:00 AM WAT<br />
+                    Thursday (Midweek): 5:00 PM WAT
+                  </p>
                 </div>
                 <div>
                   <p className="overline" style={{ marginBottom: "var(--space-2)" }}>Phone</p>

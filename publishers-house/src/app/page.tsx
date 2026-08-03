@@ -81,11 +81,10 @@ export default function HomePage() {
                 borderTop: "1px solid rgba(255,255,255,0.12)",
               }}
             >
-              {/* TODO: Replace with actual service times and location from AVO */}
               {[
-                { label: "Sunday Service", value: "[Time] — [Service Type]" },
-                { label: "Midweek Service", value: "[Day] · [Time]" },
-                { label: "Location", value: "[City, State]" },
+                { label: "Sunday Service", value: "Every Sunday · 9:00 AM WAT" },
+                { label: "Midweek Service", value: "Every Thursday · 5:00 PM WAT" },
+                { label: "Location", value: "Jos, Plateau State · Abuja" },
               ].map((item) => (
                 <div key={item.label} style={{ textAlign: "center" }}>
                   <p style={{ color: "var(--color-accent)", fontSize: "var(--text-xs)", fontWeight: 600, letterSpacing: "var(--tracking-widest)", textTransform: "uppercase", maxWidth: "none", marginBottom: "var(--space-1)" }}>
@@ -171,10 +170,10 @@ export default function HomePage() {
                 <div key={i} className="card">
                   <div className="skeleton" style={{ height: "180px", borderRadius: 0 }} />
                   <div className="card__body">
-                    <span className="badge badge--accent" style={{ marginBottom: "var(--space-3)" }}>Conference</span>
-                    <h4 className="card__title">Event Name Placeholder</h4>
+                  <span className="badge badge--accent" style={{ marginBottom: "var(--space-3)" }}>Annual Conference</span>
+                    <h4>Festival of Light</h4>
                     <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", maxWidth: "none", marginBottom: "var(--space-4)" }}>
-                      📅 Date · 📍 Venue
+                      📅 Date TBC · 📍 Jos, Plateau State
                     </p>
                     <a href="/events" className="btn btn-outline btn-sm">Learn More →</a>
                   </div>

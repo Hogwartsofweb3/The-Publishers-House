@@ -31,15 +31,16 @@ export default function AboutPage() {
               <h2>Built on the Word,<br />Rooted in Community</h2>
               <div className="divider" />
               <p style={{ maxWidth: "none" }}>
-                {/* TODO: Replace with official mission/vision from Patricia/AVO */}
-                We are The Publishers House — a church family passionate about the Word of God,
-                Spirit-filled worship, and authentic community. We believe the local church is God's
-                primary instrument for the transformation of lives and communities.
+                The Publishers House (TPH), led by Dr. Joshua Agunbiade, is a dynamic,
+                teaching-focused apostolic church headquartered at The House of Bread,
+                Korinjoh House, British, Jos, Plateau State, Nigeria, with outreach
+                locations in Abuja.
               </p>
               <p style={{ maxWidth: "none", marginTop: "var(--space-4)" }}>
-                Founded on the conviction that every believer carries a message — a divine publishing
-                mandate — we are a people sent to declare and demonstrate the Kingdom of God wherever
-                we are planted.
+                This church of the Lord focuses on accurate teachings on God, the Christian
+                faith, Bible doctrine, and getting you equipped by the power of the Holy Spirit.
+                We pray that as you engage our content, you welcome the LORD into your space
+                and allow the work of the Holy Spirit to continue in you.
               </p>
             </div>
             <div className={styles.imageFrame}>
@@ -141,7 +142,7 @@ const beliefs = [
 ];
 
 const placeholderLeaders = [
-  { name: "Pastor [Name]", title: "Senior Pastor", initials: "SP" },
+  { name: "Dr. Joshua Agunbiade", title: "Senior Pastor", initials: "JA" },
   { name: "[Name]", title: "Associate Pastor", initials: "AP" },
   { name: "[Name]", title: "Youth Pastor", initials: "YP" },
 ];
