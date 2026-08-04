@@ -15,11 +15,15 @@ function App() {
           <div className="coming-soon__halo" aria-hidden="true" />
           <img
             className="coming-soon__logo"
-            src="/logo.png"
-            alt="The Publishers House"
-            width={360}
-            height={360}
+            src="/tph-symbol.png"
+            alt=""
+            width={200}
+            height={320}
           />
+          <p className="coming-soon__name">
+            <span className="coming-soon__name-the">The</span>
+            <span className="coming-soon__name-main">Publishers House</span>
+          </p>
         </div>
 
         <div className="coming-soon__rule" aria-hidden="true" />
