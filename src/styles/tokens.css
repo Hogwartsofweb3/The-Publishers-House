@@ -1,0 +1,30 @@
+:root {
+  --navy: #151a54;
+  --blue-electric: #0100fe;
+  --blue-primary: #0140c1;
+  --blue-bright: #2090ff;
+  --blue-mid: #4169e2;
+  --blue-soft: #6496ef;
+  --blue-muted: #99afc6;
+  --blue-muted-dark: #747ca1;
+  --blue-deep: #29547e;
+  --blue-slate: #4a62a0;
+  --black: #000000;
+  --white: #ffffff;
+  --ivory: #f7f8fc;
+  --surface: #eef1f8;
+  --border: #d5dceb;
+  --text: #151a54;
+  --text-secondary: #29547e;
+  --text-muted: #747ca1;
+  --danger: #b42318;
+  --success: #027a48;
+
+  --font-sans: 'Poppins', 'Segoe UI', sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+
+  --sidebar-width: 260px;
+  --radius: 8px;
+  --shadow-sm: 0 1px 2px rgba(21, 26, 84, 0.06);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}

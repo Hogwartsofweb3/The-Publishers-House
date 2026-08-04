@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPublished() {
+      return resource.data.published == true;
+    }
+
+    // Authenticated CMS users: full read/write.
+    // Public (unauthenticated): read published docs only.
+    // Public queries must include: where('published', '==', true)
+    match /sermons/{docId} {
+      allow read: if isSignedIn() || isPublished();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /events/{docId} {
+      allow read: if isSignedIn() || isPublished();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /articles/{docId} {
+      allow read: if isSignedIn() || isPublished();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /programs/{docId} {
+      allow read: if isSignedIn() || isPublished();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    match /leadership/{docId} {
+      allow read: if isSignedIn() || isPublished();
+      allow create, update, delete: if isSignedIn();
+    }
+  }
+}
