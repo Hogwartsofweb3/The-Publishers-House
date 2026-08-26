@@ -4,13 +4,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        // Strapi self-hosted (update hostname once Samson deploys)
+        // Firebase Storage
         protocol: "https",
-        hostname: "**.railway.app",
-      },
-      {
-        protocol: "https",
-        hostname: "**.render.com",
+        hostname: "firebasestorage.googleapis.com",
       },
       {
         // YouTube thumbnails (for sermon cards)
@@ -20,12 +16,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "i.ytimg.com",
-      },
-      {
-        // Local Strapi dev
-        protocol: "http",
-        hostname: "localhost",
-        port: "1337",
       },
     ],
   },

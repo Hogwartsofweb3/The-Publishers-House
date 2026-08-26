@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Figma: EL-e6d41dfd — Navbar: row, padding 16px 100px, space-between, navy bg (#151A54), bottom border 1px #6496EF
+// Nav links: UI/Label — Poppins SemiBold 11px, 0.16em tracking, UPPERCASE, white
+
 const navLinks = [
-  { label: "Home",      href: "/" },
   { label: "About",     href: "/about" },
   { label: "Resources", href: "/resources" },
   { label: "Programs",  href: "/programs" },
-  { label: "Articles",  href: "/articles" },
   { label: "Events",    href: "/events" },
-  { label: "Contact",   href: "/contact" },
+  { label: "Articles",  href: "/articles" },
 ];
 
 export default function Navbar() {
@@ -20,17 +21,12 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close menu on route change
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
-  const isHome = pathname === "/";
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   return (
     <nav
@@ -39,99 +35,90 @@ export default function Navbar() {
         top: 0,
         left: 0,
         right: 0,
-        zIndex: "var(--z-nav)",
-        height: "var(--nav-height)",
-        display: "flex",
-        alignItems: "center",
-        transition: "background var(--transition-slow), box-shadow var(--transition-slow)",
-        background: scrolled || !isHome
-          ? "rgba(15, 15, 31, 0.97)"
-          : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.2)" : "none",
+        zIndex: 300,
+        background: "#151A54",
+        borderBottom: "1px solid #6496EF",
+        transition: "box-shadow 250ms ease",
+        boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.3)" : "none",
       }}
     >
       <div
-        className="container"
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "var(--max-width)", height: "100%" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 100px",
+          maxWidth: "1440px",
+          margin: "0 auto",
+        }}
       >
-        {/* Logo */}
+        {/* Logo — Figma: EL-5efdc068 — logo mark + "The\nPublishers\nHouse" Poppins Bold 12px UPPER 0.16em */}
         <Link
           href="/"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "var(--space-3)",
+            gap: "12px",
             textDecoration: "none",
             flexShrink: 0,
           }}
         >
-          {/* TODO: Replace with actual SVG logo from AVO */}
+          {/* Logo mark placeholder — Figma: EL-274a6ef6 — 23×38px rectangle with church image */}
           <div
             style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              background: "var(--color-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-serif)",
-              fontWeight: 700,
-              fontSize: "var(--text-xl)",
-              color: "var(--color-primary)",
+              width: "23px",
+              height: "38px",
+              background: "#6496EF",
+              borderRadius: "2px",
               flexShrink: 0,
             }}
-          >
-            P
-          </div>
+          />
           <span
             style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: "var(--text-xl)",
+              fontFamily: "'Poppins', sans-serif",
               fontWeight: 700,
-              color: "var(--color-white)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.1,
+              fontSize: "12px",
+              lineHeight: "1.6em",
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: "#FFFFFF",
+              whiteSpace: "pre-line",
             }}
           >
-            The Publishers<br />
-            <span style={{ color: "var(--color-accent)", fontWeight: 400, fontSize: "var(--text-base)" }}>
-              House
-            </span>
+            {"The\nPublishers\nHouse"}
           </span>
         </Link>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav Links — Figma: EL-28177092 — row, gap 26px */}
         <ul
-          className="hide-mobile"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "var(--space-1)",
+            gap: "26px",
             listStyle: "none",
             margin: 0,
             padding: 0,
           }}
+          className="nav-desktop"
         >
           {navLinks.map((link) => {
-            const active = pathname === link.href;
+            const active = pathname === link.href || pathname.startsWith(link.href + "/");
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   style={{
-                    display: "block",
-                    padding: "var(--space-2) var(--space-4)",
-                    color: active ? "var(--color-accent)" : "rgba(255,255,255,0.85)",
-                    fontFamily: "var(--font-sans)",
-                    fontWeight: active ? 600 : 400,
-                    fontSize: "var(--text-sm)",
-                    letterSpacing: "var(--tracking-wide)",
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    lineHeight: "1.6em",
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: active ? "#6496EF" : "#FFFFFF",
                     textDecoration: "none",
-                    borderBottom: active ? "2px solid var(--color-accent)" : "2px solid transparent",
-                    paddingBottom: "calc(var(--space-2) - 2px)",
-                    transition: "color var(--transition-fast), border-color var(--transition-fast)",
+                    transition: "color 150ms ease",
+                    paddingBottom: "2px",
+                    borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
                   }}
                 >
                   {link.label}
@@ -141,24 +128,43 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Give CTA */}
-        <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-          <Link href="/giving" className="btn btn-primary btn-sm">
-            Give
-          </Link>
-        </div>
+        {/* Give Button — Figma: EL-14642757 — padding 0 26px, h48, border 1px #2090FF, borderRadius 2px, bg transparent, text navy */}
+        <Link
+          href="/giving"
+          className="nav-give-btn"
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 600,
+            fontSize: "12px",
+            lineHeight: "1em",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "#151A54",
+            background: "#2090FF",
+            border: "1px solid #2090FF",
+            borderRadius: "2px",
+            padding: "0 26px",
+            height: "48px",
+            display: "inline-flex",
+            alignItems: "center",
+            textDecoration: "none",
+            transition: "background 150ms ease",
+          }}
+        >
+          Give
+        </Link>
 
         {/* Mobile Hamburger */}
         <button
-          className="hide-desktop"
+          className="nav-hamburger"
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           onClick={() => setMenuOpen(!menuOpen)}
           style={{
+            display: "none",
             background: "none",
             border: "none",
             cursor: "pointer",
-            padding: "var(--space-2)",
-            display: "flex",
+            padding: "8px",
             flexDirection: "column",
             gap: "5px",
           }}
@@ -170,9 +176,9 @@ export default function Navbar() {
                 display: "block",
                 width: "24px",
                 height: "2px",
-                background: "var(--color-white)",
+                background: "#FFFFFF",
                 borderRadius: "2px",
-                transition: "all var(--transition-normal)",
+                transition: "all 250ms ease",
                 transform:
                   menuOpen && i === 0 ? "rotate(45deg) translate(5px, 5px)"
                   : menuOpen && i === 1 ? "scaleX(0)"
@@ -188,46 +194,69 @@ export default function Navbar() {
       {menuOpen && (
         <div
           style={{
-            position: "absolute",
-            top: "var(--nav-height)",
-            left: 0,
-            right: 0,
-            background: "rgba(15, 15, 31, 0.98)",
-            backdropFilter: "blur(12px)",
-            padding: "var(--space-6)",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            animation: "fadeInUp 0.25s ease",
+            background: "#151A54",
+            borderTop: "1px solid #6496EF",
+            padding: "24px 20px",
           }}
         >
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
             {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   style={{
                     display: "block",
-                    padding: "var(--space-3) var(--space-4)",
-                    color: pathname === link.href ? "var(--color-accent)" : "rgba(255,255,255,0.85)",
-                    fontFamily: "var(--font-sans)",
-                    fontWeight: pathname === link.href ? 600 : 400,
-                    fontSize: "var(--text-base)",
+                    padding: "12px 16px",
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: pathname === link.href ? "#6496EF" : "#FFFFFF",
                     textDecoration: "none",
-                    borderRadius: "var(--radius-md)",
-                    background: pathname === link.href ? "rgba(201,168,76,0.1)" : "transparent",
+                    borderBottom: "1px solid rgba(100,150,239,0.2)",
                   }}
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
-            <li style={{ marginTop: "var(--space-4)" }}>
-              <Link href="/giving" className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+            <li style={{ marginTop: "16px" }}>
+              <Link
+                href="/giving"
+                style={{
+                  display: "block",
+                  textAlign: "center",
+                  padding: "14px 26px",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#151A54",
+                  background: "#2090FF",
+                  borderRadius: "2px",
+                  textDecoration: "none",
+                }}
+              >
                 Give
               </Link>
             </li>
           </ul>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .nav-desktop { display: none !important; }
+          .nav-give-btn { display: none !important; }
+          .nav-hamburger { display: flex !important; }
+        }
+        nav > div { padding: 16px 20px; }
+        @media (min-width: 769px) {
+          nav > div { padding: 16px 100px; }
+        }
+      `}</style>
     </nav>
   );
 }

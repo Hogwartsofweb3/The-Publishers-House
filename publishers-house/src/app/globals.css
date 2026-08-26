@@ -4,40 +4,37 @@
    once Patricia/AVO delivers the brand assets.
    ============================================================ */
 
-/* ---- Google Fonts ---- */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
-
 /* ---- CSS Custom Properties (Design Tokens) ---- */
 :root {
-  /* Brand Colors — PLACEHOLDERS: replace with official hex codes from AVO */
-  --color-primary:       #1A1A2E;   /* Deep navy/midnight — placeholder */
-  --color-primary-light: #2D2D4E;
-  --color-accent:        #C9A84C;   /* Gold — placeholder */
-  --color-accent-light:  #E5C97A;
-  --color-accent-dark:   #A07C2E;
-  --color-secondary:     #F5F0E8;   /* Warm off-white */
+  /* Brand Colors — Pulled directly from Figma MCP */
+  --color-primary:       #151A54;   /* Deep navy */
+  --color-primary-light: #4A62A0;   /* Muted blue */
+  --color-accent:        #2090FF;   /* Vibrant blue (buttons) */
+  --color-accent-light:  #6496EF;   /* Light blue */
+  --color-accent-dark:   #0140C1;   /* Dark vibrant blue */
+  --color-secondary:     #E8ECF7;   /* Very light grayish blue */
   --color-white:         #FFFFFF;
   --color-black:         #0D0D0D;
 
   /* Text Colors */
-  --color-text-primary:   #1A1A2E;
-  --color-text-secondary: #5A5A7A;
-  --color-text-muted:     #9090A8;
+  --color-text-primary:   #151A54;
+  --color-text-secondary: #4A62A0;
+  --color-text-muted:     #99AFC6;
   --color-text-inverse:   #FFFFFF;
 
   /* Surface Colors */
   --color-surface-1: #FFFFFF;
-  --color-surface-2: #F8F6F1;
-  --color-surface-3: #EEE9DC;
-  --color-surface-dark: #0F0F1F;
+  --color-surface-2: #F4F6FB;
+  --color-surface-3: #D3DAEC;
+  --color-surface-dark: #151A54;
 
   /* Border */
-  --color-border:       rgba(26, 26, 46, 0.12);
-  --color-border-light: rgba(26, 26, 46, 0.06);
+  --color-border:       #C0C9E0;
+  --color-border-light: #E8ECF7;
 
-  /* Typography */
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
-  --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  /* Typography — next/font injects these variables via layout.tsx */
+  --font-serif: var(--font-playfair, 'Playfair Display', Georgia, serif);
+  --font-sans:  var(--font-poppins, 'Poppins', system-ui, -apple-system, sans-serif);
 
   /* Type Scale */
   --text-xs:   0.75rem;    /* 12px */

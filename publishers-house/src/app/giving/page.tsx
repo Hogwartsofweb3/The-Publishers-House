@@ -3,203 +3,290 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Giving",
+  title: "Giving | The Publishers House",
   description:
-    "Partner with The Publishers House through your tithes, offerings, and special project donations. Give securely online.",
+    "Your giving publishes the Word. Support The Publishers House through tithe, offering, or bank transfer.",
 };
+
+const S = {
+  eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  label: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
+  scripture: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  button: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  displayXL: { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
+  displayM: { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(20px, 3vw, 30px)", lineHeight: "1.14em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
+  readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
+  readBody: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "17px", lineHeight: "1.68em" },
+};
+
+// GTB account details from Figma: #27:1806 Bank transfer panel
+const gtbAccounts = [
+  { currency: "NAIRA", number: "0869912273" },
+  { currency: "DOLLAR", number: "0885570536" },
+  { currency: "EUROS", number: "0885570550" },
+  { currency: "POUNDS", number: "0885570543" },
+];
+
+const sterlingAccounts = [
+  { currency: "NAIRA", number: "0082457106" },
+  { currency: "DOLLAR", number: "0083163086" },
+  { currency: "PROJECTS ACCOUNT (NAIRA)", number: "0086985670" },
+];
+
+// Giving categories from Figma: #27:1782 Cats
+const categories = ["Tithe", "Offering", "Special projects", "Thanksgiving"];
 
 export default function GivingPage() {
   return (
     <>
       <Navbar />
-      <main>
-        {/* Hero */}
+      <main style={{ paddingTop: "70px" }}>
+
+        {/* ══════════════════════════════════════════════════════════
+            HERO — Figma: #27:1776 — layout_56aa83c5, navy+image bg
+            "Your giving publishes the Word"
+        ══════════════════════════════════════════════════════════ */}
         <section
           style={{
-            background: "var(--color-primary)",
-            color: "var(--color-white)",
-            paddingBlock: "var(--space-24) var(--space-20)",
-            paddingInline: "var(--space-6)",
-            textAlign: "center",
+            background: "#151A54",
+            padding: "90px 100px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
           }}
         >
-          <div className="container">
-            <p className="overline" style={{ color: "var(--color-accent)" }}>
-              Partner With Us
-            </p>
-            <h1 style={{ color: "var(--color-white)", marginBottom: "var(--space-4)" }}>
-              Your Generosity Builds the Kingdom
+          <div style={{ maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
+              Your giving publishes the Word
             </h1>
-            <p
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════
+            GIVE FORM — Figma: #27:1779
+            padding 72px 100px 96px, center, bg Paper/300 (#D3DAEC)
+        ══════════════════════════════════════════════════════════ */}
+        <section style={{ background: "#D3DAEC" }}>
+          <div
+            style={{
+              maxWidth: "1440px",
+              margin: "0 auto",
+              padding: "72px 100px 96px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "28px",
+            }}
+          >
+            {/* Two-panel row */}
+            <div
               style={{
-                color: "rgba(255,255,255,0.75)",
-                maxWidth: "55ch",
-                marginInline: "auto",
-                fontSize: "var(--text-lg)",
+                display: "flex",
+                flexDirection: "row",
+                gap: "40px",
+                alignItems: "flex-start",
+                flexWrap: "wrap" as const,
+                width: "100%",
+                justifyContent: "center",
               }}
             >
-              Every gift you sow is an act of worship and an investment in eternity.
-              Give with joy, knowing God honours a cheerful giver.
-            </p>
-          </div>
-        </section>
+              {/* ── Give panel — Figma: #27:1780 ── */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "32px",
+                  gap: "20px",
+                  background: "#FFFFFF",
+                  border: "1px solid #D3DAEC",
+                  borderRadius: "4px",
+                  width: "640px",
+                  maxWidth: "100%",
+                }}
+              >
+                <span style={{ ...S.eyebrow, color: "#0140C1" }}>Giving to</span>
 
-        {/* Giving Categories */}
-        <section className="section section--warm">
-          <div className="container">
-            <div className="section-header">
-              <p className="overline">Choose a Category</p>
-              <h2>How Would You Like to Give?</h2>
-            </div>
-            <div className="grid-4" style={{ gap: "var(--space-6)" }}>
-              {givingCategories.map((cat) => (
-                <div
-                  key={cat.label}
-                  style={{
-                    background: "var(--color-surface-1)",
-                    borderRadius: "var(--radius-lg)",
-                    padding: "var(--space-8) var(--space-6)",
-                    textAlign: "center",
-                    boxShadow: "var(--shadow-card)",
-                    border: "2px solid transparent",
-                    transition: "all var(--transition-normal)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "var(--space-4)" }}>
-                    {cat.icon}
-                  </span>
-                  <h4 style={{ marginBottom: "var(--space-2)", fontSize: "var(--text-xl)" }}>
-                    {cat.label}
-                  </h4>
-                  <p style={{ fontSize: "var(--text-sm)", maxWidth: "none" }}>{cat.desc}</p>
+                {/* Category tabs — Figma: Cats row with Tithe selected */}
+                <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap" as const, gap: "8px" }}>
+                  {categories.map((cat, i) => (
+                    <div
+                      key={cat}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "64px",
+                        padding: "0 20px",
+                        background: i === 1 ? "#0140C1" : "#FFFFFF",
+                        border: `1px solid ${i === 1 ? "#0140C1" : "#C0C9E0"}`,
+                        borderRadius: "2px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span style={{ ...S.label, color: i === 1 ? "#FFFFFF" : "#151A54" }}>{cat}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Give Now Form */}
-        <section className="section">
-          <div className="container" style={{ maxWidth: "680px" }}>
-            <div className="section-header">
-              <p className="overline">Secure Giving</p>
-              <h2>Give Now</h2>
-            </div>
-
-            {/* Amount presets */}
-            <div style={{ marginBottom: "var(--space-8)" }}>
-              <label style={{ display: "block", fontWeight: 600, marginBottom: "var(--space-4)", fontSize: "var(--text-sm)", letterSpacing: "var(--tracking-wide)", textTransform: "uppercase" }}>
-                Select Amount (₦)
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-3)" }}>
-                {[5000, 10000, 25000, 50000].map((amount) => (
-                  <button
-                    key={amount}
-                    className="btn btn-outline"
-                    style={{ borderRadius: "var(--radius-md)", textTransform: "none", letterSpacing: 0, fontSize: "var(--text-base)" }}
-                  >
-                    ₦{amount.toLocaleString()}
-                  </button>
-                ))}
+                {/* Why we ask — Figma: #27:1811 */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <h3 style={{ ...S.displayM, color: "#151A54" }}>Why we ask</h3>
+                  <p style={{ ...S.readBody, color: "#4A62A0", maxWidth: "640px" }}>
+                    Everything taught in this house is recorded, transcribed and published, and none of that is free. Your giving pays for the room, the recording, the transcription, and the conferences that carry the Word beyond Jos and into Abuja.
+                  </p>
+                  <span style={{ ...S.eyebrow, color: "#0140C1" }}>Where it goes</span>
+                  <p style={{ ...S.readSmall, color: "#4A62A0", maxWidth: "640px" }}>
+                    Weekly gatherings and venue · Recording, editing and transcription · Flagship conferences and camps · Outreach and benevolence
+                  </p>
+                </div>
               </div>
-              <input
-                type="number"
-                placeholder="Custom amount"
+
+              {/* ── Bank transfer panel — Figma: #27:1806 ── */}
+              <div
+                id="bank-transfer"
                 style={{
-                  marginTop: "var(--space-3)",
-                  width: "100%",
-                  padding: "var(--space-4)",
-                  border: "2px solid var(--color-border)",
-                  borderRadius: "var(--radius-md)",
-                  fontSize: "var(--text-base)",
-                  fontFamily: "var(--font-sans)",
-                  outline: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "26px 28px",
+                  gap: "20px",
+                  background: "#E8ECF7",
+                  borderRadius: "4px",
+                  width: "640px",
+                  maxWidth: "100%",
                 }}
-              />
+              >
+                <span style={{ ...S.eyebrow, color: "#0140C1" }}>Prefer a bank transfer?</span>
+
+                {/* GTB */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ ...S.label, color: "#151A54" }}>Guaranty Trust Bank (GTB)</span>
+                    <p style={{ ...S.readSmall, color: "#4A62A0" }}>
+                      Name: THE PUBLISHERS HOUSE MINISTRY<br />
+                      Sort Code: 058-203312<br />
+                      Swift Code: GTBINGLA<br />
+                      Bank Address: Jos 1-Jengre Road
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {gtbAccounts.map((acc) => (
+                      <div
+                        key={acc.currency}
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 16px",
+                          background: "#FFFFFF",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "2px",
+                        }}
+                      >
+                        <span style={{ ...S.label, color: "#4A62A0", width: "100px" }}>{acc.currency}</span>
+                        <span
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 700,
+                            fontSize: "17px",
+                            lineHeight: "1.5em",
+                            letterSpacing: "0.05em",
+                            color: "#151A54",
+                          }}
+                        >
+                          {acc.number}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: "1px", background: "#C0C9E0" }} />
+
+                {/* Sterling Bank */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <span style={{ ...S.label, color: "#151A54" }}>Sterling Bank</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {sterlingAccounts.map((acc) => (
+                      <div
+                        key={acc.currency}
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 16px",
+                          background: "#FFFFFF",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "2px",
+                        }}
+                      >
+                        <span style={{ ...S.label, color: "#4A62A0", flex: 1, fontSize: "9px" }}>{acc.currency}</span>
+                        <span
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 700,
+                            fontSize: "17px",
+                            lineHeight: "1.5em",
+                            letterSpacing: "0.05em",
+                            color: "#151A54",
+                          }}
+                        >
+                          {acc.number}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* One-time / Recurring toggle */}
-            <div style={{ display: "flex", gap: "var(--space-3)", marginBottom: "var(--space-8)" }}>
-              <button className="btn btn-primary" style={{ flex: 1 }}>One-Time</button>
-              <button className="btn btn-outline" style={{ flex: 1 }}>Recurring</button>
-            </div>
-
-            {/* Name + Email */}
-            <div style={{ display: "grid", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
-              <input
-                type="text"
-                placeholder="Full Name"
+            {/* Building project CTA */}
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "1310px",
+                background: "#151A54",
+                borderRadius: "4px",
+                padding: "40px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+              }}
+            >
+              <span style={{ ...S.eyebrow, color: "#6496EF" }}>Our Building Project</span>
+              <h3 style={{ ...S.displayM, color: "#FFFFFF" }}>Partner with us as we build</h3>
+              <p style={{ ...S.readSmall, color: "#E8ECF7", maxWidth: "600px" }}>
+                Use the Sterling Bank Projects Account (NAIRA: 0086985670) specifically for the building fund, or fill in our partnership form.
+              </p>
+              <a
+                href="https://forms.gle/4Gimdh1WcUerMQvVA"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  padding: "var(--space-4)",
-                  border: "2px solid var(--color-border)",
-                  borderRadius: "var(--radius-md)",
-                  fontSize: "var(--text-base)",
-                  fontFamily: "var(--font-sans)",
+                  ...S.button,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "0 26px",
+                  height: "48px",
+                  background: "#2090FF",
+                  border: "1px solid #2090FF",
+                  borderRadius: "2px",
+                  color: "#151A54",
+                  textDecoration: "none",
+                  alignSelf: "flex-start",
                 }}
-              />
-              <input
-                type="email"
-                placeholder="Email Address"
-                style={{
-                  padding: "var(--space-4)",
-                  border: "2px solid var(--color-border)",
-                  borderRadius: "var(--radius-md)",
-                  fontSize: "var(--text-base)",
-                  fontFamily: "var(--font-sans)",
-                }}
-              />
+              >
+                Fill partnership form
+              </a>
             </div>
-
-            {/* CTA */}
-            <button className="btn btn-primary btn-lg" style={{ width: "100%", borderRadius: "var(--radius-md)", justifyContent: "center" }}>
-              Give Securely via Paystack →
-            </button>
-            <p style={{ textAlign: "center", marginTop: "var(--space-4)", fontSize: "var(--text-xs)", color: "var(--color-text-muted)", maxWidth: "none" }}>
-              🔒 Payments are processed securely by Paystack. We never store your card details.
-            </p>
           </div>
         </section>
 
-        {/* Bank Transfer */}
-        <section className="section section--warm">
-          <div className="container" style={{ maxWidth: "600px", textAlign: "center" }}>
-            <p className="overline">Alternative</p>
-            <h3 style={{ marginBottom: "var(--space-6)" }}>Bank Transfer</h3>
-            {/* TODO: Replace with actual account details from Patricia/AVO */}
-            <div style={{ background: "var(--color-surface-1)", borderRadius: "var(--radius-lg)", padding: "var(--space-8)", boxShadow: "var(--shadow-card)" }}>
-              <p style={{ maxWidth: "none", marginBottom: "var(--space-2)" }}><strong>Account Name:</strong> The Publishers House</p>
-              <p style={{ maxWidth: "none", marginBottom: "var(--space-2)" }}><strong>Bank:</strong> [Bank Name — from AVO]</p>
-              <p style={{ maxWidth: "none" }}><strong>Account No:</strong> [Account Number — from AVO]</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Why Give */}
-        <section className="section">
-          <div className="container" style={{ maxWidth: "720px", textAlign: "center" }}>
-            <p className="overline">The Theology of Giving</p>
-            <h3 style={{ marginBottom: "var(--space-6)" }}>Why We Give</h3>
-            <p style={{ marginInline: "auto", maxWidth: "none", fontSize: "var(--text-lg)" }}>
-              Giving is not a religious duty — it is a privilege and an act of worship. When we give,
-              we participate in God's purposes for our generation. We declare that our trust is in God,
-              not in material wealth, and we become partners in building a community that changes lives.
-            </p>
-            <p style={{ marginInline: "auto", maxWidth: "none", marginTop: "var(--space-4)", fontSize: "var(--text-lg)" }}>
-              <em>"Give, and it will be given to you. A good measure, pressed down, shaken together
-              and running over, will be poured into your lap."</em> — Luke 6:38
-            </p>
-          </div>
-        </section>
       </main>
       <Footer />
     </>
   );
 }
-
-const givingCategories = [
-  { icon: "🙏", label: "Tithe", desc: "Return the first tenth of your income as an act of trust and honour to God." },
-  { icon: "🎁", label: "Offering", desc: "Give above and beyond your tithe to support the work of the ministry." },
-  { icon: "💡", label: "Special Projects", desc: "Sow into specific church building projects, missions, and outreaches." },
-  { icon: "🎉", label: "Thanksgiving", desc: "Celebrate God's goodness with a gift of gratitude and praise." },
-];

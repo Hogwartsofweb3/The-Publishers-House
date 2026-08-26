@@ -1,6 +1,6 @@
 # The Publishers House — Official Website
 
-**Stack:** Next.js 16 · Strapi CMS · Paystack · Cloudflare · Vercel
+**Stack:** Next.js 16 · Firebase (Firestore) · Paystack · Cloudflare · Vercel
 
 ## Project Structure
 
@@ -21,7 +21,7 @@
 │   │   │   ├── Navbar.tsx
 │   │   │   └── Footer.tsx
 │   │   └── lib/
-│   │       └── strapi.ts    ← CMS API layer
+│   │       └── firebase.ts  ← CMS API layer (Firestore)
 │   ├── .env.example         ← Required env vars
 │   └── next.config.ts
 ├── vercel.json              ← Points Vercel to publishers-house/ subdirectory
@@ -33,7 +33,7 @@
 ```bash
 cd publishers-house
 cp .env.example .env.local
-# Fill in .env.local with Strapi URL, API token, and Paystack keys
+# Fill in .env.local with Firebase Config and Paystack keys
 npm install
 npm run dev
 ```
@@ -46,8 +46,10 @@ See `publishers-house/.env.example` for all required variables.
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_STRAPI_URL` | Strapi CMS base URL |
-| `STRAPI_API_TOKEN` | Strapi API token (server-side only) |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Project ID |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`| Firebase Storage Bucket |
 | `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | Paystack public key |
 | `PAYSTACK_SECRET_KEY` | Paystack secret key |
 | `NEXT_PUBLIC_SITE_URL` | Production URL |

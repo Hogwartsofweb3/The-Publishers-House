@@ -1,13 +1,12 @@
 /**
  * ProgramCard — displays a single church program.
  * Used on: Homepage programs spotlight, Programs page grid.
- * Props match the Program type from lib/strapi.ts.
+ * Props match the Program type from lib/firebase.ts.
  * Also accepts a `staticData` override for static/hardcoded programs
- * (before Strapi is wired up).
+ * (before CMS is wired up).
  */
 
-import type { Program } from "@/lib/strapi";
-import { getStrapiMediaUrl } from "@/lib/strapi";
+import type { Program } from "@/lib/firebase";
 
 interface ProgramCardProps {
   /** Live Strapi program object */
@@ -30,18 +29,16 @@ export default function ProgramCard({
   staticData,
   variant = "default",
 }: ProgramCardProps) {
-  // Prefer live Strapi data, fall back to static
+  // Prefer live Firebase data, fall back to static
   const name        = program?.name        ?? staticData?.name        ?? "Program";
   const slug        = program?.slug        ?? staticData?.slug        ?? "#";
-  const tagline     = program?.tagline     ?? staticData?.tagline     ?? "";
-  const description = program?.description ?? staticData?.description ?? "";
-  const frequency   = staticData?.frequency;
+  const tagline     = program?.summary     ?? staticData?.tagline     ?? "";
+  const description = program?.summary     ?? staticData?.description ?? "";
+  const frequency   = program?.frequency   ?? staticData?.frequency;
   const icon        = staticData?.icon;
   const accentColor = staticData?.accentColor ?? "var(--color-accent)";
 
-  const imageUrl = program?.heroImage
-    ? getStrapiMediaUrl(program.heroImage.url)
-    : null;
+  const imageUrl = program?.imageUrl || null;
 
   const isSpotlight = variant === "spotlight";
 

@@ -1,5 +1,21 @@
 import type { Metadata } from "next";
+import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thepublishershouse.org"),
@@ -46,12 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        {/* Google Fonts preconnect for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
+    <html lang="en" className={`${poppins.variable} ${playfair.variable}`}>
       <body>
         {children}
       </body>

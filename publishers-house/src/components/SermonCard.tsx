@@ -1,12 +1,11 @@
 /**
  * SermonCard — displays a single sermon entry.
  * Used on: Homepage (latest sermon), Resources/Sermons tab, sermon grid.
- * Props match the Sermon type from lib/strapi.ts.
- * TODO: Wire `sermon.youtubeUrl` to actual video player once AVO delivers thumbnails.
+ * Props match the Sermon type from lib/firebase.ts.
+ * TODO: Wire `sermon.videoUrl` to actual video player once AVO delivers thumbnails.
  */
 
-import type { Sermon } from "@/lib/strapi";
-import { getStrapiMediaUrl } from "@/lib/strapi";
+import type { Sermon } from "@/lib/firebase";
 
 interface SermonCardProps {
   sermon: Sermon;
@@ -14,7 +13,10 @@ interface SermonCardProps {
 }
 
 export default function SermonCard({ sermon, featured = false }: SermonCardProps) {
-  const thumbnailUrl = getStrapiMediaUrl(sermon.thumbnail?.url);
+  // Extract youtube thumbnail if possible, else empty string
+  const thumbnailUrl = sermon.videoUrl?.includes("v=") 
+    ? `https://img.youtube.com/vi/${sermon.videoUrl.split("v=")[1].split("&")[0]}/hqdefault.jpg`
+    : "";
   const formattedDate = sermon.date
     ? new Date(sermon.date).toLocaleDateString("en-NG", {
         day: "numeric",
@@ -60,8 +62,8 @@ export default function SermonCard({ sermon, featured = false }: SermonCardProps
 
         {/* Play button overlay */}
         <a
-          href={sermon.youtubeUrl || "#"}
-          target={sermon.youtubeUrl ? "_blank" : undefined}
+          href={sermon.videoUrl || "#"}
+          target={sermon.videoUrl ? "_blank" : undefined}
           rel="noopener noreferrer"
           aria-label={`Watch sermon: ${sermon.title}`}
           style={{
@@ -144,18 +146,11 @@ export default function SermonCard({ sermon, featured = false }: SermonCardProps
           {sermon.title}
         </h4>
 
-        {/* Description */}
-        {sermon.description && (
-          <p className="card__excerpt" style={{ flex: 1 }}>
-            {sermon.description}
-          </p>
-        )}
-
         {/* Actions */}
         <div style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
-          {sermon.youtubeUrl && (
+          {sermon.videoUrl && (
             <a
-              href={sermon.youtubeUrl}
+              href={sermon.videoUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary btn-sm"
@@ -173,7 +168,7 @@ export default function SermonCard({ sermon, featured = false }: SermonCardProps
               ↓ Study Guide
             </a>
           )}
-          {!sermon.youtubeUrl && !sermon.audioUrl && (
+          {!sermon.videoUrl && !sermon.audioUrl && (
             <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
               Recording coming soon
             </span>

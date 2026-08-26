@@ -1,29 +1,21 @@
 /**
  * EventCard — displays a single church event.
  * Used on: Homepage events strip, Events page grid.
- * Props match the ChurchEvent type from lib/strapi.ts.
+ * Props match the EventItem type from lib/firebase.ts.
  */
 
-import type { ChurchEvent } from "@/lib/strapi";
-import { getStrapiMediaUrl } from "@/lib/strapi";
+import type { EventItem } from "@/lib/firebase";
 
 interface EventCardProps {
-  event: ChurchEvent;
+  event: EventItem;
   compact?: boolean; // slim horizontal layout for homepage strip
 }
 
-const categoryColors: Record<ChurchEvent["category"], string> = {
-  Conference:       "var(--color-accent)",
-  "Special Service": "#7C6FCD",
-  Program:          "#4E9FD4",
-  Community:        "#4EAD7A",
-};
-
 export default function EventCard({ event, compact = false }: EventCardProps) {
-  const imageUrl = getStrapiMediaUrl(event.coverImage?.url);
+  const imageUrl = event.imageUrl;
 
   // Parse date for the date-badge block
-  const dateObj = event.date ? new Date(event.date) : null;
+  const dateObj = event.startAt ? new Date(event.startAt) : null;
   const day   = dateObj ? dateObj.toLocaleDateString("en-NG", { day: "2-digit" })   : "--";
   const month = dateObj ? dateObj.toLocaleDateString("en-NG", { month: "short" })   : "---";
   const year  = dateObj ? dateObj.toLocaleDateString("en-NG", { year: "numeric" }) : "----";
@@ -69,34 +61,21 @@ export default function EventCard({ event, compact = false }: EventCardProps) {
 
         {/* Body */}
         <div className="card__body" style={{ flex: 1 }}>
-          <span
-            style={{
-              fontSize: "var(--text-xs)",
-              fontWeight: 700,
-              letterSpacing: "var(--tracking-wide)",
-              textTransform: "uppercase",
-              color: categoryColors[event.category] ?? "var(--color-accent)",
-              maxWidth: "none",
-              display: "block",
-              marginBottom: "var(--space-2)",
-            }}
-          >
-            {event.category}
-          </span>
           <h4 style={{ fontSize: "var(--text-base)", marginBottom: "var(--space-2)", lineHeight: "var(--leading-snug)" }}>
             {event.title}
           </h4>
-          {event.startTime && (
+          {event.startAt && (
             <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", maxWidth: "none", marginBottom: "var(--space-1)" }}>
-              ⏰ {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
+              ⏰ {new Date(event.startAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+              {event.endAt ? ` – ${new Date(event.endAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}` : ""}
             </p>
           )}
           <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", maxWidth: "none" }}>
-            📍 {event.venue}
+            📍 {event.location}
           </p>
-          {event.registrationLink && (
+          {event.registrationUrl && (
             <a
-              href={event.registrationLink}
+              href={event.registrationUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary btn-sm"
@@ -152,43 +131,26 @@ export default function EventCard({ event, compact = false }: EventCardProps) {
             {month}
           </span>
         </div>
-        {/* Category badge */}
-        <span
-          style={{
-            position: "absolute",
-            top: "var(--space-4)",
-            right: "var(--space-4)",
-            background: categoryColors[event.category] ?? "var(--color-accent)",
-            color: "var(--color-white)",
-            fontSize: "var(--text-xs)",
-            fontWeight: 700,
-            letterSpacing: "var(--tracking-wide)",
-            textTransform: "uppercase",
-            padding: "3px 8px",
-            borderRadius: "var(--radius-full)",
-          }}
-        >
-          {event.category}
-        </span>
       </div>
 
       {/* Body */}
       <div className="card__body" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
         <h4 className="card__title">{event.title}</h4>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", marginBottom: "var(--space-3)" }}>
-          {event.startTime && (
+          {event.startAt && (
             <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", maxWidth: "none" }}>
-              ⏰ {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
+              ⏰ {new Date(event.startAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+              {event.endAt ? ` – ${new Date(event.endAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}` : ""}
             </p>
           )}
           <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", maxWidth: "none" }}>
-            📍 {event.venue}
+            📍 {event.location}
           </p>
         </div>
         <p className="card__excerpt" style={{ flex: 1 }}>{event.description}</p>
-        {event.registrationLink && (
+        {event.registrationUrl && (
           <a
-            href={event.registrationLink}
+            href={event.registrationUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-sm"

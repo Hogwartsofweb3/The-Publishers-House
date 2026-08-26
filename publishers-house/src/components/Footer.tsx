@@ -1,193 +1,281 @@
 import Link from "next/link";
 
-// TODO: Replace placeholder social links with actual handles from AVO
-const socialLinks = [
-  { label: "Instagram", href: "#" },
-  { label: "YouTube",   href: "#" },
-  { label: "Facebook",  href: "#" },
-  { label: "Twitter/X", href: "#" },
-];
-
-const footerNav = [
-  { heading: "Church",    links: [{ label: "About Us", href: "/about" }, { label: "Our Programs", href: "/programs" }, { label: "Events", href: "/events" }, { label: "Contact", href: "/contact" }] },
-  { heading: "Resources", links: [{ label: "Sermons", href: "/resources" }, { label: "Teachings", href: "/resources" }, { label: "Articles", href: "/articles" }] },
-  { heading: "Give",      links: [{ label: "Tithe", href: "/giving" }, { label: "Offering", href: "/giving" }, { label: "Special Projects", href: "/giving" }] },
-];
+// Figma: EL-7b2ab70f — Footer: column, padding 72px 100px 40px, gap 40px, bg #151A54
+// EL-4597e800 — top row: row, gap 48px
+// EL-7cda1055 — brand col: column, gap 10px
+// EL-81986ca9 — bottom bar: column, padding-top 26px, border-top 1px #E8ECF7, center align, gap 10px
 
 export default function Footer() {
-  const year = new Date().getFullYear();
-
   return (
-    <footer
-      style={{
-        background: "var(--color-surface-dark)",
-        color: "rgba(255,255,255,0.7)",
-        paddingBlock: "var(--space-20) var(--space-8)",
-      }}
-    >
-      <div className="container">
+    <footer style={{ background: "#151A54" }}>
+      {/* Desktop Footer */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          padding: "72px 100px 40px",
+          gap: "40px",
+          maxWidth: "1440px",
+          margin: "0 auto",
+        }}
+      >
         {/* Top Row */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "2fr repeat(3, 1fr)",
-            gap: "var(--space-12)",
-            marginBottom: "var(--space-16)",
+            display: "flex",
+            flexDirection: "row",
+            alignSelf: "stretch",
+            gap: "48px",
           }}
         >
           {/* Brand Column */}
-          <div>
-            {/* TODO: Replace with actual logo from AVO */}
-            <div style={{ marginBottom: "var(--space-6)" }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "var(--space-3)",
-                  marginBottom: "var(--space-4)",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "var(--color-accent)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "var(--font-serif)",
-                    fontWeight: 700,
-                    fontSize: "var(--text-lg)",
-                    color: "var(--color-primary)",
-                  }}
-                >
-                  P
-                </div>
-                <span
-                  style={{
-                    fontFamily: "var(--font-serif)",
-                    fontSize: "var(--text-lg)",
-                    fontWeight: 700,
-                    color: "var(--color-white)",
-                  }}
-                >
-                  The Publishers House
-                </span>
-              </div>
-              {/* TODO: Replace with official tagline/mission from AVO */}
-              <p
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: "0 0 320px" }}>
+            <span
               style={{
-                maxWidth: "30ch",
-                fontSize: "var(--text-sm)",
-                lineHeight: "var(--leading-relaxed)",
-                color: "rgba(255,255,255,0.55)",
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 700,
+                fontSize: "18px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#FFFFFF",
               }}
             >
-              A dynamic, teaching-focused apostolic church in Jos, Plateau State &amp; Abuja.
-              Accurate doctrine. Spirit-filled community.
+              The Publishers House
+            </span>
+            {/* Figma: EL-dec8b8b6 — Established 2020 · Dr. Joshua Agunbiade — UI/Eyebrow, #E8ECF7 */}
+            <p
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "10px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#E8ECF7",
+                maxWidth: "320px",
+              }}
+            >
+              Established 2020 · Dr. Joshua Agunbiade
             </p>
-            </div>
-
-            {/* Service Times — TODO: replace with actual times */}
-            <div style={{ marginBottom: "var(--space-6)" }}>
-              <p
-                style={{
-                  fontSize: "var(--text-xs)",
-                  fontWeight: 600,
-                  letterSpacing: "var(--tracking-widest)",
-                  textTransform: "uppercase",
-                  color: "var(--color-accent)",
-                  marginBottom: "var(--space-2)",
-                  maxWidth: "none",
-                }}
-              >
-                Service Times
-              </p>
-              <p style={{ fontSize: "var(--text-sm)", maxWidth: "none", color: "rgba(255,255,255,0.6)" }}>
-                Sunday: 9:00 AM WAT · Thursday: 5:00 PM WAT
-              </p>
-            </div>
-
-            {/* Social */}
-            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-              {socialLinks.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  style={{
-                    fontSize: "var(--text-xs)",
-                    fontWeight: 600,
-                    color: "rgba(255,255,255,0.6)",
-                    padding: "var(--space-1) var(--space-3)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: "var(--radius-full)",
-                    textDecoration: "none",
-                    transition: "all var(--transition-fast)",
-                  }}
-                >
-                  {s.label}
-                </a>
-              ))}
-            </div>
+            {/* Figma: EL-01d16010 — Address — Read/Small, #E8ECF7 */}
+            <p
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 400,
+                fontSize: "14.5px",
+                lineHeight: "1.5em",
+                color: "#E8ECF7",
+                maxWidth: "320px",
+              }}
+            >
+              The House of Bread, Korinjoh House,{"\n"}British, Jos, Plateau State
+            </p>
+            {/* Figma: EL-17d3c3f6 — Service times — Read/Small, #E8ECF7 */}
+            <p
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 400,
+                fontSize: "14.5px",
+                lineHeight: "1.5em",
+                color: "#E8ECF7",
+                maxWidth: "320px",
+              }}
+            >
+              Sundays 9:00 AM · Thursdays 5:00 PM WAT
+            </p>
+            {/* Figma: EL-bb58850b — Outreach — Read/Small, #99AFC6 (muted) */}
+            <p
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 400,
+                fontSize: "14.5px",
+                lineHeight: "1.5em",
+                color: "#99AFC6",
+                maxWidth: "320px",
+              }}
+            >
+              Outreach: Abuja
+            </p>
           </div>
 
-          {/* Nav Columns */}
-          {footerNav.map((col) => (
-            <div key={col.heading}>
-              <p
+          {/* Explore Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "10px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#E8ECF7",
+                marginBottom: "4px",
+              }}
+            >
+              Explore
+            </span>
+            {["About", "Resources", "Articles", "Programs"].map((label) => (
+              <Link
+                key={label}
+                href={`/${label.toLowerCase()}`}
                 style={{
-                  fontSize: "var(--text-xs)",
-                  fontWeight: 700,
-                  letterSpacing: "var(--tracking-widest)",
-                  textTransform: "uppercase",
-                  color: "var(--color-white)",
-                  marginBottom: "var(--space-6)",
-                  maxWidth: "none",
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 400,
+                  fontSize: "14.5px",
+                  lineHeight: "1.5em",
+                  color: "#E8ECF7",
+                  textDecoration: "none",
+                  transition: "color 150ms ease",
                 }}
               >
-                {col.heading}
-              </p>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      style={{
-                        color: "rgba(255,255,255,0.55)",
-                        fontSize: "var(--text-sm)",
-                        textDecoration: "none",
-                        transition: "color var(--transition-fast)",
-                      }}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Take Part Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "10px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#E8ECF7",
+                marginBottom: "4px",
+              }}
+            >
+              Take part
+            </span>
+            {[
+              { label: "Events", href: "/events" },
+              { label: "Giving", href: "/giving" },
+              { label: "Watch live", href: "https://www.youtube.com/@ThePublishersHouse" },
+              { label: "Contact", href: "/contact" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 400,
+                  fontSize: "14.5px",
+                  lineHeight: "1.5em",
+                  color: "#E8ECF7",
+                  textDecoration: "none",
+                  transition: "color 150ms ease",
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Follow Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "10px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#E8ECF7",
+                marginBottom: "4px",
+              }}
+            >
+              Follow
+            </span>
+            {[
+              { label: "YouTube", href: "https://www.youtube.com/@ThePublishersHouse" },
+              { label: "Instagram", href: "https://www.instagram.com/thepublishershouse/" },
+              { label: "Facebook", href: "https://www.facebook.com/thepublishershouse" },
+              { label: "X", href: "https://x.com/tph_jos" },
+            ].map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontWeight: 400,
+                  fontSize: "14.5px",
+                  lineHeight: "1.5em",
+                  color: "#E8ECF7",
+                  textDecoration: "none",
+                  transition: "color 150ms ease",
+                }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar — Figma: EL-81986ca9 — border-top 1px #E8ECF7, padding-top 26px, center, gap 10px */}
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            paddingTop: "var(--space-8)",
             display: "flex",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "var(--space-4)",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px",
+            paddingTop: "26px",
+            borderTop: "1px solid #E8ECF7",
           }}
         >
-          <p style={{ fontSize: "var(--text-xs)", color: "rgba(255,255,255,0.35)", maxWidth: "none" }}>
-            © {year} The Publishers House. All rights reserved.
+          {/* Figma: EL-ed81264a — Psalm 68:11 quote — Playfair Display Italic 21px, center, white */}
+          <p
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: "21px",
+              lineHeight: "1.3em",
+              textAlign: "center",
+              color: "#FFFFFF",
+              maxWidth: "760px",
+            }}
+          >
+            &ldquo;The Lord gave the word: great was the company of those that published it.&rdquo;
           </p>
-          <p style={{ fontSize: "var(--text-xs)", color: "rgba(255,255,255,0.35)", maxWidth: "none" }}>
-            thepublishershouse.org
-          </p>
+          {/* Figma: EL-03e03fcf — Psalm 68:11 (KJV) — UI/Scripture, #F4F6FB */}
+          <span
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              fontSize: "11px",
+              lineHeight: "1.6em",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#F4F6FB",
+            }}
+          >
+            Psalm 68:11 (KJV)
+          </span>
         </div>
       </div>
+
+      {/* Mobile Footer styles */}
+      <style>{`
+        @media (max-width: 768px) {
+          footer > div {
+            padding: 48px 20px 32px !important;
+          }
+          footer > div > div:first-child {
+            flex-direction: column !important;
+            gap: 32px !important;
+          }
+          footer > div > div:first-child > div:first-child {
+            flex: unset !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }

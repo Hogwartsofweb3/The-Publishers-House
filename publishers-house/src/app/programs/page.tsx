@@ -1,218 +1,217 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Our Programs | The Publishers House",
+  title: "Programs | The Publishers House",
   description:
-    "Explore the programs of The Publishers House — Festival of Light, Merismos, The Forge, and Abuja Apostolic Camp.",
+    "Two weekly gatherings, three annual conferences and two monthly intensives. Every one exists to put the Word into the hands of believers.",
 };
+
+const S = {
+  eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  colophon: { fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
+  displayXL: { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
+  displayS: { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(16px, 2.5vw, 21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  readLede: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
+  readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
+};
+
+// Programs from Figma: #27:1821 Grid — all 6 program cards
+const programs = [
+  {
+    frequency: "Annual homecoming conference",
+    name: "Festival of Light",
+    desc: "Believers from across the world gather for worship, sound teaching, Holy Ghost expressions and fellowship.",
+    scripture: "Isaiah 60:1",
+    cadence: "Annual",
+    location: "Jos",
+  },
+  {
+    frequency: "Annual conference",
+    name: "Merismos",
+    desc: "A power-packed encounter where the Word is rightly taught and the Holy Spirit moves tangibly to transform lives.",
+    scripture: "Hebrews 4:12",
+    cadence: "Annual",
+    location: "Jos",
+  },
+  {
+    frequency: "Annual · Easter",
+    name: "Jesus Convention",
+    desc: "Unveiling the person, finished work and lordship of Jesus Christ through sound teaching, prayer and worship.",
+    scripture: "Philippians 3:10",
+    cadence: "Easter",
+    location: "Jos",
+  },
+  {
+    frequency: "Monthly · end of month",
+    name: "The Forge",
+    desc: "An intensive prayer gathering running Wednesday to Friday and culminating in an overnight vigil.",
+    scripture: "Jeremiah 23:29",
+    cadence: "Monthly",
+    location: "Jos",
+  },
+  {
+    frequency: "Monthly · Abuja",
+    name: "Abuja Apostolic Camp",
+    desc: "An intense spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.",
+    scripture: "Ephesians 4:11",
+    cadence: "Monthly",
+    location: "Abuja",
+  },
+  {
+    frequency: "Every week",
+    name: "Sunday and midweek",
+    desc: "Sunday worship at 9:00 AM is the core weekly gathering. Thursday at 5:00 PM is doctrine and corporate prayer.",
+    scripture: "Acts 2:42",
+    cadence: "Weekly",
+    location: "Jos",
+  },
+];
 
 export default function ProgramsPage() {
   return (
     <>
       <Navbar />
-      <main>
-        {/* Hero */}
+      <main style={{ paddingTop: "70px" }}>
+
+        {/* ══════════════════════════════════════════════════════════
+            HERO — Figma: #27:1817 — layout_56aa83c5
+            "Flagship programs"
+        ══════════════════════════════════════════════════════════ */}
         <section
           style={{
-            background: "var(--color-primary)",
-            color: "var(--color-white)",
-            paddingBlock: "var(--space-24) var(--space-20)",
-            textAlign: "center",
-            paddingInline: "var(--space-6)",
+            background: "#151A54",
+            padding: "90px 100px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
           }}
         >
-          <div className="container">
-            <p className="overline" style={{ color: "var(--color-accent)" }}>Get Involved</p>
-            <h1 style={{ color: "var(--color-white)", marginBottom: "var(--space-4)" }}>
-              Our Programs
+          <div style={{ maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#D3DAEC" }}>
+              Ephesians 4:12
+            </span>
+            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
+              Flagship programs
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.75)", maxWidth: "55ch", marginInline: "auto", fontSize: "var(--text-lg)" }}>
-              Where community meets purpose. Discover the programs that make The Publishers
-              House a place of transformation, growth, and belonging.
+            <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px" }}>
+              Two weekly gatherings, three annual conferences and two monthly intensives. Every one exists to put the Word into the hands of believers.
             </p>
           </div>
         </section>
 
-        {/* Annual Conferences */}
-        <section className="section">
-          <div className="container">
-            <div style={{ marginBottom: "var(--space-10)" }}>
-              <p className="overline" style={{ marginBottom: "var(--space-2)" }}>Flagship Events</p>
-              <h2>Annual Conferences</h2>
-              <div className="divider" />
+        {/* ══════════════════════════════════════════════════════════
+            PROGRAMS GRID — Figma: #27:1821
+            padding 96px 100px, bg Paper/300 (#D3DAEC)
+            Two rows of 3 cards each
+        ══════════════════════════════════════════════════════════ */}
+        <section style={{ background: "#D3DAEC" }}>
+          <div
+            style={{
+              maxWidth: "1440px",
+              margin: "0 auto",
+              padding: "96px 100px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              gap: "20px",
+            }}
+          >
+            {/* Row 1 */}
+            <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
+              {programs.slice(0, 3).map((prog) => (
+                <ProgramCard key={prog.name} prog={prog} />
+              ))}
             </div>
-            <div className="grid-2">
-              {annualPrograms.map((program) => (
-                <div key={program.slug} className="card" style={{ overflow: "hidden" }}>
-                  <div
-                    style={{
-                      height: "260px",
-                      background: `linear-gradient(135deg, var(--color-primary) 0%, ${program.color} 100%)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                    }}
-                  >
-                    {/* TODO: Replace with real hero image from AVO */}
-                    <span style={{ fontSize: "4rem" }}>{program.icon}</span>
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: "var(--space-4)",
-                        right: "var(--space-4)",
-                        background: "var(--color-accent)",
-                        color: "var(--color-primary)",
-                        fontSize: "var(--text-xs)",
-                        fontWeight: 700,
-                        letterSpacing: "var(--tracking-wide)",
-                        textTransform: "uppercase",
-                        padding: "4px 10px",
-                        borderRadius: "var(--radius-full)",
-                      }}
-                    >
-                      {program.frequency}
-                    </span>
-                  </div>
-                  <div className="card__body">
-                    <h3 className="card__title">{program.name}</h3>
-                    <p className="card__excerpt">{program.description}</p>
-                    <a
-                      href={`/programs/${program.slug}`}
-                      className="btn btn-primary btn-sm"
-                      style={{ marginTop: "var(--space-4)", display: "inline-flex" }}
-                    >
-                      Learn More &rarr;
-                    </a>
-                  </div>
-                </div>
+
+            {/* Row 2 */}
+            <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
+              {programs.slice(3).map((prog) => (
+                <ProgramCard key={prog.name} prog={prog} />
               ))}
             </div>
           </div>
         </section>
 
-        {/* Monthly Programs */}
-        <section className="section" style={{ background: "var(--color-surface-2)" }}>
-          <div className="container">
-            <div style={{ marginBottom: "var(--space-10)" }}>
-              <p className="overline" style={{ marginBottom: "var(--space-2)" }}>Monthly</p>
-              <h2>Prayer &amp; Spiritual Intensity</h2>
-              <div className="divider" />
-            </div>
-            <div className="grid-2">
-              {monthlyPrograms.map((program) => (
-                <div key={program.slug} className="card" style={{ overflow: "hidden" }}>
-                  <div
-                    style={{
-                      height: "220px",
-                      background: `linear-gradient(135deg, var(--color-primary) 0%, ${program.color} 100%)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                    }}
-                  >
-                    {/* TODO: Replace with real hero image from AVO */}
-                    <span style={{ fontSize: "4rem" }}>{program.icon}</span>
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: "var(--space-4)",
-                        right: "var(--space-4)",
-                        background: "rgba(255,255,255,0.15)",
-                        color: "var(--color-white)",
-                        fontSize: "var(--text-xs)",
-                        fontWeight: 700,
-                        letterSpacing: "var(--tracking-wide)",
-                        textTransform: "uppercase",
-                        padding: "4px 10px",
-                        borderRadius: "var(--radius-full)",
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      {program.frequency}
-                    </span>
-                  </div>
-                  <div className="card__body">
-                    <h3 className="card__title">{program.name}</h3>
-                    <p style={{ fontSize: "var(--text-xs)", color: "var(--color-accent)", fontWeight: 600, letterSpacing: "var(--tracking-wide)", textTransform: "uppercase", marginBottom: "var(--space-2)", maxWidth: "none" }}>
-                      {program.schedule}
-                    </p>
-                    <p className="card__excerpt">{program.description}</p>
-                    <a
-                      href={`/programs/${program.slug}`}
-                      className="btn btn-outline btn-sm"
-                      style={{ marginTop: "var(--space-4)", display: "inline-flex" }}
-                    >
-                      Learn More &rarr;
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="section" style={{ background: "var(--color-primary)", textAlign: "center" }}>
-          <div className="container">
-            <h2 style={{ color: "var(--color-white)" }}>Don&apos;t Know Where to Start?</h2>
-            <p style={{ marginInline: "auto", marginBottom: "var(--space-8)", color: "rgba(255,255,255,0.75)" }}>
-              Reach out and we will help connect you to the right program for your season.
-            </p>
-            <a href="/contact" className="btn btn-primary btn-lg">Get Connected</a>
-          </div>
-        </section>
       </main>
       <Footer />
     </>
   );
 }
 
-// ── Real program data — confirmed by Patricia/AVO (Aug 2026) ─────────────────
+function ProgramCard({ prog }: { prog: typeof programs[0] }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+        background: "#FFFFFF",
+        border: "1px solid #D3DAEC",
+        borderRadius: "4px",
+        overflow: "hidden",
+        flex: 1,
+        minWidth: "280px",
+      }}
+    >
+      {/* Plate — placeholder for image */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "190px",
+          background: "#E8ECF7",
+          border: "1px solid #6496EF",
+          borderRadius: "4px",
+          margin: "12px 12px 0",
+        }}
+      />
 
-const annualPrograms = [
-  {
-    name: "Festival of Light",
-    slug: "festival-of-light",
-    icon: "🕯️",
-    frequency: "Annual Conference",
-    description:
-      "The flagship annual convention of The Publishers House. Festival of Light gathers believers for extended sessions of apostolic teaching, prophetic revelation, worship, and spiritual impartations.",
-    color: "#C9A84C",
-  },
-  {
-    name: "Merismos",
-    slug: "merismos",
-    icon: "✦",
-    frequency: "Annual Conference",
-    description:
-      "Named after the biblical concept of spiritual distribution and discernment, this power-packed conference brings together believers from around the world for intensive apostolic teaching, deep worship, and divine impartations.",
-    color: "#4E2D7A",
-  },
-];
-
-const monthlyPrograms = [
-  {
-    name: "The Forge",
-    slug: "the-forge",
-    icon: "⚒️",
-    frequency: "Monthly",
-    schedule: "End of month · Wed – Fri (Friday Vigil)",
-    description:
-      "A high-intensity prayer program designed to fan your prayer altars and impart spiritual Christian teachings. The Forge typically runs from Wednesday to Friday, with Friday being a vigil service.",
-    color: "#2D4E7A",
-  },
-  {
-    name: "Abuja Apostolic Camp",
-    slug: "abuja-apostolic-camp",
-    icon: "🏕️",
-    frequency: "Monthly",
-    schedule: "First 2 weeks of the month · Abuja",
-    description:
-      "An intense spiritual camp focused on equipping believers, prophetic words, and deep spiritual alignment. Held monthly in Abuja for the outreach community.",
-    color: "#2D7A4E",
-  },
-];
+      <div style={{ padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <span
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 600,
+            fontSize: "10px",
+            lineHeight: "1.6em",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase" as const,
+            color: "#0140C1",
+          }}
+        >
+          {prog.frequency}
+        </span>
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "21px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const, color: "#151A54" }}>
+          {prog.name}
+        </span>
+        <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em", color: "#4A62A0" }}>
+          {prog.desc}
+        </p>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap" as const,
+            gap: "5px 12px",
+            paddingTop: "10px",
+            borderTop: "1px solid #151A54",
+          }}
+        >
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#0140C1" }}>
+            {prog.scripture}
+          </span>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
+            {prog.cadence}
+          </span>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
+            {prog.location}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

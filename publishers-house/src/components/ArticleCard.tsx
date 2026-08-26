@@ -1,17 +1,16 @@
 /**
  * ArticleCard — displays a single blog/article entry.
  * Used on: Homepage articles row, Articles page grid.
- * Props match the Article type from lib/strapi.ts.
+ * Props match the Article type from lib/firebase.ts.
  */
 
-import type { Article } from "@/lib/strapi";
-import { getStrapiMediaUrl } from "@/lib/strapi";
+import type { Article } from "@/lib/firebase";
 
 interface ArticleCardProps {
   article: Article;
 }
 
-const categoryColors: Record<Article["category"], { bg: string; text: string }> = {
+const categoryColors: Record<string, { bg: string; text: string }> = {
   Faith:          { bg: "#1A1A2E", text: "#C9A84C" },
   Devotionals:    { bg: "#2D1A4E", text: "#B98FE0" },
   Family:         { bg: "#1A3A2E", text: "#5EC98C" },
@@ -20,8 +19,9 @@ const categoryColors: Record<Article["category"], { bg: string; text: string }> 
 };
 
 export default function ArticleCard({ article }: ArticleCardProps) {
-  const imageUrl = getStrapiMediaUrl(article.coverImage?.url);
-  const catStyle = categoryColors[article.category] ?? { bg: "#1A1A2E", text: "#C9A84C" };
+  const imageUrl = article.coverImageUrl;
+  const primaryCategory = article.categories?.[0] || "General";
+  const catStyle = categoryColors[primaryCategory] ?? { bg: "#1A1A2E", text: "#C9A84C" };
 
   const formattedDate = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString("en-NG", {
@@ -84,7 +84,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
               border: `1px solid ${catStyle.text}40`,
             }}
           >
-            {article.category}
+            {primaryCategory}
           </span>
         </div>
       </a>
