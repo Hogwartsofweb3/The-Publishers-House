@@ -27,7 +27,7 @@ const programs = [
     scripture: "Isaiah 60:1",
     cadence: "Annual",
     location: "Jos",
-    logoImage: "/images/fol-logo.png",
+    logoImage: "/images/Festival of Light logo (white).png",
   },
   {
     frequency: "Annual conference",
@@ -36,7 +36,7 @@ const programs = [
     scripture: "Hebrews 4:12",
     cadence: "Annual",
     location: "Jos",
-    logoImage: "/images/merismos-logo.png",
+    logoImage: "/images/Merismos black.png",
   },
   {
     frequency: "Annual · Easter",
@@ -45,7 +45,7 @@ const programs = [
     scripture: "Philippians 3:10",
     cadence: "Easter",
     location: "Jos",
-    logoImage: "/images/jc-logo.png",
+    logoImage: "/images/Jesus Convention logo white.png",
   },
   {
     frequency: "Monthly · end of month",
@@ -54,7 +54,7 @@ const programs = [
     scripture: "Jeremiah 23:29",
     cadence: "Monthly",
     location: "Jos",
-    logoImage: "/images/forge-logo.png",
+    logoImage: "/images/THE FORGE 1.png",
   },
   {
     frequency: "Monthly · Abuja",
@@ -63,7 +63,7 @@ const programs = [
     scripture: "Ephesians 4:11",
     cadence: "Monthly",
     location: "Abuja",
-    logoImage: "/images/aac-logo.png",
+    logoImage: "/images/TPH ABUJA.png",
   },
   {
     frequency: "Every week",
@@ -72,7 +72,7 @@ const programs = [
     scripture: "Acts 2:42",
     cadence: "Weekly",
     location: "Jos",
-    logoImage: "/images/tph-logo.png",
+    logoImage: "/images/MAIN TPH LOGO (W).png",
   },
 ];
 

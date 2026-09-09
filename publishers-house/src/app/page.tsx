@@ -48,7 +48,7 @@ const programs = [
     scripture: "Isaiah 60:1",
     freq: "Annual",
     city: "Jos",
-    logoImage: "/images/fol-logo.png",
+    logoImage: "/images/Festival of Light logo (white).png",
   },
   {
     slug: "merismos",
@@ -58,7 +58,7 @@ const programs = [
     scripture: "Hebrews 4:12",
     freq: "Annual",
     city: "Jos",
-    logoImage: "/images/merismos-logo.png",
+    logoImage: "/images/Merismos black.png",
   },
   {
     slug: "jesus-convention",
@@ -68,7 +68,7 @@ const programs = [
     scripture: "Philippians 2:10",
     freq: "Easter",
     city: "Jos",
-    logoImage: "/images/jc-logo.png",
+    logoImage: "/images/Jesus Convention logo white.png",
   },
   {
     slug: "the-forge",
@@ -78,7 +78,7 @@ const programs = [
     scripture: "Jeremiah 23:20",
     freq: "Monthly",
     city: "Jos",
-    logoImage: "/images/forge-logo.png",
+    logoImage: "/images/THE FORGE 1.png",
   },
   {
     slug: "abuja-apostolic-camp",
@@ -88,7 +88,7 @@ const programs = [
     scripture: "Ephesians 4:11",
     freq: "Monthly",
     city: "Abuja",
-    logoImage: "/images/aac-logo.png",
+    logoImage: "/images/TPH ABUJA.png",
   },
   {
     slug: "sunday-midweek",
@@ -98,7 +98,7 @@ const programs = [
     scripture: "Acts 2:42",
     freq: "Weekly",
     city: "Jos",
-    logoImage: "/images/tph-logo.png",
+    logoImage: "/images/MAIN TPH LOGO (W).png",
   },
 ];
 
@@ -395,7 +395,7 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/who-we-are-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/14ea686b186111ae6e64841d2934c9f6c4bd522d (1).jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", maxWidth: "700px" }}>
@@ -440,7 +440,7 @@ export default function HomePage() {
             }}
           >
             <img
-              src="/images/building-render.jpg"
+              src="/images/9528ca88db079ef5fecf726b4f42a332798a6fcc.jpg"
               alt="The Publishers House building rendering"
               style={{
                 width: "100%",
@@ -570,7 +570,7 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/Copy of IMG_6969.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.82)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>

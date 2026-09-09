@@ -64,7 +64,7 @@ export default function Navbar() {
         >
           {/* Real Navbar Logo */}
           <img
-            src="/images/nav-logo.png"
+            src="/images/FULL LOGO white.png"
             alt="The Publishers House"
             style={{
               height: "40px",
