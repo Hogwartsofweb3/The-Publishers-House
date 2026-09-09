@@ -60,33 +60,18 @@ export default function Navbar() {
             alignItems: "center",
             gap: "12px",
             textDecoration: "none",
-            flexShrink: 0,
           }}
         >
-          {/* Logo mark placeholder — Figma: EL-274a6ef6 — 23×38px rectangle with church image */}
-          <div
+          {/* Real Navbar Logo */}
+          <img
+            src="/images/nav-logo.png"
+            alt="The Publishers House"
             style={{
-              width: "23px",
-              height: "38px",
-              background: "#6496EF",
-              borderRadius: "2px",
-              flexShrink: 0,
+              height: "40px",
+              width: "auto",
+              objectFit: "contain",
             }}
           />
-          <span
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 700,
-              fontSize: "12px",
-              lineHeight: "1.6em",
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              color: "#FFFFFF",
-              whiteSpace: "pre-line",
-            }}
-          >
-            {"The\nPublishers\nHouse"}
-          </span>
         </Link>
 
         {/* Desktop Nav Links — Figma: EL-28177092 — row, gap 26px */}

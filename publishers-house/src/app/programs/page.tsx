@@ -27,6 +27,7 @@ const programs = [
     scripture: "Isaiah 60:1",
     cadence: "Annual",
     location: "Jos",
+    logoImage: "/images/fol-logo.png",
   },
   {
     frequency: "Annual conference",
@@ -35,6 +36,7 @@ const programs = [
     scripture: "Hebrews 4:12",
     cadence: "Annual",
     location: "Jos",
+    logoImage: "/images/merismos-logo.png",
   },
   {
     frequency: "Annual · Easter",
@@ -43,6 +45,7 @@ const programs = [
     scripture: "Philippians 3:10",
     cadence: "Easter",
     location: "Jos",
+    logoImage: "/images/jc-logo.png",
   },
   {
     frequency: "Monthly · end of month",
@@ -51,6 +54,7 @@ const programs = [
     scripture: "Jeremiah 23:29",
     cadence: "Monthly",
     location: "Jos",
+    logoImage: "/images/forge-logo.png",
   },
   {
     frequency: "Monthly · Abuja",
@@ -59,6 +63,7 @@ const programs = [
     scripture: "Ephesians 4:11",
     cadence: "Monthly",
     location: "Abuja",
+    logoImage: "/images/aac-logo.png",
   },
   {
     frequency: "Every week",
@@ -67,6 +72,7 @@ const programs = [
     scripture: "Acts 2:42",
     cadence: "Weekly",
     location: "Jos",
+    logoImage: "/images/tph-logo.png",
   },
 ];
 
@@ -156,19 +162,31 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
         minWidth: "280px",
       }}
     >
-      {/* Plate — placeholder for image */}
+      {/* Plate — real logo image, top half only */}
       <div
         style={{
+          height: "190px",
+          overflow: "hidden",
+          background: "#F4F6FB",
+          borderRadius: "4px",
+          margin: "12px 12px 0",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: "190px",
-          background: "#E8ECF7",
-          border: "1px solid #6496EF",
-          borderRadius: "4px",
-          margin: "12px 12px 0",
         }}
-      />
+      >
+        <img
+          src={prog.logoImage}
+          alt={prog.name}
+          style={{
+            width: "100%",
+            height: "260px",
+            objectFit: "contain",
+            objectPosition: "center top",
+            padding: "20px 28px",
+          }}
+        />
+      </div>
 
       <div style={{ padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: "8px" }}>
         <span

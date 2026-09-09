@@ -48,8 +48,7 @@ const programs = [
     scripture: "Isaiah 60:1",
     freq: "Annual",
     city: "Jos",
-    logo: "FOL",
-    logoColor: "#111",
+    logoImage: "/images/fol-logo.png",
   },
   {
     slug: "merismos",
@@ -59,8 +58,7 @@ const programs = [
     scripture: "Hebrews 4:12",
     freq: "Annual",
     city: "Jos",
-    logo: "MERISMOS",
-    logoColor: "#111",
+    logoImage: "/images/merismos-logo.png",
   },
   {
     slug: "jesus-convention",
@@ -70,8 +68,7 @@ const programs = [
     scripture: "Philippians 2:10",
     freq: "Easter",
     city: "Jos",
-    logo: "JESUS CONV.",
-    logoColor: "#111",
+    logoImage: "/images/jc-logo.png",
   },
   {
     slug: "the-forge",
@@ -81,8 +78,7 @@ const programs = [
     scripture: "Jeremiah 23:20",
     freq: "Monthly",
     city: "Jos",
-    logo: "THE FORGE",
-    logoColor: "#111",
+    logoImage: "/images/forge-logo.png",
   },
   {
     slug: "abuja-apostolic-camp",
@@ -92,8 +88,7 @@ const programs = [
     scripture: "Ephesians 4:11",
     freq: "Monthly",
     city: "Abuja",
-    logo: "AAC",
-    logoColor: "#111",
+    logoImage: "/images/aac-logo.png",
   },
   {
     slug: "sunday-midweek",
@@ -103,8 +98,7 @@ const programs = [
     scripture: "Acts 2:42",
     freq: "Weekly",
     city: "Jos",
-    logo: "TPH",
-    logoColor: "#111",
+    logoImage: "/images/tph-logo.png",
   },
 ];
 
@@ -401,7 +395,7 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/who-we-are-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", maxWidth: "700px" }}>
@@ -434,34 +428,28 @@ export default function HomePage() {
         <section style={{ backgroundColor: Paper100, padding: "80px 100px" }}>
           <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
 
-          {/* Building rendering image placeholder */}
+          {/* Building rendering — real image, cropped to top half only */}
           <div
             style={{
               width: "100%",
-              height: "400px",
-              backgroundColor: Paper200,
-              border: `1px solid ${Paper300}`,
+              height: "420px",
               borderRadius: "4px",
               marginBottom: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               overflow: "hidden",
-              position: "relative",
+              border: `1px solid ${Paper300}`,
             }}
           >
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              gap: "12px",
-            }}>
-              <div style={{ ...T.displayL, color: Slate500, textAlign: "center" }}>THE PUBLISHERS HOUSE</div>
-              <div style={{ ...T.readSmall, color: Slate500, textAlign: "center" }}>Building Rendering — Image coming soon</div>
-            </div>
+            <img
+              src="/images/building-render.jpg"
+              alt="The Publishers House building rendering"
+              style={{
+                width: "100%",
+                height: "840px",
+                objectFit: "cover",
+                objectPosition: "center top",
+                display: "block",
+              }}
+            />
           </div>
 
           <div style={{ maxWidth: "640px" }}>
@@ -525,32 +513,29 @@ export default function HomePage() {
                     cursor: "pointer",
                   }}
                 >
-                  {/* Logo plate */}
+                  {/* Logo plate — real image, show top half only */}
                   <div
                     style={{
-                      backgroundColor: Paper100,
                       height: "160px",
+                      overflow: "hidden",
+                      borderBottom: `1px solid ${Paper300}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      borderBottom: `1px solid ${Paper300}`,
+                      backgroundColor: Paper100,
                     }}
                   >
-                    <div
+                    <img
+                      src={prog.logoImage}
+                      alt={prog.name}
                       style={{
-                        fontFamily: "var(--font-poppins)",
-                        fontWeight: 800,
-                        fontSize: prog.logo.length > 8 ? "18px" : "28px",
-                        color: Navy,
-                        textTransform: "uppercase" as const,
-                        letterSpacing: "-0.02em",
-                        textAlign: "center",
-                        padding: "0 24px",
-                        lineHeight: "1.1em",
+                        width: "100%",
+                        height: "220px",
+                        objectFit: "contain",
+                        objectPosition: "center top",
+                        padding: "20px 28px",
                       }}
-                    >
-                      {prog.logo}
-                    </div>
+                    />
                   </div>
 
                   {/* Card body */}
@@ -585,8 +570,8 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center bottom", zIndex: 0 }} />
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.82)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
             {/* Left */}
