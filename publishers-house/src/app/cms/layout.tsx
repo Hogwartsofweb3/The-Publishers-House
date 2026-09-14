@@ -20,9 +20,10 @@ export default function CMSLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user && pathname !== "/cms/login") {
-      router.push("/cms/login");
-    }
+    // Temporarily disabled auth guard for development
+    // if (!loading && !user && pathname !== "/cms/login") {
+    //   router.push("/cms/login");
+    // }
   }, [user, loading, pathname, router]);
 
   if (loading) {
@@ -34,9 +35,10 @@ export default function CMSLayout({ children }: { children: React.ReactNode }) {
   }
 
   // If not logged in and not on login page, we will redirect anyway.
-  if (!user && pathname !== "/cms/login") {
-    return null;
-  }
+  // Temporarily disabled for development so the dashboard is visible
+  // if (!user && pathname !== "/cms/login") {
+  //   return null;
+  // }
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F4F6FB", display: "flex", flexDirection: "column" }}>

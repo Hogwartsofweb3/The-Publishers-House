@@ -59,6 +59,14 @@ export default function CMSLoginPage() {
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
+
+          <button 
+            type="button" 
+            onClick={() => router.push("/cms")}
+            style={{ width: "100%", padding: "12px", backgroundColor: "#E8ECF7", color: "#151A54", border: "1px solid #D3DAEC", borderRadius: "4px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, cursor: "pointer", marginTop: "4px" }}
+          >
+            Skip Login (Dev Mode)
+          </button>
         </form>
       </div>
     </div>
