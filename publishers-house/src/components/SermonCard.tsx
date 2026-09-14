@@ -139,7 +139,7 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
           >
             <button
               onClick={() => setIsVideoOpen(false)}
-              style={{ position: "absolute", top: "-40px", right: 0, background: "none", border: "none", color: "white", fontSize: "16px", cursor: "pointer", ...T.eyebrow }}
+              style={{ position: "absolute", top: "-40px", right: 0, background: "none", border: "none", color: "white", cursor: "pointer", ...T.eyebrow }}
             >
               Close ✕
             </button>
