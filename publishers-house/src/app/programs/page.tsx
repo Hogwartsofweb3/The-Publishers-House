@@ -180,10 +180,10 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
           alt={prog.name}
           style={{
             width: "100%",
-            height: "260px",
+            height: "100%",
             objectFit: "contain",
-            objectPosition: "center top",
-            padding: "20px 28px",
+            objectPosition: "center",
+            padding: "32px",
           }}
         />
       </div>

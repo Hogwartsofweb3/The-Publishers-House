@@ -530,10 +530,10 @@ export default function HomePage() {
                       alt={prog.name}
                       style={{
                         width: "100%",
-                        height: "220px",
+                        height: "100%",
                         objectFit: "contain",
-                        objectPosition: "center top",
-                        padding: "20px 28px",
+                        objectPosition: "center",
+                        padding: "32px",
                       }}
                     />
                   </div>
