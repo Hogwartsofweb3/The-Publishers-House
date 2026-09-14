@@ -30,7 +30,7 @@ export default function Footer() {
           }}
         >
           {/* Brand Column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: "0 0 320px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
             <span
               style={{
                 fontFamily: "'Poppins', sans-serif",

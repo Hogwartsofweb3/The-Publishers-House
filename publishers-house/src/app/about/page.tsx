@@ -56,12 +56,32 @@ const leadership = [
   {
     name: "Dr. Joshua Agunbiade",
     role: "Lead Pastor",
-    placeholder: "#151A54",
+    location: "TPH JOS AND ABUJA",
+    photoUrl: "/images/Rev. Joshua Agunbiade.jpg",
   },
   {
     name: "Pastor Damilare",
-    role: "Pastor",
-    placeholder: "#1B2168",
+    role: "Associate Pastor",
+    location: "TPH JOS",
+    photoUrl: "/images/Pastor Damilare Ayodele.jpg",
+  },
+  {
+    name: "Pastor Boniface",
+    role: "Associate Pastor",
+    location: "TPH ABUJA",
+    photoUrl: "/images/Pastor Boniface Onah.jpg",
+  },
+  {
+    name: "Pastor Ngbede Odeh",
+    role: "Associate Pastor",
+    location: "TPH JOS",
+    photoUrl: "/images/Pastor Ngbede Odeh.jpg",
+  },
+  {
+    name: "Pastor Makinde Theophilus",
+    role: "Associate Pastor",
+    location: "TPH JOS",
+    photoUrl: "/images/Pastor Theophilus Makinde.jpg",
   },
 ];
 
@@ -77,24 +97,27 @@ export default function AboutPage() {
         ══════════════════════════════════════════════════════════ */}
         <section
           style={{
-            background: "#151A54",
+            position: "relative",
             padding: "90px 100px",
             display: "flex",
             flexDirection: "column",
             gap: "18px",
           }}
         >
-          <div style={{ maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/about-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
+
+          <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
             {/* UI/Scripture */}
             <span style={{ ...S.scripture, color: "#D3DAEC" }}>Psalm 68:11</span>
 
             {/* Display/XL headline */}
-            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
+            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
               About the Publishers House
             </h1>
 
             {/* Read/Lede */}
-            <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px" }}>
+            <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
               An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God&apos;s Word to every sphere of society.
             </p>
           </div>
@@ -339,39 +362,34 @@ export default function AboutPage() {
               <h2 style={{ ...S.displayL, color: "#151A54" }}>Who leads us</h2>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
-              {leadership.map((leader) => (
-                <div
-                  key={leader.name}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    border: "1px solid #D3DAEC",
-                    borderRadius: "4px",
-                    overflow: "hidden",
-                    background: "#FFFFFF",
-                    flex: "0 0 300px",
-                  }}
-                >
-                  {/* Portrait placeholder — Figma: RECTANGLE 608×497 */}
-                  <div
-                    style={{
-                      width: "100%",
-                      aspectRatio: "608/497",
-                      background: leader.placeholder,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span style={{ ...S.eyebrow, color: "rgba(255,255,255,0.4)" }}>Portrait</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {/* Top row: 2 leaders */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                {leadership.slice(0, 2).map((leader) => (
+                  <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ width: "100%", aspectRatio: "608/608", overflow: "hidden", marginBottom: "16px" }}>
+                      <img src={leader.photoUrl} alt={leader.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                    </div>
+                    <span style={{ ...S.displayS, color: "#151A54", marginBottom: "4px" }}>{leader.name}</span>
+                    <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
+                    <span style={{ ...S.readSmall, fontSize: "12px", color: "#4A62A0", textTransform: "uppercase" }}>{leader.location}</span>
                   </div>
-                  <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ ...S.displayS, color: "#151A54" }}>{leader.name}</span>
-                    <span style={{ ...S.readSmall, color: "#4A62A0" }}>{leader.role}</span>
+                ))}
+              </div>
+              
+              {/* Bottom row: 3 leaders */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+                {leadership.slice(2, 5).map((leader) => (
+                  <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ width: "100%", aspectRatio: "608/700", overflow: "hidden", marginBottom: "16px" }}>
+                      <img src={leader.photoUrl} alt={leader.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                    </div>
+                    <span style={{ ...S.displayS, color: "#151A54", fontSize: "16px", marginBottom: "4px" }}>{leader.name}</span>
+                    <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
+                    <span style={{ ...S.readSmall, fontSize: "12px", color: "#4A62A0", textTransform: "uppercase" }}>{leader.location}</span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
