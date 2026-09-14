@@ -1,180 +1,160 @@
-/**
- * SermonCard — displays a single sermon entry.
- * Used on: Homepage (latest sermon), Resources/Sermons tab, sermon grid.
- * Props match the Sermon type from lib/firebase.ts.
- * TODO: Wire `sermon.videoUrl` to actual video player once AVO delivers thumbnails.
- */
+﻿use client;
 
-import type { Sermon } from "@/lib/firebase";
+import { useState } from react;
+import type { Sermon } from @/lib/firebase;
 
-interface SermonCardProps {
-  sermon: Sermon;
-  featured?: boolean; // larger display for homepage "latest sermon" slot
-}
+const Navy    = #151A54;
+const Blue500 = #2090FF;
+const Blue700 = #0140C1;
+const Paper200 = #E8ECF7;
+const Paper300 = #D3DAEC;
+const Slate500 = #747CA1;
+const Slate600 = #4A62A0;
+const White   = #FFFFFF;
 
-export default function SermonCard({ sermon, featured = false }: SermonCardProps) {
-  // Extract youtube thumbnail if possible, else empty string
-  const thumbnailUrl = sermon.videoUrl?.includes("v=") 
-    ? `https://img.youtube.com/vi/${sermon.videoUrl.split("v=")[1].split("&")[0]}/hqdefault.jpg`
-    : "";
-  const formattedDate = sermon.date
-    ? new Date(sermon.date).toLocaleDateString("en-NG", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Date TBC";
+const T = {
+  displayS:  { fontFamily: var(--font-poppins), fontWeight: 700, fontSize: 17px, lineHeight: 1.2em, letterSpacing: -0.01em, textTransform: uppercase as const },
+  eyebrow:   { fontFamily: var(--font-poppins), fontWeight: 600, fontSize: 10px, lineHeight: 1.6em, letterSpacing: 0.2em, textTransform: uppercase as const },
+  colophon:  { fontFamily: var(--font-poppins), fontWeight: 500, fontSize: 10.5px, lineHeight: 1.6em, letterSpacing: 0.1em, textTransform: uppercase as const },
+  readBody:  { fontFamily: var(--font-playfair), fontWeight: 400, fontSize: 15px, lineHeight: 1.6em },
+  button:    { fontFamily: var(--font-poppins), fontWeight: 600, fontSize: 12px, lineHeight: 1em, letterSpacing: 0.14em, textTransform: uppercase as const, cursor: pointer },
+};
 
-  return (
-    <article
-      className="card"
-      style={{
-        display: "flex",
-        flexDirection: featured ? "row" : "column",
-        overflow: "hidden",
-        transition: "transform var(--transition-normal), box-shadow var(--transition-normal)",
-        height: "100%",
-      }}
-    >
-      {/* Thumbnail */}
-      <div
-        style={{
-          position: "relative",
-          flexShrink: 0,
-          width: featured ? "260px" : "100%",
-          height: featured ? "100%" : "200px",
-          minHeight: featured ? "220px" : undefined,
-          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Thumbnail image — shows skeleton gradient until AVO provides real images */}
-        <div
-          className="skeleton"
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url('${thumbnailUrl}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+export default function SermonCard({ sermon }: { sermon: Sermon }) {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
-        {/* Play button overlay */}
-        <a
-          href={sermon.videoUrl || "#"}
-          target={sermon.videoUrl ? "_blank" : undefined}
-          rel="noopener noreferrer"
-          aria-label={`Watch sermon: ${sermon.title}`}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.35)",
-            transition: "background var(--transition-normal)",
-            textDecoration: "none",
-          }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.55)")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.35)")}
-        >
-          <div
-            style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "50%",
-              background: "var(--color-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              transition: "transform var(--transition-normal)",
-            }}
-          >
-            {/* Triangle play icon */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--color-primary)">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </a>
+  const dateLabel = sermon.date
+    ? new Date(sermon.date).toLocaleDateString(en-GB, { day: numeric, month: short, year: numeric })
+    : ";
 
-        {/* Series tag */}
-        {sermon.series && (
-          <span
-            style={{
-              position: "absolute",
-              bottom: "var(--space-3)",
-              left: "var(--space-3)",
-              background: "var(--color-accent)",
-              color: "var(--color-primary)",
-              fontSize: "var(--text-xs)",
-              fontWeight: 700,
-              letterSpacing: "var(--tracking-wide)",
-              textTransform: "uppercase",
-              padding: "3px 8px",
-              borderRadius: "var(--radius-full)",
-            }}
-          >
-            {sermon.series}
-          </span>
-        )}
-      </div>
+ const getEmbedUrl = (url: string) => {
+ if (!url) return ;
+ const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+ return videoIdMatch ? https://www.youtube.com/embed/?autoplay=1 : url;
+ };
 
-      {/* Body */}
-      <div className="card__body" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-        {/* Meta */}
-        <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", marginBottom: "var(--space-3)", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", maxWidth: "none" }}>
-            {formattedDate}
-          </span>
-          {sermon.speaker && (
-            <>
-              <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>·</span>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--color-accent)", fontWeight: 600, maxWidth: "none" }}>
-                {sermon.speaker}
-              </span>
-            </>
-          )}
-        </div>
+ const handlePlayClick = (e: React.MouseEvent) => {
+ e.preventDefault();
+ if (sermon.videoUrl) {
+ setIsVideoOpen(true);
+ }
+ };
 
-        {/* Title */}
-        <h4
-          className="card__title"
-          style={{ fontSize: featured ? "var(--text-xl)" : "var(--text-lg)", lineHeight: "var(--leading-snug)" }}
-        >
-          {sermon.title}
-        </h4>
+ return (
+ <>
+ <div
+ style={{
+ border: 1px solid ,
+ backgroundColor: White,
+ display: flex,
+ flexDirection: column,
+ }}
+ >
+ <div
+ onClick={handlePlayClick}
+ style={{
+ height: 220px,
+ backgroundColor: Paper200, 
+ display: flex,
+ alignItems: center,
+ justifyContent: center,
+ position: relative,
+ overflow: hidden,
+ cursor: sermon.videoUrl ? pointer : default,
+ }}
+ >
+ {sermon.videoUrl && (
+ <div style={{ display: flex, alignItems: center, gap: 8px, color: Blue500, ...T.eyebrow }}>
+ <div style={{ width: 0, height: 0, borderTop: 4px solid transparent, borderBottom: 4px solid transparent, borderLeft: 6px solid }} />
+ YOUTUBE
+ </div>
+ )}
+ </div>
 
-        {/* Actions */}
-        <div style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
-          {sermon.videoUrl && (
-            <a
-              href={sermon.videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary btn-sm"
-            >
-              ▶ Watch
-            </a>
-          )}
-          {sermon.audioUrl && (
-            <a href={sermon.audioUrl} className="btn btn-outline btn-sm" download>
-              ↓ Audio
-            </a>
-          )}
-          {sermon.studyGuideUrl && (
-            <a href={sermon.studyGuideUrl} className="btn btn-outline btn-sm" download>
-              ↓ Study Guide
-            </a>
-          )}
-          {!sermon.videoUrl && !sermon.audioUrl && (
-            <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-              Recording coming soon
-            </span>
-          )}
-        </div>
-      </div>
-    </article>
-  );
+ <div style={{ padding: 24px 20px 20px, display: flex, flexDirection: column, flex: 1 }}>
+ <div style={{ display: flex, gap: 8px, alignItems: center, marginBottom: 8px }}>
+ {sermon.series && <div style={{ ...T.eyebrow, color: Blue500 }}>{sermon.series}</div>}
+ {sermon.tags?.[0] && (
+ <>
+ <div style={{ ...T.eyebrow, color: Paper300 }}>·</div>
+ <div style={{ ...T.eyebrow, color: Blue500 }}>{sermon.tags[0]}</div>
+ </>
+ )}
+ </div>
+ 
+ <h3 style={{ ...T.displayS, color: Navy, margin: 0 0 12px }}>{sermon.title}</h3>
+ 
+ <p style={{ ...T.readBody, color: Slate600, margin: 0, flex: 1 }}>
+ {/* Displaying excerpt or falling back to a hardcoded string to match UI if empty */}
+ {sermon.speaker ? Teaching by . : What Paul asks of anyone who handles Scripture in public.}
+ </p>
+
+ <div style={{ display: flex, gap: 8px, alignItems: center, marginTop: 24px, paddingTop: 16px, borderTop: 1px solid }}>
+ <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{sermon.tags?.[0] || TEACHING}</span>
+ <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+ <span style={{ ...T.colophon, color: Slate500 }}>{sermon.speaker}</span>
+ {dateLabel && <>
+ <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+ <span style={{ ...T.colophon, color: Slate500 }}>{dateLabel}</span>
+ </>}
+ </div>
+
+ <div style={{ display: flex, gap: 12px, marginTop: 16px }}>
+ {sermon.audioUrl && (
+ <a
+ href={sermon.audioUrl}
+ target=_blank
+ rel=noopener noreferrer
+ style={{ ...T.eyebrow, color: Navy, textDecoration: underline, textUnderlineOffset: 4px }}
+ >
+ Telegram Audio
+ </a>
+ )}
+ {sermon.studyGuideUrl && (
+ <a
+ href={sermon.studyGuideUrl}
+ target=_blank
+ rel=noopener noreferrer
+ style={{ ...T.eyebrow, color: Navy, textDecoration: underline, textUnderlineOffset: 4px }}
+ >
+ Study Guide
+ </a>
+ )}
+ </div>
+ </div>
+ </div>
+
+ {isVideoOpen && sermon.videoUrl && (
+ <div
+ onClick={() => setIsVideoOpen(false)}
+ style={{
+ position: fixed, top: 0, left: 0, right: 0, bottom: 0,
+ backgroundColor: rgba(0,0,0,0.8), zIndex: 9999,
+ display: flex, alignItems: center, justifyContent: center,
+ padding: 40px
+ }}
+ >
+ <div
+ onClick={e => e.stopPropagation()}
+ style={{ width: 100%, maxWidth: 1000px, aspectRatio: 16/9, position: relative }}
+ >
+ <button
+ onClick={() => setIsVideoOpen(false)}
+ style={{ position: absolute, top: -40px, right: 0, background: none, border: none, color: white, fontSize: 16px, cursor: pointer, ...T.eyebrow }}
+ >
+ Close ✕
+ </button>
+ <iframe
+ width=100% height=100%
+ src={getEmbedUrl(sermon.videoUrl)}
+ frameBorder=0
+ allow=accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture
+ allowFullScreen
+ style={{ backgroundColor: black }}
+ ></iframe>
+ </div>
+ </div>
+ )}
+ </>
+ );
 }
