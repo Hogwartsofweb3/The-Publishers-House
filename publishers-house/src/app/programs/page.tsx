@@ -184,6 +184,7 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
             objectFit: "contain",
             objectPosition: "center",
             padding: "32px",
+            filter: (prog.name === "Abuja Apostolic Camp" || prog.name === "Sunday and midweek") ? "brightness(0)" : "none",
           }}
         />
       </div>

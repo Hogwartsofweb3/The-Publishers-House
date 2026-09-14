@@ -142,12 +142,12 @@ export default function HomePage() {
               zIndex: 0,
             }}
           />
-          {/* Navy overlay */}
+          {/* Navy overlay gradient */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(21, 26, 84, 0.78)",
+              background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.9) 0%, rgba(1, 64, 193, 0.45) 100%)",
               zIndex: 1,
             }}
           />
@@ -288,14 +288,15 @@ export default function HomePage() {
           </div>
 
           {/* 3 photo strip */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0", height: "240px" }}>
-            {[1, 2, 3].map((i) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", height: "300px" }}>
+            {["event-1.jpg", "event-2.jpg", "event-3.jpg"].map((img, i) => (
               <div
                 key={i}
                 style={{
-                  backgroundImage: "url('/images/hero.jpg')",
+                  backgroundImage: `url('/images/${img}')`,
                   backgroundSize: "cover",
-                  backgroundPosition: `center ${i === 1 ? "30%" : i === 2 ? "50%" : "70%"}`,
+                  backgroundPosition: "center",
+                  borderRadius: "4px",
                 }}
               />
             ))}
@@ -323,7 +324,7 @@ export default function HomePage() {
             {/* Left: sermon photo */}
             <div
               style={{
-                backgroundImage: "url('/images/hero.jpg')",
+                backgroundImage: "url('/images/sermon-v2.jpg')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 minHeight: "340px",
@@ -531,6 +532,7 @@ export default function HomePage() {
                         objectFit: "contain",
                         objectPosition: "center",
                         padding: "32px",
+                        filter: (prog.slug === "abuja-apostolic-camp" || prog.slug === "sunday-midweek") ? "brightness(0)" : "none",
                       }}
                     />
                   </div>
