@@ -136,7 +136,7 @@ export default function HomePage() {
             style={{
               position: "absolute",
               inset: 0,
-              backgroundImage: "url('/images/hero.jpg')",
+              backgroundImage: "url('/images/hero-v2.jpg')",
               backgroundSize: "cover",
               backgroundPosition: "center top",
               zIndex: 0,
@@ -395,8 +395,8 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/14ea686b186111ae6e64841d2934c9f6c4bd522d (1).jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/who-we-are-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.6)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", maxWidth: "700px" }}>
             <div style={{ ...T.eyebrow, color: Blue300 }}>Who We Are</div>
@@ -428,11 +428,10 @@ export default function HomePage() {
         <section style={{ backgroundColor: Paper100, padding: "80px 100px" }}>
           <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
 
-          {/* Building rendering — real image, cropped to top half only */}
+          {/* Building rendering — full image as requested */}
           <div
             style={{
               width: "100%",
-              height: "420px",
               borderRadius: "4px",
               marginBottom: "40px",
               overflow: "hidden",
@@ -444,9 +443,7 @@ export default function HomePage() {
               alt="The Publishers House building rendering"
               style={{
                 width: "100%",
-                height: "840px",
-                objectFit: "cover",
-                objectPosition: "center top",
+                height: "auto",
                 display: "block",
               }}
             />
