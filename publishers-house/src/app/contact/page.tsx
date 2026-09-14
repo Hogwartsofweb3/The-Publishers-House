@@ -44,32 +44,42 @@ export default function ContactPage() {
     <div style={{ backgroundColor: S.Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
 
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, backgroundColor: S.Paper100 }}>
         {/* Hero */}
         <section
           style={{
-            padding: "88px 100px",
-            backgroundColor: S.Navy,
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
+            padding: "100px 100px 120px",
             position: "relative",
-            overflow: "hidden"
+            overflow: "hidden",
+            borderBottom: `4px solid ${S.Blue500}`
           }}
         >
-          {/* Placeholder Background Image (Figma imageRef: 545014ab...) */}
+          {/* Background Image */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              backgroundColor: S.Navy, // Fallback
-              opacity: 0.8,
+              backgroundImage: "url('/images/contact-hero-v2.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
               zIndex: 0
             }}
           />
-          <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ ...S.UIEyebrow, color: S.Blue500 }}>Contact</div>
-            <h1 style={{ ...S.DisplayXL, color: S.White }}>Contact us</h1>
+          {/* Overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "rgba(21, 26, 84, 0.85)",
+              zIndex: 1
+            }}
+          />
+          <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1440px", margin: "0 auto" }}>
+            <div style={{ ...S.UIEyebrow, color: S.Paper300 }}>Get In Touch</div>
+            <h1 style={{ ...S.DisplayXL, color: S.White }}>Contact Us</h1>
+            <p style={{ ...S.ReadBody, color: S.Paper200, margin: 0, maxWidth: "600px" }}>
+              Most people arriving here want a phone number, not a form. The details come first.
+            </p>
           </div>
         </section>
 
@@ -77,83 +87,78 @@ export default function ContactPage() {
         <section
           style={{
             padding: S.SectionPad,
+            maxWidth: "1440px",
+            margin: "0 auto",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: "48px",
+            gap: "80px",
             alignItems: "start",
           }}
         >
           {/* Left Column: Details */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 24px" }}>
-              
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {/* WhatsApp */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>WhatsApp</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>+234 816 797 6888</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>WhatsApp</div>
+                <a href="https://api.whatsapp.com/send?phone=2348167976888&text=Hi%2C%20I%20want%20to%20reach%20the%20WhatsApp%20representative%20of%20The%20Publishers%20House." target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline" }}>wa.link/xr46nk</a>
               </div>
-
+              
               {/* Phone */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>Phone</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Phone</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>+234 816 797 6888</div>
               </div>
 
               {/* Email */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>Email</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>thepublishershouse1@gmail.com</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Email</div>
+                <a href="mailto:thepublishershouse1@gmail.com" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline" }}>thepublishershouse1@gmail.com</a>
               </div>
 
               {/* Address */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>Address</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>
-                  The House of Bread, Korinjoh House<br/>
-                  Opp. Sharwama & Grills, British<br/>
-                  Jos, Plateau, Nigeria
-                </div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Address</div>
+                <div style={{ ...S.ReadBody, color: S.Navy }}>The House of Bread, Korinjoh House, British, Jos, Plateau State</div>
               </div>
 
               {/* Services */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>Services (Jos)</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Services</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>
-                  Sundays 8:00am & 9:00am<br/>
-                  Thursdays 4:30pm
+                  Sunday 9:00 AM WAT<br />
+                  Thursday 5:00 PM WAT
                 </div>
               </div>
 
               {/* Abuja */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>Abuja Outreach</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>
-                  First two weeks of every month
-                </div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Abuja</div>
+                <div style={{ ...S.ReadBody, color: S.Navy }}>Abuja Apostolic Camp, monthly. Venue to be supplied.</div>
               </div>
             </div>
 
-            <a
-              href="https://api.whatsapp.com/send?phone=2347061959833"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
               style={{
                 ...S.Button,
                 ...S.UIButton,
-                color: S.Navy,
-                border: `1px solid ${S.Paper300}`,
+                color: S.White,
+                backgroundColor: S.Blue700,
+                border: "none",
                 alignSelf: "flex-start",
-                textDecoration: "none"
+                cursor: "pointer",
+                marginTop: "8px"
               }}
             >
-              Message us on WhatsApp
-            </a>
+              Open in Maps
+            </button>
 
             {/* Static Map Image Placeholder */}
             <div
               style={{
                 width: "100%",
-                height: "200px",
+                height: "240px",
                 backgroundColor: S.Paper200,
                 border: `1px solid ${S.Paper300}`,
                 borderRadius: "4px",
@@ -161,11 +166,12 @@ export default function ContactPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "24px",
-                textAlign: "center"
+                textAlign: "center",
+                marginTop: "16px"
               }}
             >
-              <span style={{ ...S.UIEyebrow, color: S.Slate500 }}>
-                Map image. Interactive embed loads on tap.
+              <span style={{ ...S.UIEyebrow, color: S.Slate400, maxWidth: "250px", lineHeight: "1.8em" }}>
+                STATIC MAP IMAGE. THE INTERACTIVE EMBED LOADS ONLY ON TAP, WHICH SAVES SEVERAL HUNDRED KILOBYTES.
               </span>
             </div>
           </div>
@@ -179,33 +185,19 @@ export default function ContactPage() {
               borderRadius: "4px",
               display: "flex",
               flexDirection: "column",
-              gap: "24px"
+              gap: "24px",
+              boxShadow: "0px 12px 32px rgba(21, 26, 84, 0.04)"
             }}
           >
             <h2 style={{ ...S.DisplayM, color: S.Navy }}>Send a message</h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {/* Field */}
+              {/* Field: Full Name */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ ...S.UILabel, color: S.Slate600 }}>What is this about?</label>
-                <div style={{
-                  padding: "16px",
-                  border: `1px solid ${S.Paper300}`,
-                  borderRadius: "2px",
-                  ...S.ReadSmall,
-                  color: S.Slate600,
-                  backgroundColor: S.Paper100
-                }}>
-                  General enquiry
-                </div>
-              </div>
-
-              {/* Field */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ ...S.UILabel, color: S.Slate600 }}>Your name</label>
+                <label style={{ ...S.UILabel, color: S.Slate600 }}>Full Name</label>
                 <input 
                   type="text" 
-                  placeholder="John Doe"
+                  placeholder="Your name"
                   style={{
                     padding: "16px",
                     border: `1px solid ${S.Paper300}`,
@@ -218,12 +210,12 @@ export default function ContactPage() {
                 />
               </div>
 
-              {/* Field */}
+              {/* Field: Email Address */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <label style={{ ...S.UILabel, color: S.Slate600 }}>Email address</label>
                 <input 
                   type="email" 
-                  placeholder="john@example.com"
+                  placeholder="you@example.com"
                   style={{
                     padding: "16px",
                     border: `1px solid ${S.Paper300}`,
@@ -236,7 +228,25 @@ export default function ContactPage() {
                 />
               </div>
 
-              {/* Field */}
+              {/* Field: What is this about */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ ...S.UILabel, color: S.Slate600 }}>What is this about?</label>
+                <input 
+                  type="text" 
+                  placeholder="Planning a first visit"
+                  style={{
+                    padding: "16px",
+                    border: `1px solid ${S.Paper300}`,
+                    borderRadius: "2px",
+                    ...S.ReadSmall,
+                    color: S.Navy,
+                    backgroundColor: S.White,
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              {/* Field: Message */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <label style={{ ...S.UILabel, color: S.Slate600 }}>Message</label>
                 <textarea 
@@ -263,18 +273,19 @@ export default function ContactPage() {
                 color: S.White,
                 backgroundColor: S.Blue700,
                 border: "none",
-                alignSelf: "flex-start",
-                cursor: "pointer"
+                width: "100%",
+                cursor: "pointer",
+                marginTop: "8px"
               }}
             >
               Send message
             </button>
-            <div style={{ ...S.ReadSmall, color: S.Slate500, marginTop: "8px" }}>
-              We usually reply within 48 hours.
+            <div style={{ ...S.ReadSmall, color: S.Slate500, marginTop: "8px", textAlign: "center", fontSize: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span>We reply within two working days.</span>
+              <span>NB: Your message can be a prayer request, a testimony, an enquiry.<br/>You're free to share anything at all.</span>
             </div>
           </div>
         </section>
-
       </main>
 
       <Footer />
