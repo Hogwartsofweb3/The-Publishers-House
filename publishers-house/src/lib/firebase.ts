@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, getDocs, query, where, orderBy, limit as firestoreLimit } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, where, limit as firestoreLimit } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -88,24 +88,25 @@ export async function getSermons(limitCount = 12): Promise<Sermon[]> {
   const q = query(
     collection(db, "sermons"),
     where("published", "==", true),
-    orderBy("date", "desc"),
     firestoreLimit(limitCount)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
+  // Sort by date descending in JS (avoids needing a composite Firestore index)
+  return results.sort((a, b) => (a.date > b.date ? -1 : 1));
 }
 
 export async function getLatestSermon(): Promise<Sermon | null> {
   const q = query(
     collection(db, "sermons"),
     where("published", "==", true),
-    orderBy("date", "desc"),
-    firestoreLimit(1)
+    firestoreLimit(10)
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return { id: doc.id, ...doc.data() } as Sermon;
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
+  results.sort((a, b) => (a.date > b.date ? -1 : 1));
+  return results[0];
 }
 
 export async function getUpcomingEvents(limitCount = 6): Promise<EventItem[]> {
@@ -113,34 +114,36 @@ export async function getUpcomingEvents(limitCount = 6): Promise<EventItem[]> {
   const q = query(
     collection(db, "events"),
     where("published", "==", true),
-    where("startAt", ">=", today),
-    orderBy("startAt", "asc"),
-    firestoreLimit(limitCount)
+    firestoreLimit(limitCount * 3)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+  return results
+    .filter((e) => e.startAt >= today)
+    .sort((a, b) => (a.startAt < b.startAt ? -1 : 1))
+    .slice(0, limitCount);
 }
 
 export async function getEvents(limitCount = 12): Promise<EventItem[]> {
   const q = query(
     collection(db, "events"),
     where("published", "==", true),
-    orderBy("startAt", "asc"),
     firestoreLimit(limitCount)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as EventItem));
+  return results.sort((a, b) => (a.startAt < b.startAt ? -1 : 1));
 }
 
 export async function getArticles(limitCount = 12): Promise<Article[]> {
   const q = query(
     collection(db, "articles"),
     where("published", "==", true),
-    orderBy("publishedAt", "desc"),
     firestoreLimit(limitCount)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Article));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Article));
+  return results.sort((a, b) => (a.publishedAt > b.publishedAt ? -1 : 1));
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
@@ -159,11 +162,11 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 export async function getPrograms(): Promise<Program[]> {
   const q = query(
     collection(db, "programs"),
-    where("published", "==", true),
-    orderBy("name", "asc")
+    where("published", "==", true)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Program));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Program));
+  return results.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getProgramBySlug(slug: string): Promise<Program | null> {
@@ -182,9 +185,9 @@ export async function getProgramBySlug(slug: string): Promise<Program | null> {
 export async function getLeadership(): Promise<Leader[]> {
   const q = query(
     collection(db, "leadership"),
-    where("published", "==", true),
-    orderBy("order", "asc")
+    where("published", "==", true)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Leader));
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Leader));
+  return results.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }

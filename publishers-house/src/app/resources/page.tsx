@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getSermons, type Sermon } from "@/lib/firebase";
 
-export const revalidate = 60; // ISR — refresh every 60 seconds
+export const revalidate = 0; // Always fetch fresh — no caching
 
 export const metadata: Metadata = {
   title: "Resources | The Publishers House",
