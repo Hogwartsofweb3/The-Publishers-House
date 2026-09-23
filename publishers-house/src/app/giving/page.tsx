@@ -4,7 +4,7 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CopyableAccount from "@/components/CopyableAccount";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 
 const S = {
   eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
@@ -31,8 +31,11 @@ const sterlingAccounts = [
   { currency: "PROJECTS ACCOUNT (NAIRA)", number: "0086985670" },
 ];
 
+const CHURCH_EVM_ADDRESS = "0x063F4fa58078f6c2F1cbCb0D9EA15962Af5BBDaE";
+
 export default function GivingPage() {
-  const { login, authenticated, user } = usePrivy();
+  const { login, authenticated } = usePrivy();
+  const { sendTransaction } = useSendTransaction();
   
   const [category, setCategory] = useState("Tithe");
   const [frequency, setFrequency] = useState("Once");
@@ -47,13 +50,27 @@ export default function GivingPage() {
 
   const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
 
-  const handleGive = () => {
+  const handleGive = async () => {
     if (method === "crypto") {
       if (!authenticated) {
         login();
       } else {
-        alert("Wallet connected! Ready to initiate crypto transfer to the church's wallet address.");
-        // We will integrate the actual blockchain transfer later.
+        try {
+          // Convert Naira to USD roughly (1 USD = 1600 NGN)
+          const usdAmount = displayAmount / 1600;
+          // Rough ETH calculation (1 ETH = $3000)
+          const ethAmount = usdAmount / 3000;
+          const weiAmount = BigInt(Math.floor(ethAmount * 10**18));
+          
+          await sendTransaction({
+            to: CHURCH_EVM_ADDRESS,
+            value: `0x${weiAmount.toString(16)}`,
+          });
+          alert("Crypto transfer initiated successfully! Thank you for your giving.");
+        } catch (e: any) {
+          console.error(e);
+          alert("Transaction failed or was canceled.");
+        }
       }
     } else {
       alert(`Ready to integrate ${method}! Need API keys.`);
