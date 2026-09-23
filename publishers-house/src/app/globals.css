@@ -620,6 +620,10 @@ img, video {
 /* Two-column content */
 .tph-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
 
+/* Events */
+.tph-event-row { display: grid; grid-template-columns: 120px 240px 1fr auto; gap: 40px; align-items: center; padding: 40px 0; border-bottom: 1px solid #D3DAEC; }
+.tph-event-photo { height: 160px; background-size: cover; background-position: center; border-radius: 4px; overflow: hidden; position: relative; }
+
 /* Footer */
 .tph-footer-inner {
   max-width: 1440px; margin: 0 auto;
@@ -661,6 +665,10 @@ img, video {
   .tph-giving-row  { flex-direction: column; padding: 24px 20px; margin-top: -40px; padding-bottom: 60px; gap: 24px; }
   .tph-giving-form { width: 100% !important; }
   .tph-giving-bank { width: 100% !important; }
+
+  /* Events → stacked */
+  .tph-event-row   { grid-template-columns: 1fr; gap: 24px; padding: 32px 0; align-items: stretch; }
+  .tph-event-photo { height: 200px; width: 100%; }
 
   /* Footer → single column */
   .tph-footer-inner { padding: 48px 20px 32px; grid-template-columns: 1fr; gap: 20px; }

@@ -43,23 +43,48 @@ function EventRow({ event }: { event: EventItem }) {
 
   // Use URL if present, otherwise just a default fallback label
   const buttonLabel = event.registrationUrl ? "Register now" : "View Details";
-  const isPrimary = !!event.registrationUrl;
+
+  // Attempt to map event title to a known logo (fallback to standard logo)
+  let logoUrl = "";
+  const t = event.title.toLowerCase();
+  if (t.includes("festival of light")) logoUrl = "/images/Festival of Light logo (white).png";
+  else if (t.includes("merismos")) logoUrl = "/images/Merismos black.png";
+  else if (t.includes("jesus convention")) logoUrl = "/images/Jesus Convention logo white.png";
+  else if (t.includes("forge")) logoUrl = "/images/THE FORGE 1.png";
+  else if (t.includes("abuja")) logoUrl = "/images/TPH ABUJA.png";
+  else logoUrl = "/images/MAIN TPH LOGO (W).png";
+  
+  // Use event photo or fallback to a standard event photo
+  const photoUrl = event.imageUrl || "/images/event-1.jpg";
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "120px 1fr auto",
-        gap: "40px",
-        alignItems: "center",
-        padding: "40px 0",
-        borderBottom: `1px solid ${S.Paper300}`
-      }}
-    >
+    <div className="tph-event-row">
       {/* Date mark */}
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ ...S.DisplayM, color: S.Blue500 }}>{day}</div>
         <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>{monthStr}</div>
+      </div>
+
+      {/* Photo with Logo Overlay */}
+      <div 
+        className="tph-event-photo"
+        style={{
+          backgroundImage: `url('${photoUrl}')`,
+        }}
+      >
+        <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21, 26, 84, 0.4)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+           <img 
+             src={logoUrl} 
+             alt={event.title} 
+             style={{ 
+               maxHeight: "60%", 
+               maxWidth: "80%", 
+               objectFit: "contain", 
+               filter: logoUrl.includes("black") ? "brightness(0) invert(1)" : "drop-shadow(0px 4px 12px rgba(0,0,0,0.3))" 
+             }} 
+           />
+        </div>
       </div>
 
       {/* Body */}
