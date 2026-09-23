@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@privy-io/react-auth": "^1.94.1",
     "@tiptap/extension-image": "^3.31.3",
     "@tiptap/extension-link": "^3.31.3",
     "@tiptap/extension-placeholder": "^3.31.3",
