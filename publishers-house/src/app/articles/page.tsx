@@ -77,7 +77,7 @@ export default async function ArticlesPage() {
       <main style={{ flex: 1 }}>
         {/* Hero */}
         <section style={{ padding: "88px 100px", backgroundColor: S.Paper200, display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ ...S.UIScripture, color: S.Blue500 }}>1 Timothy 4:13</div>
+
           <h1 style={{ ...S.DisplayXL, color: S.Navy }}>Articles and essays</h1>
           <p style={{ ...S.ReadLede, color: S.Slate600, maxWidth: "720px" }}>
             Written teachings, apologetics, and reflections on the Christian faith and life.

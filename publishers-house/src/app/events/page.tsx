@@ -134,7 +134,7 @@ export default async function EventsPage() {
             gap: "16px"
           }}
         >
-          <div style={{ ...S.UIScripture, color: S.Blue500 }}>Acts 2:42</div>
+
           <h1 style={{ ...S.DisplayXL, color: S.Navy, margin: 0 }}>Events and gatherings</h1>
           <p style={{ ...S.ReadLede, color: S.Slate600, maxWidth: "720px", margin: 0 }}>
             Every gathering in Jos and Abuja, with the weekly services and the flagship programmes in one list.

@@ -108,8 +108,6 @@ export default function AboutPage() {
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
-            {/* UI/Scripture */}
-            <span style={{ ...S.scripture, color: "#D3DAEC" }}>Psalm 68:11</span>
 
             {/* Display/XL headline */}
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>

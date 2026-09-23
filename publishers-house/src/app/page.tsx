@@ -168,15 +168,13 @@ export default function HomePage() {
               gap: "20px",
             }}
           >
+            {/* Psalm 68:11 scripture eyebrow */}
+            <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>Psalm 68:11</div>
+
             {/* Main headline */}
             <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>
               Company of the Great
             </h1>
-
-            {/* Epigraph */}
-            <p style={{ ...T.epigraph, color: White, margin: 0 }}>
-              of those that publish
-            </p>
 
             {/* Body */}
             <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>
@@ -249,7 +247,7 @@ export default function HomePage() {
               flexShrink: 0,
               width: "480px",
               height: "360px",
-              backgroundImage: "url('/images/setman.jpg')",
+              backgroundImage: "url('/images/rja-setman.jpg')",
               backgroundSize: "cover",
               backgroundPosition: "center top",
               borderRadius: "2px",
