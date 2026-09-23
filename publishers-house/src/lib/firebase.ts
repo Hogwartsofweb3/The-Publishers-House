@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, getDocs, query, where, limit as firestoreLimit } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, query, where, limit as firestoreLimit } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -81,6 +81,18 @@ export type Leader = ContentTimestamps & {
   order: number;
 };
 
+
+export type Transaction = {
+  id?: string;
+  name: string;
+  email: string;
+  amountNGN: number;
+  category: string;
+  method: string;
+  network?: string;
+  status: "pending" | "success" | "failed";
+  timestamp: string;
+};
 
 // ---- Data Fetching Functions ---- //
 
@@ -190,4 +202,24 @@ export async function getLeadership(): Promise<Leader[]> {
   const snap = await getDocs(q);
   const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Leader));
   return results.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+export async function saveTransaction(tx: Omit<Transaction, "id">) {
+  try {
+    const docRef = await addDoc(collection(db, "transactions"), tx);
+    return docRef.id;
+  } catch (e) {
+    console.error("Error saving transaction:", e);
+    return null;
+  }
+}
+
+export async function getTransactions(limitCount = 50): Promise<Transaction[]> {
+  const q = query(
+    collection(db, "transactions"),
+    firestoreLimit(limitCount)
+  );
+  const snap = await getDocs(q);
+  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
+  return results.sort((a, b) => (a.timestamp > b.timestamp ? -1 : 1));
 }

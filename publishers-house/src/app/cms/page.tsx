@@ -8,6 +8,7 @@ const modules = [
   { name: "Articles", path: "/cms/articles", description: "Publish blog posts and written teachings.", icon: "📝" },
   { name: "Programs", path: "/cms/programs", description: "Manage recurring church programs (FOL, Services, etc.).", icon: "🏛️" },
   { name: "Leadership", path: "/cms/leadership", description: "Update pastoral and leadership profiles.", icon: "👤" },
+  { name: "Transactions", path: "/cms/transactions", description: "View financial donations (Crypto and Fiat).", icon: "💳" },
 ];
 
 export default function CMSDashboard() {

@@ -64,10 +64,27 @@ export default function GivingPage() {
             const ethAmount = usdAmount / 3000;
             const weiAmount = BigInt(Math.floor(ethAmount * 10**18));
             
-            await sendTransaction({
+            const txRes = await sendTransaction({
               to: CHURCH_EVM_ADDRESS,
               value: `0x${weiAmount.toString(16)}`,
             });
+            
+            try {
+              const { saveTransaction } = await import("@/lib/firebase");
+              await saveTransaction({
+                name: name || "Anonymous",
+                email: email || "No Email",
+                amountNGN: displayAmount,
+                category,
+                method: "crypto",
+                network: "EVM",
+                status: "success",
+                timestamp: new Date().toISOString()
+              });
+            } catch (err) {
+              console.error("Failed to log transaction:", err);
+            }
+
             alert("Crypto transfer initiated successfully! Thank you for your giving.");
           } catch (e: any) {
             console.error(e);
