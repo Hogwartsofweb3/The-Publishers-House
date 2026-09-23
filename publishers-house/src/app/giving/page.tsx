@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-export const metadata: Metadata = {
-  title: "Giving | The Publishers House",
-  description:
-    "Your giving publishes the Word. Support The Publishers House through tithe, offering, or bank transfer.",
-};
+import CopyableAccount from "@/components/CopyableAccount";
 
 const S = {
   eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
@@ -18,8 +15,6 @@ const S = {
   readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
   readBody: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "17px", lineHeight: "1.68em" },
 };
-
-import CopyableAccount from "@/components/CopyableAccount";
 
 // GTB account details
 const gtbAccounts = [
@@ -36,6 +31,23 @@ const sterlingAccounts = [
 ];
 
 export default function GivingPage() {
+  const [category, setCategory] = useState("Tithe");
+  const [frequency, setFrequency] = useState("Once");
+  const [amount, setAmount] = useState<number | "other">(10000);
+  const [otherAmount, setOtherAmount] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [method, setMethod] = useState<"paystack" | "flutterwave" | "crypto">("paystack");
+
+  const categories = ["Tithe", "Offering", "Special Projects", "Thanksgiving"];
+  const amounts = [5000, 10000, 25000];
+
+  const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
+
+  const handleGive = () => {
+    alert(`Ready to integrate ${method}! Need API keys.`);
+  };
+
   return (
     <>
       <Navbar />
@@ -48,7 +60,6 @@ export default function GivingPage() {
             borderBottom: "4px solid #2090FF",
           }}
         >
-          {/* Background image & overlay */}
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-hero-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.85)", zIndex: 1 }} />
           
@@ -72,10 +83,10 @@ export default function GivingPage() {
               alignItems: "flex-start",
               justifyContent: "center",
               gap: "40px",
-              flexWrap: "wrap" as const,
+              flexWrap: "wrap",
             }}
           >
-            {/* ── Give panel — Mockup Form ── */}
+            {/* ── Give panel — Interactive Form ── */}
             <div
               style={{
                 display: "flex",
@@ -93,40 +104,95 @@ export default function GivingPage() {
 
               {/* Category tabs */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "24px" }}>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>Tithe</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", background: "#0140C1", border: "1px solid #0140C1", borderRadius: "2px", color: "#FFFFFF", ...S.label }}>Offering</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>Special Projects</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>Thanksgiving</div>
+                {categories.map((c) => (
+                  <div
+                    key={c}
+                    onClick={() => setCategory(c)}
+                    style={{ 
+                      height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                      background: category === c ? "#0140C1" : "transparent",
+                      border: category === c ? "1px solid #0140C1" : "1px solid #D3DAEC", 
+                      borderRadius: "2px", 
+                      color: category === c ? "#FFFFFF" : "#151A54", 
+                      cursor: "pointer",
+                      ...S.label 
+                    }}
+                  >
+                    {c}
+                  </div>
+                ))}
               </div>
 
               {/* Frequency tabs */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", marginBottom: "24px", width: "240px" }}>
-                <div style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: "center", background: "#151A54", border: "1px solid #151A54", borderRadius: "2px 0 0 2px", color: "#FFFFFF", ...S.label, fontSize: "9px" }}>Give Once</div>
-                <div style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: "center", background: "#FFFFFF", border: "1px solid #151A54", borderLeft: "none", borderRadius: "0 2px 2px 0", color: "#151A54", ...S.label, fontSize: "9px" }}>Give Monthly</div>
+                <div onClick={() => setFrequency("Once")} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: "center", background: frequency === "Once" ? "#151A54" : "#FFFFFF", border: "1px solid #151A54", borderRadius: "2px 0 0 2px", color: frequency === "Once" ? "#FFFFFF" : "#151A54", cursor: "pointer", ...S.label, fontSize: "9px" }}>Give Once</div>
+                <div onClick={() => setFrequency("Monthly")} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: "center", background: frequency === "Monthly" ? "#151A54" : "#FFFFFF", border: "1px solid #151A54", borderLeft: "none", borderRadius: "0 2px 2px 0", color: frequency === "Monthly" ? "#FFFFFF" : "#151A54", cursor: "pointer", ...S.label, fontSize: "9px" }}>Give Monthly</div>
               </div>
 
               {/* Amounts */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "32px" }}>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>N5,000</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", background: "#151A54", border: "1px solid #151A54", borderRadius: "2px", color: "#FFFFFF", ...S.label }}>N10,000</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>N25,000</div>
-                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #D3DAEC", borderRadius: "2px", color: "#151A54", ...S.label }}>Other</div>
+                {amounts.map(a => (
+                  <div
+                    key={a}
+                    onClick={() => setAmount(a)}
+                    style={{ 
+                      height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                      background: amount === a ? "#151A54" : "transparent",
+                      border: amount === a ? "1px solid #151A54" : "1px solid #D3DAEC", 
+                      borderRadius: "2px", 
+                      color: amount === a ? "#FFFFFF" : "#151A54", 
+                      cursor: "pointer",
+                      ...S.label 
+                    }}
+                  >
+                    N{a.toLocaleString()}
+                  </div>
+                ))}
+                <div
+                  onClick={() => setAmount("other")}
+                  style={{ 
+                    height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                    background: amount === "other" ? "#151A54" : "transparent",
+                    border: amount === "other" ? "1px solid #151A54" : "1px solid #D3DAEC", 
+                    borderRadius: "2px", 
+                    color: amount === "other" ? "#FFFFFF" : "#151A54", 
+                    cursor: "pointer",
+                    ...S.label 
+                  }}
+                >
+                  Other
+                </div>
               </div>
+              
+              {amount === "other" && (
+                <div style={{ marginBottom: "32px" }}>
+                   <input type="number" placeholder="Enter amount..." value={otherAmount} onChange={e => setOtherAmount(e.target.value)} style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
+                </div>
+              )}
 
               {/* Inputs */}
               <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginBottom: "32px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <span style={{ ...S.eyebrow, color: "#4A62A0" }}>Full Name</span>
-                  <input type="text" placeholder="Your name" style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
+                  <input type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <span style={{ ...S.eyebrow, color: "#4A62A0" }}>Email Address</span>
-                  <input type="email" placeholder="you@example.com" style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
+                  <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
                   <span style={{ ...S.readSmall, color: "#4A62A0", fontSize: "12px", marginTop: "4px" }}>We send your receipt here. Nothing else, unless you ask.</span>
                 </div>
               </div>
 
+              {/* Payment Method Selector */}
+              <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "16px" }}>Select Payment Method</span>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+                 <div onClick={() => setMethod("paystack")} style={{ flex: 1, padding: "12px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Paystack<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>Card / Naira</span></div>
+                 <div onClick={() => setMethod("flutterwave")} style={{ flex: 1, padding: "12px", border: method === "flutterwave" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Flutterwave<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>International</span></div>
+                 <div onClick={() => setMethod("crypto")} style={{ flex: 1, padding: "12px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>USDT / ETH</span></div>
+              </div>
+
               <button
+                onClick={handleGive}
                 style={{
                   ...S.button,
                   width: "100%",
@@ -137,13 +203,16 @@ export default function GivingPage() {
                   color: "#FFFFFF",
                   cursor: "pointer",
                   marginBottom: "16px",
+                  transition: "background 0.2s"
                 }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#013091"}
+                onMouseOut={(e) => e.currentTarget.style.background = "#0140C1"}
               >
-                Give N10,000
+                {method === "crypto" ? "Connect Wallet & Give" : `Give N${displayAmount.toLocaleString()}`}
               </button>
               
               <span style={{ ...S.readSmall, color: "#4A62A0", fontSize: "12px", textAlign: "center" }}>
-                Card, bank transfer, USSD or wallet. Secured by Paystack.
+                Secured by {method === "paystack" ? "Paystack" : method === "flutterwave" ? "Flutterwave" : "Privy"}
               </span>
             </div>
 
