@@ -42,16 +42,7 @@ export default function Navbar() {
         boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.3)" : "none",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 100px",
-          maxWidth: "1440px",
-          margin: "0 auto",
-        }}
-      >
+      <div className="nav-container">
         {/* Logo — Figma: EL-5efdc068 — logo mark + "The\nPublishers\nHouse" Poppins Bold 12px UPPER 0.16em */}
         <Link
           href="/"
@@ -232,14 +223,19 @@ export default function Navbar() {
       )}
 
       <style>{`
+        .nav-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 100px;
+          max-width: 1440px;
+          margin: 0 auto;
+        }
         @media (max-width: 768px) {
           .nav-desktop { display: none !important; }
           .nav-give-btn { display: none !important; }
           .nav-hamburger { display: flex !important; }
-        }
-        nav > div { padding: 16px 20px; }
-        @media (min-width: 769px) {
-          nav > div { padding: 16px 100px; }
+          .nav-container { padding: 16px 20px !important; }
         }
       `}</style>
     </nav>

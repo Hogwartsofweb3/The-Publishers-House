@@ -91,14 +91,10 @@ export default function AboutPage() {
       <Navbar />
       <main style={{ paddingTop: "70px" }}>
 
-        {/* ══════════════════════════════════════════════════════════
-            HERO — Figma: #31:4363 — layout_56aa83c5, navy+image bg
-            "About the Publishers House"
-        ══════════════════════════════════════════════════════════ */}
+        {/* HERO */}
         <section
+          className="tph-hero"
           style={{
-            position: "relative",
-            padding: "90px 100px",
             display: "flex",
             flexDirection: "column",
             gap: "18px",
@@ -108,53 +104,36 @@ export default function AboutPage() {
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
-
-            {/* Display/XL headline */}
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
               About the Publishers House
             </h1>
-
-            {/* Read/Lede */}
             <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
               An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God&apos;s Word to every sphere of society.
             </p>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            STORY — Figma: #31:4367 — EL-cdaacbb3
-            padding 96px 100px, bg Paper/300 (#D3DAEC)
-            Two-column: margin notes + body text
-        ══════════════════════════════════════════════════════════ */}
-        <section style={{ background: "#D3DAEC" }}>
+        {/* STORY */}
+        <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
             style={{
               maxWidth: "1440px",
               margin: "0 auto",
-              padding: "96px 100px",
               display: "flex",
               flexDirection: "column",
               gap: "40px",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                gap: "56px",
-                flexWrap: "wrap" as const,
-              }}
-            >
-              {/* Left margin column — Figma: #31:4369 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "180px", flexShrink: 0 }}>
+            <div className="tph-two-col">
+              {/* Left margin column */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <span style={{ ...S.eyebrow, color: "#0140C1" }}>Who we are</span>
                 <p style={{ ...S.readSmall, color: "#4A62A0" }}>
                   Established 2020 · Jos, Plateau State · Other branches all over Nigeria
                 </p>
               </div>
-
-              {/* Body text — Figma: #31:4372 */}
-              <div style={{ flex: 1, maxWidth: "760px" }}>
+              {/* Body text */}
+              <div style={{ flex: 1 }}>
                 <p style={{ ...S.readBody, color: "#151A54" }}>
                   The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.
                   <br /><br />

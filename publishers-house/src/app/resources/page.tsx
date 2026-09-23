@@ -55,9 +55,8 @@ export default async function ResourcesPage() {
 
         {/* ── HERO ──────────────────────────────────────────────── */}
         <section
+          className="tph-hero"
           style={{
-            position: "relative",
-            padding: "96px 100px",
             background: Navy,
             display: "flex",
             flexDirection: "column",
@@ -76,7 +75,7 @@ export default async function ResourcesPage() {
         </section>
 
         {/* ── SERMONS GRID ──────────────────────────────────────── */}
-        <section style={{ backgroundColor: Paper100, padding: "64px 100px" }}>
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
 
           {sermons.length === 0 ? (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
@@ -92,7 +91,7 @@ export default async function ResourcesPage() {
                   <h2 style={{ ...T.displayM, color: Navy, margin: 0 }}>{sermons.length} Teaching{sermons.length !== 1 ? "s" : ""}</h2>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+              <div className="tph-grid-3">
                 {sermons.map((sermon) => (
                   <SermonCard key={sermon.id} sermon={sermon} />
                 ))}

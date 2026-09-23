@@ -88,9 +88,8 @@ export default function GivingPage() {
       <main style={{ paddingTop: "70px", background: "#F4F6FB" }}>
         {/* HERO SECTION */}
         <section
+          className="tph-hero"
           style={{
-            position: "relative",
-            padding: "100px 100px 160px",
             borderBottom: "4px solid #2090FF",
           }}
         >
@@ -106,22 +105,15 @@ export default function GivingPage() {
         </section>
 
         {/* CONTENT SECTION */}
-        <section style={{ position: "relative", zIndex: 3, marginTop: "-80px", paddingBottom: "100px" }}>
+        <section style={{ position: "relative", zIndex: 3 }}>
           <div
+            className="tph-giving-row"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              padding: "0 100px",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              gap: "40px",
-              flexWrap: "wrap",
             }}
           >
             {/* ── Give panel — Interactive Form ── */}
             <div
+              className="tph-giving-form"
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -129,8 +121,6 @@ export default function GivingPage() {
                 background: "#FFFFFF",
                 boxShadow: "0px 12px 32px rgba(21, 26, 84, 0.08)",
                 borderRadius: "4px",
-                width: "600px",
-                maxWidth: "100%",
                 border: "1px solid #E8ECF7",
               }}
             >

@@ -590,3 +590,78 @@ img, video {
 .tiptap blockquote { border-left: 3px solid var(--color-accent-dark); padding-left: 16px; color: var(--color-text-secondary); font-style: italic; margin: 20px 0; }
 .tiptap a { color: var(--color-accent-dark); text-decoration: underline; }
 .tiptap img { max-width: 100%; border-radius: 4px; margin: 16px 0; }
+
+/* ============================================================
+   RESPONSIVE LAYOUT UTILITIES — TPH Mobile Breakpoints
+   Figma mobile canvas: 390px, padding: 20px sides
+   ============================================================ */
+
+/* Navbar */
+.nav-container {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 100px; max-width: 1440px; margin: 0 auto;
+}
+
+/* Section wrappers */
+.tph-hero    { position: relative; padding: 100px 100px 160px; border-bottom: 4px solid #2090FF; }
+.tph-section { padding: 80px 100px; }
+.tph-inner   { max-width: 1440px; margin: 0 auto; width: 100%; }
+
+/* Grids */
+.tph-grid-3    { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+.tph-grid-2    { display: grid; grid-template-columns: repeat(2,1fr); gap: 24px; }
+.tph-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 24px; }
+
+/* Giving two-panel */
+.tph-giving-row  { display: flex; flex-direction: row; gap: 40px; flex-wrap: wrap; align-items: flex-start; justify-content: center; padding: 0 100px; margin-top: -80px; padding-bottom: 100px; }
+.tph-giving-form { width: 600px; max-width: 100%; }
+.tph-giving-bank { width: 500px; max-width: 100%; }
+
+/* Two-column content */
+.tph-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+
+/* Footer */
+.tph-footer-inner {
+  max-width: 1440px; margin: 0 auto;
+  padding: 64px 100px 40px;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+}
+
+/* ── Tablet 1024px ── */
+@media (max-width: 1024px) {
+  .nav-container     { padding: 14px 40px; }
+  .tph-hero          { padding: 80px 40px 120px; }
+  .tph-section       { padding: 64px 40px; }
+  .tph-giving-row    { padding: 0 40px; gap: 24px; }
+  .tph-two-col       { gap: 48px; }
+  .tph-footer-inner  { padding: 48px 40px 32px; grid-template-columns: 1fr 1fr; }
+  .tph-grid-3        { grid-template-columns: repeat(2,1fr); }
+}
+
+/* ── Mobile 768px ── */
+@media (max-width: 768px) {
+  /* Navbar */
+  .nav-container  { padding: 12px 20px !important; }
+  .nav-desktop    { display: none !important; }
+  .nav-give-btn   { display: none !important; }
+  .nav-hamburger  { display: flex !important; }
+
+  /* Sections */
+  .tph-hero    { padding: 64px 20px 80px; }
+  .tph-section { padding: 56px 20px; }
+  .tph-inner   { padding: 0; }
+
+  /* Grids → single column */
+  .tph-grid-3    { grid-template-columns: 1fr; gap: 16px; }
+  .tph-grid-2    { grid-template-columns: 1fr; gap: 16px; }
+  .tph-grid-auto { grid-template-columns: 1fr; gap: 16px; }
+  .tph-two-col   { grid-template-columns: 1fr; gap: 32px; }
+
+  /* Giving → stacked */
+  .tph-giving-row  { flex-direction: column; padding: 24px 20px; margin-top: -40px; padding-bottom: 60px; gap: 24px; }
+  .tph-giving-form { width: 100% !important; }
+  .tph-giving-bank { width: 100% !important; }
+
+  /* Footer → single column */
+  .tph-footer-inner { padding: 48px 20px 32px; grid-template-columns: 1fr; gap: 20px; }
+}

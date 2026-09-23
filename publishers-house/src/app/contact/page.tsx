@@ -47,8 +47,8 @@ export default function ContactPage() {
       <main style={{ flex: 1, backgroundColor: S.Paper100 }}>
         {/* Hero */}
         <section
+          className="tph-hero"
           style={{
-            padding: "100px 100px 120px",
             position: "relative",
             overflow: "hidden",
             borderBottom: `4px solid ${S.Blue500}`
@@ -85,16 +85,12 @@ export default function ContactPage() {
 
         {/* Contact Content */}
         <section
-          style={{
-            padding: S.SectionPad,
-            maxWidth: "1440px",
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "80px",
-            alignItems: "start",
-          }}
+          className="tph-section"
+          style={{ background: "#FFFFFF" }}
         >
+          <div
+            className="tph-two-col tph-inner"
+          >
           {/* Left Column: Details */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             

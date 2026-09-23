@@ -154,13 +154,12 @@ export default function HomePage() {
 
           {/* Content */}
           <div
+            className="tph-hero"
             style={{
               position: "relative",
               zIndex: 2,
               width: "100%",
-              maxWidth: "1440px",
               margin: "0 auto",
-              padding: "90px 100px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -282,7 +281,7 @@ export default function HomePage() {
             THIS WEEK AT THE HOUSE — 4 event cards + 3 photo strip
             Figma: Next Gatherings section
         ════════════════════════════════════════════════════════════════════ */}
-        <section style={{ backgroundColor: Paper100, padding: "80px 100px 0" }}>
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
           {/* Header row */}
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "40px" }}>
             <div>
@@ -295,7 +294,7 @@ export default function HomePage() {
           </div>
 
           {/* 4 event cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "40px" }}>
+          <div className="tph-grid-auto" style={{ marginBottom: "40px" }}>
             {events.map((ev) => (
               <div
                 key={ev.title}
@@ -333,7 +332,7 @@ export default function HomePage() {
           </div>
 
           {/* 3 photo strip */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", height: "300px" }}>
+          <div className="tph-grid-3 tph-mobile-hide" style={{ height: "300px" }}>
             {["event-1.jpg", "event-2.jpg", "event-3.jpg"].map((img, i) => (
               <div
                 key={i}
@@ -352,14 +351,17 @@ export default function HomePage() {
             PUBLISHED THIS WEEK — Latest teaching
             Figma: two-column image + text layout
         ════════════════════════════════════════════════════════════════════ */}
-        <section style={{ backgroundColor: White, padding: "80px 100px" }}>
+        {/* ════════════════════════════════════════════════════════════════════
+            PUBLISHED THIS WEEK — Latest teaching
+            Figma: two-column image + text layout
+        ════════════════════════════════════════════════════════════════════ */}
+        <section className="tph-section" style={{ backgroundColor: White }}>
           <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>The Latest Teaching</div>
           <h2 style={{ ...T.displayM, color: Navy, marginBottom: "40px" }}>Published This Week</h2>
 
           <div
+            className="tph-two-col"
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
               gap: "0",
               border: `1px solid ${Paper300}`,
               borderRadius: "4px",
@@ -373,6 +375,7 @@ export default function HomePage() {
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 minHeight: "340px",
+                height: "100%",
               }}
             />
 
@@ -430,15 +433,15 @@ export default function HomePage() {
             Figma: full-bleed navy section with italic epigraph
         ════════════════════════════════════════════════════════════════════ */}
         <section
+          className="tph-hero"
           style={{
-            position: "relative",
-            padding: "96px 100px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
             gap: "24px",
             overflow: "hidden",
+            borderBottom: "none",
           }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/who-we-are-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
@@ -535,11 +538,11 @@ export default function HomePage() {
             FLAGSHIP PROGRAMS — 6-card grid with program logos
             Figma: WHERE THE WORD IS PUBLISHED
         ════════════════════════════════════════════════════════════════════ */}
-        <section style={{ backgroundColor: White, padding: "80px 100px" }}>
+        <section className="tph-section" style={{ backgroundColor: White }}>
           <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Flagship Programs</div>
           <h2 style={{ ...T.displayL, color: Navy, marginBottom: "48px" }}>Where the Word Is Published</h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+          <div className="tph-grid-3">
             {programs.map((prog) => (
               <Link
                 key={prog.slug}
@@ -608,16 +611,16 @@ export default function HomePage() {
             Figma: YOUR GIVING PUBLISHES THE WORD
         ════════════════════════════════════════════════════════════════════ */}
         <section
+          className="tph-section"
           style={{
             position: "relative",
-            padding: "96px 100px",
             overflow: "hidden",
           }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/Copy of IMG_6969.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.82)", zIndex: 1 }} />
 
-          <div style={{ position: "relative", zIndex: 2, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
+          <div className="tph-two-col tph-inner" style={{ position: "relative", zIndex: 2, alignItems: "center" }}>
             {/* Left */}
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ ...T.eyebrow, color: Blue300 }}>Giving</div>
@@ -640,7 +643,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: giving category buttons */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div className="tph-grid-2">
               {["Tithe", "Offering", "Special Projects", "Thanksgiving"].map((cat) => (
                 <Link
                   key={cat}

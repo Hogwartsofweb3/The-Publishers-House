@@ -126,15 +126,14 @@ export default async function EventsPage() {
       <main style={{ flex: 1, paddingTop: "70px" }}>
         {/* Hero */}
         <section
+          className="tph-section"
           style={{
-            padding: "88px 100px",
             backgroundColor: S.Paper200,
             display: "flex",
             flexDirection: "column",
             gap: "16px"
           }}
         >
-
           <h1 style={{ ...S.DisplayXL, color: S.Navy, margin: 0 }}>Events and gatherings</h1>
           <p style={{ ...S.ReadLede, color: S.Slate600, maxWidth: "720px", margin: 0 }}>
             Every gathering in Jos and Abuja, with the weekly services and the flagship programmes in one list.
@@ -143,8 +142,8 @@ export default async function EventsPage() {
 
         {/* List */}
         <section
+          className="tph-section"
           style={{
-            padding: "72px 100px 96px",
             backgroundColor: S.White,
             display: "flex",
             flexDirection: "column",

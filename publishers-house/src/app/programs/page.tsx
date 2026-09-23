@@ -86,16 +86,17 @@ export default function ProgramsPage() {
             HERO — Figma: #27:1817 — layout_56aa83c5
             "Flagship programs"
         ══════════════════════════════════════════════════════════ */}
+        {/* HERO */}
         <section
+          className="tph-hero"
           style={{
             background: "#151A54",
-            padding: "90px 100px",
             display: "flex",
             flexDirection: "column",
             gap: "18px",
           }}
         >
-          <div style={{ maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+          <div className="tph-inner" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#D3DAEC" }}>
               Ephesians 4:12
             </span>
@@ -108,36 +109,17 @@ export default function ProgramsPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            PROGRAMS GRID — Figma: #27:1821
-            padding 96px 100px, bg Paper/300 (#D3DAEC)
-            Two rows of 3 cards each
-        ══════════════════════════════════════════════════════════ */}
-        <section style={{ background: "#D3DAEC" }}>
+        {/* PROGRAMS GRID */}
+        <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
+            className="tph-grid-3 tph-inner"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              padding: "96px 100px",
-              display: "flex",
-              flexDirection: "column",
               alignItems: "stretch",
-              gap: "20px",
             }}
           >
-            {/* Row 1 */}
-            <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
-              {programs.slice(0, 3).map((prog) => (
-                <ProgramCard key={prog.name} prog={prog} />
-              ))}
-            </div>
-
-            {/* Row 2 */}
-            <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
-              {programs.slice(3).map((prog) => (
-                <ProgramCard key={prog.name} prog={prog} />
-              ))}
-            </div>
+            {programs.map((prog) => (
+              <ProgramCard key={prog.name} prog={prog} />
+            ))}
           </div>
         </section>
 

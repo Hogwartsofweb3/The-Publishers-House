@@ -8,20 +8,10 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer style={{ background: "#151A54" }}>
-      {/* Desktop Footer */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "stretch",
-          padding: "72px 100px 40px",
-          gap: "40px",
-          maxWidth: "1440px",
-          margin: "0 auto",
-        }}
-      >
+      <div className="tph-footer-inner" style={{ flexDirection: "column", gap: "40px" }}>
         {/* Top Row */}
         <div
+          className="tph-footer-top"
           style={{
             display: "flex",
             flexDirection: "row",
