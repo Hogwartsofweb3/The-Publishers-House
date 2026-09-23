@@ -231,42 +231,44 @@ export default function HomePage() {
             WELCOME FROM THE SETMAN — photo left, text right
             Added per Ayotunde's feedback, matches Figma reference
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section tph-inner" style={{ backgroundColor: Paper100 }}>
-          <div className="tph-two-col" style={{ alignItems: "center", gap: "80px" }}>
-            {/* Photo */}
-            <div
-              className="tph-setman-photo"
-              style={{
-                width: "100%",
-                maxWidth: "480px",
-                height: "360px",
-                backgroundImage: "url('/images/rja-setman.jpg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center top",
-                borderRadius: "2px",
-              }}
-            />
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
+          <div className="tph-inner">
+            <div className="tph-two-col" style={{ alignItems: "center", gap: "80px" }}>
+              {/* Photo */}
+              <div
+                className="tph-setman-photo"
+                style={{
+                  width: "100%",
+                  maxWidth: "480px",
+                  height: "360px",
+                  backgroundImage: "url('/images/rja-setman.jpg')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center top",
+                  borderRadius: "2px",
+                }}
+              />
 
-            {/* Text */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
-              <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
-                Welcome Message<br />from the Setman
-              </h2>
-              <p style={{ ...T.readBody, color: Slate600, margin: 0, maxWidth: "480px" }}>
-                What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
-              </p>
-              <div>
-                <Link
-                  href="/about"
-                  style={{
-                    ...T.button,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    height: "44px", padding: "0 24px", borderRadius: "2px",
-                    backgroundColor: Blue700, color: White, textDecoration: "none",
-                  }}
-                >
-                  Read More About Us
-                </Link>
+              {/* Text */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
+                <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
+                  Welcome Message<br />from the Setman
+                </h2>
+                <p style={{ ...T.readBody, color: Slate600, margin: 0 }}>
+                  What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
+                </p>
+                <div>
+                  <Link
+                    href="/about"
+                    style={{
+                      ...T.button,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      height: "44px", padding: "0 24px", borderRadius: "2px",
+                      backgroundColor: Blue700, color: White, textDecoration: "none",
+                    }}
+                  >
+                    Read More About Us
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -469,62 +471,64 @@ export default function HomePage() {
             SPECIAL ANNOUNCEMENT — Building Project
             Figma: Centre stage — Pastor Josh's priority
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section tph-inner" style={{ backgroundColor: Paper100 }}>
-          <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
+          <div className="tph-inner">
+            <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
 
-          {/* Building rendering — full image as requested */}
-          <div
-            style={{
-              width: "100%",
-              borderRadius: "4px",
-              marginBottom: "40px",
-              overflow: "hidden",
-              border: `1px solid ${Paper300}`,
-            }}
-          >
-            <img
-              src="/images/9528ca88db079ef5fecf726b4f42a332798a6fcc.jpg"
-              alt="The Publishers House building rendering"
+            {/* Building rendering — full image as requested */}
+            <div
               style={{
                 width: "100%",
-                height: "auto",
-                display: "block",
+                borderRadius: "4px",
+                marginBottom: "40px",
+                overflow: "hidden",
+                border: `1px solid ${Paper300}`,
               }}
-            />
-          </div>
+            >
+              <img
+                src="/images/9528ca88db079ef5fecf726b4f42a332798a6fcc.jpg"
+                alt="The Publishers House building rendering"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                }}
+              />
+            </div>
 
-          <div style={{ maxWidth: "640px" }}>
-            <h3 style={{ ...T.displayM, color: Navy, marginBottom: "16px" }}>We Are Building</h3>
-            <p style={{ ...T.readBody, color: Slate600, marginBottom: "28px" }}>
-              After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home. Our next step is to build &ldquo;The Publishers House,&rdquo; a multi-purpose facility that will include an auditorium, lecture halls, offices, and a media studio. We prayerfully invite you to partner with us in this exciting building phase.
-            </p>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <a
-                href="https://forms.gle/4Gimdh1WcUerMQvVA"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...T.button,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  height: "48px", padding: "0 26px", borderRadius: "2px",
-                  backgroundColor: Blue700, color: White, textDecoration: "none",
-                }}
-              >
-                Give Now
-              </a>
-              <a
-                href="https://forms.gle/4Gimdh1WcUerMQvVA"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...T.button,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  height: "48px", padding: "0 26px", borderRadius: "2px",
-                  border: `1px solid ${Paper300}`, color: Navy, textDecoration: "none",
-                }}
-              >
-                See More on Our Building Project
-              </a>
+            <div style={{ maxWidth: "640px" }}>
+              <h3 style={{ ...T.displayM, color: Navy, marginBottom: "16px" }}>We Are Building</h3>
+              <p style={{ ...T.readBody, color: Slate600, marginBottom: "28px" }}>
+                After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home. Our next step is to build &ldquo;The Publishers House,&rdquo; a multi-purpose facility that will include an auditorium, lecture halls, offices, and a media studio. We prayerfully invite you to partner with us in this exciting building phase.
+              </p>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <a
+                  href="https://forms.gle/4Gimdh1WcUerMQvVA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    ...T.button,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    height: "48px", padding: "0 26px", borderRadius: "2px",
+                    backgroundColor: Blue700, color: White, textDecoration: "none",
+                  }}
+                >
+                  Give Now
+                </a>
+                <a
+                  href="https://forms.gle/4Gimdh1WcUerMQvVA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    ...T.button,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    height: "48px", padding: "0 26px", borderRadius: "2px",
+                    border: `1px solid ${Paper300}`, color: Navy, textDecoration: "none",
+                  }}
+                >
+                  See More on Our Building Project
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -534,10 +538,11 @@ export default function HomePage() {
             Figma: WHERE THE WORD IS PUBLISHED
         ════════════════════════════════════════════════════════════════════ */}
         <section className="tph-section" style={{ backgroundColor: White }}>
-          <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Flagship Programs</div>
-          <h2 style={{ ...T.displayL, color: Navy, marginBottom: "48px" }}>Where the Word Is Published</h2>
+          <div className="tph-inner">
+            <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Flagship Programs</div>
+            <h2 style={{ ...T.displayL, color: Navy, marginBottom: "48px" }}>Where the Word Is Published</h2>
 
-          <div className="tph-grid-3">
+            <div className="tph-grid-3">
             {programs.map((prog) => (
               <Link
                 key={prog.slug}
@@ -598,6 +603,7 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+          </div>
           </div>
         </section>
 

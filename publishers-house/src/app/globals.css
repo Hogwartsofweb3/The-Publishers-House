@@ -657,7 +657,6 @@ img, video {
   /* Sections */
   .tph-hero    { padding: 64px 20px 80px !important; }
   .tph-section { padding: 56px 20px !important; }
-  .tph-inner   { padding: 0 !important; }
 
   /* Grids → single column */
   .tph-grid-3    { grid-template-columns: 1fr !important; gap: 16px !important; }
