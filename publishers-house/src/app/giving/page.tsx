@@ -32,6 +32,8 @@ const sterlingAccounts = [
 ];
 
 const CHURCH_EVM_ADDRESS = "0x063F4fa58078f6c2F1cbCb0D9EA15962Af5BBDaE";
+const CHURCH_SOL_ADDRESS = "54CnBrza7uivgHvXCa7ym9LNi9KLwxkXR1vT77mbBxVk";
+const CHURCH_SUI_ADDRESS = "0xaaa4e6301a452139d1b93bd72dda49ddde76f64d253163a19c827f11b8cec63c";
 
 export default function GivingPage() {
   const { login, authenticated } = usePrivy();
@@ -44,6 +46,7 @@ export default function GivingPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [method, setMethod] = useState<"paystack" | "flutterwave" | "crypto">("paystack");
+  const [cryptoNetwork, setCryptoNetwork] = useState<"EVM" | "SOL" | "SUI">("EVM");
 
   const categories = ["Tithe", "Offering", "Special Projects", "Thanksgiving"];
   const amounts = [5000, 10000, 25000];
@@ -52,25 +55,27 @@ export default function GivingPage() {
 
   const handleGive = async () => {
     if (method === "crypto") {
-      if (!authenticated) {
-        login();
-      } else {
-        try {
-          // Convert Naira to USD roughly (1 USD = 1600 NGN)
-          const usdAmount = displayAmount / 1600;
-          // Rough ETH calculation (1 ETH = $3000)
-          const ethAmount = usdAmount / 3000;
-          const weiAmount = BigInt(Math.floor(ethAmount * 10**18));
-          
-          await sendTransaction({
-            to: CHURCH_EVM_ADDRESS,
-            value: `0x${weiAmount.toString(16)}`,
-          });
-          alert("Crypto transfer initiated successfully! Thank you for your giving.");
-        } catch (e: any) {
-          console.error(e);
-          alert("Transaction failed or was canceled.");
+      if (cryptoNetwork === "EVM") {
+        if (!authenticated) {
+          login();
+        } else {
+          try {
+            const usdAmount = displayAmount / 1600;
+            const ethAmount = usdAmount / 3000;
+            const weiAmount = BigInt(Math.floor(ethAmount * 10**18));
+            
+            await sendTransaction({
+              to: CHURCH_EVM_ADDRESS,
+              value: `0x${weiAmount.toString(16)}`,
+            });
+            alert("Crypto transfer initiated successfully! Thank you for your giving.");
+          } catch (e: any) {
+            console.error(e);
+            alert("Transaction failed or was canceled.");
+          }
         }
+      } else {
+        // For SOL and SUI, the user copies the address (handled in UI)
       }
     } else {
       alert(`Ready to integrate ${method}! Need API keys.`);
@@ -217,31 +222,62 @@ export default function GivingPage() {
               <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
                  <div onClick={() => setMethod("paystack")} style={{ flex: 1, padding: "12px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Paystack<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>Card / Naira</span></div>
                  <div onClick={() => setMethod("flutterwave")} style={{ flex: 1, padding: "12px", border: method === "flutterwave" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Flutterwave<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>International</span></div>
-                 <div onClick={() => setMethod("crypto")} style={{ flex: 1, padding: "12px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>USDT / ETH</span></div>
+                 <div onClick={() => setMethod("crypto")} style={{ flex: 1, padding: "12px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>USDT / ETH / SOL</span></div>
               </div>
 
-              <button
-                onClick={handleGive}
-                style={{
-                  ...S.button,
-                  width: "100%",
-                  height: "48px",
-                  background: "#0140C1",
-                  border: "none",
-                  borderRadius: "2px",
-                  color: "#FFFFFF",
-                  cursor: "pointer",
-                  marginBottom: "16px",
-                  transition: "background 0.2s"
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = "#013091"}
-                onMouseOut={(e) => e.currentTarget.style.background = "#0140C1"}
-              >
-                {method === "crypto" ? (authenticated ? "Transfer Crypto" : "Connect Wallet & Give") : `Give N${displayAmount.toLocaleString()}`}
-              </button>
+              {method === "crypto" && (
+                <>
+                  <span style={{ ...S.eyebrow, color: "#4A62A0", marginBottom: "16px" }}>Select Crypto Network</span>
+                  <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+                    <div onClick={() => setCryptoNetwork("EVM")} style={{ flex: 1, padding: "8px", border: cryptoNetwork === "EVM" ? "2px solid #151A54" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label, fontSize: "10px" }}>Ethereum / Base</div>
+                    <div onClick={() => setCryptoNetwork("SOL")} style={{ flex: 1, padding: "8px", border: cryptoNetwork === "SOL" ? "2px solid #151A54" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label, fontSize: "10px" }}>Solana</div>
+                    <div onClick={() => setCryptoNetwork("SUI")} style={{ flex: 1, padding: "8px", border: cryptoNetwork === "SUI" ? "2px solid #151A54" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label, fontSize: "10px" }}>SUI</div>
+                  </div>
+                </>
+              )}
+
+              {method === "crypto" && cryptoNetwork !== "EVM" ? (
+                <div style={{ padding: "16px", background: "#F4F6FB", border: "1px solid #D3DAEC", borderRadius: "4px", marginBottom: "16px" }}>
+                  <span style={{ ...S.eyebrow, color: "#4A62A0", display: "block", marginBottom: "8px" }}>Send {cryptoNetwork === "SOL" ? "SOL / USDC" : "SUI"} to this address:</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <code style={{ flex: 1, fontSize: "12px", color: "#151A54", wordBreak: "break-all", fontFamily: "monospace" }}>
+                      {cryptoNetwork === "SOL" ? CHURCH_SOL_ADDRESS : CHURCH_SUI_ADDRESS}
+                    </code>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(cryptoNetwork === "SOL" ? CHURCH_SOL_ADDRESS : CHURCH_SUI_ADDRESS);
+                        alert("Address copied!");
+                      }}
+                      style={{ padding: "6px 12px", background: "#0140C1", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", ...S.label, fontSize: "9px", margin: 0 }}
+                    >
+                      COPY
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGive}
+                  style={{
+                    ...S.button,
+                    width: "100%",
+                    height: "48px",
+                    background: "#0140C1",
+                    border: "none",
+                    borderRadius: "2px",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    marginBottom: "16px",
+                    transition: "background 0.2s"
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#013091"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "#0140C1"}
+                >
+                  {method === "crypto" && cryptoNetwork === "EVM" ? (authenticated ? "Transfer Crypto via Privy" : "Connect Wallet & Give") : `Give N${displayAmount.toLocaleString()}`}
+                </button>
+              )}
               
               <span style={{ ...S.readSmall, color: "#4A62A0", fontSize: "12px", textAlign: "center" }}>
-                Secured by {method === "paystack" ? "Paystack" : method === "flutterwave" ? "Flutterwave" : "Privy"}
+                Secured by {method === "paystack" ? "Paystack" : method === "flutterwave" ? "Flutterwave" : "Blockchain"}
               </span>
             </div>
 
