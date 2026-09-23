@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ShareButtons from "@/components/ShareButtons";
 import { getArticleBySlug, getArticles } from "@/lib/firebase";
 
 export const revalidate = 0;
@@ -88,14 +89,18 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {article.body ? (
               <div
                 style={{ ...T.readBody, color: Slate600 }}
-                dangerouslySetInnerHTML={{ __html: article.body.replace(/\n/g, "<br />") }}
+                className="tiptap" // Use the class to apply Tiptap styles if any
+                dangerouslySetInnerHTML={{ __html: article.body }} // Removed replace \n so HTML renders properly
               />
             ) : (
               <p style={{ ...T.readBody, color: Slate500, textAlign: "center", padding: "60px 0" }}>
                 Full article content coming soon.
               </p>
             )}
-            <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: "1px solid #E8ECF7" }}>
+
+            <ShareButtons title={article.title} />
+
+            <div style={{ marginTop: "32px", paddingTop: "32px", borderTop: "1px solid #E8ECF7" }}>
               <Link href="/articles" style={{ ...T.button, color: Blue700, textDecoration: "none" }}>
                 ← Back to Articles
               </Link>

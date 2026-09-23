@@ -578,3 +578,15 @@ img, video {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
 }
+
+/* Tiptap Article Rendering Styles */
+.tiptap { outline: none; }
+.tiptap h1 { font-family: var(--font-poppins); font-size: 28px; font-weight: 800; margin: 24px 0 12px; color: var(--color-primary); }
+.tiptap h2 { font-family: var(--font-poppins); font-size: 22px; font-weight: 700; margin: 20px 0 10px; color: var(--color-primary); }
+.tiptap h3 { font-family: var(--font-poppins); font-size: 18px; font-weight: 700; margin: 16px 0 8px; color: var(--color-primary); }
+.tiptap p { margin: 0 0 14px; }
+.tiptap ul, .tiptap ol { padding-left: 24px; margin: 0 0 14px; }
+.tiptap li { margin-bottom: 6px; }
+.tiptap blockquote { border-left: 3px solid var(--color-accent-dark); padding-left: 16px; color: var(--color-text-secondary); font-style: italic; margin: 20px 0; }
+.tiptap a { color: var(--color-accent-dark); text-decoration: underline; }
+.tiptap img { max-width: 100%; border-radius: 4px; margin: 16px 0; }

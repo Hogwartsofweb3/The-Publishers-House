@@ -121,17 +121,31 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
             </>}
           </div>
 
-          <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-            {sermon.audioUrl && (
-              <a
-                href={sermon.audioUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ ...T.eyebrow, color: Navy, textDecoration: "underline", textUnderlineOffset: "4px" }}
-              >
-                Telegram Audio
-              </a>
-            )}
+          {sermon.audioUrl && (
+            <div style={{ marginTop: "16px", marginBottom: "8px" }}>
+              {sermon.audioUrl.includes("t.me/") ? (
+                <a
+                  href={sermon.audioUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ ...T.eyebrow, color: Navy, textDecoration: "underline", textUnderlineOffset: "4px" }}
+                >
+                  Listen on Telegram ↗
+                </a>
+              ) : (
+                <audio 
+                  controls 
+                  src={sermon.audioUrl} 
+                  style={{ width: "100%", height: "36px", outline: "none" }}
+                  preload="none"
+                >
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
             {sermon.studyGuideUrl && (
               <a
                 href={sermon.studyGuideUrl}
