@@ -278,7 +278,7 @@ export default function HomePage() {
             THIS WEEK AT THE HOUSE — 4 event cards + 3 photo strip
             Figma: Next Gatherings section
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
+        <section className="tph-section" style={{ backgroundColor: White }}>
           {/* Header row */}
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "40px" }}>
             <div>
@@ -348,11 +348,7 @@ export default function HomePage() {
             PUBLISHED THIS WEEK — Latest teaching
             Figma: two-column image + text layout
         ════════════════════════════════════════════════════════════════════ */}
-        {/* ════════════════════════════════════════════════════════════════════
-            PUBLISHED THIS WEEK — Latest teaching
-            Figma: two-column image + text layout
-        ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: White }}>
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
           <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>The Latest Teaching</div>
           <h2 style={{ ...T.displayM, color: Navy, marginBottom: "40px" }}>Published This Week</h2>
 
@@ -471,7 +467,7 @@ export default function HomePage() {
             SPECIAL ANNOUNCEMENT — Building Project
             Figma: Centre stage — Pastor Josh's priority
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
+        <section className="tph-section" style={{ backgroundColor: White }}>
           <div className="tph-inner">
             <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
 
@@ -537,7 +533,7 @@ export default function HomePage() {
             FLAGSHIP PROGRAMS — 6-card grid with program logos
             Figma: WHERE THE WORD IS PUBLISHED
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: White }}>
+        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
           <div className="tph-inner">
             <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Flagship Programs</div>
             <h2 style={{ ...T.displayL, color: Navy, marginBottom: "48px" }}>Where the Word Is Published</h2>
@@ -618,7 +614,7 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/Copy of IMG_6969.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center 25%", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.82)", zIndex: 1 }} />
 
           <div className="tph-two-col tph-inner" style={{ position: "relative", zIndex: 2, alignItems: "center" }}>

@@ -110,7 +110,7 @@ export default function GivingPage() {
             borderBottom: "none",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-hero-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center 25%", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.85)", zIndex: 1 }} />
           
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>

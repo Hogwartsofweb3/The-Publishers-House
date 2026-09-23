@@ -213,17 +213,31 @@ export default function Footer() {
         >
           <p
             style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 800,
-              fontSize: "clamp(24px, 4vw, 36px)",
-              lineHeight: "1.1em",
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: "clamp(20px, 3vw, 24px)",
+              lineHeight: "1.3em",
               textAlign: "center",
               color: "#FFFFFF",
-              letterSpacing: "0.02em"
+              margin: 0
             }}
           >
-            COMPANY OF THE GREAT
+            The Lord gave the word: great was the company of those that published it.
           </p>
+          <span
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              fontSize: "11px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#FFFFFF",
+              marginTop: "8px"
+            }}
+          >
+            PSALM 68:11 (KJV)
+          </span>
         </div>
       </div>
     </footer>
