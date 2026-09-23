@@ -27,17 +27,26 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
     ? new Date(sermon.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
     : "";
 
-  const getEmbedUrl = (url: string) => {
-    if (!url) return "";
-    const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-    return videoIdMatch ? `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=1` : url;
+  const getYouTubeVideoId = (url: string) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    return match ? match[1] : null;
   };
+
+  const videoId = sermon.videoUrl ? getYouTubeVideoId(sermon.videoUrl) : null;
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (sermon.videoUrl) {
       setIsVideoOpen(true);
     }
+  };
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return "";
+    const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    return videoIdMatch ? `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=1` : url;
   };
 
   return (
@@ -50,11 +59,15 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
           flexDirection: "column",
         }}
       >
+        {/* Thumbnail — real YouTube thumbnail or blue placeholder */}
         <div
           onClick={handlePlayClick}
           style={{
             height: "220px",
-            backgroundColor: Paper200, 
+            backgroundColor: Paper200,
+            backgroundImage: thumbnailUrl ? `url(${thumbnailUrl})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -63,10 +76,20 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
             cursor: sermon.videoUrl ? "pointer" : "default",
           }}
         >
+          {/* Play overlay */}
           {sermon.videoUrl && (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: Blue500, ...T.eyebrow }}>
-              <div style={{ width: 0, height: 0, borderTop: "4px solid transparent", borderBottom: "4px solid transparent", borderLeft: `6px solid ${Blue500}` }} />
-              YOUTUBE
+            <div style={{
+              position: "absolute", inset: 0,
+              backgroundColor: thumbnailUrl ? "rgba(0,0,0,0.35)" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{
+                width: "52px", height: "52px", borderRadius: "50%",
+                backgroundColor: "rgba(255,255,255,0.9)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <div style={{ width: 0, height: 0, borderTop: "8px solid transparent", borderBottom: "8px solid transparent", borderLeft: `14px solid ${Navy}`, marginLeft: "3px" }} />
+              </div>
             </div>
           )}
         </div>

@@ -168,12 +168,9 @@ export default function HomePage() {
               gap: "20px",
             }}
           >
-            {/* Psalm 68:11 scripture eyebrow */}
-            <div style={{ ...T.scripture, color: Blue300 }}>Psalm 68:11</div>
-
             {/* Main headline */}
             <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>
-              A Great Company
+              Company of the Great
             </h1>
 
             {/* Epigraph */}
@@ -215,20 +212,70 @@ export default function HomePage() {
             </div>
 
             {/* Service times strip */}
-            <div style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.25)`, borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.25)`, textAlign: "center" }}>
-                <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "6px" }}>Sunday Worship</div>
+            <div style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center" }}>
+                <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>Sunday Worship</div>
                 <div style={{ ...T.displayS, color: White }}>9:00 AM</div>
               </div>
               <div style={{ padding: "16px 32px", textAlign: "center" }}>
-                <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "6px" }}>Midweek Service</div>
+                <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>Midweek Service</div>
                 <div style={{ ...T.displayS, color: White }}>5:00 PM</div>
               </div>
             </div>
 
             {/* Address */}
-            <div style={{ ...T.colophon, color: "rgba(255,255,255,0.5)", marginTop: "8px" }}>
+            <div style={{ ...T.colophon, color: "rgba(255,255,255,0.75)", marginTop: "8px" }}>
               The House of Bread, Korinjoh House, British, Jos · West Africa Time
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════════
+            WELCOME FROM THE SETMAN — photo left, text right
+            Added per Ayotunde's feedback, matches Figma reference
+        ════════════════════════════════════════════════════════════════════ */}
+        <section
+          style={{
+            backgroundColor: Paper100,
+            padding: "80px 100px",
+            display: "flex",
+            alignItems: "center",
+            gap: "80px",
+          }}
+        >
+          {/* Photo */}
+          <div
+            style={{
+              flexShrink: 0,
+              width: "480px",
+              height: "360px",
+              backgroundImage: "url('/images/setman.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center top",
+              borderRadius: "2px",
+            }}
+          />
+
+          {/* Text */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
+            <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
+              Welcome Message<br />from the Setman
+            </h2>
+            <p style={{ ...T.readBody, color: Slate600, margin: 0, maxWidth: "480px" }}>
+              What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
+            </p>
+            <div>
+              <Link
+                href="/about"
+                style={{
+                  ...T.button,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  height: "44px", padding: "0 24px", borderRadius: "2px",
+                  backgroundColor: Blue700, color: White, textDecoration: "none",
+                }}
+              >
+                Read More About Us
+              </Link>
             </div>
           </div>
         </section>
