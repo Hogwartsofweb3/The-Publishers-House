@@ -677,4 +677,20 @@ img, video {
   /* Footer → single column */
   .tph-footer-inner { padding: 48px 20px 32px; }
   .tph-footer-top { grid-template-columns: 1fr !important; gap: 32px !important; }
+
+  /* Hide on mobile */
+  .tph-mobile-hide { display: none !important; }
+
+  /* Setman photo — full width on mobile */
+  .tph-setman-photo { max-width: 100% !important; width: 100% !important; height: 240px !important; }
+
+  /* Times strip — narrower padding on mobile */
+  .tph-times-strip > div { padding: 12px 16px !important; }
 }
+
+/* Prevent horizontal overflow site-wide */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+

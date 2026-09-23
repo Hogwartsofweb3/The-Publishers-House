@@ -209,12 +209,12 @@ export default function HomePage() {
             </div>
 
             {/* Service times strip */}
-            <div style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center" }}>
+            <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center", flex: 1 }}>
                 <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>Sunday Worship</div>
                 <div style={{ ...T.displayS, color: White }}>9:00 AM</div>
               </div>
-              <div style={{ padding: "16px 32px", textAlign: "center" }}>
+              <div style={{ padding: "16px 32px", textAlign: "center", flex: 1 }}>
                 <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>Midweek Service</div>
                 <div style={{ ...T.displayS, color: White }}>5:00 PM</div>
               </div>
@@ -231,48 +231,43 @@ export default function HomePage() {
             WELCOME FROM THE SETMAN — photo left, text right
             Added per Ayotunde's feedback, matches Figma reference
         ════════════════════════════════════════════════════════════════════ */}
-        <section
-          style={{
-            backgroundColor: Paper100,
-            padding: "80px 100px",
-            display: "flex",
-            alignItems: "center",
-            gap: "80px",
-          }}
-        >
-          {/* Photo */}
-          <div
-            style={{
-              flexShrink: 0,
-              width: "480px",
-              height: "360px",
-              backgroundImage: "url('/images/rja-setman.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center top",
-              borderRadius: "2px",
-            }}
-          />
+        <section className="tph-section tph-inner" style={{ backgroundColor: Paper100 }}>
+          <div className="tph-two-col" style={{ alignItems: "center", gap: "80px" }}>
+            {/* Photo */}
+            <div
+              className="tph-setman-photo"
+              style={{
+                width: "100%",
+                maxWidth: "480px",
+                height: "360px",
+                backgroundImage: "url('/images/rja-setman.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center top",
+                borderRadius: "2px",
+              }}
+            />
 
-          {/* Text */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
-            <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
-              Welcome Message<br />from the Setman
-            </h2>
-            <p style={{ ...T.readBody, color: Slate600, margin: 0, maxWidth: "480px" }}>
-              What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
-            </p>
-            <div>
-              <Link
-                href="/about"
-                style={{
-                  ...T.button,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  height: "44px", padding: "0 24px", borderRadius: "2px",
-                  backgroundColor: Blue700, color: White, textDecoration: "none",
-                }}
-              >
-                Read More About Us
-              </Link>
+            {/* Text */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
+              <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
+                Welcome Message<br />from the Setman
+              </h2>
+              <p style={{ ...T.readBody, color: Slate600, margin: 0, maxWidth: "480px" }}>
+                What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
+              </p>
+              <div>
+                <Link
+                  href="/about"
+                  style={{
+                    ...T.button,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    height: "44px", padding: "0 24px", borderRadius: "2px",
+                    backgroundColor: Blue700, color: White, textDecoration: "none",
+                  }}
+                >
+                  Read More About Us
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -474,7 +469,7 @@ export default function HomePage() {
             SPECIAL ANNOUNCEMENT — Building Project
             Figma: Centre stage — Pastor Josh's priority
         ════════════════════════════════════════════════════════════════════ */}
-        <section style={{ backgroundColor: Paper100, padding: "80px 100px" }}>
+        <section className="tph-section tph-inner" style={{ backgroundColor: Paper100 }}>
           <h2 style={{ ...T.displayM, color: Navy, marginBottom: "32px" }}>Special Announcement</h2>
 
           {/* Building rendering — full image as requested */}
