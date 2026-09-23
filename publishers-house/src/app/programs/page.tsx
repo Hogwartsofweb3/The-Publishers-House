@@ -76,7 +76,26 @@ const programs = [
   },
 ];
 
-export default function ProgramsPage() {
+import { getPrograms, type Program } from "@/lib/firebase";
+
+export const revalidate = 60;
+
+export default async function ProgramsPage() {
+  const cmsPrograms = await getPrograms().catch(() => []);
+  
+  // Use CMS programs if available, otherwise fallback
+  const displayPrograms = cmsPrograms.length > 0 
+    ? cmsPrograms.map(p => ({
+        frequency: p.frequency,
+        name: p.name,
+        desc: p.summary,
+        scripture: "Eph 4:12", // Placeholder
+        cadence: "Gathering", // Placeholder
+        location: "Jos", // Placeholder
+        logoImage: p.imageUrl || "/images/MAIN TPH LOGO (W).png"
+      }))
+    : programs;
+
   return (
     <>
       <Navbar />
@@ -117,7 +136,7 @@ export default function ProgramsPage() {
               alignItems: "stretch",
             }}
           >
-            {programs.map((prog) => (
+            {displayPrograms.map((prog) => (
               <ProgramCard key={prog.name} prog={prog} />
             ))}
           </div>

@@ -52,7 +52,7 @@ const beliefs = [
 ];
 
 // Leadership from Figma: EL-31:4426 Leadership section
-const leadership = [
+const hardcodedLeadership = [
   {
     name: "Dr. Joshua Agunbiade",
     role: "Lead Pastor",
@@ -85,7 +85,20 @@ const leadership = [
   },
 ];
 
-export default function AboutPage() {
+import { getLeadership } from "@/lib/firebase";
+export const revalidate = 60;
+
+export default async function AboutPage() {
+  const cmsLeaders = await getLeadership().catch(() => []);
+  const leadership = cmsLeaders.length > 0 
+    ? cmsLeaders.map((l) => ({
+        name: l.name,
+        role: l.role,
+        location: l.role.toLowerCase().includes("lead") ? "TPH JOS AND ABUJA" : "TPH JOS",
+        photoUrl: l.photoUrl || "/images/event-1.jpg"
+      }))
+    : hardcodedLeadership;
+
   return (
     <>
       <Navbar />
