@@ -288,16 +288,11 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            BELIEFS — Figma: #31:4406
-            padding 96px 100px, bg Paper/300 (#D3DAEC)
-        ══════════════════════════════════════════════════════════ */}
-        <section style={{ background: "#D3DAEC" }}>
+        {/* BELIEFS */}
+        <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
+            className="tph-inner"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              padding: "96px 100px",
               display: "flex",
               flexDirection: "column",
               gap: "24px",
@@ -332,16 +327,11 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════
-            LEADERSHIP — Figma: #31:4426
-            padding 96px 100px, bg #E8ECF7
-        ══════════════════════════════════════════════════════════ */}
-        <section style={{ background: "#E8ECF7" }}>
+        {/* LEADERSHIP */}
+        <section className="tph-section" style={{ background: "#E8ECF7" }}>
           <div
+            className="tph-inner"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              padding: "96px 100px",
               display: "flex",
               flexDirection: "column",
               gap: "32px",
@@ -354,7 +344,7 @@ export default async function AboutPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               {/* Top row: 2 leaders */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div className="tph-grid-2">
                 {leadership.slice(0, 2).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/608", overflow: "hidden", marginBottom: "16px" }}>
@@ -368,7 +358,7 @@ export default async function AboutPage() {
               </div>
               
               {/* Bottom row: 3 leaders */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+              <div className="tph-grid-3">
                 {leadership.slice(2, 5).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/700", overflow: "hidden", marginBottom: "16px" }}>

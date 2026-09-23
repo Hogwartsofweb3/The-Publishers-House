@@ -10,17 +10,9 @@ export default function Footer() {
     <footer style={{ background: "#151A54" }}>
       <div className="tph-footer-inner" style={{ flexDirection: "column", gap: "40px" }}>
         {/* Top Row */}
-        <div
-          className="tph-footer-top"
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignSelf: "stretch",
-            gap: "48px",
-          }}
-        >
+        <div className="tph-footer-top">
           {/* Brand Column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <span
               style={{
                 fontFamily: "'Poppins', sans-serif",
@@ -219,53 +211,21 @@ export default function Footer() {
             borderTop: "1px solid #E8ECF7",
           }}
         >
-          {/* Figma: EL-ed81264a — Psalm 68:11 quote — Playfair Display Italic 21px, center, white */}
           <p
             style={{
-              fontFamily: "'Playfair Display', serif",
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: "21px",
-              lineHeight: "1.3em",
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 800,
+              fontSize: "clamp(24px, 4vw, 36px)",
+              lineHeight: "1.1em",
               textAlign: "center",
               color: "#FFFFFF",
-              maxWidth: "760px",
+              letterSpacing: "0.02em"
             }}
           >
-            &ldquo;The Lord gave the word: great was the company of those that published it.&rdquo;
+            COMPANY OF THE GREAT
           </p>
-          {/* Figma: EL-03e03fcf — Psalm 68:11 (KJV) — UI/Scripture, #F4F6FB */}
-          <span
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 600,
-              fontSize: "11px",
-              lineHeight: "1.6em",
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#F4F6FB",
-            }}
-          >
-            Psalm 68:11 (KJV)
-          </span>
         </div>
       </div>
-
-      {/* Mobile Footer styles */}
-      <style>{`
-        @media (max-width: 768px) {
-          footer > div {
-            padding: 48px 20px 32px !important;
-          }
-          footer > div > div:first-child {
-            flex-direction: column !important;
-            gap: 32px !important;
-          }
-          footer > div > div:first-child > div:first-child {
-            flex: unset !important;
-          }
-        }
-      `}</style>
     </footer>
   );
 }
