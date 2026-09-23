@@ -78,6 +78,46 @@ export default function ArticlesEditor() {
     fetchArticles();
   };
 
+  const [importing, setImporting] = useState(false);
+  const handleImportWP = async () => {
+    if (!confirm("This will pull the latest articles from the WordPress feed. Continue?")) return;
+    setImporting(true);
+    setMsg("Fetching WordPress feed...");
+    try {
+      const res = await fetch("/api/wp-feed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      let newCount = 0;
+      for (const item of data.items) {
+        // Skip if already imported
+        const exists = articles.some(a => a.title === item.title);
+        if (!exists) {
+          await addDoc(collection(db, "articles"), {
+            title: item.title,
+            slug: autoSlug(item.title),
+            excerpt: item.contentSnippet?.substring(0, 150) + "..." || "",
+            body: item.content || item.contentSnippet || "",
+            coverImageUrl: "",
+            author: item.creator || "Ngbede Odeh",
+            categories: item.categories || [],
+            publishedAt: item.isoDate ? item.isoDate.split("T")[0] : new Date().toISOString().split("T")[0],
+            published: true,
+            createdAt: new Date(),
+          });
+          newCount++;
+        }
+      }
+      setMsg(`Imported ${newCount} new articles from WordPress.`);
+      fetchArticles();
+    } catch (err: any) {
+      setMsg("WP Import Error: " + err.message);
+    }
+    setImporting(false);
+    setTimeout(() => setMsg(""), 5000);
+  };
+
+
   return (
     <div style={{ padding: "32px", maxWidth: "1100px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
@@ -85,7 +125,12 @@ export default function ArticlesEditor() {
           <Link href="/cms" style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: S.Blue500, textDecoration: "none" }}>← Dashboard</Link>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "28px", color: S.Navy, margin: "8px 0 0" }}>Articles</h1>
         </div>
-        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Slate500 }}>{articles.length} total · {articles.filter(a => a.published).length} published</span>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Slate500 }}>{articles.length} total · {articles.filter(a => a.published).length} published</span>
+          <button onClick={handleImportWP} disabled={importing} style={S.btn(S.Paper200, S.Navy)}>
+            {importing ? "Importing..." : "↓ Import from WordPress"}
+          </button>
+        </div>
       </div>
 
       {/* Form */}
