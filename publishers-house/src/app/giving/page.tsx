@@ -4,6 +4,7 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CopyableAccount from "@/components/CopyableAccount";
+import { usePrivy } from "@privy-io/react-auth";
 
 const S = {
   eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
@@ -31,6 +32,8 @@ const sterlingAccounts = [
 ];
 
 export default function GivingPage() {
+  const { login, authenticated, user } = usePrivy();
+  
   const [category, setCategory] = useState("Tithe");
   const [frequency, setFrequency] = useState("Once");
   const [amount, setAmount] = useState<number | "other">(10000);
@@ -45,7 +48,16 @@ export default function GivingPage() {
   const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
 
   const handleGive = () => {
-    alert(`Ready to integrate ${method}! Need API keys.`);
+    if (method === "crypto") {
+      if (!authenticated) {
+        login();
+      } else {
+        alert("Wallet connected! Ready to initiate crypto transfer to the church's wallet address.");
+        // We will integrate the actual blockchain transfer later.
+      }
+    } else {
+      alert(`Ready to integrate ${method}! Need API keys.`);
+    }
   };
 
   return (
@@ -208,7 +220,7 @@ export default function GivingPage() {
                 onMouseOver={(e) => e.currentTarget.style.background = "#013091"}
                 onMouseOut={(e) => e.currentTarget.style.background = "#0140C1"}
               >
-                {method === "crypto" ? "Connect Wallet & Give" : `Give N${displayAmount.toLocaleString()}`}
+                {method === "crypto" ? (authenticated ? "Transfer Crypto" : "Connect Wallet & Give") : `Give N${displayAmount.toLocaleString()}`}
               </button>
               
               <span style={{ ...S.readSmall, color: "#4A62A0", fontSize: "12px", textAlign: "center" }}>

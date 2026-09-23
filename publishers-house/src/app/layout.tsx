@@ -56,6 +56,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Providers from "@/components/Providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -64,7 +66,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${playfair.variable}`}>
       <body>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
