@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getArticles, type Article } from "@/lib/firebase";
@@ -108,7 +109,9 @@ export default async function ArticlesPage() {
               {/* Grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "64px 32px" }}>
                 {articles.map(article => (
-                  <ArticleCard key={article.id} article={article} />
+                  <Link key={article.id} href={`/articles/${article.slug}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column" }}>
+                    <ArticleCard article={article} />
+                  </Link>
                 ))}
               </div>
             </>
