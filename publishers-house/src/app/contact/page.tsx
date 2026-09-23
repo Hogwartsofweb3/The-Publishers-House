@@ -164,14 +164,6 @@ export default function ContactPage() {
                 src={`https://maps.googleapis.com/maps/api/staticmap?center=Jos,Plateau+State,Nigeria&zoom=14&size=600x240&markers=color:blue%7CJos,Plateau+State,Nigeria&key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY`}
                 alt="Map showing The Publishers House location"
                 style={{ width: "100%", height: "240px", objectFit: "cover", display: "block" }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                  (e.target as HTMLImageElement).parentElement!.style.background = "#E8ECF7";
-                  (e.target as HTMLImageElement).parentElement!.style.height = "80px";
-                  (e.target as HTMLImageElement).parentElement!.style.display = "flex";
-                  (e.target as HTMLImageElement).parentElement!.style.alignItems = "center";
-                  (e.target as HTMLImageElement).parentElement!.style.justifyContent = "center";
-                }}
               />
             </a>
           </div>
