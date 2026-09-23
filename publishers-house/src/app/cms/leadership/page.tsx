@@ -39,10 +39,10 @@ export default function LeadershipEditor() {
       const data = { ...form, order: Number(form.order) };
       if (editingId) {
         await updateDoc(doc(db, "leadership", editingId), data);
-        setMsg("Leader updated ✓");
+        setMsg("Leader updated");
       } else {
         await addDoc(collection(db, "leadership"), { ...data, createdAt: new Date() });
-        setMsg("Leader added ✓");
+        setMsg("Leader added");
       }
       setForm({ ...empty });
       setEditingId(null);
@@ -84,8 +84,8 @@ export default function LeadershipEditor() {
         </h2>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-            <div><label style={S.label}>Full Name *</label><input style={S.input} value={form.name} onChange={e => F("name", e.target.value)} placeholder="e.g. Rev. Joshua Agunbiade" required /></div>
-            <div><label style={S.label}>Role / Title *</label><input style={S.input} value={form.role} onChange={e => F("role", e.target.value)} placeholder="e.g. Senior Pastor" required /></div>
+            <div><label style={S.label}>Full Name *</label><input style={S.input} value={form.name} onChange={e => F("name", e.target.value)} placeholder="Rev. Joshua Agunbiade" required /></div>
+            <div><label style={S.label}>Role / Title *</label><input style={S.input} value={form.role} onChange={e => F("role", e.target.value)} placeholder="Senior Pastor" required /></div>
           </div>
           <div><label style={S.label}>Bio</label><textarea style={{ ...S.input, minHeight: "100px", resize: "vertical" }} value={form.bio} onChange={e => F("bio", e.target.value)} placeholder="Short biography..." /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>

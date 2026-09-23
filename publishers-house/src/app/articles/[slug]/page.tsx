@@ -19,11 +19,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${article.title} | The Publishers House`,
     description: article.excerpt,
-    openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      images: article.coverImageUrl ? [article.coverImageUrl] : [],
-    },
   };
 }
 
@@ -32,7 +27,6 @@ const Blue700 = "#0140C1";
 const Blue500 = "#2090FF";
 const Slate500 = "#747CA1";
 const Slate600 = "#4A62A0";
-const Paper100 = "#F4F6FB";
 const White = "#FFFFFF";
 
 const T = {
@@ -59,30 +53,31 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <main style={{ paddingTop: "70px" }}>
 
         {/* Hero */}
-        <section
-          style={{
-            backgroundColor: Navy,
-            padding: "80px 100px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            maxWidth: "100%",
-          }}
-        >
+        <section style={{ position: "relative", backgroundColor: Navy, padding: "80px 100px", overflow: "hidden" }}>
           {article.coverImageUrl && (
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${article.coverImageUrl})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.12, zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${article.coverImageUrl})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.12 }} />
           )}
-          <div style={{ position: "relative", zIndex: 1, maxWidth: "900px", margin: "0 auto", width: "100%" }}>
-            <Link href="/articles" style={{ ...T.eyebrow, color: "rgba(255,255,255,0.6)", textDecoration: "none", display: "block", marginBottom: "24px" }}>← Articles and Essays</Link>
-            {article.categories?.[0] && <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "12px" }}>{article.categories[0]}</div>}
-            <h1 style={{ ...T.displayXL, color: White, margin: "0 0 20px" }}>{article.title}</h1>
-            {article.excerpt && <p style={{ ...T.readLede, color: "rgba(255,255,255,0.80)", margin: 0, maxWidth: "700px" }}>{article.excerpt}</p>}
-            <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.15)" }}>
-              {article.author && <span style={{ ...T.colophon, color: "rgba(255,255,255,0.75)" }}>{article.author}</span>}
-              {dateLabel && <>
-                <span style={{ ...T.colophon, color: "rgba(255,255,255,0.3)" }}>·</span>
-                <span style={{ ...T.colophon, color: "rgba(255,255,255,0.55)" }}>{dateLabel}</span>
-              </>}
+          <div style={{ position: "relative", maxWidth: "900px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <Link href="/articles" style={{ ...T.eyebrow, color: "rgba(255,255,255,0.6)", textDecoration: "none" }}>
+              ← Articles and Essays
+            </Link>
+            {article.categories?.[0] && (
+              <div style={{ ...T.eyebrow, color: Blue500 }}>{article.categories[0]}</div>
+            )}
+            <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{article.title}</h1>
+            {article.excerpt && (
+              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.80)", margin: 0, maxWidth: "700px" }}>{article.excerpt}</p>
+            )}
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "8px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+              {article.author && (
+                <span style={{ ...T.colophon, color: "rgba(255,255,255,0.75)" }}>{article.author}</span>
+              )}
+              {dateLabel && (
+                <>
+                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.3)" }}>·</span>
+                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.55)" }}>{dateLabel}</span>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -96,15 +91,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 dangerouslySetInnerHTML={{ __html: article.body.replace(/\n/g, "<br />") }}
               />
             ) : (
-              <p style={{ ...T.readBody, color: Slate500, textAlign: "center", padding: "60px 0" }}>Full article content coming soon.</p>
+              <p style={{ ...T.readBody, color: Slate500, textAlign: "center", padding: "60px 0" }}>
+                Full article content coming soon.
+              </p>
             )}
-
-            {/* Back link */}
-            <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: `1px solid #E8ECF7` }}>
-              <Link
-                href="/articles"
-                style={{ ...T.button, color: Blue700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "8px" }}
-              >
+            <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: "1px solid #E8ECF7" }}>
+              <Link href="/articles" style={{ ...T.button, color: Blue700, textDecoration: "none" }}>
                 ← Back to Articles
               </Link>
             </div>
