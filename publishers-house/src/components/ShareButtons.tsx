@@ -30,7 +30,7 @@ export default function ShareButtons({ title }: { title: string }) {
       <a href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>X / Twitter</a>
       <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>Facebook</a>
       <a href={`https://api.whatsapp.com/send?text=${shareText} ${shareUrl}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>WhatsApp</a>
-      {typeof navigator !== "undefined" && navigator.share && (
+      {typeof navigator !== "undefined" && 'share' in navigator && (
         <button onClick={handleShare} style={{ ...btnStyle, background: "none" }}>Share...</button>
       )}
     </div>
