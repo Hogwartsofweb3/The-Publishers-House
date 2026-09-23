@@ -281,6 +281,7 @@ export default function ContactPage() {
               <span>NB: Your message can be a prayer request, a testimony, an enquiry.<br/>You're free to share anything at all.</span>
             </div>
           </div>
+          </div>
         </section>
       </main>
 
