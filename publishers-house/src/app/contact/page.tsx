@@ -51,7 +51,7 @@ export default function ContactPage() {
           style={{
             position: "relative",
             overflow: "hidden",
-            borderBottom: `4px solid ${S.Blue500}`
+            borderBottom: "none"
           }}
         >
           {/* Background Image */}
@@ -88,40 +88,39 @@ export default function ContactPage() {
           className="tph-section"
           style={{ background: "#FFFFFF" }}
         >
-          <div
-            className="tph-two-col tph-inner"
-          >
+          <div className="tph-inner">
+          <div className="tph-two-col">
           {/* Left Column: Details */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             
             <div style={{ display: "flex", flexDirection: "column" }}>
               {/* WhatsApp */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>WhatsApp</div>
-                <a href="https://api.whatsapp.com/send?phone=2348167976888&text=Hi%2C%20I%20want%20to%20reach%20the%20WhatsApp%20representative%20of%20The%20Publishers%20House." target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline" }}>wa.link/xr46nk</a>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>WhatsApp</div>
+                <a href="https://api.whatsapp.com/send?phone=2348167976888&text=Hi%2C%20I%20want%20to%20reach%20the%20WhatsApp%20representative%20of%20The%20Publishers%20House." target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-word" }}>wa.link/xr46nk</a>
               </div>
               
               {/* Phone */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Phone</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>+234 816 797 6888</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Phone</div>
+                <a href="tel:+2348167976888" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "none" }}>+234 816 797 6888</a>
               </div>
 
               {/* Email */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Email</div>
-                <a href="mailto:thepublishershouse1@gmail.com" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline" }}>thepublishershouse1@gmail.com</a>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Email</div>
+                <a href="mailto:thepublishershouse1@gmail.com" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-all" }}>thepublishershouse1@gmail.com</a>
               </div>
 
               {/* Address */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Address</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Address</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>The House of Bread, Korinjoh House, British, Jos, Plateau State</div>
               </div>
 
               {/* Services */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Services</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Services</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>
                   Sunday 9:00 AM WAT<br />
                   Thursday 5:00 PM WAT
@@ -129,13 +128,16 @@ export default function ContactPage() {
               </div>
 
               {/* Abuja */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "160px", flexShrink: 0 }}>Abuja</div>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Abuja</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>Abuja Apostolic Camp, monthly. Venue to be supplied.</div>
               </div>
             </div>
 
-            <button
+            <a
+              href="https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 ...S.Button,
                 ...S.UIButton,
@@ -144,32 +146,34 @@ export default function ContactPage() {
                 border: "none",
                 alignSelf: "flex-start",
                 cursor: "pointer",
-                marginTop: "8px"
+                marginTop: "8px",
+                textDecoration: "none",
               }}
             >
               Open in Maps
-            </button>
+            </a>
 
-            {/* Static Map Image Placeholder */}
-            <div
-              style={{
-                width: "100%",
-                height: "240px",
-                backgroundColor: S.Paper200,
-                border: `1px solid ${S.Paper300}`,
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "24px",
-                textAlign: "center",
-                marginTop: "16px"
-              }}
+            {/* Static Map — clicking opens Google Maps */}
+            <a
+              href="https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "block", marginTop: "16px", borderRadius: "4px", overflow: "hidden", border: `1px solid ${S.Paper300}` }}
             >
-              <span style={{ ...S.UIEyebrow, color: S.Slate400, maxWidth: "250px", lineHeight: "1.8em" }}>
-                STATIC MAP IMAGE. THE INTERACTIVE EMBED LOADS ONLY ON TAP, WHICH SAVES SEVERAL HUNDRED KILOBYTES.
-              </span>
-            </div>
+              <img
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=Jos,Plateau+State,Nigeria&zoom=14&size=600x240&markers=color:blue%7CJos,Plateau+State,Nigeria&key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY`}
+                alt="Map showing The Publishers House location"
+                style={{ width: "100%", height: "240px", objectFit: "cover", display: "block" }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                  (e.target as HTMLImageElement).parentElement!.style.background = "#E8ECF7";
+                  (e.target as HTMLImageElement).parentElement!.style.height = "80px";
+                  (e.target as HTMLImageElement).parentElement!.style.display = "flex";
+                  (e.target as HTMLImageElement).parentElement!.style.alignItems = "center";
+                  (e.target as HTMLImageElement).parentElement!.style.justifyContent = "center";
+                }}
+              />
+            </a>
           </div>
 
           {/* Right Column: Message form */}
@@ -280,6 +284,7 @@ export default function ContactPage() {
               <span>We reply within two working days.</span>
               <span>NB: Your message can be a prayer request, a testimony, an enquiry.<br/>You're free to share anything at all.</span>
             </div>
+          </div>
           </div>
           </div>
         </section>

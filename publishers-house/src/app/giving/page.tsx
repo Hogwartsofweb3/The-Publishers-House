@@ -107,7 +107,7 @@ export default function GivingPage() {
         <section
           className="tph-hero"
           style={{
-            borderBottom: "4px solid #2090FF",
+            borderBottom: "none",
           }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-hero-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
@@ -150,12 +150,13 @@ export default function GivingPage() {
                     key={c}
                     onClick={() => setCategory(c)}
                     style={{ 
-                      height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                      minHeight: "48px", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "center", 
                       background: category === c ? "#0140C1" : "transparent",
                       border: category === c ? "1px solid #0140C1" : "1px solid #D3DAEC", 
                       borderRadius: "2px", 
                       color: category === c ? "#FFFFFF" : "#151A54", 
                       cursor: "pointer",
+                      textAlign: "center",
                       ...S.label 
                     }}
                   >
@@ -225,11 +226,11 @@ export default function GivingPage() {
               </div>
 
               {/* Payment Method Selector */}
-              <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "16px" }}>Select Payment Method</span>
-              <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-                 <div onClick={() => setMethod("paystack")} style={{ flex: 1, padding: "12px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Paystack<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>Card / Naira</span></div>
-                 <div onClick={() => setMethod("flutterwave")} style={{ flex: 1, padding: "12px", border: method === "flutterwave" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Flutterwave<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>International</span></div>
-                 <div onClick={() => setMethod("crypto")} style={{ flex: 1, padding: "12px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none"}}>USDT / ETH / SOL</span></div>
+              <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "16px", display: "block" }}>Select Payment Method</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "24px" }}>
+                 <div onClick={() => setMethod("paystack")} style={{ padding: "12px 8px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Paystack<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>Card / Naira</span></div>
+                 <div onClick={() => setMethod("flutterwave")} style={{ padding: "12px 8px", border: method === "flutterwave" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Flutterwave<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>International</span></div>
+                 <div onClick={() => setMethod("crypto")} style={{ padding: "12px 8px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>USDT / ETH / SOL</span></div>
               </div>
 
               {method === "crypto" && (
