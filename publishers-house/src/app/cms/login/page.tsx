@@ -27,14 +27,14 @@ export default function CMSLoginPage() {
   };
 
   return (
-    <div style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#151A54" }}>
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#151A54" }}>
       {/* Background Image with Overlay */}
-      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-1.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
       <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
       {/* Top Right Logo */}
       <div style={{ position: "absolute", top: "40px", right: "48px", zIndex: 2 }}>
-        <img src="/images/tph-logo-white.png" alt="The Publishers House" style={{ height: "48px" }} />
+        <img src="/images/nav-logo.png" alt="The Publishers House" style={{ height: "96px" }} />
       </div>
 
       {/* Login Card */}
@@ -72,6 +72,16 @@ export default function CMSLoginPage() {
             {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
+      </div>
+
+      {/* Slogan & Scripture underneath */}
+      <div style={{ position: "relative", zIndex: 2, marginTop: "40px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)" }}>
+          Psalm 68:11
+        </div>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "20px", color: "#FFFFFF" }}>
+          Company of the Great
+        </div>
       </div>
     </div>
   );
