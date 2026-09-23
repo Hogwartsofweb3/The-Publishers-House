@@ -44,7 +44,7 @@ export default function ContactPage() {
     <div style={{ backgroundColor: S.Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
 
-      <main style={{ flex: 1, backgroundColor: S.Paper100 }}>
+      <main style={{ flex: 1, backgroundColor: S.Paper100, paddingTop: "70px" }}>
         {/* Hero */}
         <section
           className="tph-hero"
