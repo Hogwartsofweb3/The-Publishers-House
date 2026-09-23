@@ -144,6 +144,38 @@ export default async function EventsPage() {
     console.error("Failed to fetch events:", e);
   }
 
+  // MOCK DATA FOR DESIGN REVIEW
+  if (events.length === 0) {
+    events = [
+      {
+        id: "mock-1",
+        title: "Festival of Light 2026",
+        summary: "Our annual flagship conference where believers gather for an intensive time of teaching, worship, and apostolic impartation.",
+        description: "",
+        startAt: "2026-11-20T09:00",
+        endAt: "2026-11-22T18:00",
+        location: "The House of Bread, Jos",
+        imageUrl: "/images/event-1.jpg",
+        registrationUrl: "https://example.com/register",
+        published: true,
+        createdAt: "2026-09-01T00:00:00Z"
+      },
+      {
+        id: "mock-2",
+        title: "The Forge",
+        summary: "Monthly end-of-month prayer and fasting retreat. A time to birth prophetic realities.",
+        description: "",
+        startAt: "2026-09-30T17:00",
+        endAt: "",
+        location: "The House of Bread, Jos",
+        imageUrl: "/images/event-2.jpg",
+        registrationUrl: "",
+        published: true,
+        createdAt: "2026-09-01T00:00:00Z"
+      }
+    ] as any;
+  }
+
   return (
     <div style={{ backgroundColor: S.Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
