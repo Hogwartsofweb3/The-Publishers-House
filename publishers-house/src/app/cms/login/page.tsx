@@ -27,39 +27,50 @@ export default function CMSLoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#F4F6FB" }}>
-      <div style={{ backgroundColor: "white", padding: "48px", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", width: "100%", maxWidth: "400px" }}>
-        <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "24px", color: "#151A54", marginBottom: "24px", textAlign: "center" }}>TPH Content Manager</h1>
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#151A54" }}>
+      {/* Background Image with Overlay */}
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-1.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+      <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
+
+      {/* Top Right Logo */}
+      <div style={{ position: "absolute", top: "40px", right: "48px", zIndex: 2 }}>
+        <img src="/images/tph-logo-white.png" alt="The Publishers House" style={{ height: "48px" }} />
+      </div>
+
+      {/* Login Card */}
+      <div style={{ position: "relative", zIndex: 2, backgroundColor: "white", padding: "48px", borderRadius: "12px", boxShadow: "0 24px 48px rgba(0,0,0,0.2)", width: "100%", maxWidth: "420px" }}>
+        <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "28px", color: "#151A54", marginBottom: "32px", textAlign: "center", letterSpacing: "-0.02em" }}>TPH Content Manager</h1>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
-            <label style={{ display: "block", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600, color: "#4A62A0", marginBottom: "8px" }}>Email</label>
+            <label style={{ display: "block", fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "#4A62A0", marginBottom: "8px" }}>Email</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ width: "100%", padding: "12px", borderRadius: "4px", border: "1px solid #D3DAEC", fontFamily: "'Playfair Display', serif" }}
+              style={{ width: "100%", padding: "14px 16px", borderRadius: "6px", border: "1px solid #D3DAEC", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none" }}
             />
           </div>
           <div>
-            <label style={{ display: "block", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600, color: "#4A62A0", marginBottom: "8px" }}>Password</label>
+            <label style={{ display: "block", fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "#4A62A0", marginBottom: "8px" }}>Password</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ width: "100%", padding: "12px", borderRadius: "4px", border: "1px solid #D3DAEC", fontFamily: "'Playfair Display', serif" }}
+              style={{ width: "100%", padding: "14px 16px", borderRadius: "6px", border: "1px solid #D3DAEC", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none" }}
             />
           </div>
-          {error && <p style={{ color: "red", fontSize: "12px", fontFamily: "'Poppins', sans-serif" }}>{error}</p>}
+          {error && <p style={{ color: "#DC2626", fontSize: "13px", fontFamily: "'Poppins', sans-serif", margin: "0" }}>{error}</p>}
           <button 
             type="submit" 
             disabled={loading}
-            style={{ width: "100%", padding: "12px", backgroundColor: "#0140C1", color: "white", border: "none", borderRadius: "4px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: "8px" }}
+            style={{ width: "100%", padding: "14px", backgroundColor: "#0140C1", color: "white", border: "none", borderRadius: "6px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "14px", letterSpacing: "0.05em", cursor: loading ? "not-allowed" : "pointer", marginTop: "12px", transition: "background-color 0.2s" }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#013091"}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#0140C1"}
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
-
         </form>
       </div>
     </div>

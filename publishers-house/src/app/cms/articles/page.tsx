@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import RichEditor from "@/components/RichEditor";
 
 const S = {
   Navy: "#151A54", Blue700: "#0140C1", Blue500: "#2090FF",
@@ -123,7 +124,9 @@ export default function ArticlesEditor() {
 
           <div style={{ marginTop: "12px" }}>
             <label style={S.label}>Full Article Body</label>
-            <textarea placeholder="Paste the full article text here..." value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} rows={10} style={{ ...S.input, resize: "vertical" }} />
+            <div style={{ marginTop: "8px" }}>
+              <RichEditor value={form.body} onChange={(html) => setForm({ ...form, body: html })} />
+            </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
