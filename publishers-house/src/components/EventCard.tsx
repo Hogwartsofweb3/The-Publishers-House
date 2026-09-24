@@ -43,6 +43,27 @@ function formatDateRange(startAt: string, endAt?: string) {
   return startStr + " \u2013 " + endStr;
 }
 
+function getEventStatus(startAt: string, endAt?: string): "upcoming" | "ongoing" | "concluded" {
+  const now = new Date();
+  const start = new Date(startAt);
+  const end = endAt ? new Date(endAt) : null;
+
+  // Add a grace period: event stays "ongoing" until midnight after endAt
+  if (end) {
+    const endOfDay = new Date(end);
+    endOfDay.setHours(23, 59, 59, 999);
+    if (now >= start && now <= endOfDay) return "ongoing";
+    if (now > endOfDay) return "concluded";
+  } else {
+    // No end date — treat as single day
+    const startEnd = new Date(start);
+    startEnd.setHours(23, 59, 59, 999);
+    if (now >= start && now <= startEnd) return "ongoing";
+    if (now > startEnd) return "concluded";
+  }
+  return "upcoming";
+}
+
 export default function EventCard({ event }: { event: EventItem }) {
   const [hovered, setHovered] = useState(false);
   const logoUrl = getLogoUrl(event.title);
@@ -51,6 +72,13 @@ export default function EventCard({ event }: { event: EventItem }) {
   const dateObj = event.startAt ? new Date(event.startAt) : new Date();
   const day = dateObj.getDate().toString().padStart(2, "0");
   const monthStr = dateObj.toLocaleDateString("en-GB", { month: "short", year: "numeric" }).toUpperCase();
+  const status = getEventStatus(event.startAt, event.endAt);
+
+  const statusConfig = {
+    upcoming:  { label: "Upcoming",  bg: "rgba(1,64,193,0.9)",   color: "#fff" },
+    ongoing:   { label: "● Ongoing", bg: "rgba(22,163,74,0.92)", color: "#fff" },
+    concluded: { label: "Concluded", bg: "rgba(100,110,140,0.85)", color: "#fff" },
+  };
 
   return (
     <Link href={"/events/" + event.id} style={{ textDecoration: "none", display: "block" }}>
@@ -96,10 +124,22 @@ export default function EventCard({ event }: { event: EventItem }) {
             </div>
           )}
 
-          {/* Date badge */}
+          {/* Date badge — bottom-left */}
           <div style={{ position: "absolute", top: "16px", left: "16px", backgroundColor: "rgba(21,26,84,0.85)", borderRadius: "2px", padding: "8px 12px", textAlign: "center" }}>
             <div style={{ ...T.displayM, color: White, fontSize: "22px" }}>{day}</div>
             <div style={{ ...T.eyebrow, color: Blue300 }}>{monthStr}</div>
+          </div>
+
+          {/* Status badge — top-right */}
+          <div style={{
+            position: "absolute", top: "16px", right: "16px",
+            backgroundColor: statusConfig[status].bg,
+            color: statusConfig[status].color,
+            borderRadius: "2px", padding: "4px 10px",
+            fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "9.5px",
+            letterSpacing: "0.16em", textTransform: "uppercase",
+          }}>
+            {statusConfig[status].label}
           </div>
         </div>
 
