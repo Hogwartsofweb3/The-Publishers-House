@@ -74,22 +74,28 @@ export default function EventCard({ event }: { event: EventItem }) {
             style={{
               position: "absolute", inset: 0,
               backgroundImage: "url('" + photoUrl + "')",
-              backgroundSize: "cover", backgroundPosition: "center",
+              backgroundSize: "cover", backgroundPosition: "center top",
               transform: hovered ? "scale(1.04)" : "scale(1)",
               transition: "transform 320ms ease",
             }}
           />
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.55)" }} />
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-            <img
-              src={logoUrl}
-              alt={event.title}
-              style={{
-                maxHeight: "55%", maxWidth: "70%", objectFit: "contain",
-                filter: logoUrl.includes("black") ? "brightness(0) invert(1)" : "drop-shadow(0px 4px 16px rgba(0,0,0,0.4))",
-              }}
-            />
-          </div>
+          {/* Dark overlay — lighter when a real photo is set so the image shows through better */}
+          <div style={{ position: "absolute", inset: 0, backgroundColor: event.imageUrl ? "rgba(21,26,84,0.25)" : "rgba(21,26,84,0.55)" }} />
+
+          {/* Only show logo when no custom image is provided */}
+          {!event.imageUrl && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+              <img
+                src={logoUrl}
+                alt={event.title}
+                style={{
+                  maxHeight: "55%", maxWidth: "70%", objectFit: "contain",
+                  filter: logoUrl.includes("black") ? "brightness(0) invert(1)" : "drop-shadow(0px 4px 16px rgba(0,0,0,0.4))",
+                }}
+              />
+            </div>
+          )}
+
           {/* Date badge */}
           <div style={{ position: "absolute", top: "16px", left: "16px", backgroundColor: "rgba(21,26,84,0.85)", borderRadius: "2px", padding: "8px 12px", textAlign: "center" }}>
             <div style={{ ...T.displayM, color: White, fontSize: "22px" }}>{day}</div>
