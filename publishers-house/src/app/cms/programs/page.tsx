@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import ImageUpload from "../components/ImageUpload";
 
 const S = {
   Navy: "#151A54", Blue700: "#0140C1", Blue500: "#2090FF",
@@ -94,8 +95,14 @@ export default function ProgramsEditor() {
             <div><label style={S.label}>Frequency</label><input style={S.input} value={form.frequency} onChange={e => F("frequency", e.target.value)} placeholder="e.g. Annual, Monthly, Weekly" /></div>
             <div><label style={S.label}>Details / Info URL</label><input style={S.input} value={form.detailsUrl} onChange={e => F("detailsUrl", e.target.value)} placeholder="https://..." /></div>
           </div>
-          <div><label style={S.label}>Image URL</label><input style={S.input} value={form.imageUrl} onChange={e => F("imageUrl", e.target.value)} placeholder="https://... (image for program card)" /></div>
-          <label style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Navy, cursor: "pointer" }}>
+          <div style={{ marginTop: "8px" }}>
+            <ImageUpload
+              label="Cover Image / Logo"
+              value={form.imageUrl}
+              onChange={(url) => F("imageUrl", url)}
+            />
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Navy, cursor: "pointer", marginTop: "8px" }}>
             <input type="checkbox" checked={form.published} onChange={e => F("published", e.target.checked)} />
             Published (visible on website)
           </label>

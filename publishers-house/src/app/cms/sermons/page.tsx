@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import ImageUpload from "../components/ImageUpload";
 
 const S = {
   Navy: "#151A54", Blue700: "#0140C1", Blue500: "#2090FF",
@@ -15,7 +16,7 @@ const S = {
   btn: (bg: string, color: string) => ({ padding: "8px 16px", backgroundColor: bg, color, border: "none", borderRadius: "4px", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase" as const }),
 };
 
-const emptySermon = { title: "", speaker: "", date: "", series: "", videoUrl: "", audioUrl: "", studyGuideUrl: "", tags: "", published: false };
+const emptySermon = { title: "", speaker: "", date: "", series: "", videoUrl: "", audioUrl: "", studyGuideUrl: "", tags: "", coverImageUrl: "", published: false };
 
 export default function SermonsEditor() {
   const [sermons, setSermons] = useState<any[]>([]);
@@ -108,6 +109,14 @@ export default function SermonsEditor() {
                 />
               </div>
             ))}
+          </div>
+
+          <div style={{ marginTop: "16px" }}>
+            <ImageUpload
+              label="Cover Image / Thumbnail"
+              value={form.coverImageUrl}
+              onChange={(url) => setForm({ ...form, coverImageUrl: url })}
+            />
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>

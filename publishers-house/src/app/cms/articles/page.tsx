@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import ImageUpload from "../components/ImageUpload";
 import RichEditor from "@/components/RichEditor";
 
 const S = {
@@ -145,7 +146,6 @@ export default function ArticlesEditor() {
               ["author", "Author *", "text", true],
               ["publishedAt", "Published Date", "date", false],
               ["categories", "Categories (comma-separated)", "text", false],
-              ["coverImageUrl", "Cover Image URL", "url", false],
               ["slug", "Slug (auto-generated if blank)", "text", false],
             ].map(([field, label, type, required]) => (
               <div key={String(field)}>
@@ -172,6 +172,14 @@ export default function ArticlesEditor() {
             <div style={{ marginTop: "8px" }}>
               <RichEditor value={form.body} onChange={(html) => setForm({ ...form, body: html })} />
             </div>
+          </div>
+
+          <div style={{ marginTop: "16px" }}>
+            <ImageUpload
+              label="Cover Image"
+              value={form.coverImageUrl}
+              onChange={(url) => setForm({ ...form, coverImageUrl: url })}
+            />
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
