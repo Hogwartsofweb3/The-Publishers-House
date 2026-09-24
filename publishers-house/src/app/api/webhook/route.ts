@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       });
 
       // Email confirmation logic would go here (e.g. Resend, SendGrid)
-      console.log([Webhook] Processed successful charge of $ $ from $);
+      console.log("[Webhook] Processed successful charge:", data.currency, data.amount / 100, "from", data.customer?.email);
     }
 
     return NextResponse.json({ status: 'success' });

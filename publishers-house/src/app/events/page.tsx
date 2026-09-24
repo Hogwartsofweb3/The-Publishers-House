@@ -1,140 +1,42 @@
-
-
-import React from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import EventCard from "@/components/EventCard";
 import { getEvents, type EventItem } from "@/lib/firebase";
 
-export const revalidate = 60; // ISR — refresh every 60 seconds
+export const revalidate = 60;
 
-// Shared style constants
-const S = {
-  Navy: "#151A54",
-  Slate600: "#4A62A0",
-  Blue500: "#2090FF",
-  Blue700: "#0140C1",
-  Blue300: "#6496EF",
-  Paper100: "#F4F6FB",
-  Paper200: "#E8ECF7",
-  Paper300: "#D3DAEC",
-  Paper400: "#C0C9E0",
-  Slate500: "#747CA1",
-  White: "#FFFFFF",
-  
-  DisplayXL: { fontFamily: "var(--font-poppins)", fontWeight: 800, fontSize: "clamp(48px,6vw,72px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  DisplayS: { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "clamp(18px,2vw,21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
-  DisplayM: { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "clamp(24px,3vw,30px)", lineHeight: "1.14em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
-  ReadLede: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
-  ReadSmall: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
-  ReadBody: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "17px", lineHeight: "1.68em" },
-  UIEyebrow: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  UIScripture: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  UIButton: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  UIColophon: { fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
-  Button: { height: "48px", padding: "0 26px", borderRadius: "2px", display: "inline-flex", alignItems: "center", justifyContent: "center" },
+export const metadata: Metadata = {
+  title: "Events | The Publishers House",
+  description: "Every gathering in Jos and Abuja — weekly services and flagship programmes in one place.",
 };
 
-function EventRow({ event }: { event: EventItem }) {
-  // Parse ISO datetime (e.g. "2026-08-10T09:00")
-  const dateObj = new Date(event.startAt);
-  const day = dateObj.getDate().toString().padStart(2, '0');
-  const monthStr = dateObj.toLocaleDateString("en-US", { month: "short", year: "numeric" }).toUpperCase();
-  const timeStr = dateObj.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false });
+const Navy    = "#151A54";
+const Blue700 = "#0140C1";
+const Blue500 = "#2090FF";
+const Blue300 = "#6496EF";
+const Paper100 = "#F4F6FB";
+const Paper200 = "#E8ECF7";
+const Paper300 = "#D3DAEC";
+const Paper400 = "#C0C9E0";
+const Slate500 = "#747CA1";
+const Slate600 = "#4A62A0";
+const White   = "#FFFFFF";
 
-  // Use URL if present, otherwise just a default fallback label
-  const buttonLabel = event.registrationUrl ? "Register now" : "View Details";
+const T = {
+  displayXL: { fontFamily: "var(--font-poppins)", fontWeight: 800, fontSize: "clamp(40px,6vw,72px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
+  displayM:  { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "clamp(20px,2.5vw,28px)", lineHeight: "1.1em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
+  displayS:  { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "18px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  eyebrow:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  colophon:  { fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
+  readLede:  { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
+  readSmall: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
+  button:    { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
+};
 
-  // Attempt to map event title to a known logo (fallback to standard logo)
-  let logoUrl = "";
-  const t = event.title.toLowerCase();
-  if (t.includes("festival of light")) logoUrl = "/images/Festival of Light logo (white).png";
-  else if (t.includes("merismos")) logoUrl = "/images/Merismos black.png";
-  else if (t.includes("jesus convention")) logoUrl = "/images/Jesus Convention logo white.png";
-  else if (t.includes("forge")) logoUrl = "/images/THE FORGE 1.png";
-  else if (t.includes("abuja")) logoUrl = "/images/TPH ABUJA.png";
-  else logoUrl = "/images/MAIN TPH LOGO (W).png";
-  
-  // Use event photo or fallback to a standard event photo
-  const photoUrl = event.imageUrl || "/images/event-1.jpg";
 
-  return (
-    <div className="tph-event-row">
-      {/* Date mark */}
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ ...S.DisplayM, color: S.Blue500 }}>{day}</div>
-        <div style={{ ...S.UIEyebrow, color: S.Slate500 }}>{monthStr}</div>
-      </div>
 
-      {/* Photo with Logo Overlay */}
-      <div 
-        className="tph-event-photo"
-        style={{
-          backgroundImage: `url('${photoUrl}')`,
-        }}
-      >
-        <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21, 26, 84, 0.4)" }} />
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-           <img 
-             src={logoUrl} 
-             alt={event.title} 
-             style={{ 
-               maxHeight: "60%", 
-               maxWidth: "80%", 
-               objectFit: "contain", 
-               filter: logoUrl.includes("black") ? "brightness(0) invert(1)" : "drop-shadow(0px 4px 12px rgba(0,0,0,0.3))" 
-             }} 
-           />
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <h3 style={{ ...S.DisplayS, color: S.Navy, margin: 0 }}>{event.title}</h3>
-        <p style={{ ...S.ReadSmall, color: S.Slate600, maxWidth: "600px", margin: 0 }}>
-          {event.summary || event.description}
-        </p>
-        
-        {/* Colophon */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
-          <span style={{ ...S.UIColophon, color: S.Slate600 }}>{timeStr}</span>
-          <span style={{ ...S.UIColophon, color: S.Paper400 }}>·</span>
-          <span style={{ ...S.UIColophon, color: S.Slate600 }}>{event.location}</span>
-        </div>
-      </div>
-
-      {/* Button */}
-      {event.registrationUrl ? (
-        <a
-          href={event.registrationUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            ...S.Button,
-            ...S.UIButton,
-            backgroundColor: S.Blue700,
-            color: S.White,
-            border: "none",
-            textDecoration: "none"
-          }}
-        >
-          {buttonLabel}
-        </a>
-      ) : (
-        <span
-          style={{
-            ...S.Button,
-            ...S.UIButton,
-            backgroundColor: "transparent",
-            color: S.Navy,
-            border: `1px solid ${S.Paper300}`,
-          }}
-        >
-          {buttonLabel}
-        </span>
-      )}
-    </div>
-  );
-}
 
 export default async function EventsPage() {
   let events: EventItem[] = [];
@@ -144,83 +46,67 @@ export default async function EventsPage() {
     console.error("Failed to fetch events:", e);
   }
 
-  // MOCK DATA FOR DESIGN REVIEW
+  // MOCK DATA — replaced by real CMS events when available
   if (events.length === 0) {
     events = [
       {
         id: "mock-1",
-        title: "Festival of Light 2026",
-        summary: "Our annual flagship conference where believers gather for an intensive time of teaching, worship, and apostolic impartation.",
-        description: "",
-        startAt: "2026-11-20T09:00",
-        endAt: "2026-11-22T18:00",
-        location: "The House of Bread, Jos",
-        imageUrl: "/images/event-1.jpg",
-        registrationUrl: "https://example.com/register",
-        published: true,
-        createdAt: "2026-09-01T00:00:00Z"
+        title: "The Shout of a King",
+        summary: "Festival of Light 2026 — The annual homecoming conference of The Publishers House. Believers from across the world gather in Jos.",
+        description: "Festival of Light brings together believers from across the world for a season of worship, sound teaching, Holy Ghost expressions, fellowship and divine encounters.\n\nIt is a celebration of God's faithfulness, of spiritual renewal, and of the shared mission of raising a great company of publishers.\n\nIf you are travelling in, register early. Registration closes when the hall is full rather than on a fixed date.",
+        startAt: "2026-10-28T16:00", endAt: "2026-11-01T23:00",
+        location: "Jos, Nigeria", imageUrl: "/images/fol-2026-poster.jpg",
+        registrationUrl: "https://bitly.com/FoL2026",
+        published: true, createdAt: null, updatedAt: null,
       },
       {
         id: "mock-2",
         title: "The Forge",
-        summary: "Monthly end-of-month prayer and fasting retreat. A time to birth prophetic realities.",
-        description: "",
-        startAt: "2026-09-30T17:00",
-        endAt: "",
-        location: "The House of Bread, Jos",
-        imageUrl: "/images/event-2.jpg",
-        registrationUrl: "",
-        published: true,
-        createdAt: "2026-09-01T00:00:00Z"
-      }
+        summary: "Monthly end-of-month prayer and fasting retreat. A time to birth prophetic realities in Jos.",
+        description: "The Forge is a monthly gathering of intense prayer, fasting, and intercession. It is a time to press in for the things of the Spirit and contend for the advancing of God's Word.",
+        startAt: "2026-09-30T17:00", endAt: "",
+        location: "The House of Bread, Jos", imageUrl: "/images/event-2.jpg",
+        registrationUrl: "", published: true, createdAt: null, updatedAt: null,
+      },
     ] as any;
   }
 
   return (
-    <div style={{ backgroundColor: S.Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ backgroundColor: Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
 
       <main style={{ flex: 1, paddingTop: "70px" }}>
+
         {/* Hero */}
-        <section
-          className="tph-section"
-          style={{
-            backgroundColor: S.Paper200,
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px"
-          }}
-        >
-          <h1 style={{ ...S.DisplayXL, color: S.Navy, margin: 0 }}>Events and gatherings</h1>
-          <p style={{ ...S.ReadLede, color: S.Slate600, maxWidth: "720px", margin: 0 }}>
-            Every gathering in Jos and Abuja, with the weekly services and the flagship programmes in one list.
+        <section className="tph-section" style={{ backgroundColor: Paper200 }}>
+          <h1 style={{ ...T.displayXL, color: Navy, margin: "0 0 16px" }}>Events &amp; Gatherings</h1>
+          <p style={{ ...T.readLede, color: Slate600, maxWidth: "720px", margin: 0 }}>
+            Every gathering in Jos and Abuja — weekly services and the flagship programmes in one place.
           </p>
         </section>
 
-        {/* List */}
-        <section
-          className="tph-section"
-          style={{
-            backgroundColor: S.White,
-            display: "flex",
-            flexDirection: "column",
-            gap: "24px"
-          }}
-        >
+        {/* Events grid */}
+        <section className="tph-section" style={{ backgroundColor: White }}>
           {events.length === 0 ? (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
-              <div style={{ ...S.UIEyebrow, color: S.Slate500, marginBottom: "16px" }}>Coming Soon</div>
-              <h2 style={{ ...S.DisplayM, color: S.Navy, margin: "0 0 12px" }}>No upcoming events</h2>
-              <p style={{ ...S.ReadBody, color: S.Slate600, margin: 0 }}>Events are being scheduled in the CMS. Check back soon.</p>
+              <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "16px" }}>Coming Soon</div>
+              <h2 style={{ ...T.displayM, color: Navy, margin: "0 0 12px" }}>No Upcoming Events</h2>
+              <p style={{ ...T.readSmall, color: Slate600, margin: 0 }}>Events are being scheduled. Check back soon.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {events.map((ev) => (
-                <EventRow key={ev.id} event={ev} />
-              ))}
-            </div>
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "40px" }}>
+                <div style={{ ...T.eyebrow, color: Blue500 }}>{events.length} Upcoming Event{events.length !== 1 ? "s" : ""}</div>
+              </div>
+              <div className="tph-grid-3">
+                {events.map((ev) => (
+                  <EventCard key={ev.id} event={ev} />
+                ))}
+              </div>
+            </>
           )}
         </section>
+
       </main>
 
       <Footer />

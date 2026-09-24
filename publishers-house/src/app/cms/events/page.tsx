@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import Link from "next/link";
+import ImageUpload from "../components/ImageUpload";
 
 const S = {
   Navy: "#151A54", Blue700: "#0140C1", Blue500: "#2090FF",
@@ -15,7 +16,7 @@ const S = {
   btn: (bg: string, color: string) => ({ padding: "8px 16px", backgroundColor: bg, color, border: "none", borderRadius: "4px", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", letterSpacing: "0.14em", textTransform: "uppercase" as const }),
 };
 
-const emptyEvent = { title: "", summary: "", description: "", startAt: "", endAt: "", location: "", imageUrl: "", registrationUrl: "", published: false };
+const emptyEvent = { title: "", summary: "", description: "", startAt: "", endAt: "", location: "", imageUrl: "", registrationUrl: "", speaker: "", scripture: "", published: false };
 
 export default function EventsEditor() {
   const [events, setEvents] = useState<any[]>([]);
@@ -91,7 +92,8 @@ export default function EventsEditor() {
               ["startAt", "Start Date & Time *", "datetime-local", true],
               ["endAt", "End Date & Time", "datetime-local", false],
               ["registrationUrl", "Registration URL", "url", false],
-              ["imageUrl", "Cover Image URL", "url", false],
+              ["speaker", "Speaker / Minister", "text", false],
+              ["scripture", "Scripture Reference (e.g. Isaiah 60:1)", "text", false],
             ].map(([field, label, type, required]) => (
               <div key={String(field)}>
                 <label style={S.label}>{String(label)}</label>
@@ -115,6 +117,14 @@ export default function EventsEditor() {
           <div style={{ marginTop: "12px" }}>
             <label style={S.label}>Full Description</label>
             <textarea placeholder="Full event description..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={4} style={{ ...S.input, resize: "vertical" }} />
+          </div>
+
+          <div style={{ marginTop: "16px" }}>
+            <ImageUpload
+              label="Cover Image (upload or drag & drop)"
+              value={form.imageUrl}
+              onChange={(url) => setForm({ ...form, imageUrl: url })}
+            />
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
