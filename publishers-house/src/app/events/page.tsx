@@ -78,12 +78,12 @@ export default async function EventsPage() {
       <main style={{ flex: 1, paddingTop: "70px" }}>
 
         {/* Hero */}
-        <section style={{ position: "relative", minHeight: "420px", display: "flex", alignItems: "center", overflow: "hidden" }}>
+        <section className="tph-hero" style={{ display: "flex", alignItems: "center", minHeight: "420px" }}>
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/events-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center 20%", zIndex: 0 }} />
           {/* Dark blue overlay matching the design */}
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.82)", zIndex: 1 }} />
           
-          <div className="tph-inner" style={{ position: "relative", zIndex: 2, padding: "clamp(60px,10vw,120px) 0" }}>
+          <div className="tph-inner" style={{ position: "relative", zIndex: 2 }}>
             <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "16px" }}>Acts 2:42</div>
             <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>Events and Gatherings</h1>
             <p style={{ ...T.readLede, color: "rgba(255,255,255,0.85)", maxWidth: "720px", margin: 0 }}>
