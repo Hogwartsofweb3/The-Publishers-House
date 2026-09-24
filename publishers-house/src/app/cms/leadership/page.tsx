@@ -90,14 +90,8 @@ export default function LeadershipEditor() {
           </div>
           <div><label style={S.label}>Bio</label><textarea style={{ ...S.input, minHeight: "100px", resize: "vertical" }} value={form.bio} onChange={e => F("bio", e.target.value)} placeholder="Short biography..." /></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-            <div style={{ alignSelf: "end" }}>
-              <ImageUpload
-                label="Profile Photo"
-                value={form.photoUrl}
-                onChange={(url) => F("photoUrl", url)}
-              />
-            </div>
-            <div style={{ alignSelf: "end" }}><label style={S.label}>Display Order (1 = first)</label><input type="number" style={S.input} value={form.order} onChange={e => F("order", e.target.value)} placeholder="1" min="1" /></div>
+            <div><label style={S.label}>Photo URL</label><input style={S.input} value={form.photoUrl} onChange={e => F("photoUrl", e.target.value)} placeholder="https://... (portrait photo)" /></div>
+            <div><label style={S.label}>Display Order (1 = first)</label><input type="number" style={S.input} value={form.order} onChange={e => F("order", e.target.value)} placeholder="1" min="1" /></div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Navy, cursor: "pointer", marginTop: "8px" }}>
             <input type="checkbox" checked={form.published} onChange={e => F("published", e.target.checked)} />

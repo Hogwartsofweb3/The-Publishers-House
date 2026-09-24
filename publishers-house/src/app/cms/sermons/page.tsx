@@ -111,14 +111,6 @@ export default function SermonsEditor() {
             ))}
           </div>
 
-          <div style={{ marginTop: "16px" }}>
-            <ImageUpload
-              label="Cover Image / Thumbnail"
-              value={form.coverImageUrl}
-              onChange={(url) => setForm({ ...form, coverImageUrl: url })}
-            />
-          </div>
-
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
             <input type="checkbox" id="pub" checked={form.published} onChange={e => setForm({ ...form, published: e.target.checked })} />
             <label htmlFor="pub" style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Slate600 }}>Published (visible on website)</label>

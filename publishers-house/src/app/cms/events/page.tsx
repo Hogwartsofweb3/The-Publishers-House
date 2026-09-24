@@ -94,6 +94,7 @@ export default function EventsEditor() {
               ["registrationUrl", "Registration URL", "url", false],
               ["speaker", "Speaker / Minister", "text", false],
               ["scripture", "Scripture Reference (e.g. Isaiah 60:1)", "text", false],
+              ["imageUrl", "Cover Image URL", "url", false],
             ].map(([field, label, type, required]) => (
               <div key={String(field)}>
                 <label style={S.label}>{String(label)}</label>
@@ -117,14 +118,6 @@ export default function EventsEditor() {
           <div style={{ marginTop: "12px" }}>
             <label style={S.label}>Full Description</label>
             <textarea placeholder="Full event description..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={4} style={{ ...S.input, resize: "vertical" }} />
-          </div>
-
-          <div style={{ marginTop: "16px" }}>
-            <ImageUpload
-              label="Cover Image (upload or drag & drop)"
-              value={form.imageUrl}
-              onChange={(url) => setForm({ ...form, imageUrl: url })}
-            />
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
