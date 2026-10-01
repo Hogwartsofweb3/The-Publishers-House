@@ -54,19 +54,19 @@ const beliefs = [
 // Leadership from Figma: EL-31:4426 Leadership section
 const hardcodedLeadership = [
   {
-    name: "Dr. Joshua Agunbiade",
+    name: "Rev. Joshua Agunbiade",
     role: "Lead Pastor",
     location: "TPH JOS AND ABUJA",
     photoUrl: "/images/Rev. Joshua Agunbiade.jpg",
   },
   {
-    name: "Pastor Damilare",
+    name: "Pastor Damilare Ayodele",
     role: "Associate Pastor",
     location: "TPH JOS",
     photoUrl: "/images/Pastor Damilare Ayodele.jpg",
   },
   {
-    name: "Pastor Boniface",
+    name: "Pastor Boniface Onah",
     role: "Associate Pastor",
     location: "TPH ABUJA",
     photoUrl: "/images/Pastor Boniface Onah.jpg",
@@ -288,44 +288,6 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        {/* BELIEFS */}
-        <section className="tph-section" style={{ background: "#D3DAEC" }}>
-          <div
-            className="tph-inner"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Our beliefs</span>
-              <h2 style={{ ...S.displayL, color: "#151A54" }}>What we hold</h2>
-            </div>
-
-            {beliefs.map((belief) => (
-              <div
-                key={belief.title}
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: "40px",
-                  padding: "24px 0",
-                  borderBottom: "1px solid #C0C9E0",
-                  flexWrap: "wrap" as const,
-                }}
-              >
-                <div style={{ minWidth: "200px", flex: "0 0 200px" }}>
-                  <span style={{ ...S.displayS, color: "#151A54" }}>{belief.title}</span>
-                </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <p style={{ ...S.readBody, color: "#4A62A0", maxWidth: "900px" }}>{belief.body}</p>
-                  <span style={{ ...S.eyebrow, color: "#0140C1" }}>{belief.scripture}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* LEADERSHIP */}
         <section className="tph-section" style={{ background: "#E8ECF7" }}>

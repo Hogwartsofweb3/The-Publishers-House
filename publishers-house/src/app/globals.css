@@ -631,7 +631,7 @@ img, video {
   display: flex; flex-direction: column; gap: 40px;
 }
 .tph-footer-top {
-  display: grid !important; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px;
+  display: grid !important; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 40px;
 }
 
 /* ── Tablet 1024px ── */

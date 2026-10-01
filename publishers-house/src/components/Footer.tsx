@@ -26,7 +26,6 @@ export default function Footer() {
             >
               The Publishers House
             </span>
-            {/* Figma: EL-dec8b8b6 — Established 2020 · Dr. Joshua Agunbiade — UI/Eyebrow, #E8ECF7 */}
             <p
               style={{
                 fontFamily: "'Poppins', sans-serif",
@@ -41,7 +40,6 @@ export default function Footer() {
             >
               Established 2020 · Dr. Joshua Agunbiade
             </p>
-            {/* Figma: EL-01d16010 — Address — Read/Small, #E8ECF7 */}
             <p
               style={{
                 fontFamily: "'Playfair Display', serif",
@@ -54,7 +52,6 @@ export default function Footer() {
             >
               The House of Bread, Korinjoh House,{"\n"}British, Jos, Plateau State
             </p>
-            {/* Figma: EL-17d3c3f6 — Service times — Read/Small, #E8ECF7 */}
             <p
               style={{
                 fontFamily: "'Playfair Display', serif",
@@ -67,7 +64,6 @@ export default function Footer() {
             >
               Sundays 9:00 AM · Thursdays 5:00 PM WAT
             </p>
-            {/* Figma: EL-bb58850b — Outreach — Read/Small, #99AFC6 (muted) */}
             <p
               style={{
                 fontFamily: "'Playfair Display', serif",
@@ -80,6 +76,38 @@ export default function Footer() {
             >
               Outreach: Abuja
             </p>
+          </div>
+
+          {/* Church Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "10px",
+                lineHeight: "1.6em",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#E8ECF7",
+                marginBottom: "4px",
+              }}
+            >
+              Church
+            </span>
+            <Link
+              href="/abuja"
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 400,
+                fontSize: "14.5px",
+                lineHeight: "1.5em",
+                color: "#E8ECF7",
+                textDecoration: "none",
+                transition: "color 150ms ease",
+              }}
+            >
+              Abuja
+            </Link>
           </div>
 
           {/* Explore Column */}

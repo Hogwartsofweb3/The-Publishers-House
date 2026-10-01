@@ -65,70 +65,72 @@ export default function Navbar() {
           />
         </Link>
 
-        {/* Desktop Nav Links — Figma: EL-28177092 — row, gap 26px */}
-        <ul
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "26px",
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-          }}
-          className="nav-desktop"
-        >
-          {navLinks.map((link) => {
-            const active = pathname === link.href || pathname.startsWith(link.href + "/");
-            return (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  style={{
-                    fontFamily: "'Poppins', sans-serif",
-                    fontWeight: 600,
-                    fontSize: "11px",
-                    lineHeight: "1.6em",
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    color: active ? "#6496EF" : "#FFFFFF",
-                    textDecoration: "none",
-                    transition: "color 150ms ease",
-                    paddingBottom: "2px",
-                    borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
-                  }}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {/* Right side: nav links + Give button grouped together */}
+        <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+          <ul
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "26px",
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+            }}
+            className="nav-desktop"
+          >
+            {navLinks.map((link) => {
+              const active = pathname === link.href || pathname.startsWith(link.href + "/");
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 600,
+                      fontSize: "11px",
+                      lineHeight: "1.6em",
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: active ? "#6496EF" : "#FFFFFF",
+                      textDecoration: "none",
+                      transition: "color 150ms ease",
+                      paddingBottom: "2px",
+                      borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
-        {/* Give Button — Figma: EL-14642757 — padding 0 26px, h48, border 1px #2090FF, borderRadius 2px, bg transparent, text navy */}
-        <Link
-          href="/giving"
-          className="nav-give-btn"
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 600,
-            fontSize: "12px",
-            lineHeight: "1em",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "#151A54",
-            background: "#2090FF",
-            border: "1px solid #2090FF",
-            borderRadius: "2px",
-            padding: "0 26px",
-            height: "48px",
-            display: "inline-flex",
-            alignItems: "center",
-            textDecoration: "none",
-            transition: "background 150ms ease",
-          }}
-        >
-          Give
-        </Link>
+          {/* Give Button */}
+          <Link
+            href="/giving"
+            className="nav-give-btn"
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              fontSize: "12px",
+              lineHeight: "1em",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#151A54",
+              background: "#FFFFFF",
+              border: "1px solid #FFFFFF",
+              borderRadius: "2px",
+              padding: "0 26px",
+              height: "48px",
+              display: "inline-flex",
+              alignItems: "center",
+              textDecoration: "none",
+              transition: "background 150ms ease",
+            }}
+          >
+            Give
+          </Link>
+        </div>
 
         {/* Mobile Hamburger */}
         <button
