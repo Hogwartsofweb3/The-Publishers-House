@@ -77,11 +77,18 @@ export default async function ArticlesPage() {
 
       <main style={{ flex: 1 }}>
         {/* Hero */}
-        <section className="tph-section" style={{ backgroundColor: S.Paper200, display: "flex", flexDirection: "column", gap: "16px" }}>
-          <h1 style={{ ...S.DisplayXL, color: S.Navy }}>Articles and essays</h1>
-          <p style={{ ...S.ReadLede, color: S.Slate600, maxWidth: "720px" }}>
-            Written teachings, apologetics, and reflections on the Christian faith and life.
-          </p>
+        <section
+          className="tph-hero"
+          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+        >
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/articles-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center 30%", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.80)", zIndex: 1 }} />
+          <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+            <h1 style={{ ...S.DisplayXL, color: "#FFFFFF", margin: 0 }}>Articles and essays</h1>
+            <p style={{ ...S.ReadLede, color: "rgba(255,255,255,0.78)", maxWidth: "720px", margin: 0 }}>
+              Written teachings, apologetics, and reflections on the Christian faith and life. All articles edited and vetted by The Publishers House Editorial Unit.
+            </p>
+          </div>
         </section>
 
         {/* Content */}

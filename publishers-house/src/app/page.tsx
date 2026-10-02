@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ArticleCarousel from "@/components/ArticleCarousel";
 
 export const metadata: Metadata = {
   title: "The Publishers House",
@@ -420,6 +421,11 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ════════════════════════════════════════════════════════════════════
+            ARTICLE CAROUSEL — random articles, infinite loop
+        ════════════════════════════════════════════════════════════════════ */}
+        <ArticleCarousel />
 
         {/* ════════════════════════════════════════════════════════════════════
             WHO WE ARE — navy + congregation photo background
