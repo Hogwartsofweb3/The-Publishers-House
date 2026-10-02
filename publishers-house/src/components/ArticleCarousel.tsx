@@ -148,14 +148,11 @@ export default function ArticleCarousel() {
           style={{ textDecoration: "none", display: "block" }}
         >
           <div
+            className="tph-carousel-grid"
             style={{
-              display: "grid",
-              gridTemplateColumns: "1.3fr 1fr",
-              gap: 0,
               border: `1px solid ${Paper300}`,
               borderRadius: "4px",
               overflow: "hidden",
-              minHeight: "440px",
               opacity: visible ? 1 : 0,
               transition: "opacity 350ms ease",
             }}
@@ -168,7 +165,7 @@ export default function ArticleCarousel() {
                   : "url('/images/who-we-are-v2.jpg')",
                 backgroundSize: "cover",
                 backgroundPosition: "center top",
-                minHeight: "440px",
+                minHeight: "280px",
               }}
             />
 
