@@ -79,9 +79,9 @@ export default async function ArticlesPage() {
         {/* Hero */}
         <section
           className="tph-hero"
-          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "200px" }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/articles-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center 30%", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/articles-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.80)", zIndex: 1 }} />
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
             <h1 style={{ ...S.DisplayXL, color: "#FFFFFF", margin: 0 }}>Articles and essays</h1>

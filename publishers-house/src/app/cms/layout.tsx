@@ -38,20 +38,35 @@ export default function CMSLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
+  const bgBlue = "#0140C1"; // "Light blue" requested by user
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#F4F6FB", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: bgBlue, position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* Background Watermark Logo */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        backgroundImage: "url('/images/main-tph-logo-w.png')",
+        backgroundSize: "400px",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        opacity: 0.1,
+        zIndex: 0,
+        pointerEvents: "none"
+      }} />
+
       {user && (
-        <header style={{ backgroundColor: "#151A54", padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "white" }}>
+        <header style={{ position: "relative", zIndex: 1, backgroundColor: "transparent", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "white" }}>
           <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "18px" }}>TPH CMS</div>
           <button 
             onClick={() => auth.signOut()} 
-            style={{ backgroundColor: "transparent", border: "1px solid white", color: "white", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: "12px" }}
+            style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.3)", color: "white", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: "12px" }}
           >
             Sign Out
           </button>
         </header>
       )}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <main style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
         {children}
       </main>
     </div>

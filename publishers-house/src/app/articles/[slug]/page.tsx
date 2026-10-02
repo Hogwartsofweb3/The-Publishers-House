@@ -195,33 +195,32 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
 
-        {/* ── COVER IMAGE (before body) ── */}
-        {coverImage && (
-          <div
-            style={{
-              width: "100%",
-              maxHeight: "520px",
-              overflow: "hidden",
-              backgroundColor: "#0A0D2A",
-            }}
-          >
-            <img
-              src={coverImage}
-              alt={article.title}
-              style={{
-                width: "100%",
-                maxHeight: "520px",
-                objectFit: "cover",
-                objectPosition: "center top",
-                display: "block",
-              }}
-            />
-          </div>
-        )}
-
         {/* ── ARTICLE BODY ── */}
         <section style={{ backgroundColor: White, padding: "72px 100px 96px" }}>
           <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+            {/* ── COVER IMAGE (before body) ── */}
+            {coverImage && (
+              <div
+                style={{
+                  width: "100%",
+                  marginBottom: "40px",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  backgroundColor: "#F4F6FB",
+                }}
+              >
+                <img
+                  src={coverImage}
+                  alt={article.title}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                  }}
+                />
+              </div>
+            )}
+
             {article.body ? (
               <div
                 style={{ ...T.readBody, color: Slate600 }}
