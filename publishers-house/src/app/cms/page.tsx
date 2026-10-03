@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 const modules = [
+  { name: "Homepage", path: "/cms/homepage", description: "Edit Next Gatherings cards and the Welcome Message section.", icon: "🏠" },
   { name: "Sermons", path: "/cms/sermons", description: "Add, edit, and publish sermons with video/audio links.", icon: "🎙️" },
   { name: "Events", path: "/cms/events", description: "Manage upcoming church events and registrations.", icon: "📅" },
   { name: "Articles", path: "/cms/articles", description: "Publish blog posts and written teachings.", icon: "📝" },

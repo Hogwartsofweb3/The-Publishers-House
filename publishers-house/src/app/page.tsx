@@ -3,6 +3,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleCarousel from "@/components/ArticleCarousel";
+import HomeSections from "@/components/HomeSections";
 
 export const metadata: Metadata = {
   title: "The Publishers House",
@@ -103,13 +104,7 @@ const programs = [
   },
 ];
 
-// ── Event data ───────────────────────────────────────────────────────────────
-const events = [
-  { day: "THU", date: "13", title: "Midweek Service", desc: "Doctrine, spiritual re-alignment and corporate prayer.", scripture: "2 Timothy 3:16", time: "5:00 PM", city: "Jos" },
-  { day: "SUN", date: "16", title: "Sunday Worship", desc: "Intense worship and in-depth teaching of the Word.", scripture: "Colossians 3:16", time: "9:00 AM", city: "Jos" },
-  { day: "AUG", date: "26", title: "The Forge", desc: "Wednesday to Friday of prayer, closing with the Friday overnight vigil.", scripture: "Jeremiah 23:29", time: "Monthly", city: "Jos" },
-  { day: "SEP", date: "05", title: "Abuja Apostolic Camp", desc: "Equipping, prophetic ministry and deep spiritual alignment.", scripture: "Ephesians 4:11", time: "Monthly", city: "Abuja" },
-];
+
 
 export default function HomePage() {
   return (
@@ -229,121 +224,10 @@ export default function HomePage() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════════
-            WELCOME FROM THE SETMAN — photo left, text right
-            Added per Ayotunde's feedback, matches Figma reference
+            WELCOME FROM THE SETMAN + THIS WEEK AT THE HOUSE
+            — Live from Firestore via HomeSections client component
         ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
-          <div className="tph-inner">
-            <div className="tph-two-col" style={{ alignItems: "center", gap: "80px" }}>
-              {/* Photo */}
-              <div
-                className="tph-setman-photo"
-                style={{
-                  width: "100%",
-                  maxWidth: "480px",
-                  height: "360px",
-                  backgroundImage: "url('/images/rja-setman.jpg')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center top",
-                  borderRadius: "2px",
-                }}
-              />
-
-              {/* Text */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
-                <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
-                  Welcome Message<br />from the Setman
-                </h2>
-                <p style={{ ...T.readBody, color: Slate600, margin: 0 }}>
-                  What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.
-                </p>
-                <div>
-                  <Link
-                    href="/about"
-                    style={{
-                      ...T.button,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      height: "44px", padding: "0 24px", borderRadius: "2px",
-                      backgroundColor: Blue700, color: White, textDecoration: "none",
-                    }}
-                  >
-                    Read More About Us
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════════════════════════════════════════════════════════════════
-            THIS WEEK AT THE HOUSE — 4 event cards + 3 photo strip
-            Figma: Next Gatherings section
-        ════════════════════════════════════════════════════════════════════ */}
-        <section className="tph-section" style={{ backgroundColor: White }}>
-          {/* Header row */}
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "40px" }}>
-            <div>
-              <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Next Gatherings</div>
-              <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>This Week at the House</h2>
-            </div>
-            <Link href="/events" style={{ ...T.label, color: Blue700, textDecoration: "none" }}>
-              All Events →
-            </Link>
-          </div>
-
-          {/* 4 event cards */}
-          <div className="tph-grid-auto" style={{ marginBottom: "40px" }}>
-            {events.map((ev) => (
-              <div
-                key={ev.title}
-                style={{
-                  backgroundColor: White,
-                  border: `1px solid ${Paper300}`,
-                  borderRadius: "4px",
-                  padding: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                {/* Date badge */}
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                  <div style={{ textAlign: "center", minWidth: "44px" }}>
-                    <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.day}</div>
-                    <div style={{ ...T.displayM, color: Navy, fontSize: "28px" }}>{ev.date}</div>
-                  </div>
-                  <h3 style={{ ...T.displayS, color: Navy, margin: 0, fontSize: "16px" }}>{ev.title}</h3>
-                </div>
-
-                <p style={{ ...T.readSmall, color: Slate600, margin: 0, flex: 1 }}>{ev.desc}</p>
-
-                {/* Colophon */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", paddingTop: "12px", borderTop: `1px solid ${Paper200}`, flexWrap: "wrap" }}>
-                  <span style={{ ...T.colophon, color: Blue700 }}>{ev.scripture}</span>
-                  <span style={{ ...T.colophon, color: Paper400 }}>·</span>
-                  <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
-                  <span style={{ ...T.colophon, color: Paper400 }}>·</span>
-                  <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 3 photo strip */}
-          <div className="tph-grid-3 tph-mobile-hide" style={{ height: "300px" }}>
-            {["event-1.jpg", "event-2.jpg", "event-3.jpg"].map((img, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundImage: `url('/images/${img}')`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  borderRadius: "4px",
-                }}
-              />
-            ))}
-          </div>
-        </section>
+        <HomeSections />
 
         {/* ════════════════════════════════════════════════════════════════════
             PUBLISHED THIS WEEK — Latest teaching
