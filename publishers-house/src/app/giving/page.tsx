@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CopyableAccount from "@/components/CopyableAccount";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
+import { usePaystackPayment } from "react-paystack";
 
 const S = {
   eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
@@ -53,6 +54,33 @@ export default function GivingPage() {
 
   const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
 
+  const paystackConfig = {
+    reference: `tph_${new Date().getTime()}`,
+    email: email || "anonymous@tph.org",
+    amount: displayAmount * 100, // Paystack amount is in kobo
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_6ad89045f87f5ea06009b6e90c7823c002ae2350",
+    metadata: {
+      name: name || "Anonymous",
+      category,
+      custom_fields: []
+    }
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  const handlePaystackSuccess = (reference: any) => {
+    alert(`Payment successful! Reference: ${reference.reference}`);
+    // Optional: save to Firebase immediately here on the frontend if the webhook isn't enough,
+    // but the webhook in /api/paystack-webhook/route.ts handles it securely.
+    setName("");
+    setEmail("");
+    setOtherAmount("");
+  };
+
+  const handlePaystackClose = () => {
+    console.log("Paystack modal closed");
+  };
+
   const handleGive = async () => {
     if (method === "crypto") {
       if (cryptoNetwork === "EVM") {
@@ -94,6 +122,12 @@ export default function GivingPage() {
       } else {
         // For SOL and SUI, the user copies the address (handled in UI)
       }
+    } else if (method === "paystack") {
+      if (!email) {
+        alert("Please enter your email address to proceed with card payment.");
+        return;
+      }
+      initializePayment({ onSuccess: handlePaystackSuccess, onClose: handlePaystackClose });
     } else {
       alert(`Ready to integrate ${method}! Need API keys.`);
     }

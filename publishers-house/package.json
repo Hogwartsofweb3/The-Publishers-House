@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.45.0",
+    "@stripe/stripe-js": "^10.0.0",
     "@tiptap/extension-color": "^3.31.3",
     "@tiptap/extension-highlight": "^3.31.3",
     "@tiptap/extension-image": "^3.31.3",
@@ -26,6 +27,7 @@
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-paystack": "^6.0.0",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {

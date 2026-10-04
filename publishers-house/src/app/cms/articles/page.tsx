@@ -56,7 +56,7 @@ const emptyArticle = {
   audioUrl: "",
   author: "",
   categories: "",
-  qa: [],
+  qa: [] as { question: string; answer: string }[],
   publishedAt: "",
   published: false,
 };
