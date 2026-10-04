@@ -38,6 +38,9 @@ export type Sermon = ContentTimestamps & {
   studyGuideUrl: string;
   series: string;
   tags: string[];
+  scripture?: string;
+  location?: string;
+  duration?: string;
 };
 
 export type EventItem = ContentTimestamps & {

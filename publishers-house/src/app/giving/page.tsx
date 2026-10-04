@@ -1,11 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CopyableAccount from "@/components/CopyableAccount";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { usePaystackPayment } from "react-paystack";
+
+// Extend Window to include PaystackPop
+declare global {
+  interface Window {
+    PaystackPop: {
+      setup: (config: {
+        key: string;
+        email: string;
+        amount: number;
+        currency?: string;
+        ref: string;
+        metadata?: Record<string, unknown>;
+        callback: (response: { reference: string }) => void;
+        onClose: () => void;
+      }) => { openIframe: () => void };
+    };
+  }
+}
 
 const S = {
   eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
@@ -36,49 +54,64 @@ const CHURCH_EVM_ADDRESS = "0x063F4fa58078f6c2F1cbCb0D9EA15962Af5BBDaE";
 const CHURCH_SOL_ADDRESS = "54CnBrza7uivgHvXCa7ym9LNi9KLwxkXR1vT77mbBxVk";
 const CHURCH_SUI_ADDRESS = "0xaaa4e6301a452139d1b93bd72dda49ddde76f64d253163a19c827f11b8cec63c";
 
+const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_6ad89045f87f5ea06009b6e90c7823c002ae2350";
+
 export default function GivingPage() {
   const { login, authenticated } = usePrivy();
   const { sendTransaction } = useSendTransaction();
-  
+
   const [category, setCategory] = useState("Tithe");
   const [frequency, setFrequency] = useState("Once");
   const [amount, setAmount] = useState<number | "other">(10000);
   const [otherAmount, setOtherAmount] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [method, setMethod] = useState<"paystack" | "flutterwave" | "crypto">("paystack");
+  const [method, setMethod] = useState<"paystack" | "crypto">("paystack");
   const [cryptoNetwork, setCryptoNetwork] = useState<"EVM" | "SOL" | "SUI">("EVM");
+  const [paystackReady, setPaystackReady] = useState(false);
 
   const categories = ["Tithe", "Offering", "Special Projects", "Thanksgiving"];
   const amounts = [5000, 10000, 25000];
 
   const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
 
-  const paystackConfig = {
-    reference: `tph_${new Date().getTime()}`,
-    email: email || "anonymous@tph.org",
-    amount: displayAmount * 100, // Paystack amount is in kobo
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_6ad89045f87f5ea06009b6e90c7823c002ae2350",
-    metadata: {
-      name: name || "Anonymous",
-      category,
-      custom_fields: []
+  const handlePaystackPayment = () => {
+    if (!email) {
+      alert("Please enter your email address to proceed with card payment.");
+      return;
     }
-  };
+    if (displayAmount < 100) {
+      alert("Please enter a valid amount (minimum ₦100).");
+      return;
+    }
+    if (!paystackReady || !window.PaystackPop) {
+      alert("Payment system is still loading. Please try again in a moment.");
+      return;
+    }
 
-  const initializePayment = usePaystackPayment(paystackConfig);
+    const handler = window.PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email,
+      amount: displayAmount * 100, // Paystack uses kobo
+      currency: "NGN",
+      ref: `tph_${Date.now()}`,
+      metadata: {
+        name: name || "Anonymous",
+        category,
+        frequency,
+      },
+      callback: (response) => {
+        alert(`Payment successful! Thank you for giving. Reference: ${response.reference}`);
+        setName("");
+        setEmail("");
+        setOtherAmount("");
+      },
+      onClose: () => {
+        // user closed the modal without paying
+      },
+    });
 
-  const handlePaystackSuccess = (reference: any) => {
-    alert(`Payment successful! Reference: ${reference.reference}`);
-    // Optional: save to Firebase immediately here on the frontend if the webhook isn't enough,
-    // but the webhook in /api/paystack-webhook/route.ts handles it securely.
-    setName("");
-    setEmail("");
-    setOtherAmount("");
-  };
-
-  const handlePaystackClose = () => {
-    console.log("Paystack modal closed");
+    handler.openIframe();
   };
 
   const handleGive = async () => {
@@ -90,13 +123,13 @@ export default function GivingPage() {
           try {
             const usdAmount = displayAmount / 1600;
             const ethAmount = usdAmount / 3000;
-            const weiAmount = BigInt(Math.floor(ethAmount * 10**18));
-            
-            const txRes = await sendTransaction({
+            const weiAmount = BigInt(Math.floor(ethAmount * 10 ** 18));
+
+            await sendTransaction({
               to: CHURCH_EVM_ADDRESS,
               value: `0x${weiAmount.toString(16)}`,
             });
-            
+
             try {
               const { saveTransaction } = await import("@/lib/firebase");
               await saveTransaction({
@@ -107,46 +140,43 @@ export default function GivingPage() {
                 method: "crypto",
                 network: "EVM",
                 status: "success",
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
               });
             } catch (err) {
               console.error("Failed to log transaction:", err);
             }
 
             alert("Crypto transfer initiated successfully! Thank you for your giving.");
-          } catch (e: any) {
+          } catch (e: unknown) {
             console.error(e);
             alert("Transaction failed or was canceled.");
           }
         }
-      } else {
-        // For SOL and SUI, the user copies the address (handled in UI)
       }
-    } else if (method === "paystack") {
-      if (!email) {
-        alert("Please enter your email address to proceed with card payment.");
-        return;
-      }
-      initializePayment({ onSuccess: handlePaystackSuccess, onClose: handlePaystackClose });
     } else {
-      alert(`Ready to integrate ${method}! Need API keys.`);
+      handlePaystackPayment();
     }
   };
 
   return (
     <>
+      {/* Load Paystack inline JS — no npm package needed */}
+      <Script
+        src="https://js.paystack.co/v1/inline.js"
+        strategy="lazyOnload"
+        onLoad={() => setPaystackReady(true)}
+      />
+
       <Navbar />
       <main style={{ paddingTop: "70px", background: "#F4F6FB" }}>
         {/* HERO SECTION */}
         <section
           className="tph-hero"
-          style={{
-            borderBottom: "none",
-          }}
+          style={{ borderBottom: "none", position: "relative", overflow: "hidden" }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center 25%", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.85)", zIndex: 1 }} />
-          
+
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
             <span style={{ ...S.scripture, color: "#D3DAEC" }}>2 Corinthians 9:7</span>
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
@@ -157,11 +187,7 @@ export default function GivingPage() {
 
         {/* CONTENT SECTION */}
         <section style={{ position: "relative", zIndex: 3 }}>
-          <div
-            className="tph-giving-row"
-            style={{
-            }}
-          >
+          <div className="tph-giving-row">
             {/* ── Give panel — Interactive Form ── */}
             <div
               className="tph-giving-form"
@@ -183,15 +209,15 @@ export default function GivingPage() {
                   <div
                     key={c}
                     onClick={() => setCategory(c)}
-                    style={{ 
-                      minHeight: "48px", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "center", 
+                    style={{
+                      minHeight: "48px", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "center",
                       background: category === c ? "#0140C1" : "transparent",
-                      border: category === c ? "1px solid #0140C1" : "1px solid #D3DAEC", 
-                      borderRadius: "2px", 
-                      color: category === c ? "#FFFFFF" : "#151A54", 
+                      border: category === c ? "1px solid #0140C1" : "1px solid #D3DAEC",
+                      borderRadius: "2px",
+                      color: category === c ? "#FFFFFF" : "#151A54",
                       cursor: "pointer",
                       textAlign: "center",
-                      ...S.label 
+                      ...S.label,
                     }}
                   >
                     {c}
@@ -211,38 +237,38 @@ export default function GivingPage() {
                   <div
                     key={a}
                     onClick={() => setAmount(a)}
-                    style={{ 
-                      height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                    style={{
+                      height: "48px", display: "flex", alignItems: "center", justifyContent: "center",
                       background: amount === a ? "#151A54" : "transparent",
-                      border: amount === a ? "1px solid #151A54" : "1px solid #D3DAEC", 
-                      borderRadius: "2px", 
-                      color: amount === a ? "#FFFFFF" : "#151A54", 
+                      border: amount === a ? "1px solid #151A54" : "1px solid #D3DAEC",
+                      borderRadius: "2px",
+                      color: amount === a ? "#FFFFFF" : "#151A54",
                       cursor: "pointer",
-                      ...S.label 
+                      ...S.label,
                     }}
                   >
-                    N{a.toLocaleString()}
+                    ₦{a.toLocaleString()}
                   </div>
                 ))}
                 <div
                   onClick={() => setAmount("other")}
-                  style={{ 
-                    height: "48px", display: "flex", alignItems: "center", justifyContent: "center", 
+                  style={{
+                    height: "48px", display: "flex", alignItems: "center", justifyContent: "center",
                     background: amount === "other" ? "#151A54" : "transparent",
-                    border: amount === "other" ? "1px solid #151A54" : "1px solid #D3DAEC", 
-                    borderRadius: "2px", 
-                    color: amount === "other" ? "#FFFFFF" : "#151A54", 
+                    border: amount === "other" ? "1px solid #151A54" : "1px solid #D3DAEC",
+                    borderRadius: "2px",
+                    color: amount === "other" ? "#FFFFFF" : "#151A54",
                     cursor: "pointer",
-                    ...S.label 
+                    ...S.label,
                   }}
                 >
                   Other
                 </div>
               </div>
-              
+
               {amount === "other" && (
                 <div style={{ marginBottom: "32px" }}>
-                   <input type="number" placeholder="Enter amount..." value={otherAmount} onChange={e => setOtherAmount(e.target.value)} style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
+                  <input type="number" placeholder="Enter amount (₦)..." value={otherAmount} onChange={e => setOtherAmount(e.target.value)} style={{ height: "48px", padding: "0 16px", border: "1px solid #D3DAEC", borderRadius: "2px", fontFamily: "'Playfair Display', serif", fontSize: "16px", outline: "none", width: "100%" }} />
                 </div>
               )}
 
@@ -261,10 +287,13 @@ export default function GivingPage() {
 
               {/* Payment Method Selector */}
               <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "16px", display: "block" }}>Select Payment Method</span>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "24px" }}>
-                 <div onClick={() => setMethod("paystack")} style={{ padding: "12px 8px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Paystack<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>Card / Naira</span></div>
-                 <div onClick={() => setMethod("flutterwave")} style={{ padding: "12px 8px", border: method === "flutterwave" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Flutterwave<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>International</span></div>
-                 <div onClick={() => setMethod("crypto")} style={{ padding: "12px 8px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>Crypto<br/><span style={{fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400}}>USDT / ETH / SOL</span></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "24px" }}>
+                <div onClick={() => setMethod("paystack")} style={{ padding: "12px 8px", border: method === "paystack" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>
+                  Paystack<br /><span style={{ fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400 }}>Card / Bank Transfer</span>
+                </div>
+                <div onClick={() => setMethod("crypto")} style={{ padding: "12px 8px", border: method === "crypto" ? "2px solid #0140C1" : "1px solid #D3DAEC", borderRadius: "4px", textAlign: "center", cursor: "pointer", ...S.label }}>
+                  Crypto<br /><span style={{ fontSize: "9px", color: "#4A62A0", textTransform: "none", fontFamily: "'Playfair Display', serif", fontWeight: 400 }}>USDT / ETH / SOL</span>
+                </div>
               </div>
 
               {method === "crypto" && (
@@ -285,7 +314,7 @@ export default function GivingPage() {
                     <code style={{ flex: 1, fontSize: "12px", color: "#151A54", wordBreak: "break-all", fontFamily: "monospace" }}>
                       {cryptoNetwork === "SOL" ? CHURCH_SOL_ADDRESS : CHURCH_SUI_ADDRESS}
                     </code>
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(cryptoNetwork === "SOL" ? CHURCH_SOL_ADDRESS : CHURCH_SUI_ADDRESS);
                         alert("Address copied!");
@@ -302,30 +331,33 @@ export default function GivingPage() {
                   style={{
                     ...S.button,
                     width: "100%",
-                    height: "48px",
+                    height: "52px",
                     background: "#0140C1",
                     border: "none",
                     borderRadius: "2px",
                     color: "#FFFFFF",
                     cursor: "pointer",
                     marginBottom: "16px",
-                    transition: "background 0.2s"
+                    transition: "background 0.2s",
                   }}
                   onMouseOver={(e) => e.currentTarget.style.background = "#013091"}
                   onMouseOut={(e) => e.currentTarget.style.background = "#0140C1"}
                 >
-                  {method === "crypto" && cryptoNetwork === "EVM" ? (authenticated ? "Transfer Crypto via Privy" : "Connect Wallet & Give") : `Give N${displayAmount.toLocaleString()}`}
+                  {method === "crypto" && cryptoNetwork === "EVM"
+                    ? (authenticated ? "Transfer Crypto via Wallet" : "Connect Wallet & Give")
+                    : `Give ₦${displayAmount.toLocaleString()}`}
                 </button>
               )}
-              
+
               <span style={{ ...S.readSmall, color: "#4A62A0", fontSize: "12px", textAlign: "center" }}>
-                Secured by {method === "paystack" ? "Paystack" : method === "flutterwave" ? "Flutterwave" : "Blockchain"}
+                Secured by {method === "paystack" ? "Paystack" : "Blockchain"}
               </span>
             </div>
 
             {/* ── Bank transfer panel ── */}
             <div
               id="bank-transfer"
+              className="tph-giving-bank"
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -350,7 +382,6 @@ export default function GivingPage() {
                     Bank Address: Jos 1-Jengre Road
                   </p>
                 </div>
-
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {gtbAccounts.map((acc) => (
                     <CopyableAccount key={acc.currency} currency={acc.currency} number={acc.number} />
