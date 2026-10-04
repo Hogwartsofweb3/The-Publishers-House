@@ -205,26 +205,13 @@ export default function ArticlesEditor() {
         <div style={{ flex: 1, maxWidth: "760px", width: "100%", margin: "0 auto", padding: "48px 24px 96px" }}>
 
           {/* Cover image URL — subtle field */}
-          <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM, whiteSpace: "nowrap" }}>
               Cover image URL
             </span>
             <input
               value={form.coverImageUrl}
               onChange={(e) => F("coverImageUrl", e.target.value)}
-              placeholder="https://..."
-              style={{ ...fieldStyle, fontSize: "13px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT }}
-            />
-          </div>
-
-          {/* Audio URL */}
-          <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM, whiteSpace: "nowrap" }}>
-              Audio on the go URL
-            </span>
-            <input
-              value={form.audioUrl || ""}
-              onChange={(e) => F("audioUrl", e.target.value)}
               placeholder="https://..."
               style={{ ...fieldStyle, fontSize: "13px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT }}
             />

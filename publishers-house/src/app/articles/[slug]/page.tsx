@@ -4,6 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ShareButtons from "@/components/ShareButtons";
+import TextToSpeech from "@/components/TextToSpeech";
 import { getArticleBySlug, getArticles } from "@/lib/firebase";
 
 export const revalidate = 0;
@@ -221,28 +222,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            {article.audioUrl && (
-              <div
-                style={{
-                  marginBottom: "40px",
-                  padding: "24px",
-                  backgroundColor: "#F4F6FB",
-                  borderRadius: "8px",
-                  border: `1px solid ${Paper200}`,
-                }}
-              >
-                <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "12px" }}>Audio on the go</div>
-                <h3 style={{ ...T.displayXL, fontSize: "20px", color: Navy, margin: "0 0 16px" }}>Listen to this article</h3>
-                <audio 
-                  controls 
-                  src={article.audioUrl} 
-                  style={{ width: "100%", outline: "none" }}
-                  preload="none"
-                >
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            )}
+            <TextToSpeech title={article.title} htmlContent={article.body} />
 
             {article.body ? (
               <div
