@@ -94,6 +94,7 @@ export type Transaction = {
   category: string;
   method: string;
   network?: string;
+  reference?: string;
   status: "pending" | "success" | "failed";
   timestamp: string;
 };
