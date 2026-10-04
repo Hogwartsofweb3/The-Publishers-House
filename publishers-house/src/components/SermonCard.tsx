@@ -53,17 +53,17 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
     <>
       <div
         style={{
-          border: `1px solid ${Paper300}`,
           backgroundColor: White,
           display: "flex",
           flexDirection: "column",
+          gap: "16px",
         }}
       >
         {/* Thumbnail — real YouTube thumbnail or blue placeholder */}
         <div
           onClick={handlePlayClick}
           style={{
-            height: "220px",
+            height: "240px",
             backgroundColor: Paper200,
             backgroundImage: thumbnailUrl ? `url(${thumbnailUrl})` : undefined,
             backgroundSize: "cover",
@@ -74,13 +74,14 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
             position: "relative",
             overflow: "hidden",
             cursor: sermon.videoUrl ? "pointer" : "default",
+            borderRadius: "4px"
           }}
         >
           {/* Play overlay */}
           {sermon.videoUrl && (
             <div style={{
               position: "absolute", inset: 0,
-              backgroundColor: thumbnailUrl ? "rgba(0,0,0,0.35)" : "transparent",
+              backgroundColor: thumbnailUrl ? "rgba(0,0,0,0.25)" : "transparent",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <div style={{
@@ -94,7 +95,7 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
           )}
         </div>
 
-        <div style={{ padding: "24px 20px 20px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
             {sermon.series && <div style={{ ...T.eyebrow, color: Blue500 }}>{sermon.series}</div>}
             {sermon.tags?.[0] && (
@@ -107,22 +108,24 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
           
           <h3 style={{ ...T.displayS, color: Navy, margin: "0 0 12px" }}>{sermon.title}</h3>
           
-          <p style={{ ...T.readBody, color: Slate600, margin: 0, flex: 1 }}>
-            {sermon.speaker ? `Teaching by ${sermon.speaker}.` : "What Paul asks of anyone who handles Scripture in public."}
+          <p style={{ ...T.readBody, color: Slate500, margin: 0, flex: 1, paddingBottom: "16px" }}>
+            {sermon.speaker ? `Teaching by ${sermon.speaker}.` : "What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before scholarship."}
           </p>
 
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "24px", paddingTop: "16px", borderTop: `1px solid ${Navy}` }}>
-            <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{sermon.tags?.[0] || "TEACHING"}</span>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", paddingTop: "12px", borderTop: `1px solid ${Paper300}`, flexWrap: "wrap" }}>
+            <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{sermon.scripture || "2 TIMOTHY 2:15"}</span>
             <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-            <span style={{ ...T.colophon, color: Slate500 }}>{sermon.speaker}</span>
-            {dateLabel && <>
-              <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-              <span style={{ ...T.colophon, color: Slate500 }}>{dateLabel}</span>
-            </>}
+            <span style={{ ...T.colophon, color: Slate500 }}>{sermon.speaker || "DR. JOSHUA AGUNBIADE"}</span>
+            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>JOS</span>
+            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>JOS</span>
+            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>48:12</span>
           </div>
 
           {sermon.audioUrl && (
-            <div style={{ marginTop: "16px", marginBottom: "8px" }}>
+            <div style={{ marginTop: "16px" }}>
               {sermon.audioUrl.includes("t.me/") ? (
                 <a
                   href={sermon.audioUrl}
@@ -144,19 +147,6 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
               )}
             </div>
           )}
-
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-            {sermon.studyGuideUrl && (
-              <a
-                href={sermon.studyGuideUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ ...T.eyebrow, color: Navy, textDecoration: "underline", textUnderlineOffset: "4px" }}
-              >
-                Study Guide
-              </a>
-            )}
-          </div>
         </div>
       </div>
 

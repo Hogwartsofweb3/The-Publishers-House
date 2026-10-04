@@ -39,6 +39,8 @@ const T = {
 
 import SermonCard from "@/components/SermonCard";
 
+import ResourcesClient from "./ResourcesClient";
+
 export default async function ResourcesPage() {
   // Fetch live sermons from Firestore
   let sermons: Sermon[] = [];
@@ -61,44 +63,25 @@ export default async function ResourcesPage() {
             display: "flex",
             flexDirection: "column",
             gap: "20px",
+            padding: "80px 100px",
+            position: "relative",
+            overflow: "hidden"
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0, opacity: 0.18 }} />
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "12px" }}>Resources</div>
-            <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>The Published Word</h1>
-            <p style={{ ...T.epigraph, color: "rgba(255,255,255,0.8)", margin: 0, maxWidth: "560px" }}>
-              Study to shew thyself approved unto God.
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/resources-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0, opacity: 0.25 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21, 26, 84, 0.7)", zIndex: 1 }} />
+          
+          <div style={{ position: "relative", zIndex: 2, maxWidth: "800px" }}>
+            <div style={{ ...T.eyebrow, color: White, marginBottom: "12px", opacity: 0.8 }}>2 TIMOTHY 2:15</div>
+            <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>Teachings and Resources</h1>
+            <p style={{ ...T.readLede, color: "rgba(255,255,255,0.8)", margin: 0, maxWidth: "600px" }}>
+              Every message preached in this house, searchable by title, series, speaker or Scripture reference.
             </p>
-            <div style={{ ...T.colophon, color: Blue300, marginTop: "8px" }}>2 Timothy 2:15</div>
           </div>
         </section>
 
-        {/* ── SERMONS GRID ──────────────────────────────────────── */}
-        <section className="tph-section" style={{ backgroundColor: Paper100 }}>
-
-          {sermons.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "80px 0" }}>
-              <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "16px" }}>Coming Soon</div>
-              <h2 style={{ ...T.displayM, color: Navy, margin: "0 0 12px" }}>Teachings Loading</h2>
-              <p style={{ ...T.readBody, color: Slate600 }}>Sermons are being published through the CMS. Check back soon.</p>
-            </div>
-          ) : (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-                <div>
-                  <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "8px" }}>All Teachings</div>
-                  <h2 style={{ ...T.displayM, color: Navy, margin: 0 }}>{sermons.length} Teaching{sermons.length !== 1 ? "s" : ""}</h2>
-                </div>
-              </div>
-              <div className="tph-grid-3">
-                {sermons.map((sermon) => (
-                  <SermonCard key={sermon.id} sermon={sermon} />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
+        {/* ── SERMONS GRID (Client Component) ────────────────── */}
+        <ResourcesClient initialSermons={sermons} />
 
       </main>
       <Footer />

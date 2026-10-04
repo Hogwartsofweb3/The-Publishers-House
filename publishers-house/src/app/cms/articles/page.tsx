@@ -19,6 +19,7 @@ const RED = "#DC2626";
 const DIM = "#747CA1";
 const TEXT = "#151A54";
 const SUBTEXT = "#4A62A0";
+const White = "#FFFFFF";
 
 const pill = (bg: string, color: string) => ({
   padding: "6px 14px",
@@ -52,8 +53,10 @@ const emptyArticle = {
   excerpt: "",
   body: "",
   coverImageUrl: "",
+  audioUrl: "",
   author: "",
   categories: "",
+  qa: [],
   publishedAt: "",
   published: false,
 };
@@ -202,13 +205,26 @@ export default function ArticlesEditor() {
         <div style={{ flex: 1, maxWidth: "760px", width: "100%", margin: "0 auto", padding: "48px 24px 96px" }}>
 
           {/* Cover image URL — subtle field */}
-          <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM, whiteSpace: "nowrap" }}>
               Cover image URL
             </span>
             <input
               value={form.coverImageUrl}
               onChange={(e) => F("coverImageUrl", e.target.value)}
+              placeholder="https://..."
+              style={{ ...fieldStyle, fontSize: "13px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT }}
+            />
+          </div>
+
+          {/* Audio URL */}
+          <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM, whiteSpace: "nowrap" }}>
+              Audio on the go URL
+            </span>
+            <input
+              value={form.audioUrl || ""}
+              onChange={(e) => F("audioUrl", e.target.value)}
               placeholder="https://..."
               style={{ ...fieldStyle, fontSize: "13px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT }}
             />
@@ -272,6 +288,66 @@ export default function ArticlesEditor() {
           {/* Rich body editor */}
           <div style={{ color: TEXT }}>
             <RichEditor value={form.body} onChange={(html) => F("body", html)} />
+          </div>
+
+          {/* Q&A Section */}
+          <div style={{ marginTop: "48px", borderTop: `1px solid ${BORDER}`, paddingTop: "32px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <h3 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "16px", color: TEXT, margin: 0 }}>Questions & Reflections</h3>
+              <button 
+                onClick={() => F("qa", [...(form.qa || []), { question: "", answer: "" }])}
+                style={pill("rgba(1,64,193,0.1)", ACCENT)}
+              >
+                + Add Q&A
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {(form.qa || []).map((item: any, idx: number) => (
+                <div key={idx} style={{ background: "#F4F6FB", padding: "20px", borderRadius: "8px", position: "relative" }}>
+                  <button 
+                    onClick={() => {
+                      const newQa = [...form.qa];
+                      newQa.splice(idx, 1);
+                      F("qa", newQa);
+                    }}
+                    style={{ ...pill("transparent", RED), position: "absolute", top: "8px", right: "8px" }}
+                  >
+                    Remove
+                  </button>
+                  <div style={{ marginBottom: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM }}>Question</span>
+                    <input
+                      value={item.question}
+                      onChange={(e) => {
+                        const newQa = [...form.qa];
+                        newQa[idx].question = e.target.value;
+                        F("qa", newQa);
+                      }}
+                      placeholder="e.g. What is the core message of this teaching?"
+                      style={{ ...fieldStyle, fontSize: "15px", fontWeight: 700, borderBottom: "none", background: White, padding: "12px", borderRadius: "4px" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM }}>Answer / Reflection</span>
+                    <textarea
+                      value={item.answer}
+                      onChange={(e) => {
+                        const newQa = [...form.qa];
+                        newQa[idx].answer = e.target.value;
+                        F("qa", newQa);
+                      }}
+                      placeholder="Answer or reflection point..."
+                      rows={3}
+                      style={{ ...fieldStyle, fontSize: "14px", borderBottom: "none", background: White, padding: "12px", borderRadius: "4px", resize: "vertical" }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {(form.qa || []).length === 0 && (
+                <p style={{ fontFamily: "'Playfair Display', serif", color: DIM, margin: 0, fontStyle: "italic" }}>No questions added. Click "+ Add Q&A" to append a Q&A section to the bottom of the article.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

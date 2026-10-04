@@ -221,6 +221,29 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
+            {article.audioUrl && (
+              <div
+                style={{
+                  marginBottom: "40px",
+                  padding: "24px",
+                  backgroundColor: "#F4F6FB",
+                  borderRadius: "8px",
+                  border: `1px solid ${Paper200}`,
+                }}
+              >
+                <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "12px" }}>Audio on the go</div>
+                <h3 style={{ ...T.displayXL, fontSize: "20px", color: Navy, margin: "0 0 16px" }}>Listen to this article</h3>
+                <audio 
+                  controls 
+                  src={article.audioUrl} 
+                  style={{ width: "100%", outline: "none" }}
+                  preload="none"
+                >
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+
             {article.body ? (
               <div
                 style={{ ...T.readBody, color: Slate600 }}
@@ -240,7 +263,24 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </p>
             )}
 
-            <ShareButtons title={article.title} />
+            {/* ── Q&A SECTION ── */}
+            {article.qa && article.qa.length > 0 && (
+              <div style={{ marginTop: "48px", paddingTop: "48px", borderTop: `1px solid ${Paper200}` }}>
+                <h2 style={{ ...T.displayXL, fontSize: "28px", color: Navy, marginBottom: "32px" }}>Questions & Reflections</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  {article.qa.map((item, idx) => (
+                    <div key={idx} style={{ backgroundColor: "#F4F6FB", padding: "24px", borderRadius: "8px" }}>
+                      <h4 style={{ ...T.displayXL, fontSize: "18px", color: Navy, margin: "0 0 12px", textTransform: "none" }}>{item.question}</h4>
+                      <p style={{ ...T.readBody, color: Slate600, margin: 0, fontSize: "15px" }}>{item.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: "40px" }}>
+              <ShareButtons title={article.title} />
+            </div>
 
             <div
               style={{

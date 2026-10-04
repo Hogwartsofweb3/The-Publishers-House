@@ -61,6 +61,8 @@ export type Article = ContentTimestamps & {
   coverImageUrl: string;
   author: string;
   categories: string[];
+  audioUrl?: string;
+  qa?: { question: string; answer: string }[];
   publishedAt: string;
 };
 

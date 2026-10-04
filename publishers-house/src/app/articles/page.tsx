@@ -63,6 +63,8 @@ function ArticleCard({ article }: { article: Article }) {
   );
 }
 
+import ArticlesClient from "./ArticlesClient";
+
 export default async function ArticlesPage() {
   let articles: Article[] = [];
   try {
@@ -92,7 +94,7 @@ export default async function ArticlesPage() {
         </section>
 
         {/* Content */}
-        <section className="tph-section" style={{ backgroundColor: S.White, display: "flex", flexDirection: "column", gap: "48px" }}>
+        <section className="tph-section" style={{ backgroundColor: S.White, display: "flex", flexDirection: "column" }}>
           {articles.length === 0 ? (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
               <div style={{ ...S.UIEyebrow, color: S.Slate500, marginBottom: "16px" }}>Coming Soon</div>
@@ -100,25 +102,7 @@ export default async function ArticlesPage() {
               <p style={{ ...S.ReadBody, color: S.Slate600, margin: 0 }}>Articles are being published through the CMS. Check back soon.</p>
             </div>
           ) : (
-            <>
-              {/* Top Bar */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <div style={{ display: "flex", gap: "32px", borderBottom: `1px solid ${S.Paper300}`, overflowX: "auto" }}>
-                  <div style={{ ...S.UILabel, color: S.Navy, paddingBottom: "12px", borderBottom: `2px solid ${S.Navy}`, whiteSpace: "nowrap" }}>All ({articles.length})</div>
-                  {["Theology", "Apologetics", "Christian Living"].map(cat => (
-                    <div key={cat} style={{ ...S.UILabel, color: S.Slate500, paddingBottom: "12px", whiteSpace: "nowrap" }}>{cat}</div>
-                  ))}
-                </div>
-              </div>
-              {/* Grid */}
-              <div className="tph-grid-3">
-                {articles.map(article => (
-                  <Link key={article.id} href={`/articles/${article.slug}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column" }}>
-                    <ArticleCard article={article} />
-                  </Link>
-                ))}
-              </div>
-            </>
+            <ArticlesClient initialArticles={articles} />
           )}
         </section>
       </main>
