@@ -10,15 +10,15 @@ import Link from "next/link";
 import RichEditor from "@/components/RichEditor";
 
 /* ── Design tokens ─────────────────────────────────────────── */
-const BG = "transparent";       // allow layout background/watermark to show
-const CARD = "rgba(0, 0, 0, 0.15)";
-const BORDER = "rgba(255, 255, 255, 0.15)";
-const ACCENT = "#FFFFFF";
-const GREEN = "#22C55E";
-const RED = "#EF4444";
-const DIM = "rgba(255, 255, 255, 0.6)";
-const TEXT = "#FFFFFF";
-const SUBTEXT = "rgba(255, 255, 255, 0.8)";
+const BG = "transparent";
+const CARD = "#FFFFFF";
+const BORDER = "#D3DAEC";
+const ACCENT = "#0140C1";
+const GREEN = "#16A34A";
+const RED = "#DC2626";
+const DIM = "#747CA1";
+const TEXT = "#151A54";
+const SUBTEXT = "#4A62A0";
 
 const pill = (bg: string, color: string) => ({
   padding: "6px 14px",
