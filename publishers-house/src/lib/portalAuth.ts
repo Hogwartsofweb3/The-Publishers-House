@@ -55,8 +55,10 @@ export async function createOrUpdatePortalUser(user: User, role: UserRole = "mem
     activityTier: "regular",
     createdAt: now,
     lastLogin: now,
-    photoURL: user.photoURL || undefined,
   };
+  if (user.photoURL) {
+    portalUser.photoURL = user.photoURL;
+  }
   
   const existing = await getPortalUser(user.uid);
   if (existing) {
