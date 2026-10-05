@@ -47,7 +47,9 @@ export async function getPortalUser(uid: string): Promise<PortalUser | null> {
 
 export async function createOrUpdatePortalUser(user: User, role: UserRole = "member"): Promise<PortalUser> {
   const now = new Date().toISOString();
-  const portalUser: PortalUser = {
+  
+  // Build payload — NEVER include undefined values (Firestore rejects them)
+  const payload: Record<string, string> = {
     uid: user.uid,
     email: user.email || "",
     displayName: user.displayName || user.email?.split("@")[0] || "Member",
@@ -56,9 +58,8 @@ export async function createOrUpdatePortalUser(user: User, role: UserRole = "mem
     createdAt: now,
     lastLogin: now,
   };
-  if (user.photoURL) {
-    portalUser.photoURL = user.photoURL;
-  }
+  if (user.photoURL) payload.photoURL = user.photoURL;
+  if (user.phoneNumber) payload.phone = user.phoneNumber;
   
   const existing = await getPortalUser(user.uid);
   if (existing) {
@@ -67,8 +68,8 @@ export async function createOrUpdatePortalUser(user: User, role: UserRole = "mem
     return { ...existing, lastLogin: now };
   }
   
-  await setDoc(doc(db, "users", user.uid), portalUser);
-  return portalUser;
+  await setDoc(doc(db, "users", user.uid), payload);
+  return payload as unknown as PortalUser;
 }
 
 export function getRoleLabel(role: UserRole): string {
