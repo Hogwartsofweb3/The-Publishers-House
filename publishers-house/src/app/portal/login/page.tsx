@@ -19,12 +19,12 @@ export default function PortalLoginPage() {
     setLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      const portalUser = await getPortalUser(cred.user.uid);
+      let portalUser = await getPortalUser(cred.user.uid);
       
       if (!portalUser) {
-        // New user — default to member portal
-        router.push("/portal/member");
-        return;
+        // New user — create them in Firestore!
+        const { createOrUpdatePortalUser } = await import("@/lib/portalAuth");
+        portalUser = await createOrUpdatePortalUser(cred.user);
       }
       
       switch (portalUser.role) {
