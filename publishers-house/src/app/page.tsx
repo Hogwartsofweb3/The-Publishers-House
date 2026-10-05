@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleCarousel from "@/components/ArticleCarousel";
 import HomeContent from "@/components/HomeContent";
+import FloatingAttendance from "@/components/FloatingAttendance";
 
 export const metadata: Metadata = {
   title: "The Publishers House",
@@ -81,6 +82,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        <FloatingAttendance />
       </main>
       <Footer />
     </>

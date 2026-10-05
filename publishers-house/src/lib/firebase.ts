@@ -231,3 +231,14 @@ export async function getTransactions(limitCount = 50): Promise<Transaction[]> {
   const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
   return results.sort((a, b) => (a.timestamp > b.timestamp ? -1 : 1));
 }
+
+export async function getSermonById(id: string): Promise<Sermon | null> {
+  try {
+    const snap = await getDocs(query(collection(db, "sermons")));
+    const doc = snap.docs.find(d => d.id === id);
+    if (!doc) return null;
+    return { id: doc.id, ...doc.data() } as Sermon;
+  } catch (e) {
+    return null;
+  }
+}

@@ -21,6 +21,7 @@ const S = {
 // Programs from Figma: #27:1821 Grid — all 6 program cards
 const programs = [
   {
+    slug: "festival-of-light",
     frequency: "Annual homecoming conference",
     name: "Festival of Light",
     desc: "Believers from across the world gather for worship, sound teaching, Holy Ghost expressions and fellowship.",
@@ -30,6 +31,7 @@ const programs = [
     logoImage: "/images/Festival of Light logo (white).png",
   },
   {
+    slug: "merismos",
     frequency: "Annual conference",
     name: "Merismos",
     desc: "A power-packed encounter where the Word is rightly taught and the Holy Spirit moves tangibly to transform lives.",
@@ -39,6 +41,7 @@ const programs = [
     logoImage: "/images/Merismos black.png",
   },
   {
+    slug: "jesus-convention",
     frequency: "Annual · Easter",
     name: "Jesus Convention",
     desc: "Unveiling the person, finished work and lordship of Jesus Christ through sound teaching, prayer and worship.",
@@ -48,6 +51,7 @@ const programs = [
     logoImage: "/images/Jesus Convention logo white.png",
   },
   {
+    slug: "the-forge",
     frequency: "Monthly · end of month",
     name: "The Forge",
     desc: "An intensive prayer gathering running Wednesday to Friday and culminating in an overnight vigil.",
@@ -57,6 +61,7 @@ const programs = [
     logoImage: "/images/THE FORGE 1.png",
   },
   {
+    slug: "abuja-apostolic-camp",
     frequency: "Monthly · Abuja",
     name: "Abuja Apostolic Camp",
     desc: "An intense spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.",
@@ -66,6 +71,7 @@ const programs = [
     logoImage: "/images/TPH ABUJA.png",
   },
   {
+    slug: "sunday-midweek",
     frequency: "Every week",
     name: "Sunday and midweek",
     desc: "Sunday worship at 9:00 AM is the core weekly gathering. Thursday at 5:00 PM is doctrine and corporate prayer.",
@@ -86,6 +92,7 @@ export default async function ProgramsPage() {
   // Use CMS programs if available, otherwise fallback
   const displayPrograms = cmsPrograms.length > 0 
     ? cmsPrograms.map(p => ({
+        slug: p.slug || p.id,
         frequency: p.frequency,
         name: p.name,
         desc: p.summary,
@@ -137,7 +144,9 @@ export default async function ProgramsPage() {
             }}
           >
             {displayPrograms.map((prog) => (
-              <ProgramCard key={prog.name} prog={prog} />
+              <Link href={`/programs/${prog.slug}`} key={prog.slug} style={{ textDecoration: 'none' }}>
+                <ProgramCard prog={prog} />
+              </Link>
             ))}
           </div>
         </section>
