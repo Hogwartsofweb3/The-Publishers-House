@@ -8,11 +8,20 @@ import { usePathname } from "next/navigation";
 // Nav links: UI/Label — Poppins SemiBold 11px, 0.16em tracking, UPPERCASE, white
 
 const navLinks = [
-  { label: "About",     href: "/about" },
-  { label: "Resources", href: "/resources" },
-  { label: "Programs",  href: "/programs" },
-  { label: "Events",    href: "/events" },
-  { label: "Articles",  href: "/articles" },
+  { label: "About", href: "/about" },
+  { label: "Sermons and Talks", href: "/sermons" },
+  { 
+    label: "Resources", 
+    href: "/resources", 
+    dropdown: [
+      { label: "All Resources", href: "/resources" },
+      { label: "Books", href: "/resources/books" },
+      { label: "Study Guides", href: "/resources/studies" },
+    ]
+  },
+  { label: "Programs", href: "/programs" },
+  { label: "Events", href: "/events" },
+  { label: "Articles", href: "/articles" },
 ];
 
 export default function Navbar() {
@@ -81,7 +90,7 @@ export default function Navbar() {
             {navLinks.map((link) => {
               const active = pathname === link.href || pathname.startsWith(link.href + "/");
               return (
-                <li key={link.href}>
+                <li key={link.href} className={link.dropdown ? "nav-dropdown-wrapper" : ""}>
                   <Link
                     href={link.href}
                     style={{
@@ -96,10 +105,27 @@ export default function Navbar() {
                       transition: "color 150ms ease",
                       paddingBottom: "2px",
                       borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
                     }}
                   >
                     {link.label}
+                    {link.dropdown && (
+                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
                   </Link>
+                  {link.dropdown && (
+                    <div className="nav-dropdown">
+                      {link.dropdown.map(sublink => (
+                        <Link key={sublink.href} href={sublink.href} className="nav-dropdown-item">
+                          {sublink.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -233,6 +259,44 @@ export default function Navbar() {
           max-width: 1440px;
           margin: 0 auto;
         }
+        
+        .nav-dropdown-wrapper {
+          position: relative;
+        }
+        
+        .nav-dropdown {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: #151A54;
+          border: 1px solid #6496EF;
+          min-width: 220px;
+          padding: 8px 0;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+          z-index: 400;
+        }
+        
+        .nav-dropdown-wrapper:hover .nav-dropdown {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .nav-dropdown-item {
+          padding: 12px 24px;
+          color: #FFFFFF;
+          text-decoration: none;
+          font-family: 'Poppins', sans-serif;
+          font-weight: 500;
+          font-size: 13px;
+          transition: background 150ms ease, color 150ms ease;
+        }
+        
+        .nav-dropdown-item:hover {
+          background: rgba(100, 150, 239, 0.1);
+          color: #6496EF;
+        }
+        
         @media (max-width: 768px) {
           .nav-desktop { display: none !important; }
           .nav-give-btn { display: none !important; }

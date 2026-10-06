@@ -22,7 +22,7 @@ const T = {
   readBody:  { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "15px", lineHeight: "1.6em" },
 };
 
-export default function ResourcesClient({ initialSermons }: { initialSermons: Sermon[] }) {
+export default function SermonsClient({ initialSermons }: { initialSermons: Sermon[] }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
   
@@ -152,7 +152,7 @@ export default function ResourcesClient({ initialSermons }: { initialSermons: Se
           ) : (
             <div className="tph-grid-3" style={{ marginBottom: "64px" }}>
               {filtered.map((sermon) => (
-                <Link href={`/resources/${sermon.id}`} key={sermon.id} style={{ textDecoration: 'none' }}>
+                <Link href={`/sermons/${sermon.id}`} key={sermon.id} style={{ textDecoration: 'none' }}>
                   <SermonCard sermon={sermon} />
                 </Link>
               ))}

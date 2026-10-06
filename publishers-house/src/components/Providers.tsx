@@ -1,6 +1,7 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
+import { AudioProvider } from "./GlobalAudioPlayer";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         loginMethods: ["email", "wallet"],
       }}
     >
-      {children}
+      <AudioProvider>
+        {children}
+      </AudioProvider>
     </PrivyProvider>
   );
 }
