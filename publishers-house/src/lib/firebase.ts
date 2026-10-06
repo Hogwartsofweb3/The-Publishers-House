@@ -41,6 +41,7 @@ export type Sermon = ContentTimestamps & {
   scripture?: string;
   location?: string;
   duration?: string;
+  summary?: string;
 };
 
 export type EventItem = ContentTimestamps & {
