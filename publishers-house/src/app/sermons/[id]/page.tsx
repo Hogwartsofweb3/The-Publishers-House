@@ -7,8 +7,9 @@ import SermonDetailClient from "./SermonDetailClient";
 
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const sermon = await getSermonById(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const sermon = await getSermonById(id);
   if (!sermon) return { title: "Sermon Not Found | The Publishers House" };
   return {
     title: `${sermon.title} | The Publishers House`,
@@ -16,8 +17,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function SermonDetailPage({ params }: { params: { id: string } }) {
-  const sermon = await getSermonById(params.id);
+export default async function SermonDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const sermon = await getSermonById(id);
   if (!sermon) return notFound();
 
   // Fetch some related sermons (same series if possible, else just recent)

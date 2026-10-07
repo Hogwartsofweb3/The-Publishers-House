@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, doc, getDoc } from "firebase/firestore";
+import ArticleCarousel from "@/components/ArticleCarousel";
 
 /* ─── Design tokens ─── */
 const Navy    = "#151A54";
@@ -102,6 +103,14 @@ const FALLBACK_GATHERINGS = [
 export default function HomeContent() {
   const [s, setS] = useState<any>({ ...D });
   const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide((prev) => (prev === 0 ? 1 : 0));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     // Fetch settings
@@ -123,29 +132,172 @@ export default function HomeContent() {
 
   return (
     <>
-      {/* ══════════════ HERO ══════════════ */}
-      <section style={{ position:"relative", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", paddingTop:"70px" }}>
-        <div style={{ position:"absolute", inset:0, backgroundImage:`url('${s.heroBgImage||D.heroBgImage}')`, backgroundSize:"cover", backgroundPosition:"center top", zIndex:0 }} />
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex:1 }} />
-        <div className="tph-hero" style={{ position:"relative", zIndex:2, width:"100%", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:"20px" }}>
-          <div style={{ ...T.scripture, color:"rgba(255,255,255,0.7)" }}>{s.heroEyebrow||D.heroEyebrow}</div>
-          <h1 style={{ ...T.displayXL, color:White, margin:0 }}>{s.heroHeadline||D.heroHeadline}</h1>
-          <p style={{ ...T.readLede, color:"rgba(255,255,255,0.82)", maxWidth:"560px", margin:0 }}>{s.heroSubtitle||D.heroSubtitle}</p>
-          <div style={{ display:"flex", gap:"16px", flexWrap:"wrap", justifyContent:"center", marginTop:"8px" }}>
-            <Link href={s.heroBtn1Url||D.heroBtn1Url} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${White}`, color:White, textDecoration:"none", background:"transparent" }}>{s.heroBtn1Label||D.heroBtn1Label}</Link>
-            <Link href={s.heroBtn2Url||D.heroBtn2Url} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${White}`, color:White, textDecoration:"none", background:"transparent" }}>{s.heroBtn2Label||D.heroBtn2Label}</Link>
-          </div>
-          <div className="tph-times-strip" style={{ display:"flex", gap:"0", marginTop:"16px", border:`1px solid rgba(255,255,255,0.35)`, borderRadius:"2px", overflow:"hidden" }}>
-            <div style={{ padding:"16px 32px", borderRight:`1px solid rgba(255,255,255,0.35)`, textAlign:"center", flex:1 }}>
-              <div style={{ ...T.eyebrow, color:White, marginBottom:"6px", opacity:0.75 }}>{s.heroSundayLabel||D.heroSundayLabel}</div>
-              <div style={{ ...T.displayS, color:White }}>{s.heroSundayTime||D.heroSundayTime}</div>
+      {/* ══════════════ HERO CAROUSEL ══════════════ */}
+      <section style={{ position: "relative", minHeight: "100vh", overflow: "hidden", paddingTop: "70px", backgroundColor: Navy }}>
+        {/* Sliding track container */}
+        <div
+          style={{
+            display: "flex",
+            width: "200%",
+            transform: heroSlide === 0 ? "translateX(0%)" : "translateX(-50%)",
+            transition: "transform 0.75s cubic-bezier(0.25, 1, 0.5, 1)",
+          }}
+        >
+          {/* ── SLIDE 1: Company of the Great ── */}
+          <div
+            style={{
+              width: "50%",
+              minWidth: "50%",
+              position: "relative",
+              minHeight: "calc(100vh - 70px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${s.heroBgImage || D.heroBgImage}')`, backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex: 1 }} />
+            <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px" }}>
+              <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>{s.heroEyebrow || D.heroEyebrow}</div>
+              <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
+              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
+                <Link href={s.heroBtn1Url || D.heroBtn1Url} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
+                <Link href="/sermons" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
+              </div>
+              <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
+                <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center", flex: 1 }}>
+                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroSundayLabel || D.heroSundayLabel}</div>
+                  <div style={{ ...T.displayS, color: White }}>{s.heroSundayTime || D.heroSundayTime}</div>
+                </div>
+                <div style={{ padding: "16px 32px", textAlign: "center", flex: 1 }}>
+                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroMidweekLabel || D.heroMidweekLabel}</div>
+                  <div style={{ ...T.displayS, color: White }}>{s.heroMidweekTime || D.heroMidweekTime}</div>
+                </div>
+              </div>
+              <div style={{ ...T.colophon, color: "rgba(255,255,255,0.75)", marginTop: "8px" }}>{s.heroAddress || D.heroAddress}</div>
             </div>
-            <div style={{ padding:"16px 32px", textAlign:"center", flex:1 }}>
-              <div style={{ ...T.eyebrow, color:White, marginBottom:"6px", opacity:0.75 }}>{s.heroMidweekLabel||D.heroMidweekLabel}</div>
-              <div style={{ ...T.displayS, color:White }}>{s.heroMidweekTime||D.heroMidweekTime}</div>
+          </div>
+
+          {/* ── SLIDE 2: Building Project Video ── */}
+          <div
+            style={{
+              width: "50%",
+              minWidth: "50%",
+              position: "relative",
+              minHeight: "calc(100vh - 70px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                zIndex: 0,
+              }}
+            >
+              <source src="/videos/building.mp4" type="video/mp4" />
+            </video>
+            {/* Deep blue overlay matching Slide 1 */}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.88) 0%, rgba(1,64,193,0.55) 100%)", zIndex: 1 }} />
+            
+            <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "880px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px", padding: "40px 20px" }}>
+              <div style={{ ...T.scripture, color: "#2090FF", backgroundColor: "rgba(32,144,255,0.15)", padding: "4px 16px", borderRadius: "20px", border: "1px solid rgba(32,144,255,0.3)" }}>
+                Special Announcement
+              </div>
+              <h1 style={{ ...T.displayXL, color: White, margin: 0, letterSpacing: "-0.02em" }}>
+                We Are Building
+              </h1>
+              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.9)", maxWidth: "680px", margin: 0, lineHeight: "1.65em" }}>
+                After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home. Our next step is to build &quot;The Publishers House,&quot; a multi-purpose facility that will include an auditorium, lecture halls, offices, and a media studio. We prayerfully invite you to partner with us in this exciting building phase.
+              </p>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "12px" }}>
+                <Link
+                  href="/giving"
+                  style={{
+                    ...T.button,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "48px",
+                    padding: "0 32px",
+                    borderRadius: "2px",
+                    backgroundColor: "#2090FF",
+                    color: White,
+                    textDecoration: "none",
+                    border: "1px solid #2090FF",
+                    boxShadow: "0 4px 16px rgba(32,144,255,0.35)"
+                  }}
+                >
+                  Give Toward the Project
+                </Link>
+                <a
+                  href="https://forms.gle/4Gimdh1WcUerMQvVA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    ...T.button,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "48px",
+                    padding: "0 28px",
+                    borderRadius: "2px",
+                    border: `1px solid ${White}`,
+                    color: White,
+                    textDecoration: "none",
+                    background: "transparent"
+                  }}
+                >
+                  Partner With Us
+                </a>
+              </div>
             </div>
           </div>
-          <div style={{ ...T.colophon, color:"rgba(255,255,255,0.75)", marginTop:"8px" }}>{s.heroAddress||D.heroAddress}</div>
+        </div>
+
+        {/* Carousel indicator dots */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "28px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            zIndex: 10,
+          }}
+        >
+          {[0, 1].map((index) => (
+            <button
+              key={index}
+              onClick={() => setHeroSlide(index)}
+              aria-label={`Slide ${index + 1}`}
+              style={{
+                width: heroSlide === index ? "28px" : "8px",
+                height: "8px",
+                borderRadius: "4px",
+                backgroundColor: heroSlide === index ? "#2090FF" : "rgba(255,255,255,0.45)",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 300ms ease",
+                padding: 0,
+              }}
+            />
+          ))}
         </div>
       </section>
 
@@ -234,6 +386,9 @@ export default function HomeContent() {
           </div>
         </div>
       </section>
+
+      {/* ══════════════ FROM THE ARTICLES (WORTH READING) ══════════════ */}
+      <ArticleCarousel />
 
       {/* ══════════════ WHO WE ARE ══════════════ */}
       <section className="tph-hero" style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:"24px", overflow:"hidden", borderBottom:"none" }}>

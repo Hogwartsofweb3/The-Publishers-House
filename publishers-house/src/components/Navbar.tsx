@@ -8,17 +8,10 @@ import { usePathname } from "next/navigation";
 // Nav links: UI/Label — Poppins SemiBold 11px, 0.16em tracking, UPPERCASE, white
 
 const navLinks = [
+  { label: "Home", href: "/", isHome: true },
   { label: "About", href: "/about" },
   { label: "Sermons and Talks", href: "/sermons" },
-  { 
-    label: "Resources", 
-    href: "/resources", 
-    dropdown: [
-      { label: "All Resources", href: "/resources" },
-      { label: "Books", href: "/resources/books" },
-      { label: "Study Guides", href: "/resources/studies" },
-    ]
-  },
+  { label: "Resources", href: "/resources" },
   { label: "Programs", href: "/programs" },
   { label: "Events", href: "/events" },
   { label: "Articles", href: "/articles" },
@@ -88,9 +81,9 @@ export default function Navbar() {
             className="nav-desktop"
           >
             {navLinks.map((link) => {
-              const active = pathname === link.href || pathname.startsWith(link.href + "/");
+              const active = link.href === "/" ? pathname === "/" : (pathname === link.href || pathname.startsWith(link.href + "/"));
               return (
-                <li key={link.href} className={link.dropdown ? "nav-dropdown-wrapper" : ""}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     style={{
@@ -107,25 +100,21 @@ export default function Navbar() {
                       borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
                       display: "flex",
                       alignItems: "center",
-                      gap: "4px"
+                      gap: "6px"
                     }}
                   >
-                    {link.label}
-                    {link.dropdown && (
-                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                    {link.isHome ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                          <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                        <span>Home</span>
+                      </span>
+                    ) : (
+                      link.label
                     )}
                   </Link>
-                  {link.dropdown && (
-                    <div className="nav-dropdown">
-                      {link.dropdown.map(sublink => (
-                        <Link key={sublink.href} href={sublink.href} className="nav-dropdown-item">
-                          {sublink.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
                 </li>
               );
             })}
@@ -204,27 +193,38 @@ export default function Navbar() {
           }}
         >
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-            {navLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  style={{
-                    display: "block",
-                    padding: "12px 16px",
-                    fontFamily: "'Poppins', sans-serif",
-                    fontWeight: 600,
-                    fontSize: "11px",
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    color: pathname === link.href ? "#6496EF" : "#FFFFFF",
-                    textDecoration: "none",
-                    borderBottom: "1px solid rgba(100,150,239,0.2)",
-                  }}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {navLinks.map((link) => {
+              const active = link.href === "/" ? pathname === "/" : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "12px 16px",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 600,
+                      fontSize: "11px",
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: active ? "#6496EF" : "#FFFFFF",
+                      textDecoration: "none",
+                      borderBottom: "1px solid rgba(100,150,239,0.2)",
+                    }}
+                  >
+                    {link.isHome && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                    )}
+                    <span>{link.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
             <li style={{ marginTop: "16px" }}>
               <Link
                 href="/giving"
@@ -258,43 +258,6 @@ export default function Navbar() {
           padding: 16px 100px;
           max-width: 1440px;
           margin: 0 auto;
-        }
-        
-        .nav-dropdown-wrapper {
-          position: relative;
-        }
-        
-        .nav-dropdown {
-          display: none;
-          position: absolute;
-          top: 100%;
-          left: 0;
-          background: #151A54;
-          border: 1px solid #6496EF;
-          min-width: 220px;
-          padding: 8px 0;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-          z-index: 400;
-        }
-        
-        .nav-dropdown-wrapper:hover .nav-dropdown {
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .nav-dropdown-item {
-          padding: 12px 24px;
-          color: #FFFFFF;
-          text-decoration: none;
-          font-family: 'Poppins', sans-serif;
-          font-weight: 500;
-          font-size: 13px;
-          transition: background 150ms ease, color 150ms ease;
-        }
-        
-        .nav-dropdown-item:hover {
-          background: rgba(100, 150, 239, 0.1);
-          color: #6496EF;
         }
         
         @media (max-width: 768px) {

@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Public readable content collections (CMS managed)
+    match /sermons/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /articles/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /programs/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /leadership/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Homepage settings and gatherings
+    match /homeSettings/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /gatherings/{docId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Transactions / giving
+    match /transactions/{docId} {
+      allow read, write: if true; // allow recording gifts
+    }
+
+    // User management & Portal
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Portal data collections
+    match /audit_logs/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /testimonies/{docId} {
+      allow read: if true;
+      allow write: if true; // Members/seekers can submit
+    }
+
+    match /prayers/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if true; // Can submit prayer request
+    }
+
+    match /attendance/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

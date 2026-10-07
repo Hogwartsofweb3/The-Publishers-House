@@ -47,15 +47,60 @@ const Paper300 = "#D3DAEC";
 const Paper400 = "#C0C9E0";
 const White = "#FFFFFF";
 
+const INITIAL_ARTICLES: Article[] = [
+  {
+    id: "art-influencer",
+    title: "INFLUENCER CULTURE AND SELF-WORTH: DO FAME AND FOLLOWERS DEFINE VALUE FROM A BIBLICAL PERSPECTIVE?",
+    slug: "influencer-culture-and-self-worth",
+    excerpt: "Does God assess worth the same way the world does? Many Christians have been blinded to a deep truth by the unrelenting need for acceptance and an orphan spirit, which is characterized by emotions of abandonment, rejection, loneliness, and a lack of belonging.",
+    coverImageUrl: "https://i.postimg.cc/0NSxwv0x/d9a11-1hdvqaknzmb0fi-qhqrew7a.jpg",
+    author: "OYEWOLE PRECIOUS IBUKUNOLUWA",
+    categories: ["INFLUENCER CULTURE"],
+    publishedAt: "2025-07-23T00:00:00.000Z",
+    body: "",
+    createdAt: null,
+    updatedAt: null,
+    published: true,
+  },
+  {
+    id: "art-grief",
+    title: "COMFORT IN GRIEF – HOW GOD SUSTAINS THE BROKENHEARTED.",
+    slug: "comfort-in-grief",
+    excerpt: "Grief, they say, has five stages: denial, anger, bargaining, depression, and acceptance. The reality, however, is that it is seldom neat or linear.",
+    coverImageUrl: "https://i.postimg.cc/C1NjSWt3/whatsapp-image-2026-09-28-at-10-03-29-am.webp",
+    author: "THE PUBLISHERS HOUSE EDITORIAL TEAM",
+    categories: ["FAITH"],
+    publishedAt: "2026-09-28T00:00:00.000Z",
+    body: "",
+    createdAt: null,
+    updatedAt: null,
+    published: true,
+  },
+  {
+    id: "art-serving",
+    title: "SERVING GOD WITHOUT LOSING GOD",
+    slug: "serving-god-without-losing-god",
+    excerpt: "Activity in the house of God is not the same as communion with the God of the house. We must learn to minister from His presence, not for His approval.",
+    coverImageUrl: "https://i.postimg.cc/bvxcvJLK/whatsapp-image-2026-07-18-at-12-47-59-pm-(1).webp",
+    author: "THE PUBLISHERS HOUSE",
+    categories: ["DISCIPLESHIP"],
+    publishedAt: "2026-07-18T00:00:00.000Z",
+    body: "",
+    createdAt: null,
+    updatedAt: null,
+    published: true,
+  }
+];
+
 export default function ArticleCarousel() {
-  const [queue, setQueue] = useState<Article[]>([]);
+  const [queue, setQueue] = useState<Article[]>(INITIAL_ARTICLES);
   const [current, setCurrent] = useState(0);
   const [visible, setVisible] = useState(true);
-  const [newestSlug, setNewestSlug] = useState<string>("");
+  const [newestSlug, setNewestSlug] = useState<string>("influencer-culture-and-self-worth");
 
   useEffect(() => {
     getArticles(20).then((fetched) => {
-      if (!fetched.length) return;
+      if (!fetched || !fetched.length) return;
       // Sort by date to find newest
       const sorted = [...fetched].sort(
         (a, b) =>
@@ -67,7 +112,7 @@ export default function ArticleCarousel() {
       // Newest first, then shuffle the rest for random order
       const rest = shuffle(sorted.slice(1));
       setQueue([newest, ...rest]);
-    });
+    }).catch(() => {});
   }, []);
 
   const advance = useCallback(

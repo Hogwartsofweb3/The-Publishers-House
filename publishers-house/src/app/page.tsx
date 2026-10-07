@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ArticleCarousel from "@/components/ArticleCarousel";
 import HomeContent from "@/components/HomeContent";
 import FloatingAttendance from "@/components/FloatingAttendance";
 
@@ -48,9 +47,6 @@ export default function HomePage() {
       <main>
         {/* All editable dynamic sections — fetched live from Firestore */}
         <HomeContent />
-
-        {/* Article Carousel — auto from Firestore articles */}
-        <ArticleCarousel />
 
         {/* Flagship Programs — static (managed via CMS Programs) */}
         <section className="tph-section" style={{ backgroundColor: Paper100 }}>

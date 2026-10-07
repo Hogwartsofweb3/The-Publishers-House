@@ -26,8 +26,17 @@ const T = {
 export default function SermonDetailClient({ sermon, relatedSermons }: { sermon: Sermon, relatedSermons: Sermon[] }) {
   const [videoOpen, setVideoOpen] = useState(false);
   const { playSermon } = useAudio();
-
   const dateStr = sermon.date ? new Date(sermon.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.') : "00.00.0000";
+
+  const handleListen = () => {
+    if (sermon.audioUrl) {
+      playSermon(sermon);
+    } else if (sermon.videoUrl) {
+      setVideoOpen(true);
+    } else {
+      alert("Audio message is being uploaded and will be available shortly.");
+    }
+  };
 
   return (
     <>
@@ -70,7 +79,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
             
             {/* Action Buttons */}
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <button onClick={() => playSermon(sermon)} style={{ ...T.button, padding: "14px 32px", backgroundColor: White, color: Navy, border: "none", cursor: "pointer" }}>
+              <button onClick={handleListen} style={{ ...T.button, padding: "14px 32px", backgroundColor: White, color: Navy, border: "none", cursor: "pointer" }}>
                 LISTEN
               </button>
               <button onClick={() => setVideoOpen(true)} style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", cursor: "pointer", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 
@@ -99,6 +99,11 @@ export default function HomepageEditor() {
   const saveSettings = async () => {
     setSaving(true);
     try {
+      if (!auth.currentUser) {
+        flash("Error: You are not signed in. Please sign in to save changes.");
+        setSaving(false);
+        return;
+      }
       await setDoc(doc(db,"homeSettings","main"), settings, { merge:true });
       flash("Saved ✓ — changes will appear on the homepage shortly.");
     } catch(e: any) { flash("Error: "+e.message); }
@@ -110,6 +115,11 @@ export default function HomepageEditor() {
     if (!gForm.title.trim()) { flash("Title is required"); return; }
     setGLoading(true);
     try {
+      if (!auth.currentUser) {
+        flash("Error: You are not signed in. Please sign in to save changes.");
+        setGLoading(false);
+        return;
+      }
       if (editId) {
         await updateDoc(doc(db,"gatherings",editId), { ...gForm, order:Number(gForm.order) });
         flash("Gathering updated ✓");

@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, query, where, limit as firestoreLimit } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, query, where, limit as firestoreLimit, doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
@@ -234,12 +234,18 @@ export async function getTransactions(limitCount = 50): Promise<Transaction[]> {
 }
 
 export async function getSermonById(id: string): Promise<Sermon | null> {
+  if (!id) return null;
   try {
+    const docSnap = await getDoc(doc(db, "sermons", id));
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Sermon;
+    }
     const snap = await getDocs(query(collection(db, "sermons")));
-    const doc = snap.docs.find(d => d.id === id);
-    if (!doc) return null;
-    return { id: doc.id, ...doc.data() } as Sermon;
+    const found = snap.docs.find((d) => d.id === id || (d.data() as any).slug === id);
+    if (found) return { id: found.id, ...found.data() } as Sermon;
+    return null;
   } catch (e) {
+    console.error("Error in getSermonById:", e);
     return null;
   }
 }
