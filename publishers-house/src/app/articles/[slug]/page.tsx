@@ -222,7 +222,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            <TextToSpeech title={article.title} htmlContent={article.body} />
+            <TextToSpeech title={article.title} htmlContent={article.body} audioUrl={article.audioUrl} />
 
             {article.body ? (
               <div

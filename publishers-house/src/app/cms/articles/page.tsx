@@ -69,6 +69,7 @@ export default function ArticlesEditor() {
   const [msg, setMsg] = useState("");
   const [view, setView] = useState<"list" | "editor">("list");
   const [importing, setImporting] = useState(false);
+  const [ttsLoading, setTtsLoading] = useState(false);
 
   const fetchArticles = async () => {
     const q = query(collection(db, "articles"), orderBy("publishedAt", "desc"));
@@ -82,6 +83,39 @@ export default function ArticlesEditor() {
     title.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").trim();
 
   const F = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }));
+
+  const handleGenerateVoice = async () => {
+    if (!form.body && !form.title) {
+      setMsg("Error: Please add article title and content first");
+      return;
+    }
+    setTtsLoading(true);
+    setMsg("Generating Rev. Joshua's audio with AI...");
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          text: form.body || form.excerpt,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to generate audio. Make sure ELEVENLABS_API_KEY is configured.");
+      }
+
+      const blob = await res.blob();
+      const localAudioUrl = URL.createObjectURL(blob);
+      F("audioUrl", localAudioUrl);
+      setMsg("Audio generated successfully ✓ (Preview below)");
+    } catch (err: any) {
+      setMsg("TTS Error: " + err.message);
+    } finally {
+      setTtsLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.title.trim()) { setMsg("Title is required"); return; }
@@ -205,7 +239,7 @@ export default function ArticlesEditor() {
         <div style={{ flex: 1, maxWidth: "760px", width: "100%", margin: "0 auto", padding: "48px 24px 96px" }}>
 
           {/* Cover image URL — subtle field */}
-          <div style={{ marginBottom: "32px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", letterSpacing: "0.16em", textTransform: "uppercase", color: DIM, whiteSpace: "nowrap" }}>
               Cover image URL
             </span>
@@ -215,6 +249,34 @@ export default function ArticlesEditor() {
               placeholder="https://..."
               style={{ ...fieldStyle, fontSize: "13px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT }}
             />
+          </div>
+
+          {/* Voice Narration (Audio on the go) */}
+          <div style={{ marginBottom: "32px", padding: "16px 20px", backgroundColor: "#F4F6FB", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: TEXT }}>
+                🎙️ Audio on the Go (Rev. Joshua&apos;s Voice)
+              </span>
+              <button
+                type="button"
+                onClick={handleGenerateVoice}
+                disabled={ttsLoading}
+                style={pill(ACCENT, "#FFFFFF")}
+              >
+                {ttsLoading ? "Generating..." : "Generate with AI"}
+              </button>
+            </div>
+            <input
+              value={form.audioUrl}
+              onChange={(e) => F("audioUrl", e.target.value)}
+              placeholder="Audio URL (paste direct link or click Generate with AI)"
+              style={{ ...fieldStyle, fontSize: "12px", fontFamily: "'Poppins', sans-serif", color: SUBTEXT, borderBottomColor: BORDER }}
+            />
+            {form.audioUrl && (
+              <div style={{ marginTop: "10px" }}>
+                <audio controls src={form.audioUrl} style={{ width: "100%", height: "36px" }} />
+              </div>
+            )}
           </div>
 
           {/* Title */}
