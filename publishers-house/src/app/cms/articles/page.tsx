@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
   doc, query, orderBy,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Link from "next/link";
 import RichEditor from "@/components/RichEditor";
 
@@ -107,9 +108,18 @@ export default function ArticlesEditor() {
       }
 
       const blob = await res.blob();
-      const localAudioUrl = URL.createObjectURL(blob);
-      F("audioUrl", localAudioUrl);
-      setMsg("Audio generated successfully ✓ (Preview below)");
+      try {
+        const fileSlug = form.slug || autoSlug(form.title) || `audio_${Date.now()}`;
+        const storageRef = ref(storage, `articles/audio/${fileSlug}.mp3`);
+        await uploadBytes(storageRef, blob);
+        const permUrl = await getDownloadURL(storageRef);
+        F("audioUrl", permUrl);
+        setMsg("Audio generated & saved to storage ✓");
+      } catch (storageErr) {
+        const localAudioUrl = URL.createObjectURL(blob);
+        F("audioUrl", localAudioUrl);
+        setMsg("Audio generated ✓ (Preview ready)");
+      }
     } catch (err: any) {
       setMsg("TTS Error: " + err.message);
     } finally {
