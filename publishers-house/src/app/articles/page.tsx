@@ -8,7 +8,14 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Articles & Essays | The Publishers House",
-  description: "Written teachings, apologetics, and reflections on the Christian faith and life.",
+  description:
+    "Written teachings, apologetics, and reflections on the Christian faith and life. All articles edited and vetted by The Publishers House Editorial Unit.",
+  openGraph: {
+    title: "Articles & Essays | The Publishers House",
+    description:
+      "Written teachings, apologetics, and reflections on faith and life — edited and vetted by The Publishers House.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Articles – The Publishers House" }],
+  },
 };
 
 const S = {

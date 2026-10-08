@@ -4,9 +4,15 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "About | The Publishers House",
+  title: "About Us | The Publishers House",
   description:
-    "An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God's Word to every sphere of society.",
+    "Learn about The Publishers House — our vision, leadership, and what we believe. Led by Rev. Joshua Agunbiade, we are an apostolic ministry committed to proclaiming God's Word to every sphere of society.",
+  openGraph: {
+    title: "About Us | The Publishers House",
+    description:
+      "An apostolic ministry committed to proclaiming the unchanging truth of God's Word. Led by Rev. Joshua Agunbiade.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "About – The Publishers House" }],
+  },
 };
 
 // Figma text styles (same tokens as homepage)

@@ -10,8 +10,15 @@ import SermonsClient from "./SermonsClient";
 export const revalidate = 0; // Always fetch fresh — no caching
 
 export const metadata: Metadata = {
-  title: "Sermons | The Publishers House",
-  description: "Teachings and sermons from The Publishers House.",
+  title: "Sermons & Teachings | The Publishers House",
+  description:
+    "Browse every sermon preached at The Publishers House — searchable by title, series, speaker, and Scripture reference. Watch on YouTube, listen, or download.",
+  openGraph: {
+    title: "Sermons & Teachings | The Publishers House",
+    description:
+      "Every message preached at The Publishers House. Search by title, speaker, series, or Scripture.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Sermons – The Publishers House" }],
+  },
 };
 
 const Navy    = "#151A54";

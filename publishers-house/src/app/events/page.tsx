@@ -8,8 +8,14 @@ import { getEvents, type EventItem } from "@/lib/firebase";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Events | The Publishers House",
-  description: "Every gathering in Jos and Abuja — weekly services and flagship programmes in one place.",
+  title: "Events & Programmes | The Publishers House",
+  description:
+    "Upcoming services, conferences, and special events at The Publishers House in Jos and Abuja. Find dates, register, and stay connected with what God is doing.",
+  openGraph: {
+    title: "Events & Programmes | The Publishers House",
+    description: "Upcoming services, conferences, and special events at The Publishers House. Find dates and register.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Events – The Publishers House" }],
+  },
 };
 
 const Navy    = "#151A54";
