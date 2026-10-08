@@ -156,28 +156,74 @@ export async function getEvents(limitCount = 12): Promise<EventItem[]> {
   return results.sort((a, b) => (a.startAt < b.startAt ? -1 : 1));
 }
 
-export async function getArticles(limitCount = 12): Promise<Article[]> {
-  const q = query(
-    collection(db, "articles"),
-    where("published", "==", true),
-    firestoreLimit(limitCount)
-  );
-  const snap = await getDocs(q);
-  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Article));
-  return results.sort((a, b) => (a.publishedAt > b.publishedAt ? -1 : 1));
+import { CURATED_ARTICLES, getCuratedArticleBySlug } from "./articlesCurated";
+
+export async function getArticles(limitCount = 50): Promise<Article[]> {
+  try {
+    const q = query(
+      collection(db, "articles"),
+      where("published", "==", true),
+      firestoreLimit(limitCount)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Article));
+      // Merge with curated articles so full body, cover image, and real author are always present
+      const merged = results.map((art) => {
+        const curated = getCuratedArticleBySlug(art.slug);
+        const hasFullBody = art.body && art.body.length > 1000 && !art.body.includes("Continue reading");
+        return {
+          ...art,
+          coverImageUrl: art.coverImageUrl || curated?.coverImageUrl || "",
+          body: hasFullBody ? art.body : (curated?.body || art.body || ""),
+          author: (art.author && !art.author.toLowerCase().includes("editorialtphjos")) ? art.author : (curated?.author || art.author || "The Publishers House"),
+          categories: (art.categories && art.categories.length > 0 && !art.categories.includes("Uncategorized")) ? art.categories : (curated?.categories || ["Christian Living"]),
+          excerpt: art.excerpt || curated?.excerpt || "",
+        };
+      });
+
+      // Also ensure all curated articles that might not yet be in Firestore are included
+      for (const cur of CURATED_ARTICLES) {
+        if (!merged.some(m => m.slug === cur.slug)) {
+          merged.push(cur);
+        }
+      }
+
+      return merged.sort((a, b) => (a.publishedAt > b.publishedAt ? -1 : 1)).slice(0, limitCount);
+    }
+  } catch (e) {
+    console.error("Firestore getArticles error, using curated:", e);
+  }
+  return CURATED_ARTICLES.slice(0, limitCount);
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
-  const q = query(
-    collection(db, "articles"),
-    where("published", "==", true),
-    where("slug", "==", slug),
-    firestoreLimit(1)
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return { id: doc.id, ...doc.data() } as Article;
+  const curated = getCuratedArticleBySlug(slug);
+  try {
+    const q = query(
+      collection(db, "articles"),
+      where("published", "==", true),
+      where("slug", "==", slug),
+      firestoreLimit(1)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const docSnap = snap.docs[0];
+      const art = { id: docSnap.id, ...docSnap.data() } as Article;
+      const hasFullBody = art.body && art.body.length > 1000 && !art.body.includes("Continue reading");
+      return {
+        ...art,
+        coverImageUrl: art.coverImageUrl || curated?.coverImageUrl || "",
+        body: hasFullBody ? art.body : (curated?.body || art.body || ""),
+        author: (art.author && !art.author.toLowerCase().includes("editorialtphjos")) ? art.author : (curated?.author || art.author || "The Publishers House"),
+        categories: (art.categories && art.categories.length > 0 && !art.categories.includes("Uncategorized")) ? art.categories : (curated?.categories || ["Christian Living"]),
+        excerpt: art.excerpt || curated?.excerpt || "",
+      };
+    }
+  } catch (e) {
+    console.error("Firestore getArticleBySlug error:", e);
+  }
+  return curated;
 }
 
 export async function getPrograms(): Promise<Program[]> {

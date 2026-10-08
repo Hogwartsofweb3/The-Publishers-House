@@ -177,33 +177,42 @@ export default function ArticlesEditor() {
   };
 
   const handleImportWP = async () => {
-    if (!confirm("Pull latest articles from WordPress feed?")) return;
+    if (!confirm("Pull latest articles from WordPress feed? This will update articles with full content and cover images.")) return;
     setImporting(true);
-    setMsg("Fetching...");
+    setMsg("Fetching WordPress articles...");
     try {
       const res = await fetch("/api/wp-feed");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      let updatedCount = 0;
       let newCount = 0;
       for (const item of data.items) {
-        const exists = articles.some((a) => a.title === item.title);
-        if (!exists) {
+        const existing = articles.find((a) => a.slug === item.slug || a.title?.toLowerCase().trim() === item.title?.toLowerCase().trim());
+        const articleData = {
+          title: item.title,
+          slug: item.slug || autoSlug(item.title),
+          excerpt: item.excerpt || "",
+          body: item.body || "",
+          coverImageUrl: item.coverImageUrl || "",
+          author: item.author || "Pastor Ngbede Odeh",
+          categories: item.categories || ["Christian Living"],
+          publishedAt: item.isoDate || new Date().toISOString().split("T")[0],
+          published: true,
+          updatedAt: new Date(),
+        };
+
+        if (existing) {
+          await updateDoc(doc(db, "articles", existing.id), articleData);
+          updatedCount++;
+        } else {
           await addDoc(collection(db, "articles"), {
-            title: item.title,
-            slug: autoSlug(item.title),
-            excerpt: item.contentSnippet?.substring(0, 150) + "..." || "",
-            body: item.content || item.contentSnippet || "",
-            coverImageUrl: "",
-            author: item.creator || "Ngbede Odeh",
-            categories: item.categories || [],
-            publishedAt: item.isoDate ? item.isoDate.split("T")[0] : new Date().toISOString().split("T")[0],
-            published: true,
+            ...articleData,
             createdAt: new Date(),
           });
           newCount++;
         }
       }
-      setMsg(`Imported ${newCount} new articles.`);
+      setMsg(`Synced ${updatedCount} existing and added ${newCount} new articles ✓`);
       fetchArticles();
     } catch (err: any) { setMsg("WP Error: " + err.message); }
     setImporting(false);

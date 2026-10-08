@@ -64,6 +64,8 @@ const T = {
   button:    { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
 };
 
+import { getAuthorAvatar } from "@/lib/authorAvatars";
+
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
@@ -82,6 +84,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         year: "numeric",
       })
     : "";
+
+  const authorAvatar = getAuthorAvatar(article.author || "");
 
   return (
     <>
@@ -179,26 +183,59 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 borderTop: "1px solid rgba(255,255,255,0.18)",
               }}
             >
-              {article.author && (
-                <span style={{ ...T.colophon, color: "rgba(255,255,255,0.80)" }}>
-                  {article.author}
-                </span>
+              {authorAvatar.type === "image" ? (
+                <img
+                  src={authorAvatar.src}
+                  alt={article.author}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid rgba(255,255,255,0.4)",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #0140C1, #2090FF)",
+                    color: "#FFFFFF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "2px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  {authorAvatar.initials}
+                </div>
               )}
-              {dateLabel && (
-                <>
-                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.3)" }}>·</span>
-                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.58)" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {article.author && (
+                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.95)", fontWeight: 600 }}>
+                    {article.author}
+                  </span>
+                )}
+                {dateLabel && (
+                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.6)", fontSize: "10px" }}>
                     {dateLabel}
                   </span>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </section>
 
         {/* ── ARTICLE BODY ── */}
         <section style={{ backgroundColor: White, padding: "72px 100px 96px" }}>
-          <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <div style={{ maxWidth: "760px", margin: "0 auto" }}>
+            {/* Audio player matching screenshot with sliding bar */}
+            <TextToSpeech title={article.title} slug={article.slug} audioUrl={article.audioUrl} />
+
             {/* ── COVER IMAGE (before body) ── */}
             {coverImage && (
               <div
@@ -208,6 +245,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                   borderRadius: "8px",
                   overflow: "hidden",
                   backgroundColor: "#F4F6FB",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
                 }}
               >
                 <img
@@ -221,8 +259,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 />
               </div>
             )}
-
-            <TextToSpeech title={article.title} htmlContent={article.body} audioUrl={article.audioUrl} />
 
             {article.body ? (
               <div

@@ -2,43 +2,29 @@
 
 import { useState, useEffect, useRef } from "react";
 
-const Navy    = "#151A54";
-const Blue500 = "#2090FF";
-const Blue700 = "#0140C1";
-const Paper200 = "#E8ECF7";
-const Slate500 = "#747CA1";
-const White   = "#FFFFFF";
-
 interface TextToSpeechProps {
   title: string;
-  htmlContent: string;
+  slug?: string;
   audioUrl?: string;
 }
 
-export default function TextToSpeech({ title, htmlContent, audioUrl }: TextToSpeechProps) {
-  // If an audioUrl (cloned voice recording / ElevenLabs MP3) is available
-  if (audioUrl) {
-    return <AudioFilePlayer title={title} audioUrl={audioUrl} />;
-  }
-
-  // Fallback: Browser Web Speech API
-  return <BrowserSpeechPlayer title={title} htmlContent={htmlContent} />;
-}
-
-/* ── Dedicated player for the cloned voice MP3 file ──────────────── */
-function AudioFilePlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
+export default function TextToSpeech({ title, slug, audioUrl }: TextToSpeechProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState("0:00");
-  const [duration, setDuration] = useState("0:00");
+  const [currentTime, setCurrentTime] = useState("00:00");
+  const [duration, setDuration] = useState("00:00");
   const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Audio source: explicit audioUrl or on-demand streaming endpoint
+  const resolvedAudioSrc = audioUrl || (slug ? `/api/tts?slug=${slug}` : "");
+
   const formatTime = (time: number) => {
-    if (isNaN(time) || !isFinite(time)) return "0:00";
+    if (isNaN(time) || !isFinite(time) || time < 0) return "00:00";
     const m = Math.floor(time / 60);
     const s = Math.floor(time % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   const togglePlay = () => {
@@ -47,7 +33,17 @@ function AudioFilePlayer({ title, audioUrl }: { title: string; audioUrl: string 
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      setIsLoading(true);
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.warn("Audio play error:", err);
+          setIsLoading(false);
+        });
     }
   };
 
@@ -63,13 +59,17 @@ function AudioFilePlayer({ title, audioUrl }: { title: string; audioUrl: string 
   const handleLoadedMetadata = () => {
     if (!audioRef.current) return;
     setDuration(formatTime(audioRef.current.duration));
+    setIsLoading(false);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const seekPct = Number(e.target.value);
-    const newTime = (seekPct / 100) * (audioRef.current.duration || 0);
-    audioRef.current.currentTime = newTime;
+    const totalDuration = audioRef.current.duration;
+    if (totalDuration && !isNaN(totalDuration)) {
+      const newTime = (seekPct / 100) * totalDuration;
+      audioRef.current.currentTime = newTime;
+    }
     setProgress(seekPct);
   };
 
@@ -81,258 +81,230 @@ function AudioFilePlayer({ title, audioUrl }: { title: string; audioUrl: string 
     setPlaybackRate(nextRate);
   };
 
+  if (!resolvedAudioSrc) return null;
+
+  const downloadHref = audioUrl || `/api/tts?slug=${slug}&download=1`;
+
   return (
     <div
       style={{
-        marginBottom: "40px",
-        padding: "20px 24px",
-        backgroundColor: "#F4F6FB",
+        width: "100%",
+        backgroundColor: "#0B0E14",
+        color: "#FFFFFF",
         borderRadius: "8px",
-        border: `1px solid ${Paper200}`,
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
+        padding: "18px 24px 20px",
+        marginBottom: "36px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+        border: "1px solid rgba(255,255,255,0.08)",
       }}
     >
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={resolvedAudioSrc}
+        preload="metadata"
+        onWaiting={() => setIsLoading(true)}
+        onCanPlay={() => setIsLoading(false)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false);
+          setProgress(0);
+        }}
       />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase", color: Blue500, marginBottom: "2px" }}>
-            Audio on the Go · Rev. Joshua Agunbiade
-          </div>
-          <div style={{ fontFamily: "var(--font-playfair)", fontSize: "16px", color: Navy, fontWeight: 600 }}>
-            {isPlaying ? "Playing article narration..." : "Listen to this article"}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            onClick={togglePlay}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 22px",
-              backgroundColor: isPlaying ? Navy : Blue700,
-              color: White,
-              border: "none",
-              borderRadius: "32px",
-              cursor: "pointer",
-              fontFamily: "var(--font-poppins)",
-              fontWeight: 600,
-              fontSize: "12px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              transition: "all 0.2s",
-            }}
-          >
-            {isPlaying ? "⏸ Pause" : "▶ Play"}
-          </button>
-
-          <button
-            onClick={changeSpeed}
-            style={{
-              background: "none",
-              border: `1px solid ${Paper200}`,
-              padding: "6px 12px",
-              borderRadius: "16px",
-              fontFamily: "var(--font-poppins)",
-              fontSize: "11px",
-              fontWeight: 600,
-              color: Navy,
-              cursor: "pointer",
-            }}
-          >
-            {playbackRate}x
-          </button>
-        </div>
+      {/* Title centered at top */}
+      <div
+        style={{
+          textAlign: "center",
+          fontFamily: "var(--font-poppins)",
+          fontSize: "11px",
+          fontWeight: 600,
+          letterSpacing: "0.15em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.7)",
+          marginBottom: "12px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          padding: "0 10px",
+        }}
+      >
+        {isLoading ? "Loading audio stream..." : title}
       </div>
 
-      {/* Progress & Time */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span style={{ fontSize: "11px", fontFamily: "var(--font-poppins)", color: Slate500, minWidth: "32px" }}>{currentTime}</span>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={isNaN(progress) ? 0 : progress}
-          onChange={handleSeek}
-          style={{ flex: 1, accentColor: Blue700, height: "4px", cursor: "pointer" }}
-        />
-        <span style={{ fontSize: "11px", fontFamily: "var(--font-poppins)", color: Slate500, minWidth: "32px", textAlign: "right" }}>{duration}</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Browser Web Speech fallback player ──────────────────────────── */
-function BrowserSpeechPlayer({ title, htmlContent }: { title: string; htmlContent: string }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isSupported, setIsSupported] = useState(true);
-
-  const synthRef = useRef<SpeechSynthesis | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const keepAliveInterval = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.speechSynthesis) {
-      setIsSupported(false);
-      return;
-    }
-
-    synthRef.current = window.speechSynthesis;
-
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = htmlContent;
-    const textContent = tempDiv.textContent || tempDiv.innerText || "";
-    const textToRead = `${title}. . ${textContent}`;
-
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-      if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-    };
-
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-      if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-    };
-
-    utteranceRef.current = utterance;
-
-    return () => {
-      if (synthRef.current) synthRef.current.cancel();
-      if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-    };
-  }, [title, htmlContent]);
-
-  const startKeepAlive = () => {
-    if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-    keepAliveInterval.current = setInterval(() => {
-      if (synthRef.current?.speaking && !synthRef.current?.paused) {
-        synthRef.current.pause();
-        synthRef.current.resume();
-      }
-    }, 14000);
-  };
-
-  const handlePlayPause = () => {
-    if (!synthRef.current || !utteranceRef.current) return;
-
-    if (isPlaying) {
-      synthRef.current.pause();
-      setIsPlaying(false);
-      setIsPaused(true);
-      if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-    } else if (isPaused) {
-      synthRef.current.resume();
-      setIsPlaying(true);
-      setIsPaused(false);
-      startKeepAlive();
-    } else {
-      synthRef.current.cancel();
-      synthRef.current.speak(utteranceRef.current);
-      setIsPlaying(true);
-      setIsPaused(false);
-      startKeepAlive();
-    }
-  };
-
-  const handleStop = () => {
-    if (!synthRef.current) return;
-    synthRef.current.cancel();
-    setIsPlaying(false);
-    setIsPaused(false);
-    if (keepAliveInterval.current) clearInterval(keepAliveInterval.current);
-  };
-
-  if (!isSupported || !htmlContent) return null;
-
-  return (
-    <div
-      style={{
-        marginBottom: "40px",
-        padding: "20px 24px",
-        backgroundColor: "#F4F6FB",
-        borderRadius: "8px",
-        border: `1px solid ${Paper200}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "16px",
-      }}
-    >
-      <div>
-        <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase", color: Blue500, marginBottom: "4px" }}>
-          Audio on the go
-        </div>
-        <div style={{ fontFamily: "var(--font-playfair)", fontSize: "16px", color: Navy, fontWeight: 600 }}>
-          {isPlaying ? "Reading aloud..." : isPaused ? "Paused" : "Listen to this article"}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "12px" }}>
+      {/* Main player controls row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "14px",
+          width: "100%",
+        }}
+      >
+        {/* Circular Play / Pause button */}
         <button
-          onClick={handlePlayPause}
+          onClick={togglePlay}
+          aria-label={isPlaying ? "Pause" : "Play"}
           style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            backgroundColor: "transparent",
+            border: "1.5px solid rgba(255,255,255,0.85)",
+            color: "#FFFFFF",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "10px 20px",
-            backgroundColor: isPlaying ? Navy : Blue700,
-            color: White,
-            border: "none",
-            borderRadius: "32px",
+            justifyContent: "center",
             cursor: "pointer",
-            fontFamily: "var(--font-poppins)",
-            fontWeight: 600,
-            fontSize: "12px",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            transition: "all 0.2s",
+            flexShrink: 0,
+            transition: "all 0.2s ease",
+            padding: 0,
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = "#FFFFFF";
+            e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.85)";
+            e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
-          {isPlaying ? "⏸ Pause" : isPaused ? "▶ Resume" : "▶ Play"}
+          {isLoading ? (
+            <span
+              style={{
+                width: "14px",
+                height: "14px",
+                border: "2px solid rgba(255,255,255,0.3)",
+                borderTopColor: "#FFFFFF",
+                borderRadius: "50%",
+                display: "inline-block",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+          ) : isPlaying ? (
+            // Pause icon
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
+              <rect x="1" width="3.5" height="14" rx="1" />
+              <rect x="7.5" width="3.5" height="14" rx="1" />
+            </svg>
+          ) : (
+            // Play icon
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" style={{ marginLeft: "2px" }}>
+              <path d="M1 1.25C1 0.63 1.68 0.25 2.21 0.58L11.21 6.33C11.71 6.65 11.71 7.35 11.21 7.67L2.21 13.42C1.68 13.75 1 13.37 1 12.75V1.25Z" />
+            </svg>
+          )}
         </button>
 
-        {(isPlaying || isPaused) && (
-          <button
-            onClick={handleStop}
+        {/* Current Time */}
+        <span
+          style={{
+            fontFamily: "var(--font-poppins)",
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.8)",
+            letterSpacing: "0.05em",
+            minWidth: "36px",
+            flexShrink: 0,
+          }}
+        >
+          {currentTime}
+        </span>
+
+        {/* Sliding Range Track */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", position: "relative" }}>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={isNaN(progress) ? 0 : progress}
+            onChange={handleSeek}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 20px",
-              backgroundColor: "transparent",
-              color: Slate500,
-              border: `1px solid ${Paper200}`,
-              borderRadius: "32px",
+              width: "100%",
+              height: "4px",
               cursor: "pointer",
-              fontFamily: "var(--font-poppins)",
-              fontWeight: 600,
-              fontSize: "12px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
+              accentColor: "#FFFFFF",
+              appearance: "none",
+              backgroundColor: "rgba(255,255,255,0.22)",
+              borderRadius: "2px",
+              outline: "none",
             }}
-          >
-            ⏹ Stop
-          </button>
-        )}
+          />
+        </div>
+
+        {/* Total Duration */}
+        <span
+          style={{
+            fontFamily: "var(--font-poppins)",
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.6)",
+            letterSpacing: "0.05em",
+            minWidth: "36px",
+            textAlign: "right",
+            flexShrink: 0,
+          }}
+        >
+          {duration}
+        </span>
+
+        {/* Speed toggle */}
+        <button
+          onClick={changeSpeed}
+          title="Playback Speed"
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "4px",
+            padding: "4px 8px",
+            color: "#FFFFFF",
+            fontFamily: "var(--font-poppins)",
+            fontSize: "10px",
+            fontWeight: 600,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          {playbackRate}x
+        </button>
+
+        {/* Download Button matching screenshot */}
+        <a
+          href={downloadHref}
+          download={`${slug || "article"}.mp3`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Download audio"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            color: "rgba(255,255,255,0.75)",
+            textDecoration: "none",
+            fontFamily: "var(--font-poppins)",
+            fontSize: "11px",
+            fontWeight: 500,
+            cursor: "pointer",
+            flexShrink: 0,
+            padding: "4px 8px",
+            borderRadius: "4px",
+            transition: "color 0.2s",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.color = "#FFFFFF")}
+          onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Download</span>
+        </a>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
