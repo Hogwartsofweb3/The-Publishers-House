@@ -39,8 +39,8 @@ export default async function ArticlesPage() {
       <main style={{ flex: 1 }}>
         {/* Hero */}
         <section
-          className="tph-hero"
-          style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "200px" }}
+          className="tph-hero articles-hero"
+          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/articles-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.85)", zIndex: 1 }} />

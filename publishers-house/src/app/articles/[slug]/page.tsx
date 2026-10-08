@@ -94,11 +94,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         {/* ── HERO ── */}
         <section
+          className="article-detail-hero"
           style={{
             position: "relative",
             backgroundColor: Navy,
             overflow: "hidden",
-            padding: "100px 100px 80px",
           }}
         >
           {/* Background image — positioned center-top to show faces/congregation */}
@@ -231,7 +231,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </section>
 
         {/* ── ARTICLE BODY ── */}
-        <section style={{ backgroundColor: White, padding: "72px 100px 96px" }}>
+        <section className="article-body-section" style={{ backgroundColor: White }}>
           <div style={{ maxWidth: "760px", margin: "0 auto" }}>
             {/* Audio player matching screenshot with sliding bar */}
             <TextToSpeech title={article.title} slug={article.slug} audioUrl={article.audioUrl} />

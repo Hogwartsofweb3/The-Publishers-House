@@ -696,3 +696,46 @@ html, body {
 
 .tph-carousel-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 0; }
 @media (max-width: 768px) { .tph-carousel-grid { grid-template-columns: 1fr !important; } }
+
+/* ── Article Hero (list page) ── */
+.tph-hero.articles-hero { padding-top: 200px; }
+@media (max-width: 1024px) { .tph-hero.articles-hero { padding-top: 120px; } }
+@media (max-width: 768px)  { .tph-hero.articles-hero { padding-top: 100px !important; padding-bottom: 48px !important; } }
+
+/* ── Article Detail Hero ── */
+.article-detail-hero { padding: 100px 100px 80px; }
+@media (max-width: 768px) { .article-detail-hero { padding: 56px 20px 48px !important; } }
+
+/* ── Article Detail Body ── */
+.article-body-section { padding: 72px 100px 96px; }
+@media (max-width: 1024px) { .article-body-section { padding: 56px 48px 80px; } }
+@media (max-width: 768px)  { .article-body-section { padding: 40px 20px 64px !important; } }
+
+/* ── Sidebar / Mobile Filter Bar toggle ── */
+.tph-sidebar { display: flex; }
+.tph-mobile-filter-bar { display: none; }
+@media (max-width: 768px) {
+  .tph-sidebar { display: none !important; }
+  .tph-mobile-filter-bar { display: flex !important; }
+}
+
+/* ── Sermons / Articles content wrapper on mobile ── */
+@media (max-width: 768px) {
+  .tph-content-with-sidebar { flex-direction: column !important; gap: 0 !important; }
+}
+
+/* ── Mobile Sermon List Card ── */
+.sermon-mobile-list { display: flex; flex-direction: column; gap: 10px; }
+.sermon-mobile-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: #FFFFFF; border-radius: 8px; border: 1px solid #E8ECF7;
+  padding: 12px; text-decoration: none; cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+.sermon-mobile-card:hover { box-shadow: 0 4px 12px rgba(21,26,84,0.08); }
+.sermon-mobile-card-thumb {
+  width: 110px; min-width: 110px; height: 80px;
+  border-radius: 4px; object-fit: cover; background-color: #151A54; flex-shrink: 0;
+}
+.sermon-mobile-card-body { flex: 1; min-width: 0; }
+
