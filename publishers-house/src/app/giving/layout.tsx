@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GivingProviders from "@/components/GivingProviders";
 
 export const metadata: Metadata = {
   title: "Give | The Publishers House",
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function GivingLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <GivingProviders>{children}</GivingProviders>;
 }
