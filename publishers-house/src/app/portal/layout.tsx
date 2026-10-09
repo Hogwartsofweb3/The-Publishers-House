@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAuth";
 import { getPortalUser, type PortalUser } from "@/lib/portalAuth";
 import Sidebar from "@/components/portal/Sidebar";
 

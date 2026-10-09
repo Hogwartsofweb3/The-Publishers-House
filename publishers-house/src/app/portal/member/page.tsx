@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged } from "firebase/auth";
 import { getPortalUser, PortalUser, UNITS, getTierLabel } from "@/lib/portalAuth";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";

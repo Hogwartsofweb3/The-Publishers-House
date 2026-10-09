@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAuth";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function CMSLayout({ children }: { children: React.ReactNode }) {

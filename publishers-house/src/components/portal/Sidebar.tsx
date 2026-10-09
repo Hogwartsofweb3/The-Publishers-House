@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAuth";
 import type { PortalUser } from "@/lib/portalAuth";
 import { getRoleColor, getRoleLabel } from "@/lib/portalAuth";
 
