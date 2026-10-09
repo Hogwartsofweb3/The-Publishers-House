@@ -316,7 +316,7 @@ export default async function AboutPage() {
                 {leadership.slice(0, 2).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/608", overflow: "hidden", marginBottom: "16px" }}>
-                      <img src={leader.photoUrl} alt={leader.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                      <img src={leader.photoUrl} alt={leader.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
@@ -330,7 +330,7 @@ export default async function AboutPage() {
                 {leadership.slice(2, 5).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/700", overflow: "hidden", marginBottom: "16px" }}>
-                      <img src={leader.photoUrl} alt={leader.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                      <img src={leader.photoUrl} alt={leader.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", fontSize: "16px", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>

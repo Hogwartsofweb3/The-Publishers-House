@@ -97,7 +97,7 @@ function DesiringGodArticleCard({ article }: { article: Article }) {
         <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: "10px",
           paddingTop: "12px", borderTop: `1px solid ${Paper200}` }}>
           {avatar.type === "image" ? (
-            <img src={avatar.src} alt={article.author}
+            <img src={avatar.src} alt={article.author} loading="lazy"
               style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
             <div style={{ width: "28px", height: "28px", borderRadius: "50%",

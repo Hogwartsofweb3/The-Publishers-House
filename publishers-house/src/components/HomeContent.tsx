@@ -409,7 +409,7 @@ export default function HomeContent() {
             <h2 style={{ ...T.displayM, color:Navy, marginBottom:"32px" }}>{s.annHeading||D.annHeading}</h2>
             {(s.annImageUrl||D.annImageUrl) && (
               <div style={{ width:"100%", borderRadius:"4px", marginBottom:"40px", overflow:"hidden", border:`1px solid ${Paper300}` }}>
-                <img src={s.annImageUrl||D.annImageUrl} alt="Announcement" style={{ width:"100%", height:"auto", display:"block" }} />
+                <img loading="lazy" src={s.annImageUrl||D.annImageUrl} alt="Announcement" style={{ width:"100%", height:"auto", display:"block" }} />
               </div>
             )}
             <div style={{ maxWidth:"640px" }}>
