@@ -174,7 +174,7 @@ export default function GivingPage() {
           className="tph-hero"
           style={{ borderBottom: "none", position: "relative", overflow: "hidden" }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center 25%", zIndex: 0 }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/giving-bg.webp')", backgroundSize: "cover", backgroundPosition: "center 25%", zIndex: 0 }} />
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.85)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>

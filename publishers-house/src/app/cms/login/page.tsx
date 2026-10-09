@@ -29,7 +29,7 @@ export default function CMSLoginPage() {
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#151A54" }}>
       {/* Background Image with Overlay */}
-      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-v2.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-v2.webp')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
       <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
       {/* Top Right Logo */}

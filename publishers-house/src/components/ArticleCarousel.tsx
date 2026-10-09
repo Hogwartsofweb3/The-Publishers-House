@@ -207,7 +207,7 @@ export default function ArticleCarousel() {
               style={{
                 backgroundImage: cover
                   ? `url(${cover})`
-                  : "url('/images/who-we-are-v2.jpg')",
+                  : "url('/images/who-we-are-v2.webp')",
                 backgroundSize: "cover",
                 backgroundPosition: "center top",
                 minHeight: "280px",

@@ -44,7 +44,7 @@ const D = {
   heroSundayLabel: "Sunday Worship",   heroSundayTime: "9:00 AM",
   heroMidweekLabel: "Midweek Service", heroMidweekTime: "5:00 PM",
   heroAddress: "The House of Bread, Korinjoh House, British, Jos · West Africa Time",
-  heroBgImage: "/images/hero-v2.jpg",
+  heroBgImage: "/images/hero-v2.webp",
 
   // Setman
   setmanHeading: "Welcome Message\nfrom the Setman",
@@ -65,14 +65,14 @@ const D = {
   teachingBtn1Label: "Listen — 48:12",    teachingBtn1Url: "/resources",
   teachingBtn2Label: "Read the Transcript", teachingBtn2Url: "/resources",
   teachingColophon: "2 Timothy 2:15,Foundations,Dr. Joshua Agunbiade,Jos,48:12",
-  teachingImageUrl: "/images/sermon-v2.jpg",
+  teachingImageUrl: "/images/sermon-v2.webp",
 
   // Who We Are
   whoEyebrow: "Who We Are",
   whoQuote: "Every believer is commissioned to become a publisher of God's message.",
   whoBody: "Established in 2020 under the leadership of Dr. Joshua Agunbiade, the ministry exists to equip believers, strengthen the Church and advance the Kingdom through biblical teaching, revival and apologetics.",
   whoBtnLabel: "Read What We Believe", whoBtnUrl: "/about",
-  whoBgImage: "/images/who-we-are-v2.jpg",
+  whoBgImage: "/images/who-we-are-v2.webp",
 
   // Announcement
   annShow: true,
@@ -88,7 +88,7 @@ const D = {
   givingHeading: "Your Giving Publishes the Word",
   givingBody: "Gifts to this house pay for the gatherings, the recording and transcription of every teaching, and the programmes that carry the Word beyond Jos.",
   givingBtnLabel: "Give Now", givingBtnUrl: "/giving",
-  givingBgImage: "/images/giving-bg.jpg",
+  givingBgImage: "/images/giving-bg.webp",
   givingCategories: "Tithe,Offering,Special Projects,Thanksgiving",
 };
 
@@ -98,15 +98,9 @@ const FALLBACK_GATHERINGS = [
   { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"5:00 PM", city:"Jos", published:true, order:2 },
 ];
 
-export default function HomeContent({ 
-  initialSettings, 
-  initialGatherings 
-}: { 
-  initialSettings?: any, 
-  initialGatherings?: any[] 
-}) {
-  const [s] = useState<any>({ ...D, ...(initialSettings || {}) });
-  const [gatherings] = useState<any[]>(initialGatherings && initialGatherings.length > 0 ? initialGatherings : FALLBACK_GATHERINGS);
+export default function HomeContent() {
+  const [s, setS] = useState<any>({ ...D });
+  const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
   const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
@@ -114,6 +108,16 @@ export default function HomeContent({
       setHeroSlide((prev) => (prev === 0 ? 1 : 0));
     }, 5000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/home-data")
+      .then(r => r.json())
+      .then(data => {
+        if (data.settings) setS((prev: any) => ({ ...prev, ...data.settings }));
+        if (data.gatherings?.length > 0) setGatherings(data.gatherings);
+      })
+      .catch(() => {});
   }, []);
 
   const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");

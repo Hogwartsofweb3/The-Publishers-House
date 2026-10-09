@@ -40,13 +40,12 @@ const T = {
   colophon:  { fontFamily:"var(--font-poppins)", fontWeight:500, fontSize:"10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
 };
 
-import { db } from "@/lib/firebase"; import { doc, getDoc, collection, getDocs, query, orderBy } from "firebase/firestore"; export const revalidate = 60; export default async function HomePage() { let initialSettings = {}; let initialGatherings: any[] = []; try { const snap = await getDoc(doc(db, "homeSettings", "main")); if (snap.exists()) initialSettings = snap.data(); } catch (e) {} try { const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order", "asc"))); initialGatherings = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((g: any) => g.published !== false); } catch (e) {}
+export default function HomePage() {
   return (
     <>
       <Navbar />
       <main>
-        {/* All editable dynamic sections — fetched live from Firestore */}
-        <HomeContent initialSettings={initialSettings} initialGatherings={initialGatherings} />
+        <HomeContent />
 
         {/* Flagship Programs — static (managed via CMS Programs) */}
         <section className="tph-section" style={{ backgroundColor: Paper100 }}>
@@ -58,7 +57,7 @@ import { db } from "@/lib/firebase"; import { doc, getDoc, collection, getDocs, 
                 <a key={prog.slug} href="/programs" style={{ textDecoration: "none" }}>
                   <div style={{ border: `1px solid ${Paper300}`, borderRadius: "4px", overflow: "hidden", backgroundColor: White, cursor: "pointer" }}>
                     <div style={{ height: "160px", overflow: "hidden", borderBottom: `1px solid ${Paper300}`, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: Paper100 }}>
-                      <img src={prog.logoImage} alt={prog.name} style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", padding: "32px", filter: (prog.slug === "abuja-apostolic-camp" || prog.slug === "sunday-midweek") ? "brightness(0)" : "none" }} />
+                      <img src={prog.logoImage} alt={prog.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", padding: "32px", filter: (prog.slug === "abuja-apostolic-camp" || prog.slug === "sunday-midweek") ? "brightness(0)" : "none" }} />
                     </div>
                     <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div style={{ ...T.eyebrow, color: Blue500 }}>{prog.schedule}</div>

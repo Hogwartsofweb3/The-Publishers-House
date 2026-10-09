@@ -41,7 +41,7 @@ const DEF: Record<string, string|boolean> = {
   heroSundayLabel:"Sunday Worship", heroSundayTime:"9:00 AM",
   heroMidweekLabel:"Midweek Service", heroMidweekTime:"5:00 PM",
   heroAddress:"The House of Bread, Korinjoh House, British, Jos · West Africa Time",
-  heroBgImage:"/images/hero-v2.jpg",
+  heroBgImage:"/images/hero-v2.webp",
   setmanHeading:"Welcome Message\nfrom the Setman",
   setmanSubtext:"What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.",
   setmanBtnLabel:"Read More About Us", setmanBtnUrl:"/about",
@@ -53,12 +53,12 @@ const DEF: Record<string, string|boolean> = {
   teachingBtn1Label:"Listen — 48:12", teachingBtn1Url:"/resources",
   teachingBtn2Label:"Read the Transcript", teachingBtn2Url:"/resources",
   teachingColophon:"2 Timothy 2:15,Foundations,Dr. Joshua Agunbiade,Jos,48:12",
-  teachingImageUrl:"/images/sermon-v2.jpg",
+  teachingImageUrl:"/images/sermon-v2.webp",
   whoEyebrow:"Who We Are",
   whoQuote:"Every believer is commissioned to become a publisher of God's message.",
   whoBody:"Established in 2020 under the leadership of Dr. Joshua Agunbiade, the ministry exists to equip believers, strengthen the Church and advance the Kingdom through biblical teaching, revival and apologetics.",
   whoBtnLabel:"Read What We Believe", whoBtnUrl:"/about",
-  whoBgImage:"/images/who-we-are-v2.jpg",
+  whoBgImage:"/images/who-we-are-v2.webp",
   annShow:true, annHeading:"Special Announcement",
   annSubheading:"We Are Building",
   annBody:"After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home.",
@@ -68,7 +68,7 @@ const DEF: Record<string, string|boolean> = {
   givingEyebrow:"Giving", givingHeading:"Your Giving Publishes the Word",
   givingBody:"Gifts to this house pay for the gatherings, the recording and transcription of every teaching, and the programmes that carry the Word beyond Jos.",
   givingBtnLabel:"Give Now", givingBtnUrl:"/giving",
-  givingBgImage:"/images/giving-bg.jpg",
+  givingBgImage:"/images/giving-bg.webp",
   givingCategories:"Tithe,Offering,Special Projects,Thanksgiving",
 };
 
@@ -175,7 +175,7 @@ export default function HomepageEditor() {
         <div style={card}>
           <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:"0 0 24px" }}>Hero Section</h2>
           <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
-            {FRow([["Scripture Eyebrow","heroEyebrow","Psalm 68:11"],["Hero Background Image URL","heroBgImage","/images/hero-v2.jpg"]])}
+            {FRow([["Scripture Eyebrow","heroEyebrow","Psalm 68:11"],["Hero Background Image URL","heroBgImage","/images/hero-v2.webp"]])}
             {F("Main Headline","heroHeadline","Company of the Great")}
             {F("Subtitle / Tagline","heroSubtitle","An apostolic and scriptural ministry...",true)}
             {FRow([["Button 1 Label","heroBtn1Label"],["Button 1 URL","heroBtn1Url","/about"]])}
@@ -289,7 +289,7 @@ export default function HomepageEditor() {
           <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:"0 0 24px" }}>Latest Teaching Section</h2>
           <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
             {FRow([["Section Eyebrow","teachingEyebrow"],["Section Heading","teachingHeading"]])}
-            {FRow([["Series Eyebrow (e.g. Foundations · Part 8)","teachingSeriesEyebrow","Foundations · Part Eight"],["Sermon Image URL","teachingImageUrl","/images/sermon-v2.jpg"]])}
+            {FRow([["Series Eyebrow (e.g. Foundations · Part 8)","teachingSeriesEyebrow","Foundations · Part Eight"],["Sermon Image URL","teachingImageUrl","/images/sermon-v2.webp"]])}
             {F("Sermon Title","teachingTitle","A Workman Unashamed")}
             {F("Description","teachingDesc","",true)}
             {FRow([["Button 1 Label","teachingBtn1Label","Listen — 48:12"],["Button 1 URL","teachingBtn1Url","/resources"]])}
@@ -315,7 +315,7 @@ export default function HomepageEditor() {
             {F("Pull Quote / Epigraph","whoQuote","Every believer is commissioned...",true)}
             {F("Body Paragraph","whoBody","Established in 2020...",true)}
             {FRow([["Button Label","whoBtnLabel","Read What We Believe"],["Button URL","whoBtnUrl","/about"]])}
-            {F("Background Image URL","whoBgImage","/images/who-we-are-v2.jpg")}
+            {F("Background Image URL","whoBgImage","/images/who-we-are-v2.webp")}
           </div>
           <div style={{ marginTop:"24px" }}>
             <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), opacity:saving?0.6:1 }}>{saving?"Saving...":"Save Who We Are Section"}</button>
@@ -353,7 +353,7 @@ export default function HomepageEditor() {
             {FRow([["Eyebrow","givingEyebrow","Giving"],["Section Heading","givingHeading","Your Giving Publishes the Word"]])}
             {F("Body Text","givingBody","Gifts to this house...",true)}
             {FRow([["Button Label","givingBtnLabel","Give Now"],["Button URL","givingBtnUrl","/giving"]])}
-            {F("Background Image URL","givingBgImage","/images/giving-bg.jpg")}
+            {F("Background Image URL","givingBgImage","/images/giving-bg.webp")}
             <div>
               <label style={lbl}>Giving Categories (comma-separated)</label>
               <input style={inp} value={settings.givingCategories??""} onChange={e => S("givingCategories",e.target.value)} placeholder="Tithe,Offering,Special Projects,Thanksgiving" />
