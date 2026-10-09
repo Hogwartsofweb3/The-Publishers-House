@@ -333,7 +333,7 @@ export default function ArticleCarousel() {
         <div
           style={{
             display: "flex",
-            gap: "8px",
+            gap: "0px",
             justifyContent: "center",
             marginTop: "24px",
           }}
@@ -344,16 +344,27 @@ export default function ArticleCarousel() {
               onClick={() => advance(i)}
               aria-label={`Go to article ${i + 1}`}
               style={{
-                width: i === current ? "28px" : "8px",
-                height: "8px",
-                borderRadius: "4px",
-                backgroundColor: i === current ? Blue700 : Paper300,
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "transparent",
                 border: "none",
                 cursor: "pointer",
-                transition: "all 300ms ease",
                 padding: 0,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: i === current ? "28px" : "8px",
+                  height: "8px",
+                  borderRadius: "4px",
+                  backgroundColor: i === current ? Blue700 : Paper300,
+                  transition: "all 300ms ease",
+                }}
+              />
+            </button>
           ))}
         </div>
       </div>

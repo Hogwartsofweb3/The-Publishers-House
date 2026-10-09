@@ -40,13 +40,13 @@ const T = {
   colophon:  { fontFamily:"var(--font-poppins)", fontWeight:500, fontSize:"10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
 };
 
-export default function HomePage() {
+import { db } from "@/lib/firebase"; import { doc, getDoc, collection, getDocs, query, orderBy } from "firebase/firestore"; export const revalidate = 60; export default async function HomePage() { let initialSettings = {}; let initialGatherings: any[] = []; try { const snap = await getDoc(doc(db, "homeSettings", "main")); if (snap.exists()) initialSettings = snap.data(); } catch (e) {} try { const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order", "asc"))); initialGatherings = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((g: any) => g.published !== false); } catch (e) {}
   return (
     <>
       <Navbar />
       <main>
         {/* All editable dynamic sections — fetched live from Firestore */}
-        <HomeContent />
+        <HomeContent initialSettings={initialSettings} initialGatherings={initialGatherings} />
 
         {/* Flagship Programs — static (managed via CMS Programs) */}
         <section className="tph-section" style={{ backgroundColor: Paper100 }}>

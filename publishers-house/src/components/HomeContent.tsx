@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, doc, getDoc } from "firebase/firestore";
 import ArticleCarousel from "@/components/ArticleCarousel";
 
 /* ─── Design tokens ─── */
@@ -100,9 +98,15 @@ const FALLBACK_GATHERINGS = [
   { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"5:00 PM", city:"Jos", published:true, order:2 },
 ];
 
-export default function HomeContent() {
-  const [s, setS] = useState<any>({ ...D });
-  const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
+export default function HomeContent({ 
+  initialSettings, 
+  initialGatherings 
+}: { 
+  initialSettings?: any, 
+  initialGatherings?: any[] 
+}) {
+  const [s] = useState<any>({ ...D, ...(initialSettings || {}) });
+  const [gatherings] = useState<any[]>(initialGatherings && initialGatherings.length > 0 ? initialGatherings : FALLBACK_GATHERINGS);
   const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
@@ -110,20 +114,6 @@ export default function HomeContent() {
       setHeroSlide((prev) => (prev === 0 ? 1 : 0));
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    // Fetch settings
-    getDoc(doc(db, "homeSettings", "main"))
-      .then(snap => { if (snap.exists()) setS((prev: any) => ({ ...prev, ...snap.data() })); })
-      .catch(() => {});
-    // Fetch gatherings
-    getDocs(query(collection(db, "gatherings"), orderBy("order", "asc")))
-      .then(snap => {
-        const live = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((g: any) => g.published !== false);
-        if (live.length > 0) setGatherings(live);
-      })
-      .catch(() => {});
   }, []);
 
   const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");
@@ -156,7 +146,7 @@ export default function HomeContent() {
               overflow: "hidden",
             }}
           >
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${s.heroBgImage || D.heroBgImage}')`, backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+            <img src={s.heroBgImage || D.heroBgImage} alt="" fetchPriority="high" decoding="sync" loading="eager" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", zIndex: 0 }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex: 1 }} />
             <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px" }}>
               <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>{s.heroEyebrow || D.heroEyebrow}</div>
