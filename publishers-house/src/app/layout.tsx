@@ -1,23 +1,5 @@
 import { Poppins, Playfair_Display } from "next/font/google";
-import localFont from "next/font/local";
 import "./globals.css";
-
-const soulmaze = localFont({
-  src: [
-    {
-      path: "../../public/fonts/made-soulmaze.otf",
-      weight: "700",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/made-soulmaze-italic.otf",
-      weight: "700",
-      style: "italic",
-    },
-  ],
-  variable: "--font-soulmaze",
-  display: "swap",
-});
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -83,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${playfair.variable} ${soulmaze.variable}`}>
+    <html lang="en" className={`${poppins.variable} ${playfair.variable}`}>
       <body>
         <Providers>
           {children}

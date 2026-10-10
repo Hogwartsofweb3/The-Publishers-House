@@ -52,12 +52,12 @@ const Slate600= "#4A62A0";
 const White   = "#FFFFFF";
 
 const T = {
-  displayL: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight:800, fontSize:"clamp(32px,4.5vw,48px)", lineHeight:"1.04em", letterSpacing:"-0.02em", textTransform:"uppercase" as const },
-  displayS: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
-  readSmall: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
-  eyebrow: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight:600, fontSize:"10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
-  button: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight:600, fontSize:"12px", lineHeight:"1em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
-  colophon: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight:500, fontSize:"10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
+  displayL: { fontFamily: "var(--font-poppins)", fontWeight:800, fontSize:"clamp(32px,4.5vw,48px)", lineHeight:"1.04em", letterSpacing:"-0.02em", textTransform:"uppercase" as const },
+  displayS: { fontFamily: "var(--font-poppins)", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
+  readSmall: { fontFamily: "var(--font-poppins)", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
+  eyebrow: { fontFamily: "var(--font-poppins)", fontWeight:600, fontSize:"10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
+  button: { fontFamily: "var(--font-poppins)", fontWeight:600, fontSize:"12px", lineHeight:"1em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
+  colophon: { fontFamily: "var(--font-poppins)", fontWeight:500, fontSize:"10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
 };
 
 export default function HomePage() {

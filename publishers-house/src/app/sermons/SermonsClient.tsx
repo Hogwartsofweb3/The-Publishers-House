@@ -30,11 +30,11 @@ const Paper300 = "#D3DAEC";
 const White   = "#FFFFFF";
 
 const T = {
-  headline:{ fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, textTransform: "uppercase" as const },
-  eyebrow: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  label:   { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
-  button:  { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "12px", lineHeight: "1em",   letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  readBody:{ fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 400, fontSize: "15px", lineHeight: "1.6em" },
+  headline:{ fontFamily: "var(--font-poppins)", fontWeight: 700, textTransform: "uppercase" as const },
+  eyebrow: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  label:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
+  button:  { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", lineHeight: "1em",   letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  readBody:{ fontFamily: "var(--font-poppins)", fontWeight: 400, fontSize: "15px", lineHeight: "1.6em" },
 };
 
 /* ─── Mobile horizontal sermon card (Gospel-in-Life style) ─── */

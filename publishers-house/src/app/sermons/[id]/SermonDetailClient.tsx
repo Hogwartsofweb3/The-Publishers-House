@@ -18,15 +18,15 @@ const White   = "#FFFFFF";
 
 const T = {
   headline: {
-    fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))",
-    fontWeight: 700,
+    fontFamily: "var(--font-poppins)",
+    fontWeight: 800,
     fontSize: "clamp(28px, 4.5vw, 52px)",
     lineHeight: "1.08em",
-    letterSpacing: "-0.01em",
+    letterSpacing: "-0.02em",
     textTransform: "uppercase" as const,
   },
   eyebrow: {
-    fontFamily: "var(--font-body, var(--font-poppins))",
+    fontFamily: "var(--font-poppins)",
     fontWeight: 600,
     fontSize: "10px",
     lineHeight: "1.6em",
@@ -34,7 +34,7 @@ const T = {
     textTransform: "uppercase" as const,
   },
   colophon: {
-    fontFamily: "var(--font-body, var(--font-poppins))",
+    fontFamily: "var(--font-poppins)",
     fontWeight: 500,
     fontSize: "10.5px",
     lineHeight: "1.6em",
@@ -42,7 +42,7 @@ const T = {
     textTransform: "uppercase" as const,
   },
   button: {
-    fontFamily: "var(--font-body, var(--font-poppins))",
+    fontFamily: "var(--font-poppins)",
     fontWeight: 600,
     fontSize: "11px",
     lineHeight: "1em",
@@ -51,13 +51,13 @@ const T = {
     cursor: "pointer",
   },
   overviewTitle: {
-    fontFamily: "var(--font-accent, 'Playfair Display', serif)",
+    fontFamily: "'Playfair Display', serif",
     fontWeight: 700,
     fontSize: "28px",
     lineHeight: "1.2em",
   },
   readBody: {
-    fontFamily: "var(--font-body, var(--font-poppins))",
+    fontFamily: "var(--font-poppins)",
     fontWeight: 400,
     fontSize: "15.5px",
     lineHeight: "1.75em",
@@ -272,7 +272,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                 <Link
                   href={`/sermons?series=${encodeURIComponent(sermon.series)}`}
                   style={{
-                    fontFamily: "var(--font-body, var(--font-poppins))",
+                    fontFamily: "var(--font-poppins)",
                     fontWeight: 600,
                     fontSize: "14px",
                     color: Blue700,
@@ -286,7 +286,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
 
             <div>
               <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "4px" }}>Speaker:</div>
-              <div style={{ fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "14px", color: Navy }}>
+              <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "14px", color: Navy }}>
                 {sermon.speaker || "Dr. Joshua Agunbiade"}
               </div>
             </div>
@@ -294,7 +294,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
             {sermon.duration && (
               <div>
                 <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "4px" }}>Duration:</div>
-                <div style={{ fontFamily: "var(--font-body, var(--font-poppins))", fontSize: "14px", color: Navy }}>
+                <div style={{ fontFamily: "var(--font-poppins)", fontSize: "14px", color: Navy }}>
                   {sermon.duration}
                 </div>
               </div>
@@ -303,7 +303,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
             {sermon.scripture && (
               <div>
                 <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "4px" }}>Scripture:</div>
-                <div style={{ fontFamily: "var(--font-body, var(--font-poppins))", fontSize: "14px", color: Blue700, fontWeight: 600 }}>
+                <div style={{ fontFamily: "var(--font-poppins)", fontSize: "14px", color: Blue700, fontWeight: 600 }}>
                   {sermon.scripture}
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                         borderRadius: "3px",
                         fontSize: "11px",
                         color: Slate600,
-                        fontFamily: "var(--font-body, var(--font-poppins))",
+                        fontFamily: "var(--font-poppins)",
                       }}
                     >
                       {tag}
@@ -342,7 +342,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: "var(--font-body, var(--font-poppins))",
+                    fontFamily: "var(--font-poppins)",
                     fontSize: "12px",
                     color: "#16A34A",
                     textDecoration: "none",
@@ -359,7 +359,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: "var(--font-body, var(--font-body))",
+                    fontFamily: "var(--font-body, var(--font-poppins))",
                     fontSize: "12px",
                     color: Navy,
                     textDecoration: "none",
@@ -377,7 +377,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                     background: "none",
                     border: "none",
                     padding: 0,
-                    fontFamily: "var(--font-body, var(--font-poppins))",
+                    fontFamily: "var(--font-poppins)",
                     fontSize: "12px",
                     color: Blue700,
                     cursor: "pointer",
@@ -431,7 +431,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
             </div>
             <h2
               style={{
-                fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))",
+                fontFamily: "var(--font-poppins)",
                 fontWeight: 700,
                 color: Navy,
                 fontSize: "clamp(24px, 4vw, 38px)",
@@ -480,7 +480,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h3 style={{ fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 700, fontSize: "16px", color: Navy, margin: 0 }}>
+              <h3 style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "16px", color: Navy, margin: 0 }}>
                 Share this Sermon
               </h3>
               <button
@@ -490,7 +490,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                 ✕
               </button>
             </div>
-            <p style={{ fontFamily: "var(--font-body, var(--font-poppins))", fontSize: "13px", color: Slate600, margin: "0 0 20px" }}>
+            <p style={{ fontFamily: "var(--font-poppins)", fontSize: "13px", color: Slate600, margin: "0 0 20px" }}>
               {sermon.title}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -507,7 +507,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   fontWeight: 600,
                   fontSize: "13px",
                   textAlign: "center",
-                  fontFamily: "var(--font-body, var(--font-poppins))",
+                  fontFamily: "var(--font-poppins)",
                 }}
               >
                 Share via WhatsApp
@@ -525,7 +525,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   fontWeight: 600,
                   fontSize: "13px",
                   textAlign: "center",
-                  fontFamily: "var(--font-body, var(--font-poppins))",
+                  fontFamily: "var(--font-poppins)",
                 }}
               >
                 Share via X (Twitter)
@@ -541,7 +541,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   fontWeight: 600,
                   fontSize: "13px",
                   cursor: "pointer",
-                  fontFamily: "var(--font-body, var(--font-poppins))",
+                  fontFamily: "var(--font-poppins)",
                 }}
               >
                 {copied ? "✓ Copied to Clipboard!" : "Copy Link"}

@@ -25,9 +25,9 @@ const Navy    = "#151A54";
 const White   = "#FFFFFF";
 
 const T = {
-  displayXL: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, fontSize: "clamp(36px,5vw,58px)", lineHeight: "0.98em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
-  eyebrow:   { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  readLede:  { fontFamily: "var(--font-accent, var(--font-playfair))", fontWeight: 400, fontSize: "20px", lineHeight: "1.5em" },
+  displayXL: { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "clamp(36px,5vw,58px)", lineHeight: "0.98em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  eyebrow:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  readLede:  { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "20px", lineHeight: "1.5em" },
 };
 
 export default async function SermonsPage() {
