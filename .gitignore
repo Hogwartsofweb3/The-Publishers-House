@@ -43,3 +43,9 @@ npm-debug.log*
 /*.svg
 /*.mov
 /script.js
+# Service Account credentials
+*firebase-adminsdk*.json
+*.json
+!publishers-house/package*.json
+!publishers-house/tsconfig.json
+!publishers-house/vercel.json

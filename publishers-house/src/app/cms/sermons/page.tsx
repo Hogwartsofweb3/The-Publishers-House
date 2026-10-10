@@ -24,6 +24,8 @@ export default function SermonsEditor() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const fetchSermons = async () => {
     const q = query(collection(db, "sermons"), orderBy("date", "desc"));
@@ -32,6 +34,26 @@ export default function SermonsEditor() {
   };
 
   useEffect(() => { fetchSermons(); }, []);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/sync-sermons?key=tph-cron-2026-secure");
+      const data = await res.json();
+      if (data.success) {
+        setSyncResult(`✓ Sync finished: ${data.added} added, ${data.skipped} existing`);
+        fetchSermons();
+      } else {
+        setSyncResult(`Sync error: ${data.error || "Failed"}`);
+      }
+    } catch (e: any) {
+      setSyncResult(`Sync error: ${e.message}`);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncResult(null), 8000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,12 +94,34 @@ export default function SermonsEditor() {
 
   return (
     <div style={{ padding: "32px", maxWidth: "1100px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <Link href="/cms" style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: S.Blue500, textDecoration: "none" }}>← Dashboard</Link>
           <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "28px", color: S.Navy, margin: "8px 0 0" }}>Sermons</h1>
         </div>
-        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Slate500 }}>{sermons.length} total · {sermons.filter(s => s.published).length} published</span>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          {syncResult && (
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: syncResult.startsWith("✓") ? S.Green : S.Red, fontWeight: 600 }}>
+              {syncResult}
+            </span>
+          )}
+          <button
+            onClick={handleManualSync}
+            disabled={syncing}
+            style={{
+              ...S.btn(S.Blue700, S.White),
+              opacity: syncing ? 0.6 : 1,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            {syncing ? "Syncing..." : "🔄 Sync Now"}
+          </button>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "13px", color: S.Slate500 }}>
+            {sermons.length} total · {sermons.filter(s => s.published).length} published
+          </span>
+        </div>
       </div>
 
       {/* Form */}
