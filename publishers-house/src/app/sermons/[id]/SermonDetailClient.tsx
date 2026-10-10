@@ -29,12 +29,11 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
   const dateStr = sermon.date ? new Date(sermon.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.') : "00.00.0000";
 
   const handleListen = () => {
-    if (sermon.audioUrl) {
+    if (sermon.audioUrl && !sermon.audioUrl.includes("t.me/")) {
       playSermon(sermon);
-    } else if (sermon.videoUrl) {
-      setVideoOpen(true);
     } else {
-      alert("Audio message is being uploaded and will be available shortly.");
+      const tgUrl = sermon.audioUrl?.includes("t.me/") ? sermon.audioUrl : "https://t.me/ThePublishersHouse";
+      window.open(tgUrl, "_blank");
     }
   };
 
@@ -57,7 +56,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
           
           <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{ ...T.eyebrow, color: "rgba(255,255,255,0.8)", marginBottom: "16px" }}>
-              {sermon.series || "TEACHING"} {sermon.series ? "· PART" : ""}
+              {sermon.series || "TEACHING"}
             </div>
             
             <h1 style={{ ...T.displayL, color: White, margin: "0 0 24px", maxWidth: "900px" }}>
@@ -68,23 +67,33 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", borderBottom: "1px solid rgba(255,255,255,0.2)", padding: "16px 0", marginBottom: "32px", display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
               <span style={{ ...T.colophon, color: White }}>{sermon.scripture || "2 TIMOTHY 2:15"}</span>
               <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-              <span style={{ ...T.colophon, color: White }}>{sermon.speaker || "DR. JOSHUA AGUNBIADE"}</span>
+              <span style={{ ...T.colophon, color: White }}>{sermon.speaker || "REV. JOSHUA AGUNBIADE"}</span>
               <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
               <span style={{ ...T.colophon, color: White }}>{dateStr}</span>
-              <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-              <span style={{ ...T.colophon, color: White }}>{sermon.location || "JOS"}</span>
-              <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-              <span style={{ ...T.colophon, color: White }}>{sermon.duration || "48:12"}</span>
+              {sermon.duration && (
+                <>
+                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
+                  <span style={{ ...T.colophon, color: White }}>{sermon.duration}</span>
+                </>
+              )}
             </div>
             
             {/* Action Buttons */}
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <button onClick={handleListen} style={{ ...T.button, padding: "14px 32px", backgroundColor: White, color: Navy, border: "none", cursor: "pointer" }}>
-                LISTEN
+              <button onClick={handleListen} style={{ ...T.button, padding: "14px 32px", backgroundColor: White, color: Navy, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
+                </svg>
+                LISTEN {sermon.audioUrl && !sermon.audioUrl.includes("t.me/") ? "AUDIO" : "ON TELEGRAM"}
               </button>
-              <button onClick={() => setVideoOpen(true)} style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", cursor: "pointer", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>
-                WATCH
-              </button>
+              {sermon.videoUrl && (
+                <button onClick={() => setVideoOpen(true)} style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  WATCH VIDEO
+                </button>
+              )}
               {sermon.studyGuideUrl && (
                 <a href={sermon.studyGuideUrl} target="_blank" rel="noopener noreferrer" style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", textDecoration: "none", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>
                   STUDY GUIDE
@@ -114,23 +123,11 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
           {/* Right Content */}
           <article style={{ flex: "1 1 500px" }}>
             <div style={{ ...T.readBody, color: Navy }}>
-              {/* Fake transcript if empty */}
               {sermon.summary ? (
                  <div dangerouslySetInnerHTML={{ __html: sermon.summary.replace(/\n/g, '<br/>') }} />
               ) : (
-                <>
-                  <p>Paul does not ask Timothy to be clever. He asks him to be unashamed, and he ties that to one thing: handling the word of truth accurately.</p>
-                  <p>The word Paul uses carries the sense of cutting a straight path. It is the language of a road builder, not a philosopher. The point is not display, it is arrival. A teaching that impresses everyone and takes nobody anywhere has failed at the only thing it was for.</p>
-                  <p>That is why accuracy is a matter of love before it is a matter of scholarship. When you handle the text carelessly in front of people who trust you, you are not merely being sloppy. You are sending them down a road that does not go where you said it goes.</p>
-                </>
+                <p>Teaching by {sermon.speaker || "Rev. Joshua Agunbiade"}.</p>
               )}
-            </div>
-            
-            <div style={{ marginTop: "64px" }}>
-              <span style={{ ...T.eyebrow, color: Blue500 }}>FULL TRANSCRIPT</span>
-              <p style={{ ...T.readBody, color: Slate500, fontSize: "15px", marginTop: "16px" }}>
-                Transcripts are published within 72 hours of each gathering. They serve the deaf visitor, the person on expensive data, and every search anyone will ever run for a Scripture reference. Automated output is corrected by a person before publication.
-              </p>
             </div>
           </article>
         </section>
@@ -139,16 +136,20 @@ export default function SermonDetailClient({ sermon, relatedSermons }: { sermon:
         {relatedSermons.length > 0 && (
           <section style={{ backgroundColor: Paper100, padding: "80px 5%" }}>
             <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-              <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "8px" }}>REST OF THE SERIES</div>
+              <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "8px" }}>
+                {sermon.series && relatedSermons.some(r => r.series === sermon.series)
+                  ? "REST OF THE SERIES"
+                  : "MORE TEACHINGS"}
+              </div>
               <h2 style={{ ...T.displayL, color: Navy, fontSize: "clamp(24px, 4vw, 42px)", margin: "0 0 48px" }}>
-                {sermon.series || "MORE TEACHINGS"}
+                {sermon.series && relatedSermons.some(r => r.series === sermon.series)
+                  ? sermon.series
+                  : "FROM THIS HOUSE"}
               </h2>
               
               <div className="tph-grid-3">
-                {relatedSermons.slice(0,3).map(item => (
-                  <Link href={`/sermons/${item.id}`} key={item.id} style={{ textDecoration: 'none' }}>
-                    <SermonCard sermon={item} />
-                  </Link>
+                {relatedSermons.slice(0, 3).map(item => (
+                  <SermonCard key={item.id} sermon={item} />
                 ))}
               </div>
             </div>

@@ -160,7 +160,7 @@ function SermonsFilterPanel({
 /* ─── Main component ─── */
 export default function SermonsClient({ initialSermons }: { initialSermons: Sermon[] }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState("oldest");
   const [yearFilter, setYearFilter] = useState("All");
   const [speakerFilter, setSpeakerFilter] = useState("All");
   const [seriesFilter, setSeriesFilter] = useState("All");
@@ -310,9 +310,7 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
             ) : (
               <div className="tph-grid-3" style={{ marginBottom: "64px" }}>
                 {filtered.map(sermon => (
-                  <Link href={`/sermons/${sermon.id}`} key={sermon.id} style={{ textDecoration: "none" }}>
-                    <SermonCard sermon={sermon} />
-                  </Link>
+                  <SermonCard key={sermon.id} sermon={sermon} />
                 ))}
               </div>
             )}

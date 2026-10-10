@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { getSermonById, getSermons } from "@/lib/firebase";
+import { getSermonById, getSermons, getSermonsBySeries, type Sermon } from "@/lib/firebase";
 import SermonDetailClient from "./SermonDetailClient";
 
 export const revalidate = 60;
@@ -22,15 +22,15 @@ export default async function SermonDetailPage({ params }: { params: Promise<{ i
   const sermon = await getSermonById(id);
   if (!sermon) return notFound();
 
-  // Fetch some related sermons (same series if possible, else just recent)
-  let allSermons = await getSermons(10);
-  let relatedSermons = allSermons.filter(s => s.id !== sermon.id);
-  
+  // Fetch related sermons strictly in the same series
+  let relatedSermons: Sermon[] = [];
   if (sermon.series) {
-    const seriesMatches = relatedSermons.filter(s => s.series === sermon.series);
-    if (seriesMatches.length > 0) {
-      relatedSermons = seriesMatches;
-    }
+    relatedSermons = await getSermonsBySeries(sermon.series, sermon.id, 6);
+  }
+  // If no sermons in the same series, fallback to other teachings
+  if (relatedSermons.length === 0) {
+    const all = await getSermons(6);
+    relatedSermons = all.filter(s => s.id !== sermon.id).slice(0, 3);
   }
 
   return (

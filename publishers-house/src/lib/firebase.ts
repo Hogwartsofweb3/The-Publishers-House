@@ -111,7 +111,7 @@ export type Transaction = {
 
 // ---- Data Fetching Functions ---- //
 
-export async function getSermons(limitCount = 12): Promise<Sermon[]> {
+export async function getSermons(limitCount = 1000): Promise<Sermon[]> {
   const q = query(
     collection(db, "sermons"),
     where("published", "==", true),
@@ -119,8 +119,29 @@ export async function getSermons(limitCount = 12): Promise<Sermon[]> {
   );
   const snap = await getDocs(q);
   const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
-  // Sort by date descending in JS (avoids needing a composite Firestore index)
-  return results.sort((a, b) => (a.date > b.date ? -1 : 1));
+  // Sort from oldest to newest by default
+  return results.sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+export async function getSermonsBySeries(seriesName: string, excludeId?: string, limitCount = 6): Promise<Sermon[]> {
+  if (!seriesName) return [];
+  try {
+    const q = query(
+      collection(db, "sermons"),
+      where("published", "==", true),
+      where("series", "==", seriesName)
+    );
+    const snap = await getDocs(q);
+    const results = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as Sermon))
+      .filter((s) => s.id !== excludeId)
+      .sort((a, b) => (a.date < b.date ? -1 : 1)) // Chronological Part 1, Part 2...
+      .slice(0, limitCount);
+    return results;
+  } catch (e) {
+    console.error("Error in getSermonsBySeries:", e);
+    return [];
+  }
 }
 
 export async function getLatestSermon(): Promise<Sermon | null> {

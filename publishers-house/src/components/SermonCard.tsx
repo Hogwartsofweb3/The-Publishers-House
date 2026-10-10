@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Sermon } from "@/lib/firebase";
 
 const Navy    = "#151A54";
@@ -54,16 +55,21 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
       <div
         style={{
           backgroundColor: White,
+          border: `1px solid ${Paper300}`,
+          borderRadius: "8px",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          height: "100%",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
         }}
       >
         {/* Thumbnail — real YouTube thumbnail or blue placeholder */}
         <div
           onClick={handlePlayClick}
           style={{
-            height: "240px",
+            height: "220px",
             backgroundColor: Paper200,
             backgroundImage: thumbnailUrl ? `url(${thumbnailUrl})` : undefined,
             backgroundSize: "cover",
@@ -74,7 +80,6 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
             position: "relative",
             overflow: "hidden",
             cursor: sermon.videoUrl ? "pointer" : "default",
-            borderRadius: "4px"
           }}
         >
           {/* Play overlay */}
@@ -95,7 +100,7 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
           )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "column", padding: "16px 20px 20px", flex: 1 }}>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
             {sermon.series && <div style={{ ...T.eyebrow, color: Blue500 }}>{sermon.series}</div>}
             {sermon.tags?.[0] && (
@@ -106,22 +111,34 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
             )}
           </div>
           
-          <h3 style={{ ...T.displayS, color: Navy, margin: "0 0 12px" }}>{sermon.title}</h3>
+          <Link href={`/sermons/${sermon.id}`} style={{ textDecoration: "none" }}>
+            <h3 style={{ ...T.displayS, color: Navy, margin: "0 0 12px", cursor: "pointer", transition: "color 0.15s" }}>{sermon.title}</h3>
+          </Link>
           
           <p style={{ ...T.readBody, color: Slate500, margin: 0, flex: 1, paddingBottom: "16px" }}>
-            {sermon.speaker ? `Teaching by ${sermon.speaker}.` : "What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before scholarship."}
+            {sermon.summary ? `${sermon.summary.slice(0, 140)}...` : (sermon.speaker ? `Teaching by ${sermon.speaker}.` : "Teaching from The Publishers House.")}
           </p>
 
           <div style={{ display: "flex", gap: "8px", alignItems: "center", paddingTop: "12px", borderTop: `1px solid ${Paper300}`, flexWrap: "wrap" }}>
-            <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{sermon.scripture || "2 TIMOTHY 2:15"}</span>
-            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-            <span style={{ ...T.colophon, color: Slate500 }}>{sermon.speaker || "DR. JOSHUA AGUNBIADE"}</span>
-            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-            <span style={{ ...T.colophon, color: Slate500 }}>JOS</span>
-            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-            <span style={{ ...T.colophon, color: Slate500 }}>JOS</span>
-            <span style={{ ...T.colophon, color: Paper300 }}>·</span>
-            <span style={{ ...T.colophon, color: Slate500 }}>48:12</span>
+            {sermon.scripture && (
+              <>
+                <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{sermon.scripture}</span>
+                <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+              </>
+            )}
+            <span style={{ ...T.colophon, color: Slate500 }}>{sermon.speaker || "Rev. Joshua Agunbiade"}</span>
+            {dateLabel && (
+              <>
+                <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+                <span style={{ ...T.colophon, color: Slate500 }}>{dateLabel}</span>
+              </>
+            )}
+            {sermon.duration && (
+              <>
+                <span style={{ ...T.colophon, color: Paper300 }}>·</span>
+                <span style={{ ...T.colophon, color: Slate500 }}>{sermon.duration}</span>
+              </>
+            )}
           </div>
 
           {sermon.audioUrl && (
