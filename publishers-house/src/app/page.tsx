@@ -5,9 +5,29 @@ import HomeContent from "@/components/HomeContent";
 import FloatingAttendance from "@/components/FloatingAttendance";
 
 export const metadata: Metadata = {
-  title: "The Publishers House",
+  title: "The Publishers House | Company of the Great",
   description:
-    "The Publishers House — a teaching-focused apostolic church in Jos, Plateau State. Led by Dr. Joshua Agunbiade.",
+    "The Publishers House — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ. Led by Dr. Joshua Agunbiade.",
+  openGraph: {
+    title: "The Publishers House | Company of the Great",
+    description:
+      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+    images: [
+      {
+        url: "/images/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "The Publishers House — Company of the Great",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Publishers House | Company of the Great",
+    description:
+      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+    images: ["/images/og-image.jpg"],
+  },
 };
 
 // ── Programs data (still static — managed from CMS Programs page) ─────────

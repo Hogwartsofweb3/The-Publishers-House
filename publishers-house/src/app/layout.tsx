@@ -37,35 +37,35 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL("https://thepublishershouse.org"),
   title: {
-    default: "The Publishers House | A Church Family",
+    default: "The Publishers House | Company of the Great",
     template: "%s | The Publishers House",
   },
   description:
-    "The Publishers House is a vibrant, Spirit-filled church community. Join us for worship, growth, and community.",
-  keywords: ["The Publishers House", "church", "worship", "sermons", "community", "faith"],
+    "The Publishers House — Company of the Great. An apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+  keywords: ["The Publishers House", "Company of the Great", "church", "worship", "sermons", "community", "faith", "Dr. Joshua Agunbiade", "Jos"],
   openGraph: {
     type: "website",
     locale: "en_NG",
     url: "https://thepublishershouse.org",
     siteName: "The Publishers House",
-    title: "The Publishers House | A Church Family",
+    title: "The Publishers House | Company of the Great",
     description:
-      "The Publishers House is a vibrant, Spirit-filled church community. Join us for worship, growth, and community.",
+      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
     images: [
       {
-        url: "/og-image.jpg", // replace with actual OG image once AVO delivers assets
+        url: "/images/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "The Publishers House Church",
+        alt: "The Publishers House — Company of the Great",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Publishers House | A Church Family",
+    title: "The Publishers House | Company of the Great",
     description:
-      "A vibrant, Spirit-filled church community.",
-    images: ["/og-image.jpg"],
+      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+    images: ["/images/og-image.jpg"],
   },
   robots: {
     index: true,
