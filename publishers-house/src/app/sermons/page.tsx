@@ -34,7 +34,7 @@ export default async function SermonsPage() {
   // Fetch live sermons from Firestore
   let sermons: Sermon[] = [];
   try {
-    sermons = await getSermons(100);
+    sermons = await getSermons(600);
   } catch (e) {
     console.error("Failed to fetch sermons:", e);
   }
