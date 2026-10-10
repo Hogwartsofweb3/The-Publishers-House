@@ -196,32 +196,8 @@ function FloatingDockedPlayer({
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : "/images/sermon-hero-bg.jpg";
 
-  const hasDirectAudio = Boolean(
-    sermon.audioUrl &&
-    !sermon.audioUrl.includes("t.me") &&
-    !sermon.audioUrl.includes("spotify.com") &&
-    !sermon.audioUrl.includes("youtube.com") &&
-    !sermon.audioUrl.includes("youtu.be") &&
-    (
-      sermon.audioUrl.endsWith(".mp3") ||
-      sermon.audioUrl.endsWith(".m4a") ||
-      sermon.audioUrl.endsWith(".aac") ||
-      sermon.audioUrl.includes("storage.googleapis.com") ||
-      sermon.audioUrl.includes("firebasestorage")
-    )
-  );
 
-  const [audioSource, setAudioSource] = useState<"spotify" | "telegram" | "direct">("spotify");
 
-  useEffect(() => {
-    if (hasDirectAudio) {
-      setAudioSource("direct");
-    } else if (sermon.audioUrl && sermon.audioUrl.includes("t.me")) {
-      setAudioSource("telegram");
-    } else {
-      setAudioSource("spotify");
-    }
-  }, [sermon.id, hasDirectAudio, sermon.audioUrl]);
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
@@ -377,265 +353,179 @@ function FloatingDockedPlayer({
             </div>
           )}
 
-          {/* AUDIO MODE — STRICTLY AUDIO ONLY (Spotify, Telegram, or direct MP3) */}
+          {/* AUDIO MODE — YouTube iframe as audio source, artwork overlay covers video */}
           {mode === "audio" && (
-            <div style={{ padding: "16px", backgroundColor: "#151A54" }}>
-              {/* Sermon Header */}
-              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-                <img
-                  src={thumbnailUrl}
-                  alt={sermon.title}
-                  style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "6px",
-                    objectFit: "cover",
-                    flexShrink: 0,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                  }}
-                />
-                <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ backgroundColor: "#0D1238" }}>
+              {videoId ? (
+                /* ── YouTube playing, video hidden behind artwork cover ── */
+                <div style={{ position: "relative", width: "100%" }}>
+                  {/* The real YouTube iframe — plays correct sermon audio */}
+                  <div style={{ width: "100%", aspectRatio: "16/9" }}>
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+                      title={sermon.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      style={{ display: "block" }}
+                    />
+                  </div>
+
+                  {/* Artwork overlay — covers the video portion, leaves YT control bar visible */}
                   <div
                     style={{
-                      fontFamily: "var(--font-poppins)",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      color: "#FFFFFF",
-                      lineHeight: "1.25em",
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      marginBottom: "3px",
-                    }}
-                  >
-                    {sermon.title}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)" }}>
-                    {sermon.speaker || "Dr. Joshua Agunbiade"}
-                  </div>
-                  {sermon.series && (
-                    <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px", fontWeight: 600 }}>
-                      {sermon.series}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Source Switcher: Spotify vs Telegram vs Direct */}
-              <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
-                <button
-                  type="button"
-                  onClick={() => setAudioSource("spotify")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 10px",
-                    borderRadius: "6px",
-                    fontSize: "10.5px",
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    backgroundColor: audioSource === "spotify" ? "#1DB954" : "rgba(255,255,255,0.08)",
-                    color: audioSource === "spotify" ? "#000000" : "rgba(255,255,255,0.85)",
-                    border: audioSource === "spotify" ? "1px solid #1DB954" : "1px solid rgba(255,255,255,0.15)",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-                  </svg>
-                  Spotify
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAudioSource("telegram")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 10px",
-                    borderRadius: "6px",
-                    fontSize: "10.5px",
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    backgroundColor: audioSource === "telegram" ? "#229ED9" : "rgba(255,255,255,0.08)",
-                    color: "#FFFFFF",
-                    border: audioSource === "telegram" ? "1px solid #229ED9" : "1px solid rgba(255,255,255,0.15)",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.92 9.07c-.14.65-.53.81-1.07.51l-2.95-2.18-1.42 1.37c-.16.16-.29.29-.6.29l.21-3.01 5.48-4.95c.24-.21-.05-.33-.37-.12l-6.77 4.26-2.92-.91c-.64-.2-.65-.64.13-.95l11.41-4.4c.53-.19.99.13.8.92z" />
-                  </svg>
-                  Telegram
-                </button>
-
-                {hasDirectAudio && (
-                  <button
-                    type="button"
-                    onClick={() => setAudioSource("direct")}
-                    style={{
-                      flex: 1,
-                      padding: "7px 10px",
-                      borderRadius: "6px",
-                      fontSize: "10.5px",
-                      fontWeight: 700,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      backgroundColor: audioSource === "direct" ? "#2090FF" : "rgba(255,255,255,0.08)",
-                      color: "#FFFFFF",
-                      border: audioSource === "direct" ? "1px solid #2090FF" : "1px solid rgba(255,255,255,0.15)",
-                      cursor: "pointer",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      /* Leave ~46px at bottom for YouTube native control bar */
+                      bottom: "46px",
+                      background: "linear-gradient(160deg, #0D1238 0%, #151A54 100%)",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
+                      gap: "14px",
+                      padding: "14px 16px",
+                      pointerEvents: "none",
                     }}
                   >
-                    Direct MP3
-                  </button>
-                )}
-              </div>
-
-              {/* 1. Spotify Audio Player Embed */}
-              {audioSource === "spotify" && (
-                <div>
-                  <div style={{ borderRadius: "8px", overflow: "hidden", backgroundColor: "#000" }}>
-                    <iframe
-                      style={{ borderRadius: "8px", border: "none" }}
-                      src={getSpotifyEmbedUrl(sermon)}
-                      width="100%"
-                      height="152"
-                      frameBorder="0"
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="lazy"
-                      title={`Spotify Audio - ${sermon.title}`}
+                    <img
+                      src={thumbnailUrl}
+                      alt={sermon.title}
+                      style={{
+                        width: "56px",
+                        height: "56px",
+                        borderRadius: "8px",
+                        objectFit: "cover",
+                        flexShrink: 0,
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                      }}
                     />
-                  </div>
-                  <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)" }}>The Publishers House Podcast</span>
-                    <a
-                      href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: "10.5px", color: "#1DB954", textDecoration: "none", fontWeight: 600 }}
-                    >
-                      Open Spotify App ↗
-                    </a>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-poppins)",
+                          fontWeight: 700,
+                          fontSize: "13px",
+                          color: "#FFFFFF",
+                          lineHeight: "1.3em",
+                          overflow: "hidden",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {sermon.title}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.65)" }}>
+                        {sermon.speaker || "Dr. Joshua Agunbiade"}
+                      </div>
+                      {sermon.series && (
+                        <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px", fontWeight: 600 }}>
+                          {sermon.series}
+                        </div>
+                      )}
+                    </div>
+                    {/* Sound wave visual indicator */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
+                      {[14, 22, 18, 26, 16, 20].map((h, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            width: "3px",
+                            height: `${h}px`,
+                            borderRadius: "2px",
+                            backgroundColor: "#2090FF",
+                            opacity: 0.8,
+                            animation: `pulse ${0.8 + i * 0.1}s ease-in-out infinite alternate`,
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* 2. Telegram Audio Player Embed */}
-              {audioSource === "telegram" && (
-                <div>
-                  <div style={{ borderRadius: "8px", overflow: "hidden", backgroundColor: "#FFFFFF" }}>
-                    <iframe
-                      style={{ borderRadius: "8px", border: "none" }}
-                      src={getTelegramEmbedUrl(sermon)}
-                      width="100%"
-                      height="180"
-                      frameBorder="0"
-                      loading="lazy"
-                      title={`Telegram Audio - ${sermon.title}`}
-                    />
-                  </div>
-                  <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)" }}>@ThePublishersHouse Channel</span>
-                    <a
-                      href="https://t.me/ThePublishersHouse"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: "10.5px", color: "#229ED9", textDecoration: "none", fontWeight: 600 }}
-                    >
-                      Open Telegram ↗
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Direct HTML5 Audio Player */}
-              {audioSource === "direct" && hasDirectAudio && (
-                <div>
-                  <audio
-                    ref={audioRef}
-                    src={sermon.audioUrl}
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onEnded={onTogglePlay}
+              ) : (
+                /* ── No YouTube video — fallback info card ── */
+                <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
+                  <img
+                    src={thumbnailUrl}
+                    alt={sermon.title}
+                    style={{ width: "56px", height: "56px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
                   />
-
-                  {/* Scrubber */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", minWidth: "32px", textAlign: "right" }}>
-                      {currentTime}
-                    </span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={isNaN(progress) ? 0 : progress}
-                      onChange={handleSeek}
-                      style={{
-                        flex: 1,
-                        accentColor: "#2090FF",
-                        height: "4px",
-                        backgroundColor: "rgba(255,255,255,0.2)",
-                        borderRadius: "2px",
-                        outline: "none",
-                        cursor: "pointer",
-                      }}
-                    />
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", minWidth: "32px" }}>
-                      {duration}
-                    </span>
-                  </div>
-
-                  {/* Controls */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-                    <button
-                      onClick={() => skip(-15)}
-                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}
-                    >
-                      ↺ 15s
-                    </button>
-                    <button
-                      onClick={onTogglePlay}
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "50%",
-                        backgroundColor: "#2090FF",
-                        border: "none",
-                        color: "#FFFFFF",
-                        fontSize: "16px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {isPlaying ? "⏸" : "▶"}
-                    </button>
-                    <button
-                      onClick={() => skip(15)}
-                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}
-                    >
-                      15s ↻
-                    </button>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "13px", color: "#FFF", marginBottom: "3px" }}>
+                      {sermon.title}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>
+                      {sermon.speaker || "Dr. Joshua Agunbiade"}
+                    </div>
                   </div>
                 </div>
               )}
+
+              {/* Listen externally row */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  padding: "10px 14px",
+                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-poppins)", fontSize: "10px", color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", textTransform: "uppercase", flexShrink: 0 }}>
+                  Also on:
+                </span>
+                <a
+                  href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "4px 10px",
+                    borderRadius: "20px",
+                    backgroundColor: "rgba(29,185,84,0.12)",
+                    border: "1px solid rgba(29,185,84,0.35)",
+                    color: "#1DB954",
+                    textDecoration: "none",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-poppins)",
+                  }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                  </svg>
+                  Spotify
+                </a>
+                <a
+                  href="https://t.me/ThePublishersHouse"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "4px 10px",
+                    borderRadius: "20px",
+                    backgroundColor: "rgba(34,158,217,0.12)",
+                    border: "1px solid rgba(34,158,217,0.35)",
+                    color: "#229ED9",
+                    textDecoration: "none",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-poppins)",
+                  }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.92 9.07c-.14.65-.53.81-1.07.51l-2.95-2.18-1.42 1.37c-.16.16-.29.29-.6.29l.21-3.01 5.48-4.95c.24-.21-.05-.33-.37-.12l-6.77 4.26-2.92-.91c-.64-.2-.65-.64.13-.95l11.41-4.4c.53-.19.99.13.8.92z"/>
+                  </svg>
+                  Telegram
+                </a>
+              </div>
             </div>
           )}
 
