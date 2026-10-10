@@ -1,183 +1,405 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Sermon } from "@/lib/firebase";
 import Link from "next/link";
 import SermonCard from "@/components/SermonCard";
-
 import { useAudio } from "@/components/GlobalAudioPlayer";
 
-const Navy    = "#151A54";
+// COLOR TOKENS
+const Navy = "#151A54";
 const Blue700 = "#0140C1";
 const Blue500 = "#2090FF";
 const Slate500 = "#747CA1";
 const Slate600 = "#4A62A0";
 const Paper100 = "#F4F6FB";
-const White   = "#FFFFFF";
+const Cream = "#F7F5F0";
+const White = "#FFFFFF";
+const Orange = "#E8740C";
+const Gold = "#B8860B";
 
-const T = {
-  displayL:  { fontFamily: "var(--font-poppins)", fontWeight: 800, fontSize: "clamp(32px,5vw,56px)", lineHeight: "1.04em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  eyebrow:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  colophon:  { fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.15em", textTransform: "uppercase" as const },
-  readBody:  { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "18px", lineHeight: "1.75em" },
-  button:    { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
-};
+function getYouTubeVideoId(url?: string): string | null {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+  return match ? match[1] : null;
+}
 
-export default function SermonDetailClient({ sermon, relatedSermons }: { sermon: Sermon, relatedSermons: Sermon[] }) {
-  const [videoOpen, setVideoOpen] = useState(false);
+interface Props {
+  sermon: Sermon;
+  relatedSermons: Sermon[];
+}
+
+export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [isVideoMinimized, setIsVideoMinimized] = useState(false);
   const { playSermon } = useAudio();
-  const dateStr = sermon.date ? new Date(sermon.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.') : "00.00.0000";
 
-  const handleListen = () => {
-    if (sermon.audioUrl && !sermon.audioUrl.includes("t.me/")) {
-      playSermon(sermon);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const videoId = getYouTubeVideoId(sermon.videoUrl);
+  const coverImageUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+
+  const formattedDate = sermon.date ? new Date(sermon.date).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }) : "";
+
+  const handlePlayAudio = () => {
+    if (!sermon.audioUrl) return;
+    if (sermon.audioUrl.includes('t.me') || sermon.audioUrl.includes('spotify.com')) {
+      window.open(sermon.audioUrl, '_blank');
     } else {
-      const tgUrl = sermon.audioUrl?.includes("t.me/") ? sermon.audioUrl : "https://t.me/ThePublishersHouse";
-      window.open(tgUrl, "_blank");
+      playSermon(sermon);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: sermon.title,
+        text: `Listen to ${sermon.title} by ${sermon.speaker}`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
     }
   };
 
   return (
-    <>
-      <main style={{ paddingTop: "70px", backgroundColor: White }}>
-        
-        {/* ── HERO BANNER ──────────────────────────────────────────────── */}
-        <section style={{
-          position: "relative",
-          backgroundColor: Navy,
-          padding: "100px 5%",
-          minHeight: "480px",
-          display: "flex",
-          alignItems: "flex-end"
+    <main style={{ paddingTop: '70px', minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: White, fontFamily: "'Poppins', sans-serif" }}>
+      {/* HEADER SECTION */}
+      <section style={{ backgroundColor: Cream, padding: isMobile ? '40px 20px' : '80px 5%' }}>
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '40px',
+          alignItems: isMobile ? 'center' : 'flex-start'
         }}>
-          {/* Background Image */}
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/sermon-hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0, opacity: 0.3, mixBlendMode: "luminosity" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #151A54 0%, transparent 80%)", zIndex: 1 }} />
-          
-          <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ ...T.eyebrow, color: "rgba(255,255,255,0.8)", marginBottom: "16px" }}>
-              {sermon.series || "TEACHING"}
-            </div>
-            
-            <h1 style={{ ...T.displayL, color: White, margin: "0 0 24px", maxWidth: "900px" }}>
+          {/* Left Column */}
+          <div style={{ flexShrink: 0 }}>
+            {coverImageUrl ? (
+              <img 
+                src={coverImageUrl} 
+                alt={sermon.title} 
+                style={{
+                  width: isMobile ? '100%' : '320px',
+                  maxWidth: '320px',
+                  height: isMobile ? 'auto' : '320px',
+                  aspectRatio: '1/1',
+                  objectFit: 'cover',
+                  borderRadius: '4px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              />
+            ) : (
+              <div style={{
+                width: isMobile ? '100%' : '320px',
+                maxWidth: '320px',
+                height: isMobile ? '320px' : '320px',
+                backgroundColor: Navy,
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                <span style={{ fontSize: '48px' }}>🎵</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', textAlign: isMobile ? 'center' : 'left' }}>
+            <span style={{ color: Gold, fontWeight: 600, fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+              SERMON
+            </span>
+            <h1 style={{ 
+              fontFamily: "'Playfair Display', serif", 
+              color: '#1A1A2E', 
+              fontSize: 'clamp(28px, 4vw, 42px)',
+              margin: '0 0 16px 0',
+              lineHeight: 1.2
+            }}>
               {sermon.title}
             </h1>
-            
-            {/* Meta Line */}
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", borderBottom: "1px solid rgba(255,255,255,0.2)", padding: "16px 0", marginBottom: "32px", display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
-              <span style={{ ...T.colophon, color: White }}>{sermon.scripture || "2 TIMOTHY 2:15"}</span>
-              <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-              <span style={{ ...T.colophon, color: White }}>{sermon.speaker || "REV. JOSHUA AGUNBIADE"}</span>
-              <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-              <span style={{ ...T.colophon, color: White }}>{dateStr}</span>
-              {sermon.duration && (
-                <>
-                  <span style={{ ...T.colophon, color: "rgba(255,255,255,0.5)" }}>·</span>
-                  <span style={{ ...T.colophon, color: White }}>{sermon.duration}</span>
-                </>
-              )}
-            </div>
-            
-            {/* Action Buttons */}
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <button onClick={handleListen} style={{ ...T.button, padding: "14px 32px", backgroundColor: White, color: Navy, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
-                </svg>
-                LISTEN {sermon.audioUrl && !sermon.audioUrl.includes("t.me/") ? "AUDIO" : "ON TELEGRAM"}
-              </button>
+            <p style={{ 
+              color: Slate600, 
+              fontSize: '16px',
+              margin: '0 0 32px 0'
+            }}>
+              {sermon.speaker} {formattedDate && `| ${formattedDate}`}
+            </p>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
               {sermon.videoUrl && (
-                <button onClick={() => setVideoOpen(true)} style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                  WATCH VIDEO
+                <button 
+                  onClick={() => { setShowVideoPlayer(true); setIsVideoMinimized(false); }}
+                  style={{
+                    backgroundColor: Navy,
+                    color: White,
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '15px'
+                  }}
+                >
+                  <span>▶</span> Watch
                 </button>
               )}
-              {sermon.studyGuideUrl && (
-                <a href={sermon.studyGuideUrl} target="_blank" rel="noopener noreferrer" style={{ ...T.button, padding: "14px 32px", backgroundColor: "transparent", color: White, border: "1px solid rgba(255,255,255,0.4)", textDecoration: "none", transition: "background 200ms" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor="rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor="transparent"}>
-                  STUDY GUIDE
-                </a>
+              {sermon.audioUrl && (
+                <button 
+                  onClick={handlePlayAudio}
+                  style={{
+                    backgroundColor: Orange,
+                    color: White,
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '15px'
+                  }}
+                >
+                  <span>🔊</span> Play Audio
+                </button>
               )}
+              <button 
+                onClick={handleShare}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: Navy,
+                  border: `1px solid ${Slate500}`,
+                  padding: '12px 24px',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '15px'
+                }}
+              >
+                Share
+              </button>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── MAIN BODY SPLIT ─────────────────────────────────────────── */}
-        <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 5%", display: "flex", gap: "64px", flexWrap: "wrap", alignItems: "flex-start" }}>
-          
-          {/* Left Sidebar */}
-          <aside style={{ flex: "0 0 200px", position: "sticky", top: "100px" }}>
-            <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "16px" }}>IN THIS TEACHING</div>
-            {sermon.tags && sermon.tags.map((tag) => (
-              <div key={tag} style={{ ...T.colophon, color: Navy, marginBottom: "12px", letterSpacing: "0.1em" }}>
-                {tag}
-              </div>
-            ))}
-            
-            <div style={{ marginTop: "48px", ...T.colophon, color: Slate500, textTransform: "none", lineHeight: "1.8em", opacity: 0.8 }}>
-              Share to WhatsApp · X · Copy link
-            </div>
-          </aside>
-          
-          {/* Right Content */}
-          <article style={{ flex: "1 1 500px" }}>
-            <div style={{ ...T.readBody, color: Navy }}>
-              {sermon.summary ? (
-                 <div dangerouslySetInnerHTML={{ __html: sermon.summary.replace(/\n/g, '<br/>') }} />
-              ) : (
-                <p>Teaching by {sermon.speaker || "Rev. Joshua Agunbiade"}.</p>
+      {/* BODY SECTION */}
+      <section style={{ padding: isMobile ? '40px 20px' : '60px 5%', flex: 1 }}>
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '60px',
+          alignItems: 'flex-start'
+        }}>
+          {/* Left Metadata Panel */}
+          <div style={{ 
+            width: isMobile ? '100%' : '280px', 
+            flexShrink: 0,
+            position: isMobile ? 'static' : 'sticky',
+            top: '40px'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {sermon.series && (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1A1A2E', marginBottom: '4px' }}>Series:</div>
+                  <Link href={`/sermons?series=${encodeURIComponent(sermon.series)}`} style={{ color: Blue500, textDecoration: 'none' }}>
+                    {sermon.series}
+                  </Link>
+                </div>
               )}
-            </div>
-          </article>
-        </section>
-
-        {/* ── REST OF SERIES ─────────────────────────────────────────── */}
-        {relatedSermons.length > 0 && (
-          <section style={{ backgroundColor: Paper100, padding: "80px 5%" }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-              <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "8px" }}>
-                {sermon.series && relatedSermons.some(r => r.series === sermon.series)
-                  ? "REST OF THE SERIES"
-                  : "MORE TEACHINGS"}
-              </div>
-              <h2 style={{ ...T.displayL, color: Navy, fontSize: "clamp(24px, 4vw, 42px)", margin: "0 0 48px" }}>
-                {sermon.series && relatedSermons.some(r => r.series === sermon.series)
-                  ? sermon.series
-                  : "FROM THIS HOUSE"}
-              </h2>
-              
-              <div className="tph-grid-3">
-                {relatedSermons.slice(0, 3).map(item => (
-                  <SermonCard key={item.id} sermon={item} />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* ── VIDEO MODAL ─────────────────────────────────────────── */}
-      {videoOpen && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(11, 14, 20, 0.95)", zIndex: 9999, display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "24px", display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={() => setVideoOpen(false)} style={{ ...T.eyebrow, background: "none", border: "none", color: White, cursor: "pointer" }}>
-              CLOSE ✕
-            </button>
-          </div>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5% 5% 5%" }}>
-            <div style={{ width: "100%", maxWidth: "1000px", aspectRatio: "16/9", backgroundColor: "#000", position: "relative" }}>
-              {sermon.videoUrl && sermon.videoUrl.includes("youtube") ? (
-                <iframe width="100%" height="100%" src={`${sermon.videoUrl.replace("watch?v=", "embed/")}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-              ) : (
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: Slate500, fontFamily: "var(--font-poppins)" }}>
-                  Video URL not provided
+              {sermon.speaker && (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1A1A2E', marginBottom: '4px' }}>Speaker:</div>
+                  <div style={{ color: Slate600 }}>{sermon.speaker}</div>
+                </div>
+              )}
+              {sermon.duration && (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1A1A2E', marginBottom: '4px' }}>Duration:</div>
+                  <div style={{ color: Slate600 }}>{sermon.duration}</div>
+                </div>
+              )}
+              {sermon.scripture && (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1A1A2E', marginBottom: '4px' }}>Scripture:</div>
+                  <div style={{ color: Slate600 }}>{sermon.scripture}</div>
+                </div>
+              )}
+              {sermon.tags && sermon.tags.length > 0 && (
+                <div>
+                  <div style={{ fontWeight: 600, color: '#1A1A2E', marginBottom: '4px' }}>Tags:</div>
+                  <div style={{ color: Slate600 }}>{sermon.tags.join(", ")}</div>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Right Content Area */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ 
+              fontFamily: "'Playfair Display', serif", 
+              color: '#1A1A2E',
+              fontSize: '28px',
+              borderBottom: `2px solid ${Paper100}`,
+              paddingBottom: '16px',
+              margin: '0 0 24px 0'
+            }}>
+              Overview
+            </h2>
+            <div style={{ 
+              color: '#333333', 
+              fontSize: '17px', 
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap'
+            }}>
+              {sermon.summary || `Teaching by ${sermon.speaker}.`}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* RELATED SERMONS SECTION */}
+      {relatedSermons && relatedSermons.length > 0 && (
+        <section style={{ backgroundColor: Paper100, padding: isMobile ? '40px 20px' : '60px 5%' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <h2 style={{ 
+              fontFamily: "'Playfair Display', serif", 
+              color: Navy,
+              fontSize: '28px',
+              textAlign: 'center',
+              margin: '0 0 40px 0'
+            }}>
+              {sermon.series && relatedSermons.some(r => r.series === sermon.series)
+                ? `More from: ${sermon.series}`
+                : "More Teachings"}
+            </h2>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '280px' : '320px'}, 1fr))`,
+              gap: '24px' 
+            }}>
+              {relatedSermons.slice(0, 3).map(related => (
+                <SermonCard key={related.id} sermon={related} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FLOATING MINI-PLAYER */}
+      {showVideoPlayer && videoId && (
+        <div style={{
+          position: 'fixed',
+          bottom: isMobile ? '12px' : '24px',
+          right: isMobile ? '12px' : '24px',
+          width: isMobile ? 'calc(100% - 24px)' : '380px',
+          backgroundColor: '#22272E',
+          borderRadius: '12px',
+          boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+          zIndex: 1000,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          border: '1px solid #333'
+        }}>
+          {/* Title Bar */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            backgroundColor: '#1C2128',
+            borderBottom: isVideoMinimized ? 'none' : '1px solid #333'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+              <span style={{ color: '#fff', fontSize: '14px' }}>▶</span>
+              <span style={{ 
+                color: '#fff', 
+                fontSize: '14px', 
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {sermon.title}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button 
+                onClick={() => setIsVideoMinimized(!isVideoMinimized)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title={isVideoMinimized ? "Expand" : "Minimize"}
+              >
+                {isVideoMinimized ? '□' : '—'}
+              </button>
+              <button 
+                onClick={() => { setShowVideoPlayer(false); setIsVideoMinimized(false); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          
+          {/* Video Area */}
+          {!isVideoMinimized && (
+            <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000' }}>
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                title={sermon.title} 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            </div>
+          )}
         </div>
       )}
-    </>
+    </main>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import type { Sermon } from "@/lib/firebase";
 import SermonCard from "@/components/SermonCard";
@@ -86,7 +86,7 @@ function SermonMobileCard({ sermon }: { sermon: Sermon }) {
   );
 }
 
-/* ─── Sidebar filter panel ─── */
+/* ─── Original Sidebar filter panel (USED FOR MOBILE DRAWER ONLY) ─── */
 function SermonsFilterPanel({
   search, setSearch,
   yearFilter, setYearFilter,
@@ -157,6 +157,98 @@ function SermonsFilterPanel({
   );
 }
 
+/* ─── NEW Desktop filter panel (WITH SCROLLABLE AREAS) ─── */
+function DesktopFilterPanel({
+  search, setSearch,
+  yearFilter, setYearFilter,
+  speakerFilter, setSpeakerFilter,
+  seriesFilter, setSeriesFilter,
+  initialSermons,
+}: {
+  search: string; setSearch: (v: string) => void;
+  yearFilter: string; setYearFilter: (v: string) => void;
+  speakerFilter: string; setSpeakerFilter: (v: string) => void;
+  seriesFilter: string; setSeriesFilter: (v: string) => void;
+  initialSermons: Sermon[];
+}) {
+  const labelStyle = { ...T.label, color: Navy, marginBottom: "16px", borderBottom: `1px solid ${Paper300}`, paddingBottom: "8px", display: "block" } as React.CSSProperties;
+  const radioRow = { display: "flex", alignItems: "center", gap: "8px", fontFamily: "var(--font-poppins)", fontSize: "13px", color: Slate600, cursor: "pointer", padding: "4px 0" } as React.CSSProperties;
+
+  // Speaker counts and filtering
+  const speakerCounts = initialSermons.reduce((acc, s) => {
+    if (s.speaker) acc[s.speaker] = (acc[s.speaker] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const uniqueSpeakers = Object.keys(speakerCounts).sort((a,b) => a.localeCompare(b));
+
+  const [speakerSearch, setSpeakerSearch] = useState("");
+  const filteredSpeakers = uniqueSpeakers.filter(s => s.toLowerCase().includes(speakerSearch.toLowerCase()));
+
+  // Series counts and filtering
+  const seriesCounts = initialSermons.reduce((acc, s) => {
+    if (s.series) acc[s.series] = (acc[s.series] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const uniqueSeries = Object.keys(seriesCounts).sort((a,b) => a.localeCompare(b));
+
+  const [seriesSearch, setSeriesSearch] = useState("");
+  const filteredSeries = uniqueSeries.filter(s => s.toLowerCase().includes(seriesSearch.toLowerCase()));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+      {/* Search */}
+      <div>
+        <label style={labelStyle}>Search</label>
+        <input type="text" placeholder="Search sermons…" value={search} onChange={e => setSearch(e.target.value)}
+          style={{ width: "100%", padding: "10px 12px", border: `1px solid ${Paper300}`, borderRadius: "4px",
+            fontFamily: "var(--font-poppins)", fontSize: "13px", outline: "none", boxSizing: "border-box" }} />
+      </div>
+
+      {/* Year */}
+      <div>
+        <label style={labelStyle}>Year</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          {["All", "2026", "2025", "2024", "2023", "2022", "2021"].map(y => (
+            <label key={y} style={radioRow}>
+              <input type="radio" name="d-year" checked={yearFilter === y} onChange={() => setYearFilter(y)} /> {y === "All" ? "All Years" : y}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Preacher */}
+      <div>
+        <label style={labelStyle}>Speakers</label>
+        <input type="text" placeholder="Search Speakers..." value={speakerSearch} onChange={e => setSpeakerSearch(e.target.value)}
+          style={{ width: "100%", padding: "8px 10px", marginBottom: "12px", border: `1px solid ${Paper300}`, borderRadius: "4px",
+            fontFamily: "var(--font-poppins)", fontSize: "12px", outline: "none", boxSizing: "border-box" }} />
+        <div className="filter-scroll-box" style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "220px", overflowY: "auto", paddingRight: "8px" }}>
+          <label style={radioRow}><input type="radio" name="d-speaker" checked={speakerFilter === "All"} onChange={() => setSpeakerFilter("All")} /> All Preachers</label>
+          {filteredSpeakers.map(sp => (
+            <label key={sp} style={radioRow}><input type="radio" name="d-speaker" checked={speakerFilter === sp} onChange={() => setSpeakerFilter(sp)} /> {sp} ({speakerCounts[sp]})</label>
+          ))}
+        </div>
+      </div>
+
+      {/* Series */}
+      <div>
+        <label style={labelStyle}>Series / Conference</label>
+        <input type="text" placeholder="Search Series..." value={seriesSearch} onChange={e => setSeriesSearch(e.target.value)}
+          style={{ width: "100%", padding: "8px 10px", marginBottom: "12px", border: `1px solid ${Paper300}`, borderRadius: "4px",
+            fontFamily: "var(--font-poppins)", fontSize: "12px", outline: "none", boxSizing: "border-box" }} />
+        <div className="filter-scroll-box" style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "220px", overflowY: "auto", paddingRight: "8px" }}>
+          <label style={radioRow}><input type="radio" name="d-series" checked={seriesFilter === "All"} onChange={() => setSeriesFilter("All")} /> All Series</label>
+          {filteredSeries.map(s => (
+            <label key={s} style={radioRow}><input type="radio" name="d-series" checked={seriesFilter === s} onChange={() => setSeriesFilter(s)} /> {s} ({seriesCounts[s]})</label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const PAGE_SIZE = 24;
+
 /* ─── Main component ─── */
 export default function SermonsClient({ initialSermons }: { initialSermons: Sermon[] }) {
   const [search, setSearch] = useState("");
@@ -165,6 +257,10 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
   const [speakerFilter, setSpeakerFilter] = useState("All");
   const [seriesFilter, setSeriesFilter] = useState("All");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const gridTopRef = useRef<HTMLDivElement>(null);
+  const mobileTopRef = useRef<HTMLDivElement>(null);
 
   const uniqueSpeakers = Array.from(new Set(initialSermons.map(s => s.speaker))).filter(Boolean) as string[];
   const uniqueSeries   = Array.from(new Set(initialSermons.map(s => s.series))).filter(Boolean) as string[];
@@ -187,7 +283,12 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
     return 0;
   });
 
-  const clearAll = () => { setSearch(""); setYearFilter("All"); setSpeakerFilter("All"); setSeriesFilter("All"); };
+  const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
+  const handleYearFilter = (v: string) => { setYearFilter(v); setCurrentPage(1); };
+  const handleSpeakerFilter = (v: string) => { setSpeakerFilter(v); setCurrentPage(1); };
+  const handleSeriesFilter = (v: string) => { setSeriesFilter(v); setCurrentPage(1); };
+
+  const clearAll = () => { handleSearch(""); handleYearFilter("All"); handleSpeakerFilter("All"); handleSeriesFilter("All"); };
 
   const activeFilterCount = [
     search !== "",
@@ -196,16 +297,107 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
     seriesFilter !== "All",
   ].filter(Boolean).length;
 
-  const filterPanelProps = { search, setSearch, yearFilter, setYearFilter, speakerFilter, setSpeakerFilter, uniqueSpeakers, seriesFilter, setSeriesFilter, uniqueSeries };
+  const filterPanelProps = { 
+    search, setSearch: handleSearch, 
+    yearFilter, setYearFilter: handleYearFilter, 
+    speakerFilter, setSpeakerFilter: handleSpeakerFilter, uniqueSpeakers, 
+    seriesFilter, setSeriesFilter: handleSeriesFilter, uniqueSeries 
+  };
+  
+  const desktopFilterPanelProps = {
+    search, setSearch: handleSearch,
+    yearFilter, setYearFilter: handleYearFilter,
+    speakerFilter, setSpeakerFilter: handleSpeakerFilter,
+    seriesFilter, setSeriesFilter: handleSeriesFilter,
+    initialSermons
+  };
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const paginatedSermons = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const onPageChange = (page: number, isMobile: boolean) => {
+    setCurrentPage(page);
+    if (isMobile && mobileTopRef.current) {
+       mobileTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (!isMobile && gridTopRef.current) {
+       gridTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  function renderPagination(isMobile: boolean) {
+    if (totalPages <= 1) return null;
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "48px", marginBottom: "32px" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "4px" }}>
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => onPageChange(currentPage - 1, isMobile)}
+            style={{ ...T.button, padding: "8px 12px", border: "none", background: "none", color: currentPage === 1 ? Paper300 : Navy, cursor: currentPage === 1 ? "default" : "pointer" }}
+          >&lt; Previous</button>
+
+          {pages.map((p, i) => (
+            typeof p === 'number' ? (
+              <button 
+                key={i}
+                onClick={() => onPageChange(p, isMobile)}
+                style={{
+                  width: "36px", height: "36px", borderRadius: "50%",
+                  backgroundColor: p === currentPage ? Blue700 : "transparent",
+                  color: p === currentPage ? White : Slate600,
+                  border: "none",
+                  fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "13px",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >{p}</button>
+            ) : (
+              <div key={i} style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", color: Slate600 }}>...</div>
+            )
+          ))}
+
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => onPageChange(currentPage + 1, isMobile)}
+            style={{ ...T.button, padding: "8px 12px", border: "none", background: "none", color: currentPage === totalPages ? Paper300 : Navy, cursor: currentPage === totalPages ? "default" : "pointer" }}
+          >Next &gt;</button>
+        </div>
+        <div style={{ ...T.eyebrow, color: Slate500, marginTop: "16px" }}>
+          Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems} results
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section style={{ backgroundColor: Paper100, padding: "40px 24px 96px" }}>
+      <style>{`
+        .filter-scroll-box::-webkit-scrollbar { width: 5px; }
+        .filter-scroll-box::-webkit-scrollbar-track { background: #F4F6FB; border-radius: 3px; }
+        .filter-scroll-box::-webkit-scrollbar-thumb { background: #D3DAEC; border-radius: 3px; }
+        .filter-scroll-box::-webkit-scrollbar-thumb:hover { background: #747CA1; }
+      `}</style>
       <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
 
         {/* ══════════ MOBILE FILTER BAR ══════════ */}
-        <div className="tph-mobile-filter-bar" style={{ flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
+        <div className="tph-mobile-filter-bar" style={{ flexDirection: "column", gap: "12px", marginBottom: "20px" }} ref={mobileTopRef}>
           {/* Search */}
-          <input type="text" placeholder="Search sermons…" value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search sermons…" value={search} onChange={e => handleSearch(e.target.value)}
             style={{ width: "100%", padding: "11px 14px", border: `1px solid ${Paper300}`, borderRadius: "6px",
               fontFamily: "var(--font-poppins)", fontSize: "14px", outline: "none" }} />
 
@@ -224,7 +416,7 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
             <div style={{ flex: 1, position: "relative" }}>
-              <select value={sort} onChange={e => setSort(e.target.value)}
+              <select value={sort} onChange={e => { setSort(e.target.value); setCurrentPage(1); }}
                 style={{ width: "100%", padding: "10px 14px", border: `1.5px solid ${Paper300}`, borderRadius: "6px",
                   fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "13px",
                   outline: "none", cursor: "pointer", backgroundColor: White, color: Navy, appearance: "none" }}>
@@ -259,11 +451,12 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
             </div>
           ) : (
             <div className="sermon-mobile-list" style={{ marginTop: "4px" }}>
-              {filtered.map(sermon => (
+              {paginatedSermons.map(sermon => (
                 <SermonMobileCard key={sermon.id} sermon={sermon} />
               ))}
             </div>
           )}
+          {filtered.length > 0 && renderPagination(true)}
         </div>
 
         {/* ══════════ DESKTOP LAYOUT (sidebar + grid) ══════════ */}
@@ -272,11 +465,11 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
         }}>
           {/* Sidebar */}
           <div style={{ flex: "0 0 260px", display: "flex", flexDirection: "column", gap: "32px", position: "sticky", top: "100px" }}>
-            <SermonsFilterPanel {...filterPanelProps} />
+            <DesktopFilterPanel {...desktopFilterPanelProps} />
           </div>
 
           {/* Results */}
-          <div style={{ flex: "1 1 0", minWidth: 0 }}>
+          <div style={{ flex: "1 1 0", minWidth: 0 }} ref={gridTopRef}>
             {/* Top bar */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
               marginBottom: "24px", paddingBottom: "16px", borderBottom: `1px solid ${Paper300}`, flexWrap: "wrap", gap: "16px" }}>
@@ -285,7 +478,7 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span style={{ ...T.label, color: Navy }}>Sort by:</span>
-                <select value={sort} onChange={e => setSort(e.target.value)}
+                <select value={sort} onChange={e => { setSort(e.target.value); setCurrentPage(1); }}
                   style={{ padding: "6px 12px", border: `1px solid ${Paper300}`, borderRadius: "4px",
                     fontFamily: "var(--font-poppins)", fontSize: "12px", outline: "none", cursor: "pointer" }}>
                   <option value="newest">Newest First</option>
@@ -309,11 +502,13 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
               </div>
             ) : (
               <div className="tph-grid-3" style={{ marginBottom: "64px" }}>
-                {filtered.map(sermon => (
+                {paginatedSermons.map(sermon => (
                   <SermonCard key={sermon.id} sermon={sermon} />
                 ))}
               </div>
             )}
+            
+            {filtered.length > 0 && renderPagination(false)}
           </div>
         </div>
 
