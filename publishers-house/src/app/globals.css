@@ -1,3 +1,19 @@
+@font-face {
+  font-family: 'MADE Soulmaze';
+  src: url('/fonts/made-soulmaze.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MADE Soulmaze';
+  src: url('/fonts/made-soulmaze-italic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* ============================================================
    THE PUBLISHERS HOUSE — GLOBAL DESIGN SYSTEM
    Replace placeholder values with actual brand hex codes
@@ -33,8 +49,11 @@
   --color-border-light: #E8ECF7;
 
   /* Typography — next/font injects these variables via layout.tsx */
-  --font-serif: var(--font-playfair, 'Playfair Display', Georgia, serif);
-  --font-sans:  var(--font-poppins, 'Poppins', system-ui, -apple-system, sans-serif);
+  --font-headline: var(--font-soulmaze, 'MADE Soulmaze'), var(--font-poppins, 'Poppins'), sans-serif;
+  --font-body:     var(--font-poppins, 'Poppins'), system-ui, -apple-system, sans-serif;
+  --font-accent:   var(--font-playfair, 'Playfair Display'), Georgia, serif;
+  --font-serif:    var(--font-playfair, 'Playfair Display'), Georgia, serif;
+  --font-sans:     var(--font-poppins, 'Poppins'), system-ui, -apple-system, sans-serif;
 
   /* Type Scale */
   --text-xs:   0.75rem;    /* 12px */
@@ -739,3 +758,9 @@ html, body {
 }
 .sermon-mobile-card-body { flex: 1; min-width: 0; }
 
+
+
+/* ---- Brand Typography Utilities ---- */
+.font-headline { font-family: var(--font-headline); text-transform: uppercase; letter-spacing: -0.01em; }
+.font-body { font-family: var(--font-body); }
+.font-accent { font-family: var(--font-accent); }

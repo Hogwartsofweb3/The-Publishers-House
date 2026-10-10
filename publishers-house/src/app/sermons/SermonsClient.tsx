@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import type { Sermon } from "@/lib/firebase";
 import SermonCard from "@/components/SermonCard";
+import { useAudio } from "@/components/GlobalAudioPlayer";
 
 /** Extract a YouTube thumbnail from any YouTube URL format, or return "" */
 function getYouTubeThumbnail(videoUrl?: string): string {
@@ -29,37 +30,61 @@ const Paper300 = "#D3DAEC";
 const White   = "#FFFFFF";
 
 const T = {
-  eyebrow: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  label:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
-  button:  { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", lineHeight: "1em",   letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  readBody:{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "15px", lineHeight: "1.6em" },
+  headline:{ fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, textTransform: "uppercase" as const },
+  eyebrow: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  label:   { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
+  button:  { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "12px", lineHeight: "1em",   letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  readBody:{ fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 400, fontSize: "15px", lineHeight: "1.6em" },
 };
 
 /* ─── Mobile horizontal sermon card (Gospel-in-Life style) ─── */
 function SermonMobileCard({ sermon }: { sermon: Sermon }) {
+  const { playVideo, playAudio } = useAudio();
   const dateLabel = sermon.date
     ? new Date(sermon.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()
     : "";
   const thumb = getYouTubeThumbnail(sermon.videoUrl);
 
-  return (
-    <Link href={`/sermons/${sermon.id}`} className="sermon-mobile-card">
-      {/* Thumbnail */}
-      {thumb ? (
-        <img src={thumb} alt={sermon.title} className="sermon-mobile-card-thumb" />
-      ) : (
-        <div className="sermon-mobile-card-thumb" style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "rgba(255,255,255,0.3)", fontSize: "11px", fontFamily: "var(--font-poppins)",
-        }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" opacity={0.4}>
-            <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
-          </svg>
-        </div>
-      )}
+  const handleThumbPlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (sermon.videoUrl) {
+      playVideo(sermon);
+    } else {
+      playAudio(sermon);
+    }
+  };
 
-      {/* Text */}
-      <div className="sermon-mobile-card-body">
+  return (
+    <div className="sermon-mobile-card" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+      {/* Thumbnail with quick-play overlay */}
+      <div
+        onClick={handleThumbPlay}
+        className="sermon-mobile-card-thumb"
+        style={{ position: "relative", cursor: "pointer", flexShrink: 0 }}
+        title="Play in mini-player"
+      >
+        {thumb ? (
+          <img src={thumb} alt={sermon.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: "100%", height: "100%", backgroundColor: Navy, color: "rgba(255,255,255,0.3)",
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z" />
+            </svg>
+          </div>
+        )}
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.25)" }}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 0, height: 0, borderTop: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: `9px solid ${Navy}`, marginLeft: "2px" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Text link to detail page */}
+      <Link href={`/sermons/${sermon.id}`} className="sermon-mobile-card-body" style={{ flex: 1, textDecoration: "none", minWidth: 0 }}>
         <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "9px",
           letterSpacing: "0.18em", textTransform: "uppercase", color: Blue500, marginBottom: "4px" }}>
           Sermon
@@ -81,8 +106,8 @@ function SermonMobileCard({ sermon }: { sermon: Sermon }) {
             {sermon.series}
           </div>
         )}
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 

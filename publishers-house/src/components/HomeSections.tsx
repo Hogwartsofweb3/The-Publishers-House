@@ -18,15 +18,15 @@ const Slate500 = "#747CA1";
 const White   = "#FFFFFF";
 
 const T = {
-  displayL:  { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(32px,4.5vw,48px)", lineHeight: "1.04em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  displayM:  { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "30px", lineHeight: "1.14em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
-  displayS:  { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "21px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
-  readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
-  readBody:  { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "17px", lineHeight: "1.68em" },
-  eyebrow:   { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  label:     { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
-  button:    { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  colophon:  { fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
+  displayL:  { fontFamily: "var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight: 700, fontSize: "clamp(32px,4.5vw,48px)", lineHeight: "1.04em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  displayM:  { fontFamily: "var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight: 700, fontSize: "28px", lineHeight: "1.14em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  displayS:  { fontFamily: "var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight: 700, fontSize: "21px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  readSmall: { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 400, fontSize: "14px", lineHeight: "1.5em" },
+  readBody:  { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 400, fontSize: "16px", lineHeight: "1.68em" },
+  eyebrow:   { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  label:     { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
+  button:    { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 600, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  colophon:  { fontFamily: "var(--font-body, 'Poppins', sans-serif)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
 };
 
 /* ── Static fallback (shown until Firestore loads) ── */

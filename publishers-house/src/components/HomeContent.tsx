@@ -18,19 +18,19 @@ const Slate500= "#747CA1";
 const White   = "#FFFFFF";
 
 const T = {
-  displayXL: { fontFamily:"'Poppins',sans-serif", fontWeight:800, fontSize:"clamp(42px,6vw,72px)", lineHeight:"0.98em", letterSpacing:"-0.02em", textTransform:"uppercase" as const },
-  displayL:  { fontFamily:"'Poppins',sans-serif", fontWeight:800, fontSize:"clamp(32px,4.5vw,48px)", lineHeight:"1.04em", letterSpacing:"-0.02em", textTransform:"uppercase" as const },
-  displayM:  { fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"30px", lineHeight:"1.14em", letterSpacing:"-0.015em", textTransform:"uppercase" as const },
-  displayS:  { fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
-  epigraph:  { fontFamily:"'Playfair Display',serif", fontWeight:400, fontStyle:"italic" as const, fontSize:"clamp(24px,3vw,36px)", lineHeight:"1.3em" },
-  readLede:  { fontFamily:"'Playfair Display',serif", fontWeight:400, fontSize:"20px", lineHeight:"1.55em" },
-  readBody:  { fontFamily:"'Playfair Display',serif", fontWeight:400, fontSize:"17px", lineHeight:"1.68em" },
-  readSmall: { fontFamily:"'Playfair Display',serif", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
-  eyebrow:   { fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
-  label:     { fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"11px", lineHeight:"1.6em", letterSpacing:"0.16em", textTransform:"uppercase" as const },
-  scripture: { fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"11px", lineHeight:"1.6em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
-  button:    { fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"12px", lineHeight:"1em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
-  colophon:  { fontFamily:"'Poppins',sans-serif", fontWeight:500, fontSize:"10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
+  displayXL: { fontFamily:"var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight:700, fontSize:"clamp(42px,6vw,72px)", lineHeight:"0.98em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
+  displayL:  { fontFamily:"var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight:700, fontSize:"clamp(32px,4.5vw,48px)", lineHeight:"1.04em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
+  displayM:  { fontFamily:"var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight:700, fontSize:"28px", lineHeight:"1.14em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
+  displayS:  { fontFamily:"var(--font-headline, 'MADE Soulmaze', sans-serif)", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
+  epigraph:  { fontFamily:"var(--font-accent, 'Playfair Display', serif)", fontWeight:400, fontStyle:"italic" as const, fontSize:"clamp(24px,3vw,36px)", lineHeight:"1.3em" },
+  readLede:  { fontFamily:"var(--font-accent, 'Playfair Display', serif)", fontWeight:400, fontSize:"20px", lineHeight:"1.55em" },
+  readBody:  { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:400, fontSize:"16px", lineHeight:"1.7em" },
+  readSmall: { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
+  eyebrow:   { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:600, fontSize: "10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
+  label:     { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:600, fontSize: "11px", lineHeight:"1.6em", letterSpacing:"0.16em", textTransform:"uppercase" as const },
+  scripture: { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:600, fontSize: "11px", lineHeight:"1.6em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
+  button:    { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:600, fontSize: "12px", lineHeight:"1em", letterSpacing:"0.14em", textTransform:"uppercase" as const },
+  colophon:  { fontFamily:"var(--font-body, 'Poppins', sans-serif)", fontWeight:500, fontSize: "10.5px", lineHeight:"1.6em", letterSpacing:"0.1em", textTransform:"uppercase" as const },
 };
 
 /* ─── Default / fallback content ─── */

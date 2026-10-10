@@ -17,15 +17,15 @@ export const metadata: Metadata = {
 
 // Figma text styles (same tokens as homepage)
 const S = {
-  eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  scripture: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
-  displayXL: { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  displayL: { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(28px, 4vw, 48px)", lineHeight: "1.04em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  displayM: { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(20px, 3vw, 30px)", lineHeight: "1.14em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
-  displayS: { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(16px, 2.5vw, 21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
-  readLede: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
-  readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
-  readBody: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "17px", lineHeight: "1.68em" },
+  eyebrow: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  scripture: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
+  displayXL: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  displayL: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, fontSize: "clamp(28px, 4vw, 48px)", lineHeight: "1.04em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  displayM: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, fontSize: "clamp(20px, 3vw, 30px)", lineHeight: "1.14em", letterSpacing: "-0.015em", textTransform: "uppercase" as const },
+  displayS: { fontFamily: "var(--font-headline, 'MADE Soulmaze', var(--font-poppins))", fontWeight: 700, fontSize: "clamp(16px, 2.5vw, 21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  readLede: { fontFamily: "var(--font-accent, var(--font-playfair))", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
+  readSmall: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
+  readBody: { fontFamily: "var(--font-body, var(--font-poppins))", fontWeight: 400, fontSize: "16px", lineHeight: "1.68em" },
 };
 
 // Beliefs from Figma: EL-31:4406 Beliefs section
