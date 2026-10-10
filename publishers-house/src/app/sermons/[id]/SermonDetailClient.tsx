@@ -333,6 +333,47 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
               </div>
             )}
 
+            {/* Audio Platforms */}
+            <div style={{ marginTop: "12px", paddingTop: "16px", borderTop: `1px solid ${Paper300}` }}>
+              <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>Audio Channels:</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <a
+                  href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: "var(--font-poppins)",
+                    fontSize: "12px",
+                    color: "#15803D",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  🟢 Spotify Podcast ↗
+                </a>
+                <a
+                  href="https://t.me/ThePublishersHouse"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: "var(--font-poppins)",
+                    fontSize: "12px",
+                    color: "#0284C7",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  🔵 Telegram MP3s ↗
+                </a>
+              </div>
+            </div>
+
             {/* In-Page Share Links */}
             <div style={{ marginTop: "16px", paddingTop: "20px", borderTop: `1px solid ${Paper300}` }}>
               <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "12px" }}>Share this message:</div>

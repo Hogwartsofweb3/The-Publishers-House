@@ -15,6 +15,8 @@ export type Sermon = ContentTimestamps & {
   studyGuideUrl: string
   series: string
   tags: string[]
+  spotifyEpisodeId?: string
+  telegramMessageId?: string
 }
 
 export type EventItem = ContentTimestamps & {

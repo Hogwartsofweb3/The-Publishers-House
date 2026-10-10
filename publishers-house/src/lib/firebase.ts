@@ -48,6 +48,8 @@ export type Sermon = ContentTimestamps & {
   location?: string;
   duration?: string;
   summary?: string;
+  spotifyEpisodeId?: string;
+  telegramMessageId?: string;
 };
 
 export type EventItem = ContentTimestamps & {

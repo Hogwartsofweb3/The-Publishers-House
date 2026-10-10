@@ -39,6 +39,28 @@ function getYouTubeVideoId(url?: string): string | null {
   return match ? match[1] : null;
 }
 
+function getSpotifyEmbedUrl(sermon: Sermon): string {
+  if (sermon.spotifyEpisodeId) {
+    return `https://open.spotify.com/embed/episode/${sermon.spotifyEpisodeId}?utm_source=generator&theme=0`;
+  }
+  if (sermon.audioUrl && sermon.audioUrl.includes("spotify.com/episode/")) {
+    const match = sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/);
+    if (match) return `https://open.spotify.com/embed/episode/${match[1]}?utm_source=generator&theme=0`;
+  }
+  return `https://open.spotify.com/embed/show/0FELkmsjm7yVoytlwCXXDG?utm_source=generator&theme=0`;
+}
+
+function getTelegramEmbedUrl(sermon: Sermon): string {
+  if (sermon.telegramMessageId) {
+    return `https://t.me/ThePublishersHouse/${sermon.telegramMessageId}?embed=1`;
+  }
+  if (sermon.audioUrl && sermon.audioUrl.includes("t.me/")) {
+    const clean = sermon.audioUrl.replace(/^https?:\/\/t\.me\//, "").replace(/\?.*/, "");
+    if (clean) return `https://t.me/${clean}?embed=1`;
+  }
+  return `https://t.me/ThePublishersHouse/1457?embed=1`;
+}
+
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [currentSermon, setCurrentSermon] = useState<Sermon | null>(null);
   const [mode, setMode] = useState<"video" | "audio" | null>(null);
@@ -174,7 +196,32 @@ function FloatingDockedPlayer({
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : "/images/sermon-hero-bg.jpg";
 
-  const hasDirectAudio = sermon.audioUrl && !sermon.audioUrl.includes("t.me") && !sermon.audioUrl.includes("spotify.com");
+  const hasDirectAudio = Boolean(
+    sermon.audioUrl &&
+    !sermon.audioUrl.includes("t.me") &&
+    !sermon.audioUrl.includes("spotify.com") &&
+    !sermon.audioUrl.includes("youtube.com") &&
+    !sermon.audioUrl.includes("youtu.be") &&
+    (
+      sermon.audioUrl.endsWith(".mp3") ||
+      sermon.audioUrl.endsWith(".m4a") ||
+      sermon.audioUrl.endsWith(".aac") ||
+      sermon.audioUrl.includes("storage.googleapis.com") ||
+      sermon.audioUrl.includes("firebasestorage")
+    )
+  );
+
+  const [audioSource, setAudioSource] = useState<"spotify" | "telegram" | "direct">("spotify");
+
+  useEffect(() => {
+    if (hasDirectAudio) {
+      setAudioSource("direct");
+    } else if (sermon.audioUrl && sermon.audioUrl.includes("t.me")) {
+      setAudioSource("telegram");
+    } else {
+      setAudioSource("spotify");
+    }
+  }, [sermon.id, hasDirectAudio, sermon.audioUrl]);
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
@@ -330,16 +377,17 @@ function FloatingDockedPlayer({
             </div>
           )}
 
-          {/* AUDIO MODE */}
+          {/* AUDIO MODE — STRICTLY AUDIO ONLY (Spotify, Telegram, or direct MP3) */}
           {mode === "audio" && (
             <div style={{ padding: "16px", backgroundColor: "#151A54" }}>
-              <div style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "14px" }}>
+              {/* Sermon Header */}
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
                 <img
                   src={thumbnailUrl}
                   alt={sermon.title}
                   style={{
-                    width: "64px",
-                    height: "64px",
+                    width: "56px",
+                    height: "56px",
                     borderRadius: "6px",
                     objectFit: "cover",
                     flexShrink: 0,
@@ -358,7 +406,7 @@ function FloatingDockedPlayer({
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
-                      marginBottom: "4px",
+                      marginBottom: "3px",
                     }}
                   >
                     {sermon.title}
@@ -367,16 +415,158 @@ function FloatingDockedPlayer({
                     {sermon.speaker || "Dr. Joshua Agunbiade"}
                   </div>
                   {sermon.series && (
-                    <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px" }}>
+                    <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px", fontWeight: 600 }}>
                       {sermon.series}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Direct MP3 Audio Player */}
-              {hasDirectAudio ? (
-                <>
+              {/* Source Switcher: Spotify vs Telegram vs Direct */}
+              <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setAudioSource("spotify")}
+                  style={{
+                    flex: 1,
+                    padding: "7px 10px",
+                    borderRadius: "6px",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    backgroundColor: audioSource === "spotify" ? "#1DB954" : "rgba(255,255,255,0.08)",
+                    color: audioSource === "spotify" ? "#000000" : "rgba(255,255,255,0.85)",
+                    border: audioSource === "spotify" ? "1px solid #1DB954" : "1px solid rgba(255,255,255,0.15)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                  </svg>
+                  Spotify
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAudioSource("telegram")}
+                  style={{
+                    flex: 1,
+                    padding: "7px 10px",
+                    borderRadius: "6px",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    backgroundColor: audioSource === "telegram" ? "#229ED9" : "rgba(255,255,255,0.08)",
+                    color: "#FFFFFF",
+                    border: audioSource === "telegram" ? "1px solid #229ED9" : "1px solid rgba(255,255,255,0.15)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.92 9.07c-.14.65-.53.81-1.07.51l-2.95-2.18-1.42 1.37c-.16.16-.29.29-.6.29l.21-3.01 5.48-4.95c.24-.21-.05-.33-.37-.12l-6.77 4.26-2.92-.91c-.64-.2-.65-.64.13-.95l11.41-4.4c.53-.19.99.13.8.92z" />
+                  </svg>
+                  Telegram
+                </button>
+
+                {hasDirectAudio && (
+                  <button
+                    type="button"
+                    onClick={() => setAudioSource("direct")}
+                    style={{
+                      flex: 1,
+                      padding: "7px 10px",
+                      borderRadius: "6px",
+                      fontSize: "10.5px",
+                      fontWeight: 700,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      backgroundColor: audioSource === "direct" ? "#2090FF" : "rgba(255,255,255,0.08)",
+                      color: "#FFFFFF",
+                      border: audioSource === "direct" ? "1px solid #2090FF" : "1px solid rgba(255,255,255,0.15)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    Direct MP3
+                  </button>
+                )}
+              </div>
+
+              {/* 1. Spotify Audio Player Embed */}
+              {audioSource === "spotify" && (
+                <div>
+                  <div style={{ borderRadius: "8px", overflow: "hidden", backgroundColor: "#000" }}>
+                    <iframe
+                      style={{ borderRadius: "8px", border: "none" }}
+                      src={getSpotifyEmbedUrl(sermon)}
+                      width="100%"
+                      height="152"
+                      frameBorder="0"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                      title={`Spotify Audio - ${sermon.title}`}
+                    />
+                  </div>
+                  <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)" }}>The Publishers House Podcast</span>
+                    <a
+                      href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "10.5px", color: "#1DB954", textDecoration: "none", fontWeight: 600 }}
+                    >
+                      Open Spotify App ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Telegram Audio Player Embed */}
+              {audioSource === "telegram" && (
+                <div>
+                  <div style={{ borderRadius: "8px", overflow: "hidden", backgroundColor: "#FFFFFF" }}>
+                    <iframe
+                      style={{ borderRadius: "8px", border: "none" }}
+                      src={getTelegramEmbedUrl(sermon)}
+                      width="100%"
+                      height="180"
+                      frameBorder="0"
+                      loading="lazy"
+                      title={`Telegram Audio - ${sermon.title}`}
+                    />
+                  </div>
+                  <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)" }}>@ThePublishersHouse Channel</span>
+                    <a
+                      href="https://t.me/ThePublishersHouse"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "10.5px", color: "#229ED9", textDecoration: "none", fontWeight: 600 }}
+                    >
+                      Open Telegram ↗
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Direct HTML5 Audio Player */}
+              {audioSource === "direct" && hasDirectAudio && (
+                <div>
                   <audio
                     ref={audioRef}
                     src={sermon.audioUrl}
@@ -444,37 +634,6 @@ function FloatingDockedPlayer({
                       15s ↻
                     </button>
                   </div>
-                </>
-              ) : videoId ? (
-                /* YouTube In-Page Audio-Stream Player */
-                <div>
-                  <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: "6px", overflow: "hidden", backgroundColor: "#000" }}>
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
-                      title={sermon.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                  <div style={{ marginTop: "10px", display: "flex", gap: "10px", justifyContent: "center" }}>
-                    {sermon.audioUrl?.includes("t.me") && (
-                      <a
-                        href={sermon.audioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: "10px", color: "#2090FF", textDecoration: "underline" }}
-                      >
-                        Listen on Telegram ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ textAlign: "center", padding: "16px 0", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>
-                  Audio player initializing...
                 </div>
               )}
             </div>
