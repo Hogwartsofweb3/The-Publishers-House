@@ -109,11 +109,14 @@ export default function HomeContent() {
   const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    // Slide 0 ("Company of the Great"): 3 seconds
+    // Slide 1 ("We Are Building"): 10 seconds
+    const duration = heroSlide === 0 ? 3000 : 10000;
+    const timer = setTimeout(() => {
       setHeroSlide((prev) => (prev === 0 ? 1 : 0));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [heroSlide]);
 
   useEffect(() => {
     fetch("/api/home-data")
