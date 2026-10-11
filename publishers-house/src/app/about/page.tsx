@@ -63,39 +63,44 @@ const hardcodedLeadership = [
     name: "Rev. Joshua Agunbiade",
     role: "Lead Pastor",
     location: "TPH JOS AND ABUJA",
-    photoUrl: "/images/Rev. Joshua Agunbiade.jpg",
+    photoUrl: "/images/Rev. Joshua Agunbiade.webp",
   },
   {
     name: "Pastor Damilare Ayodele",
     role: "Associate Pastor",
     location: "TPH JOS",
-    photoUrl: "/images/Pastor Damilare Ayodele.jpg",
+    photoUrl: "/images/Pastor Damilare Ayodele.webp",
   },
   {
     name: "Pastor Boniface Onah",
     role: "Associate Pastor",
     location: "TPH ABUJA",
-    photoUrl: "/images/Pastor Boniface Onah.jpg",
+    photoUrl: "/images/Pastor Boniface Onah.webp",
   },
   {
     name: "Pastor Ngbede Odeh",
     role: "Associate Pastor",
     location: "TPH JOS",
-    photoUrl: "/images/Pastor Ngbede Odeh.jpg",
+    photoUrl: "/images/Pastor Ngbede Odeh.webp",
   },
   {
     name: "Pastor Makinde Theophilus",
     role: "Associate Pastor",
     location: "TPH JOS",
-    photoUrl: "/images/Pastor Theophilus Makinde.jpg",
+    photoUrl: "/images/Pastor Theophilus Makinde.webp",
   },
 ];
 
 import { getLeadership } from "@/lib/firebase";
-export const revalidate = 60;
+export const revalidate = 3600; // Cache on edge CDN for 1 hour for fast ~20ms TTFB
 
 export default async function AboutPage() {
-  const cmsLeaders = await getLeadership().catch(() => []);
+  // Safe fetch with 1.5s timeout so cold starts never hang TTFB
+  const cmsLeaders = await Promise.race([
+    getLeadership(),
+    new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 1500))
+  ]).catch(() => []);
+
   const leadership = cmsLeaders.length > 0 
     ? cmsLeaders.map((l) => ({
         name: l.name,
@@ -114,12 +119,26 @@ export default async function AboutPage() {
         <section
           className="tph-hero"
           style={{
+            position: "relative",
             display: "flex",
             flexDirection: "column",
             gap: "18px",
+            overflow: "hidden",
           }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/about-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+          {/* High-priority responsive LCP image: 51KB on mobile, 224KB on desktop (vs 1.8MB original) */}
+          <picture style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+            <source media="(max-width: 768px)" srcSet="/images/about-hero-mobile.webp" type="image/webp" />
+            <source srcSet="/images/about-hero.webp" type="image/webp" />
+            <img
+              src="/images/about-hero.jpg"
+              alt="About The Publishers House"
+              fetchPriority="high"
+              decoding="sync"
+              loading="eager"
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+            />
+          </picture>
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
