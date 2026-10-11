@@ -101,6 +101,7 @@ const FALLBACK_GATHERINGS = [
 export default function HomeContent() {
   const [s, setS] = useState<any>({ ...D });
   const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
+  const [latestSermon, setLatestSermon] = useState<any>(null);
   const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
@@ -116,12 +117,32 @@ export default function HomeContent() {
       .then(data => {
         if (data.settings) setS((prev: any) => ({ ...prev, ...data.settings }));
         if (data.gatherings?.length > 0) setGatherings(data.gatherings);
+        if (data.latestSermon) setLatestSermon(data.latestSermon);
       })
       .catch(() => {});
   }, []);
 
   const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");
-  const teachColophon = (s.teachingColophon || D.teachingColophon).split(",").map((x: string) => x.trim()).filter(Boolean);
+
+  // Latest Teaching: CMS manual fields win; auto-fetched sermon fills the rest
+  const teach = {
+    eyebrow: s.teachingEyebrow || D.teachingEyebrow,
+    heading: s.teachingHeading || D.teachingHeading,
+    seriesEyebrow: s.teachingSeriesEyebrow || (latestSermon?.series ? latestSermon.series : D.teachingSeriesEyebrow),
+    title: s.teachingTitle || (latestSermon?.title || D.teachingTitle),
+    desc: s.teachingDesc || (latestSermon?.summary || D.teachingDesc),
+    btn1Label: s.teachingBtn1Label || (latestSermon?.duration ? `Listen — ${latestSermon.duration}` : D.teachingBtn1Label),
+    btn1Url: s.teachingBtn1Url || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn1Url),
+    btn2Label: s.teachingBtn2Label || D.teachingBtn2Label,
+    btn2Url: s.teachingBtn2Url || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn2Url),
+    imageUrl: s.teachingImageUrl || (latestSermon?.thumbnailUrl || D.teachingImageUrl),
+    colophon: s.teachingColophon
+      ? s.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean)
+      : latestSermon
+      ? [latestSermon.scripture, latestSermon.series, latestSermon.speaker, latestSermon.duration].filter(Boolean)
+      : D.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean),
+  };
+
   const givingCats = (s.givingCategories || D.givingCategories).split(",").map((x: string) => x.trim()).filter(Boolean);
 
   return (
@@ -356,28 +377,33 @@ export default function HomeContent() {
       {/* ══════════════ LATEST TEACHING ══════════════ */}
       <section className="tph-section" style={{ backgroundColor:Paper100 }}>
         <div className="tph-inner">
-          <div style={{ ...T.eyebrow, color:Slate500, marginBottom:"8px" }}>{s.teachingEyebrow||D.teachingEyebrow}</div>
-          <h2 style={{ ...T.displayM, color:Navy, marginBottom:"40px" }}>{s.teachingHeading||D.teachingHeading}</h2>
-          <div className="tph-two-col" style={{ gap:"0", border:`1px solid ${Paper300}`, borderRadius:"4px", overflow:"hidden" }}>
-            <div style={{ backgroundImage:`url('${s.teachingImageUrl||D.teachingImageUrl}')`, backgroundSize:"cover", backgroundPosition:"center", minHeight:"340px", height:"100%" }} />
-            <div style={{ padding:"40px", display:"flex", flexDirection:"column", justifyContent:"center", gap:"16px" }}>
-              <div style={{ ...T.eyebrow, color:Blue500 }}>{s.teachingSeriesEyebrow||D.teachingSeriesEyebrow}</div>
-              <h3 style={{ ...T.displayL, color:Navy, margin:0, fontSize:"clamp(24px,3vw,36px)" }}>{s.teachingTitle||D.teachingTitle}</h3>
-              <p style={{ ...T.readBody, color:Slate600, margin:0 }}>{s.teachingDesc||D.teachingDesc}</p>
-              <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-                <Link href={s.teachingBtn1Url||D.teachingBtn1Url} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{s.teachingBtn1Label||D.teachingBtn1Label}</Link>
-                <Link href={s.teachingBtn2Url||D.teachingBtn2Url} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${Paper300}`, color:Navy, textDecoration:"none" }}>{s.teachingBtn2Label||D.teachingBtn2Label}</Link>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap", paddingTop:"16px", borderTop:`1px solid ${Paper200}` }}>
-                {teachColophon.map((item: string, i: number, arr: string[]) => (
-                  <span key={i} style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                    <span style={{ ...T.colophon, color: i===0 ? Blue700 : Slate500 }}>{item}</span>
-                    {i < arr.length-1 && <span style={{ ...T.colophon, color:Paper400 }}>·</span>}
-                  </span>
-                ))}
+          <div style={{ ...T.eyebrow, color:Slate500, marginBottom:"8px" }}>{teach.eyebrow}</div>
+          <h2 style={{ ...T.displayM, color:Navy, marginBottom:"40px" }}>{teach.heading}</h2>
+          <a
+            href={teach.btn1Url}
+            style={{ textDecoration:"none", display:"block" }}
+          >
+            <div className="tph-two-col" style={{ gap:"0", border:`1px solid ${Paper300}`, borderRadius:"4px", overflow:"hidden", cursor:"pointer" }}>
+              <div style={{ backgroundImage:`url('${teach.imageUrl}')`, backgroundSize:"cover", backgroundPosition:"center", minHeight:"340px", height:"100%" }} />
+              <div style={{ padding:"40px", display:"flex", flexDirection:"column", justifyContent:"center", gap:"16px" }}>
+                <div style={{ ...T.eyebrow, color:Blue500 }}>{teach.seriesEyebrow}</div>
+                <h3 style={{ ...T.displayL, color:Navy, margin:0, fontSize:"clamp(24px,3vw,36px)" }}>{teach.title}</h3>
+                <p style={{ ...T.readBody, color:Slate600, margin:0 }}>{teach.desc}</p>
+                <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
+                  <span style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{teach.btn1Label}</span>
+                  <Link href={teach.btn2Url} onClick={e => e.stopPropagation()} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${Paper300}`, color:Navy, textDecoration:"none" }}>{teach.btn2Label}</Link>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap", paddingTop:"16px", borderTop:`1px solid ${Paper200}` }}>
+                  {teach.colophon.map((item: string, i: number, arr: string[]) => (
+                    <span key={i} style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                      <span style={{ ...T.colophon, color: i===0 ? Blue700 : Slate500 }}>{item}</span>
+                      {i < arr.length-1 && <span style={{ ...T.colophon, color:Paper400 }}>·</span>}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </a>
         </div>
       </section>
 
