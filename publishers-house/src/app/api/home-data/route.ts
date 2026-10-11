@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 
 export const revalidate = 60; // refresh every minute so new sermons appear quickly
 
@@ -24,17 +24,19 @@ export async function GET() {
   } catch (e) {}
 
   // 3. Auto-fetch latest published sermon (most recent date)
+  // NOTE: No `where("published")` to avoid needing a composite index.
+  // We fetch the 5 most recent and filter published in JS.
   try {
     const snap = await getDocs(
       query(
         collection(db, "sermons"),
-        where("published", "==", true),
         orderBy("date", "desc"),
-        limit(1)
+        limit(5)
       )
     );
-    if (!snap.empty) {
-      const d = snap.docs[0];
+    const publishedDocs = snap.docs.filter(d => d.data().published !== false);
+    if (publishedDocs.length > 0) {
+      const d = publishedDocs[0];
       const data = d.data();
       const videoId = (() => {
         const url: string = data.videoUrl || "";

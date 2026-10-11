@@ -99,6 +99,10 @@ const FALLBACK_GATHERINGS = [
 ];
 
 export default function HomeContent() {
+  // cmsSettings: only fields the editor has *explicitly* saved in Firestore
+  // (starts empty — we never pre-fill it with defaults)
+  const [cmsSettings, setCmsSettings] = useState<any>({});
+  // s: merged view used by all the non-teaching JSX (hero, setman, giving, etc.)
   const [s, setS] = useState<any>({ ...D });
   const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
   const [latestSermon, setLatestSermon] = useState<any>(null);
@@ -115,7 +119,11 @@ export default function HomeContent() {
     fetch("/api/home-data")
       .then(r => r.json())
       .then(data => {
-        if (data.settings) setS((prev: any) => ({ ...prev, ...data.settings }));
+        if (data.settings) {
+          setCmsSettings(data.settings);
+          // merge into s for all other sections that still use s.*
+          setS((prev: any) => ({ ...prev, ...data.settings }));
+        }
         if (data.gatherings?.length > 0) setGatherings(data.gatherings);
         if (data.latestSermon) setLatestSermon(data.latestSermon);
       })
@@ -124,24 +132,28 @@ export default function HomeContent() {
 
   const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");
 
-  // Latest Teaching: CMS manual fields win; auto-fetched sermon fills the rest
+  // ── Latest Teaching: CMS explicit save → auto-fetched sermon → static default ──
+  // IMPORTANT: we read from cmsSettings (not s) so defaults don't shadow latestSermon
   const teach = {
-    eyebrow: s.teachingEyebrow || D.teachingEyebrow,
-    heading: s.teachingHeading || D.teachingHeading,
-    seriesEyebrow: s.teachingSeriesEyebrow || (latestSermon?.series ? latestSermon.series : D.teachingSeriesEyebrow),
-    title: s.teachingTitle || (latestSermon?.title || D.teachingTitle),
-    desc: s.teachingDesc || (latestSermon?.summary || D.teachingDesc),
-    btn1Label: s.teachingBtn1Label || (latestSermon?.duration ? `Listen — ${latestSermon.duration}` : D.teachingBtn1Label),
-    btn1Url: s.teachingBtn1Url || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn1Url),
-    btn2Label: s.teachingBtn2Label || D.teachingBtn2Label,
-    btn2Url: s.teachingBtn2Url || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn2Url),
-    imageUrl: s.teachingImageUrl || (latestSermon?.thumbnailUrl || D.teachingImageUrl),
-    colophon: s.teachingColophon
-      ? s.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean)
+    eyebrow:      cmsSettings.teachingEyebrow      || D.teachingEyebrow,
+    heading:      cmsSettings.teachingHeading      || D.teachingHeading,
+    seriesEyebrow:cmsSettings.teachingSeriesEyebrow|| latestSermon?.series || D.teachingSeriesEyebrow,
+    title:        cmsSettings.teachingTitle        || latestSermon?.title  || D.teachingTitle,
+    desc:         cmsSettings.teachingDesc         || latestSermon?.summary|| D.teachingDesc,
+    btn1Label:    cmsSettings.teachingBtn1Label    || (latestSermon?.duration ? `Listen — ${latestSermon.duration}` : D.teachingBtn1Label),
+    btn1Url:      cmsSettings.teachingBtn1Url      || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn1Url),
+    btn2Label:    cmsSettings.teachingBtn2Label    || D.teachingBtn2Label,
+    btn2Url:      cmsSettings.teachingBtn2Url      || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn2Url),
+    imageUrl:     cmsSettings.teachingImageUrl     || latestSermon?.thumbnailUrl || D.teachingImageUrl,
+    colophon: cmsSettings.teachingColophon
+      ? cmsSettings.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean)
       : latestSermon
       ? [latestSermon.scripture, latestSermon.series, latestSermon.speaker, latestSermon.duration].filter(Boolean)
       : D.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean),
   };
+
+  // Hero "Watch the Last Teaching" URL — always points to the specific latest sermon
+  const heroWatchUrl = cmsSettings.heroBtn2Url || (latestSermon ? `/sermons/${latestSermon.id}` : "/sermons");
 
   const givingCats = (s.givingCategories || D.givingCategories).split(",").map((x: string) => x.trim()).filter(Boolean);
 
@@ -179,7 +191,7 @@ export default function HomeContent() {
               <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
                 <Link href={s.heroBtn1Url || D.heroBtn1Url} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
-                <Link href="/sermons" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
+                <Link href={heroWatchUrl} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
               </div>
               <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
                 <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center", flex: 1 }}>
