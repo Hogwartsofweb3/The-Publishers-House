@@ -7,13 +7,15 @@ import ArticlesClient from "./ArticlesClient";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Articles & Essays | The Publishers House",
+  title: "Articles & Essays | TPH",
   description:
-    "Written teachings, apologetics, and reflections on the Christian faith and life. All articles edited and vetted by The Publishers House Editorial Unit.",
+    "Written teachings, apologetics, and reflections on the Christian faith and life. Edited and vetted by The Publishers House Editorial Unit.",
   openGraph: {
+    siteName: "The Publishers House",
     title: "Articles & Essays | The Publishers House",
     description:
       "Written teachings, apologetics, and reflections on faith and life — edited and vetted by The Publishers House.",
+    url: "https://www.thepublishershouse.org/articles",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Articles – The Publishers House" }],
   },
 };

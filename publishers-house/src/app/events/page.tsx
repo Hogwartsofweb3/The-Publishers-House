@@ -8,12 +8,14 @@ import { getEvents, type EventItem } from "@/lib/firebase";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Events & Programmes | The Publishers House",
+  title: "Events & Programmes | TPH",
   description:
-    "Upcoming services, conferences, and special events at The Publishers House in Jos and Abuja. Find dates, register, and stay connected with what God is doing.",
+    "Upcoming services, conferences, and special events at The Publishers House in Jos and Abuja. Find dates, register, and stay connected.",
   openGraph: {
+    siteName: "The Publishers House",
     title: "Events & Programmes | The Publishers House",
     description: "Upcoming services, conferences, and special events at The Publishers House. Find dates and register.",
+    url: "https://www.thepublishershouse.org/events",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Events – The Publishers House" }],
   },
 };

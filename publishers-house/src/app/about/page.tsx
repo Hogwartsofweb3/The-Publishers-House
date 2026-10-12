@@ -6,11 +6,13 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "About Us | The Publishers House",
   description:
-    "Learn about The Publishers House — our vision, leadership, and what we believe. Led by Rev. Joshua Agunbiade, we are an apostolic ministry committed to proclaiming God's Word to every sphere of society.",
+    "The Publishers House is an apostolic ministry in Jos led by Rev. Joshua Agunbiade, raising believers whose lives publish Christ to every sphere of society.",
   openGraph: {
+    siteName: "The Publishers House",
     title: "About Us | The Publishers House",
     description:
-      "An apostolic ministry committed to proclaiming the unchanging truth of God's Word. Led by Rev. Joshua Agunbiade.",
+      "An apostolic ministry in Jos committed to proclaiming the unchanging truth of God's Word. Led by Rev. Joshua Agunbiade.",
+    url: "https://www.thepublishershouse.org/about",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "About – The Publishers House" }],
   },
 };

@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://thepublishershouse.org"),
+  metadataBase: new URL("https://www.thepublishershouse.org"),
   title: {
     default: "The Publishers House | Company of the Great",
     template: "%s | The Publishers House",

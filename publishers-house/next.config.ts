@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      // Redirect bare domain → www so Google always indexes www version
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "thepublishershouse.org" }],
+        destination: "https://www.thepublishershouse.org/:path*",
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     optimizeCss: true,
   },
