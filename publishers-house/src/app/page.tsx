@@ -7,11 +7,15 @@ import FloatingAttendance from "@/components/FloatingAttendance";
 export const metadata: Metadata = {
   title: "The Publishers House | Company of the Great",
   description:
-    "The Publishers House — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ. Led by Dr. Joshua Agunbiade.",
+    "The Publishers House — an apostolic ministry in Jos raising believers whose lives become living publications of Christ. Led by Dr. Joshua Agunbiade.",
   openGraph: {
+    type: "website",
+    locale: "en_NG",
+    url: "https://thepublishershouse.org",
+    siteName: "The Publishers House",
     title: "The Publishers House | Company of the Great",
     description:
-      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+      "Company of the Great — an apostolic ministry in Jos, raising believers whose lives become living publications of Christ.",
     images: [
       {
         url: "/images/og-image.jpg",
@@ -25,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Publishers House | Company of the Great",
     description:
-      "Company of the Great — an apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
+      "Company of the Great — an apostolic ministry in Jos, raising believers whose lives become living publications of Christ.",
     images: ["/images/og-image.jpg"],
   },
 };
