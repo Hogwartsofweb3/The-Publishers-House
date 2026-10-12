@@ -2,76 +2,147 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isAuthenticated() {
+    function isSignedIn() {
       return request.auth != null;
     }
 
-    // Public readable content collections (CMS managed)
-    match /sermons/{docId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-    
-    match /events/{docId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-    
-    match /articles/{docId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-    
-    match /programs/{docId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-    
-    match /leadership/{docId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
-    // Homepage settings and gatherings
+    function userData() {
+      return get(userPath()).data;
+    }
+
+    function hasProfile() {
+      return isSignedIn() && exists(userPath());
+    }
+
+    function isAdmin() {
+      return hasProfile() && userData().role == 'admin';
+    }
+
+    function isUnitHead() {
+      return hasProfile() && userData().role == 'unit_head';
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function privilegedFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['role', 'activityTier', 'assignedUnitId']);
+    }
+
+    function isGuestCheckIn() {
+      return request.resource.data.keys().hasOnly(['fullName', 'phone', 'timestamp', 'date', 'type'])
+        && request.resource.data.type == 'weekend_service'
+        && request.resource.data.fullName is string
+        && request.resource.data.phone is string
+        && request.resource.data.fullName.size() > 0
+        && request.resource.data.fullName.size() < 120
+        && request.resource.data.phone.size() > 0
+        && request.resource.data.phone.size() < 40;
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin()
+        || isSelf(userId)
+        || (isUnitHead() && resource.data.assignedUnitId == userData().assignedUnitId);
+
+      allow create: if isSelf(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role == 'member'
+        && request.resource.data.activityTier == 'regular'
+        && (
+          !request.resource.data.keys().hasAny(['assignedUnitId'])
+          || request.resource.data.assignedUnitId == ''
+        );
+
+      allow update: if isAdmin()
+        || (isSelf(userId) && privilegedFieldsUnchanged());
+
+      allow delete: if isAdmin();
+    }
+
+    match /sermons/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /articles/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /programs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /leadership/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /homeSettings/{docId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /gatherings/{docId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // Transactions / giving
     match /transactions/{docId} {
-      allow read, write: if true; // allow recording gifts
-    }
-
-    // User management & Portal
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // Portal data collections
-    match /audit_logs/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /testimonies/{docId} {
-      allow read: if true;
-      allow write: if true; // Members/seekers can submit
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /prayers/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if true; // Can submit prayer request
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /testimonies/{docId} {
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.name is string
+        && request.resource.data.content is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 200
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() < 5000;
+      allow read: if isAdmin() || resource.data.status == 'approved';
+      allow update, delete: if isAdmin();
     }
 
     match /attendance/{docId} {
-      allow read, write: if isAuthenticated();
+      allow create: if isSignedIn() || isGuestCheckIn();
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.phone == userData().phone)
+        || (isSignedIn() && resource.data.loggedBy == request.auth.uid)
+        || (isUnitHead() && resource.data.unitId == userData().assignedUnitId);
+      allow update, delete: if isAdmin();
+    }
+
+    match /audit_logs/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /pastoral_notes/{docId} {
+      allow read, write: if isAdmin();
     }
   }
 }

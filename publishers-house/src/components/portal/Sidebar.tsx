@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
+import { clearSession } from "@/lib/clientSession";
 import type { PortalUser } from "@/lib/portalAuth";
 import { getRoleColor, getRoleLabel } from "@/lib/portalAuth";
 
@@ -47,6 +48,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const navItems = user.role === "admin" ? adminNav : user.role === "unit_head" ? unitNav : memberNav;
 
   const handleSignOut = async () => {
+    await clearSession();
     await signOut(auth);
     window.location.href = "/portal/login";
   };

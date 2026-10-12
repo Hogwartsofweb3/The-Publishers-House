@@ -54,7 +54,7 @@ const CHURCH_EVM_ADDRESS = "0x063F4fa58078f6c2F1cbCb0D9EA15962Af5BBDaE";
 const CHURCH_SOL_ADDRESS = "54CnBrza7uivgHvXCa7ym9LNi9KLwxkXR1vT77mbBxVk";
 const CHURCH_SUI_ADDRESS = "0xaaa4e6301a452139d1b93bd72dda49ddde76f64d253163a19c827f11b8cec63c";
 
-const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_6ad89045f87f5ea06009b6e90c7823c002ae2350";
+const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
 
 export default function GivingPage() {
   const { login, authenticated } = usePrivy();
@@ -82,6 +82,10 @@ export default function GivingPage() {
     }
     if (displayAmount < 100) {
       alert("Please enter a valid amount (minimum ₦100).");
+      return;
+    }
+    if (!PAYSTACK_PUBLIC_KEY) {
+      alert("Card payments are not configured yet. Please try another method.");
       return;
     }
     if (!paystackReady || !window.PaystackPop) {
@@ -131,17 +135,20 @@ export default function GivingPage() {
             });
 
             try {
-              const { saveTransaction } = await import("@/lib/firebase");
-              await saveTransaction({
-                name: name || "Anonymous",
-                email: email || "No Email",
-                amountNGN: displayAmount,
-                category,
-                method: "crypto",
-                network: "EVM",
-                status: "success",
-                timestamp: new Date().toISOString(),
+              const logRes = await fetch("/api/crypto-transaction", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: name || "Anonymous",
+                  email: email || "No Email",
+                  amountNGN: displayAmount,
+                  category,
+                  network: "EVM",
+                }),
               });
+              if (!logRes.ok) {
+                console.error("Failed to log crypto gift");
+              }
             } catch (err) {
               console.error("Failed to log transaction:", err);
             }
