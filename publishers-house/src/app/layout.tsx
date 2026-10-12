@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -57,8 +58,6 @@ export const metadata: Metadata = {
 
 import Providers from "@/components/Providers";
 
-import type { Metadata } from "next";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -66,6 +65,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${poppins.variable} ${playfair.variable}`}>
+      <head>
+        {/* Preconnect to Google Fonts and Firebase CDN to reduce DNS lookup latency */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+        <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+      </head>
       <body>
         <Providers>
           {children}
