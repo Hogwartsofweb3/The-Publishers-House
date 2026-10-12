@@ -77,7 +77,11 @@ export default function PortalLoginPage() {
       await finishSignIn(cred.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign-in failed.";
-      if (!msg.includes("popup-closed-by-user")) setError(msg);
+      if (msg.includes("unauthorized-domain")) {
+        setError("Google sign-in is not allowed on this website yet. Add this site under Firebase Authentication, Settings, Authorized domains.");
+      } else if (!msg.includes("popup-closed-by-user")) {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

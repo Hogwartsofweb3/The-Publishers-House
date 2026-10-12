@@ -8,6 +8,13 @@ export const dynamic = "force-dynamic";
 const ROLES = ["admin", "unit_head", "member"];
 
 export async function POST(req: Request) {
+  if (!process.env.FIREBASE_ADMIN_PRIVATE_KEY || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL) {
+    return NextResponse.json(
+      { error: "Sign-in is not configured on the server yet. Add the Firebase Admin credentials." },
+      { status: 500 }
+    );
+  }
+
   try {
     const body = await req.json();
     const idToken = body?.idToken;

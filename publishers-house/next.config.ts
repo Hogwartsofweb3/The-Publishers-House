@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  serverExternalPackages: ["firebase-admin"],
   async redirects() {
     return [
       // Redirect bare domain → www so Google always indexes www version

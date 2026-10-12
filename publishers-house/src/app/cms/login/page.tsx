@@ -66,7 +66,9 @@ export default function CMSLoginPage() {
       await enterCms(cred.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign-in failed.";
-      if (msg.includes("No portal profile")) {
+      if (msg.includes("unauthorized-domain")) {
+        setError("Google sign-in is not allowed on this website yet. Add this site under Firebase Authentication, Settings, Authorized domains.");
+      } else if (msg.includes("No portal profile")) {
         setError("This account does not have CMS access.");
       } else if (!msg.includes("popup-closed-by-user")) {
         setError(msg);
