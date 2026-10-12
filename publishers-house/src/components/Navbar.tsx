@@ -56,15 +56,20 @@ export default function Navbar() {
           }}
         >
           {/* Real Navbar Logo */}
-          <img
-            src="/images/FULL LOGO white.png"
-            alt="The Publishers House"
-            style={{
-              height: "40px",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
+          <picture>
+            <source srcSet="/images/nav-logo-opt.webp" type="image/webp" />
+            <img
+              src="/images/FULL LOGO white.png"
+              alt="The Publishers House"
+              width={80}
+              height={40}
+              style={{
+                height: "40px",
+                width: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </picture>
         </Link>
 
         {/* Right side: nav links + Give button grouped together */}

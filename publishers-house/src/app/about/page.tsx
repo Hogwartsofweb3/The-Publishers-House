@@ -64,30 +64,35 @@ const hardcodedLeadership = [
     role: "Lead Pastor",
     location: "TPH JOS AND ABUJA",
     photoUrl: "/images/Rev. Joshua Agunbiade.webp",
+    photoUrlMobile: "/images/Rev. Joshua Agunbiade-mobile.webp",
   },
   {
     name: "Pastor Damilare Ayodele",
     role: "Associate Pastor",
     location: "TPH JOS",
     photoUrl: "/images/Pastor Damilare Ayodele.webp",
+    photoUrlMobile: "/images/Pastor Damilare Ayodele-mobile.webp",
   },
   {
     name: "Pastor Boniface Onah",
     role: "Associate Pastor",
     location: "TPH ABUJA",
     photoUrl: "/images/Pastor Boniface Onah.webp",
+    photoUrlMobile: "/images/Pastor Boniface Onah-mobile.webp",
   },
   {
     name: "Pastor Ngbede Odeh",
     role: "Associate Pastor",
     location: "TPH JOS",
     photoUrl: "/images/Pastor Ngbede Odeh.webp",
+    photoUrlMobile: "/images/Pastor Ngbede Odeh-mobile.webp",
   },
   {
     name: "Pastor Makinde Theophilus",
     role: "Associate Pastor",
     location: "TPH JOS",
     photoUrl: "/images/Pastor Theophilus Makinde.webp",
+    photoUrlMobile: "/images/Pastor Theophilus Makinde-mobile.webp",
   },
 ];
 
@@ -106,7 +111,8 @@ export default async function AboutPage() {
         name: l.name,
         role: l.role,
         location: l.role.toLowerCase().includes("lead") ? "TPH JOS AND ABUJA" : "TPH JOS",
-        photoUrl: l.photoUrl || "/images/event-1.jpg"
+        photoUrl: l.photoUrl || "/images/event-1.jpg",
+        photoUrlMobile: l.photoUrl || "/images/event-1.jpg",
       }))
     : hardcodedLeadership;
 
@@ -335,7 +341,15 @@ export default async function AboutPage() {
                 {leadership.slice(0, 2).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/608", overflow: "hidden", marginBottom: "16px" }}>
-                      <img src={leader.photoUrl} alt={leader.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                      <img
+                        src={leader.photoUrl}
+                        srcSet={leader.photoUrlMobile ? `${leader.photoUrlMobile} 420w, ${leader.photoUrl} 800w` : undefined}
+                        sizes="(max-width: 768px) 372px, 608px"
+                        alt={leader.name}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                      />
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
@@ -349,7 +363,15 @@ export default async function AboutPage() {
                 {leadership.slice(2, 5).map((leader) => (
                   <div key={leader.name} style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ width: "100%", aspectRatio: "608/700", overflow: "hidden", marginBottom: "16px" }}>
-                      <img src={leader.photoUrl} alt={leader.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+                      <img
+                        src={leader.photoUrl}
+                        srcSet={leader.photoUrlMobile ? `${leader.photoUrlMobile} 420w, ${leader.photoUrl} 800w` : undefined}
+                        sizes="(max-width: 768px) 372px, 400px"
+                        alt={leader.name}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                      />
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", fontSize: "16px", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
