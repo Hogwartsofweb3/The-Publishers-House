@@ -25,12 +25,15 @@
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "firebase": "^12.17.1",
-    "firebase-admin": "^14.5.0",
+    "firebase-admin": "^12.7.0",
     "msedge-tts": "^2.0.9",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rss-parser": "^3.13.0"
+  },
+  "overrides": {
+    "jose": "^4.15.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
