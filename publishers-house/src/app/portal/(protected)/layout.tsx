@@ -4,6 +4,7 @@ import { canAccessPortal, portalHomeFor, requirePortalUser } from "@/lib/serverA
 import PortalShell from "../PortalShell";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export default async function PortalProtectedLayout({ children }: { children: React.ReactNode }) {
   const pathname = (await headers()).get("x-pathname") || "";
