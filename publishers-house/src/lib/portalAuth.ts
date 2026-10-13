@@ -64,12 +64,22 @@ export async function createOrUpdatePortalUser(user: User, role: UserRole = "mem
   
   const existing = await getPortalUser(user.uid);
   if (existing) {
-    // Only update lastLogin
-    await setDoc(doc(db, "users", user.uid), { lastLogin: now }, { merge: true });
+    // Best-effort: update lastLogin. Firestore rules may block browser writes — never fail login over this.
+    try {
+      await setDoc(doc(db, "users", user.uid), { lastLogin: now }, { merge: true });
+    } catch {
+      // silently ignore — server-side session is the real auth guard
+    }
     return { ...existing, lastLogin: now };
   }
-  
-  await setDoc(doc(db, "users", user.uid), payload);
+
+  // New user — try to create their profile. May fail if rules are strict; the session endpoint
+  // will reject them with "No portal profile" which is the correct UX for unregistered users.
+  try {
+    await setDoc(doc(db, "users", user.uid), payload);
+  } catch {
+    // If rules block this, fall through — establishSession will return 403 with a clear message
+  }
   return payload as unknown as PortalUser;
 }
 
