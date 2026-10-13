@@ -1,0 +1,8 @@
+User-Agent: *
+Allow: /
+Disallow: /cms/
+Disallow: /portal/
+Disallow: /api/
+
+Sitemap: https://www.thepublishershouse.org/sitemap.xml
+Host: https://www.thepublishershouse.org

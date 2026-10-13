@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import ArticleCarousel from "@/components/ArticleCarousel";
+import dynamic from "next/dynamic";
+const ArticleCarousel = dynamic(() => import("@/components/ArticleCarousel"), {
+  ssr: false,
+  loading: () => <div style={{ minHeight: "360px", backgroundColor: "#0B0E14" }} />,
+});
 
 /* ─── Design tokens ─── */
 const Navy    = "#151A54";
@@ -50,7 +54,7 @@ const D = {
   setmanHeading: "Welcome Message\nfrom the Setman",
   setmanSubtext: "What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.",
   setmanBtnLabel: "Read More About Us", setmanBtnUrl: "/about",
-  setmanPhotoUrl: "/images/rja-setman.jpg",
+  setmanPhotoUrl: "/images/rja-setman.webp",
 
   // Gatherings heading
   gatheringsLabel: "Next Gatherings",
@@ -223,23 +227,34 @@ export default function HomeContent() {
               overflow: "hidden",
             }}
           >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="none"
+            <div
               style={{
                 position: "absolute",
                 inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
+                backgroundImage: "url('/images/building-render.webp')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
                 zIndex: 0,
               }}
-            >
-              <source src="/videos/building.mp4" type="video/mp4" />
-            </video>
+            />
+            {heroSlide === 1 && (
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  zIndex: 0,
+                }}
+              >
+                <source src="/videos/building.mp4" type="video/mp4" />
+              </video>
+            )}
             {/* Deep blue overlay matching Slide 1 */}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.88) 0%, rgba(1,64,193,0.55) 100%)", zIndex: 1 }} />
             
@@ -264,11 +279,11 @@ export default function HomeContent() {
                     height: "48px",
                     padding: "0 32px",
                     borderRadius: "2px",
-                    backgroundColor: "#2090FF",
+                    backgroundColor: "#0140C1",
                     color: White,
                     textDecoration: "none",
-                    border: "1px solid #2090FF",
-                    boxShadow: "0 4px 16px rgba(32,144,255,0.35)"
+                    border: "1px solid #0140C1",
+                    boxShadow: "0 4px 16px rgba(1,64,193,0.35)"
                   }}
                 >
                   Give Toward the Project
@@ -382,7 +397,7 @@ export default function HomeContent() {
             ))}
           </div>
           <div className="tph-grid-3 tph-mobile-hide" style={{ height:"300px" }}>
-            {["event-1.jpg","event-2.jpg","event-3.jpg"].map((img, i) => (
+            {["event-1.webp","event-2.webp","event-3.webp"].map((img, i) => (
               <div key={i} style={{ backgroundImage:`url('/images/${img}')`, backgroundSize:"cover", backgroundPosition:"center", borderRadius:"4px" }} />
             ))}
           </div>

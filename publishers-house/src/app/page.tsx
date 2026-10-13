@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeContent from "@/components/HomeContent";
-import FloatingAttendance from "@/components/FloatingAttendance";
+import dynamic from "next/dynamic";
+const FloatingAttendance = dynamic(() => import("@/components/FloatingAttendance"));
 
 export const metadata: Metadata = {
   title: "The Publishers House | Company of the Great",

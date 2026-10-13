@@ -40,11 +40,14 @@ export async function POST(req: Request) {
       role,
       assignedUnitId: snap.data()?.assignedUnitId || null,
     });
+    const host = req.headers.get("host") || "";
+    const isApexOrSub = host.includes("thepublishershouse.org");
     res.cookies.set(SESSION_COOKIE, sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
+      domain: isApexOrSub ? ".thepublishershouse.org" : undefined,
       maxAge: SESSION_MAX_AGE_MS / 1000,
     });
     return res;

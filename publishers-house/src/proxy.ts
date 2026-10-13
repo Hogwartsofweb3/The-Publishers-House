@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/sessionCookie";
 
 function logicalPath(hostname: string, pathname: string) {
+  if (pathname.startsWith("/api")) {
+    return pathname;
+  }
   if (hostname.includes("cms.thepublishershouse.org") && !pathname.startsWith("/cms")) {
     return `/cms${pathname === "/" ? "" : pathname}`;
   }
@@ -14,6 +17,10 @@ function logicalPath(hostname: string, pathname: string) {
 
 export function proxy(request: NextRequest) {
   const url = request.nextUrl;
+  if (url.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   const hostname = request.headers.get("host") || "";
   const pathname = logicalPath(hostname, url.pathname);
 
