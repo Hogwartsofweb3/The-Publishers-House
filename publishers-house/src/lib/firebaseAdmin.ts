@@ -5,14 +5,15 @@ import { getFirestore, Firestore } from "firebase-admin/firestore";
 function formatPrivateKey(key?: string): string {
   if (!key) return "";
   let formatted = key.trim();
-  // Strip surrounding quotes if the user pasted it with quotes in Vercel
+  // Strip surrounding quotes if present
   if (
     (formatted.startsWith('"') && formatted.endsWith('"')) ||
     (formatted.startsWith("'") && formatted.endsWith("'"))
   ) {
-    formatted = formatted.slice(1, -1);
+    formatted = formatted.slice(1, -1).trim();
   }
-  // Replace escaped \n with actual newlines
+  // Normalize Windows line endings and escaped newlines
+  formatted = formatted.replace(/\r\n/g, "\n").replace(/\r/g, "");
   formatted = formatted.replace(/\\n/g, "\n");
   return formatted;
 }

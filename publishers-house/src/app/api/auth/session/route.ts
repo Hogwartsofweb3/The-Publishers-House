@@ -48,8 +48,9 @@ export async function POST(req: Request) {
       maxAge: SESSION_MAX_AGE_MS / 1000,
     });
     return res;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to create session:", error);
-    return NextResponse.json({ error: "Could not start a secure session." }, { status: 401 });
+    const detail = error?.message ? `: ${error.message}` : "";
+    return NextResponse.json({ error: `Could not start a secure session${detail}` }, { status: 401 });
   }
 }
