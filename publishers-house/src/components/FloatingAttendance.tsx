@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
 
 interface AttendanceUser {
   fullName: string;
@@ -44,63 +42,38 @@ export default function FloatingAttendance() {
   const [otherName, setOtherName] = useState("");
   const [otherPhone, setOtherPhone] = useState("");
 
-  // Stream code requirement from Admin
-  const [streamCodeConfig, setStreamCodeConfig] = useState<{ active: boolean; code: string }>({
-    active: false,
-    code: "",
-  });
-
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Listen for logged-in Portal user or read from localStorage
+  // Load identity from localStorage & Firebase Auth
   useEffect(() => {
-    // Check localStorage first
     try {
       const stored = localStorage.getItem("tph_attendance_user");
       if (stored) {
         const parsed = JSON.parse(stored);
-        setSavedUser(parsed);
-        setFullName(parsed.fullName || "");
-        setPhone(parsed.phone || "");
+        if (parsed && typeof parsed === "object") {
+          setSavedUser(parsed);
+          if (parsed.fullName) setFullName(parsed.fullName);
+          if (parsed.phone) setPhone(parsed.phone);
+        }
       }
     } catch {
       // ignore
     }
 
-    // Check Firebase Auth state
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthUser(user);
-        if (user.displayName && !fullName) {
-          setFullName(user.displayName);
+        if (user.displayName) {
+          setFullName((prev) => prev || user.displayName || "");
         }
-        if (user.phoneNumber && !phone) {
-          setPhone(user.phoneNumber);
+        if (user.phoneNumber) {
+          setPhone((prev) => prev || user.phoneNumber || "");
         }
       } else {
         setAuthUser(null);
       }
     });
-
-    // Check today's stream code setting from Firestore
-    const fetchStreamConfig = async () => {
-      try {
-        const snap = await getDoc(doc(db, "homeSettings", "attendance"));
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data?.streamCodeActive && data?.streamCode) {
-            setStreamCodeConfig({
-              active: Boolean(data.streamCodeActive),
-              code: String(data.streamCode).trim().toUpperCase(),
-            });
-          }
-        }
-      } catch {
-        // non-blocking
-      }
-    };
-    fetchStreamConfig();
 
     return () => unsubscribe();
   }, []);
@@ -113,7 +86,7 @@ export default function FloatingAttendance() {
 
     let currentProgress = 0;
     progressInterval.current = setInterval(() => {
-      currentProgress += 100 / (2500 / 50); // 2.5 seconds total for responsive feel
+      currentProgress += 100 / (2200 / 50); // ~2.2s hold duration
       setProgress(Math.min(currentProgress, 100));
     }, 50);
 
@@ -121,8 +94,9 @@ export default function FloatingAttendance() {
       clearTimers();
       setIsPressing(false);
       setProgress(0);
+      setError("");
       setShowModal(true);
-    }, 2500);
+    }, 2200);
   };
 
   const handlePressEnd = () => {
@@ -136,69 +110,54 @@ export default function FloatingAttendance() {
     if (progressInterval.current) clearInterval(progressInterval.current);
   };
 
+  const effectiveSelfName = (fullName || savedUser?.fullName || authUser?.displayName || "").trim();
+  const effectiveSelfPhone = (phone || savedUser?.phone || authUser?.phoneNumber || "").trim();
+  const isRecognized = Boolean(effectiveSelfName);
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError("");
 
-    // Validate Stream Code if Online & Active
-    if (mode === "online" && streamCodeConfig.active) {
-      const inputTrimmed = enteredCode.trim().toUpperCase();
-      if (!inputTrimmed) {
-        setError("Please enter the Stream Check-In Code announced during service.");
-        return;
-      }
-      if (inputTrimmed !== streamCodeConfig.code) {
-        setError("Invalid stream code. Please verify the code displayed on stream.");
-        return;
-      }
-    }
+    const targetName = isCheckingInOther ? otherName.trim() : effectiveSelfName;
+    const targetPhone = isCheckingInOther ? otherPhone.trim() : effectiveSelfPhone;
 
-    const attendeeName = isCheckingInOther ? otherName.trim() : fullName.trim();
-    const attendeePhone = isCheckingInOther ? otherPhone.trim() : phone.trim();
-
-    if (!attendeeName) {
-      setError("Please enter a full name.");
-      return;
-    }
-    if (!attendeePhone) {
-      setError("Please enter a phone number.");
+    if (!targetName) {
+      setError("Please enter your full name.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const todayDate = new Date().toISOString().split("T")[0];
-
-      const record: Record<string, any> = {
-        fullName: attendeeName,
-        phone: attendeePhone,
+      const payload: Record<string, any> = {
+        fullName: targetName,
+        phone: targetPhone,
         mode,
-        location: mode === "in_person" ? (location === "jos" ? "Jos (The House of Bread)" : "Abuja Outreach") : "Online",
-        streamChannel: mode === "online" ? streamChannel : "none",
-        type: "weekend_service",
-        date: todayDate,
-        timestamp: serverTimestamp(),
-        isGuest: !authUser,
+        location: location === "jos" ? "Jos (House of Bread)" : "Abuja Outreach",
+        streamChannel,
+        serviceCode: enteredCode.trim(),
       };
 
-      if (enteredCode) {
-        record.serviceCode = enteredCode.trim().toUpperCase();
-      }
-
-      if (authUser?.uid && !isCheckingInOther) {
-        record.userId = authUser.uid;
-      }
-
       if (isCheckingInOther) {
-        record.checkedInBy = fullName || savedUser?.fullName || "Family/Friend";
+        payload.checkedInBy = effectiveSelfName || "Family/Friend";
       }
 
-      await addDoc(collection(db, "attendance"), record);
+      // Submit via Server-Side API endpoint (bypasses Firestore client security rule issues)
+      const res = await fetch("/api/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      // Save primary user to localStorage if not checking in someone else
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "Could not record attendance. Please try again.");
+      }
+
+      // Update local storage if signing self
       if (!isCheckingInOther) {
-        const toSave = { fullName: attendeeName, phone: attendeePhone, uid: authUser?.uid };
+        const toSave = { fullName: targetName, phone: targetPhone };
         localStorage.setItem("tph_attendance_user", JSON.stringify(toSave));
         setSavedUser(toSave);
       }
@@ -206,12 +165,11 @@ export default function FloatingAttendance() {
       setShowModal(false);
       setSuccessMessage(
         isCheckingInOther
-          ? `Attendance confirmed for ${attendeeName} ✓`
+          ? `Attendance confirmed for ${targetName} ✓`
           : "Attendance Confirmed! Thank you for worshipping with us today."
       );
       setShowSuccess(true);
 
-      // Reset 'other' form if used
       if (isCheckingInOther) {
         setIsCheckingInOther(false);
         setOtherName("");
@@ -221,14 +179,11 @@ export default function FloatingAttendance() {
       setTimeout(() => setShowSuccess(false), 4500);
     } catch (err: any) {
       console.error("Attendance submission error:", err);
-      setError("Could not sign attendance. Please check your connection and try again.");
+      setError(err?.message || "Could not sign attendance. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
-  const isRecognized = Boolean(savedUser?.fullName || authUser?.displayName);
-  const activeDisplayName = authUser?.displayName || savedUser?.fullName || fullName;
 
   // SVG circular progress ring
   const radius = 28;
@@ -247,7 +202,7 @@ export default function FloatingAttendance() {
         }
       `}</style>
 
-      {/* Floating Widget Container */}
+      {/* Floating Container */}
       <div
         style={{
           position: "fixed",
@@ -260,7 +215,7 @@ export default function FloatingAttendance() {
           gap: "14px",
         }}
       >
-        {/* Success Toast */}
+        {/* Success Banner */}
         {showSuccess && (
           <div
             className="tph-modal-anim"
@@ -302,7 +257,7 @@ export default function FloatingAttendance() {
           </div>
         )}
 
-        {/* Modal Sheet / Form */}
+        {/* Modal Form */}
         {showModal && (
           <div
             className="tph-modal-anim"
@@ -318,14 +273,18 @@ export default function FloatingAttendance() {
               backdropFilter: "blur(12px)",
             }}
           >
-            {/* Top Bar */}
+            {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
               <div>
                 <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#D97706", textTransform: "uppercase" }}>
                   The Publishers House
                 </div>
                 <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "2px 0 0", color: "#FFFFFF" }}>
-                  {isCheckingInOther ? "Check In Guest / Family" : isRecognized ? `Welcome, ${activeDisplayName.split(" ")[0]}!` : "Sign Attendance"}
+                  {isCheckingInOther
+                    ? "Check In Guest / Family"
+                    : isRecognized
+                    ? `Welcome, ${effectiveSelfName.split(" ")[0]}!`
+                    : "Sign Attendance"}
                 </h3>
               </div>
               <button
@@ -353,45 +312,73 @@ export default function FloatingAttendance() {
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {/* If recognized & NOT checking in another person */}
+              {/* User Identity View / Inputs */}
               {isRecognized && !isCheckingInOther ? (
                 <div
                   style={{
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: "10px",
-                    padding: "10px 14px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    padding: "12px 14px",
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#F8FAFC" }}>{activeDisplayName}</div>
-                    <div style={{ fontSize: "11px", color: "#94A3B8" }}>{phone || savedUser?.phone || "Phone logged"}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#F8FAFC" }}>{effectiveSelfName}</div>
+                      <div style={{ fontSize: "11px", color: effectiveSelfPhone ? "#94A3B8" : "#F59E0B", marginTop: "2px" }}>
+                        {effectiveSelfPhone ? `Phone: ${effectiveSelfPhone}` : "No phone saved"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSavedUser(null);
+                        setFullName("");
+                        setPhone("");
+                        localStorage.removeItem("tph_attendance_user");
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#38BDF8",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      Switch
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSavedUser(null);
-                      setFullName("");
-                      setPhone("");
-                      localStorage.removeItem("tph_attendance_user");
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#38BDF8",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Switch
-                  </button>
+
+                  {/* If recognized user has no phone, provide an input */}
+                  {!effectiveSelfPhone && (
+                    <div style={{ marginTop: "10px", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <label style={{ display: "block", fontSize: "10px", color: "#94A3B8", marginBottom: "4px" }}>
+                        Phone number (optional):
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. 08012345678"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.05)",
+                          color: "#FFF",
+                          fontSize: "12px",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
-                /* Inputs for First-time user OR checking in family member */
+                /* Inputs for new attendee OR family member */
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>
@@ -400,7 +387,7 @@ export default function FloatingAttendance() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Samuel Adekunle"
+                      placeholder="e.g. Michael Okoro"
                       value={isCheckingInOther ? otherName : fullName}
                       onChange={(e) => (isCheckingInOther ? setOtherName(e.target.value) : setFullName(e.target.value))}
                       style={{
@@ -418,12 +405,11 @@ export default function FloatingAttendance() {
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>
-                      Phone Number *
+                      Phone Number (optional)
                     </label>
                     <input
                       type="tel"
-                      required
-                      placeholder="e.g. 0801 234 5678"
+                      placeholder="e.g. 0706 194 5751"
                       value={isCheckingInOther ? otherPhone : phone}
                       onChange={(e) => (isCheckingInOther ? setOtherPhone(e.target.value) : setPhone(e.target.value))}
                       style={{
@@ -442,7 +428,7 @@ export default function FloatingAttendance() {
                 </>
               )}
 
-              {/* Attendance Mode Selector */}
+              {/* Mode Selection */}
               <div>
                 <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>
                   Where are you worshipping today?
@@ -493,7 +479,7 @@ export default function FloatingAttendance() {
                 </div>
               </div>
 
-              {/* Sub-options based on mode */}
+              {/* In-Person vs Online Options */}
               {mode === "in_person" ? (
                 <div>
                   <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>
@@ -537,7 +523,6 @@ export default function FloatingAttendance() {
                   </div>
                 </div>
               ) : (
-                /* Online Mode details */
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>
@@ -568,37 +553,30 @@ export default function FloatingAttendance() {
                     </div>
                   </div>
 
-                  {/* Stream Code Input */}
-                  {streamCodeConfig.active && (
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                        <label style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B" }}>
-                          Stream Check-In Code *
-                        </label>
-                        <span style={{ fontSize: "9px", color: "#94A3B8" }}>Announced on stream</span>
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter stream code"
-                        value={enteredCode}
-                        onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-                        style={{
-                          width: "100%",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid #F59E0B",
-                          background: "rgba(245,158,11,0.08)",
-                          color: "#FFFFFF",
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          outline: "none",
-                          boxSizing: "border-box",
-                        }}
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B", marginBottom: "4px" }}>
+                      Stream Check-In Code (if announced)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. LIGHT-2026"
+                      value={enteredCode}
+                      onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(245,158,11,0.4)",
+                        background: "rgba(245,158,11,0.06)",
+                        color: "#FFFFFF",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -608,7 +586,7 @@ export default function FloatingAttendance() {
                 </div>
               )}
 
-              {/* Action Buttons */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -631,7 +609,7 @@ export default function FloatingAttendance() {
                 {loading ? "Confirming..." : isCheckingInOther ? "Confirm Guest Check-In" : "Confirm My Attendance"}
               </button>
 
-              {/* Multi-person check-in toggle button */}
+              {/* Family / Friend Check-in Toggle */}
               {isRecognized && (
                 <button
                   type="button"
@@ -654,10 +632,9 @@ export default function FloatingAttendance() {
           </div>
         )}
 
-        {/* The Floating Trigger Button */}
+        {/* Floating Circle Button */}
         {!showModal && !showSuccess && (
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {/* Pill Tooltip */}
             <div
               style={{
                 background: "#0F172A",
@@ -681,7 +658,6 @@ export default function FloatingAttendance() {
               <span>Tap & hold to sign attendance</span>
             </div>
 
-            {/* Circular Hold Button */}
             <div
               onMouseDown={handlePressStart}
               onMouseUp={handlePressEnd}
@@ -700,7 +676,6 @@ export default function FloatingAttendance() {
               }}
               aria-label="Tap and hold to sign attendance"
             >
-              {/* Background Glow & Button Body */}
               <div
                 style={{
                   position: "absolute",
@@ -722,7 +697,6 @@ export default function FloatingAttendance() {
                 📍
               </div>
 
-              {/* Progress SVG Ring */}
               <svg
                 width="64"
                 height="64"
