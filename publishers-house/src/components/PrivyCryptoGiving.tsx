@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePrivy, useSendTransaction, useWallets } from "@privy-io/react-auth";
-import PrivySafeProvider from "./PrivySafeProvider";
+import PrivySafeProvider, { PrivyErrorBoundary } from "./PrivySafeProvider";
 
 const S = {
   label: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.16em", textTransform: "uppercase" as const },
@@ -287,8 +287,10 @@ function PrivyFallback({ churchAddress }: { churchAddress: string }) {
 
 export default function PrivyCryptoGiving(props: PrivyCryptoGivingProps) {
   return (
-    <PrivySafeProvider fallback={<PrivyFallback churchAddress={props.churchAddress} />}>
-      <PrivyGivingInner {...props} />
-    </PrivySafeProvider>
+    <PrivyErrorBoundary fallback={<PrivyFallback churchAddress={props.churchAddress} />}>
+      <PrivySafeProvider fallback={<PrivyFallback churchAddress={props.churchAddress} />}>
+        <PrivyGivingInner {...props} />
+      </PrivySafeProvider>
+    </PrivyErrorBoundary>
   );
 }

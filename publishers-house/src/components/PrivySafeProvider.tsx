@@ -3,17 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 
-class PrivyErrorBoundary extends React.Component<
+export class PrivyErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback: React.ReactNode },
-  { hasError: boolean }
+  { hasError: boolean; error?: Error }
 > {
   constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: unknown) {
@@ -42,13 +42,13 @@ export default function PrivySafeProvider({
   }, []);
 
   if (!mounted) {
-    return <>{children}</>;
+    return fallback ? <>{fallback}</> : null;
   }
 
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmued569w00d20cl8zynnfgsk";
 
   return (
-    <PrivyErrorBoundary fallback={fallback ?? <>{children}</>}>
+    <PrivyErrorBoundary fallback={fallback ?? null}>
       <PrivyProvider
         appId={appId}
         config={{
