@@ -37,6 +37,7 @@ export default function FloatingAttendance() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isCodeRequired, setIsCodeRequired] = useState(false);
 
   // Family / Guest check-in mode
   const [isCheckingInOther, setIsCheckingInOther] = useState(false);
@@ -46,8 +47,20 @@ export default function FloatingAttendance() {
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
+  const checkStreamConfig = () => {
+    fetch("/api/attendance/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.active === "boolean") {
+          setIsCodeRequired(data.active);
+        }
+      })
+      .catch(() => {});
+  };
+
   // Load identity from localStorage & Firebase Auth
   useEffect(() => {
+    checkStreamConfig();
     let foundProfile = false;
     try {
       const stored = localStorage.getItem("tph_attendance_user");
@@ -84,6 +97,7 @@ export default function FloatingAttendance() {
   const handlePressStart = (e: React.TouchEvent | React.MouseEvent) => {
     if (showModal || showSuccess) return;
 
+    checkStreamConfig();
     setIsPressing(true);
     setProgress(0);
 
@@ -130,6 +144,11 @@ export default function FloatingAttendance() {
 
     if (!targetName) {
       setError("Please enter your full name.");
+      return;
+    }
+
+    if (mode === "online" && isCodeRequired && !enteredCode.trim()) {
+      setError("Please enter the Stream Check-In Code announced during the service.");
       return;
     }
 
@@ -534,30 +553,44 @@ export default function FloatingAttendance() {
                     </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B", marginBottom: "4px" }}>
-                      Stream Check-In Code (if announced)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. LIGHT-2026"
-                      value={enteredCode}
-                      onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(245,158,11,0.4)",
-                        background: "rgba(245,158,11,0.06)",
-                        color: "#FFFFFF",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        outline: "none",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
+                  {isCodeRequired ? (
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                        <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B" }}>
+                          Stream Check-In Code *
+                        </label>
+                        <span style={{ fontSize: "9px", color: "#F59E0B", background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                          CODE REQUIRED
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Enter code displayed on stream"
+                        value={enteredCode}
+                        onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                        style={{
+                          width: "100%",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          border: "1px solid #F59E0B",
+                          background: "rgba(245,158,11,0.08)",
+                          color: "#FFFFFF",
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ padding: "8px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <p style={{ fontSize: "11px", color: "#94A3B8", margin: 0 }}>
+                        ✓ Open stream check-in — no stream code is required for today's service.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

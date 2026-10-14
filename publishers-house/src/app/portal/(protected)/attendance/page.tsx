@@ -99,11 +99,11 @@ export default function AttendanceAdminPage() {
   // 1. Fetch Stream Code Settings
   const fetchStreamSettings = async () => {
     try {
-      const snap = await getDoc(doc(db, "homeSettings", "attendance"));
-      if (snap.exists()) {
-        const data = snap.data();
-        setStreamCode(data.streamCode || "");
-        setStreamCodeActive(Boolean(data.streamCodeActive));
+      const res = await fetch("/api/attendance/config");
+      const data = await res.json().catch(() => ({}));
+      if (data) {
+        setStreamCode(data.code || "");
+        setStreamCodeActive(Boolean(data.active));
       }
     } catch (err) {
       console.error("Error fetching stream settings:", err);
@@ -183,25 +183,62 @@ export default function AttendanceAdminPage() {
     setFilteredRecords(list);
   }, [search, modeFilter, records]);
 
-  // Save Stream Code Setting
+  // Save Stream Code Setting via Admin Server API
   const handleSaveStreamCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!streamCode.trim()) {
+      setStreamCodeMsg("Please enter a code to activate (e.g. LIGHT-2026), or click Deactivate.");
+      return;
+    }
     setStreamCodeLoading(true);
     setStreamCodeMsg("");
     try {
-      await setDoc(
-        doc(db, "homeSettings", "attendance"),
-        {
-          streamCode: streamCode.trim().toUpperCase(),
-          streamCodeActive,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
-      setStreamCodeMsg("Stream code updated successfully ✓");
-      setTimeout(() => setStreamCodeMsg(""), 3500);
+      const res = await fetch("/api/attendance/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: streamCode.trim().toUpperCase(),
+          active: true,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update stream code.");
+      }
+      setStreamCode(data.code || streamCode.trim().toUpperCase());
+      setStreamCodeActive(true);
+      setStreamCodeMsg(data.message || "Stream code activated successfully ✓");
+      setTimeout(() => setStreamCodeMsg(""), 4000);
     } catch (err: any) {
       setStreamCodeMsg("Failed to save stream code: " + err.message);
+    } finally {
+      setStreamCodeLoading(false);
+    }
+  };
+
+  // One-click Deactivate Stream Code
+  const handleDeactivateStreamCode = async () => {
+    setStreamCodeLoading(true);
+    setStreamCodeMsg("");
+    try {
+      const res = await fetch("/api/attendance/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "",
+          active: false,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to deactivate stream code.");
+      }
+      setStreamCode("");
+      setStreamCodeActive(false);
+      setStreamCodeMsg("Stream code requirement deactivated ✓");
+      setTimeout(() => setStreamCodeMsg(""), 4000);
+    } catch (err: any) {
+      setStreamCodeMsg("Failed to deactivate: " + err.message);
     } finally {
       setStreamCodeLoading(false);
     }
@@ -518,7 +555,7 @@ export default function AttendanceAdminPage() {
             padding: "22px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
             <div>
               <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "15px", fontWeight: 700, color: "#F8FAFC", margin: 0 }}>
                 Virtual Stream Check-In Code
@@ -527,6 +564,15 @@ export default function AttendanceAdminPage() {
                 Announce during YouTube / Mixlr live stream to verify attendance.
               </p>
             </div>
+            {streamCodeActive && streamCode ? (
+              <span style={{ fontSize: "11px", color: "#10B981", background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>
+                ● ENFORCED: {streamCode}
+              </span>
+            ) : (
+              <span style={{ fontSize: "11px", color: "#94A3B8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: "20px" }}>
+                ○ INACTIVE (Open check-in)
+              </span>
+            )}
           </div>
 
           <form onSubmit={handleSaveStreamCode} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -534,32 +580,15 @@ export default function AttendanceAdminPage() {
               <label style={labelStyle}>Today's Stream Code</label>
               <input
                 type="text"
-                placeholder="e.g. LIGHT-2026 or 4921"
+                placeholder="e.g. LIGHT-2026 or HIGHTOWER"
                 value={streamCode}
-                onChange={(e) => setStreamCode(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setStreamCode(e.target.value.toUpperCase());
+                  if (e.target.value.trim()) setStreamCodeActive(true);
+                }}
                 style={{ ...inputStyle, fontWeight: 700, letterSpacing: "0.1em", fontSize: "14px" }}
               />
             </div>
-
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "12px",
-                color: "#F8FAFC",
-                cursor: "pointer",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={streamCodeActive}
-                onChange={(e) => setStreamCodeActive(e.target.checked)}
-                style={{ width: "16px", height: "16px", accentColor: "#2090FF" }}
-              />
-              Require this code for Online Attendance Check-In
-            </label>
 
             {streamCodeMsg && (
               <div
@@ -573,24 +602,46 @@ export default function AttendanceAdminPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={streamCodeLoading}
-              style={{
-                padding: "10px 16px",
-                background: "rgba(32,144,255,0.15)",
-                border: "1px solid rgba(32,144,255,0.3)",
-                borderRadius: "8px",
-                color: "#38BDF8",
-                fontSize: "12px",
-                fontWeight: 600,
-                fontFamily: "'Poppins', sans-serif",
-                cursor: streamCodeLoading ? "not-allowed" : "pointer",
-                alignSelf: "flex-start",
-              }}
-            >
-              {streamCodeLoading ? "Saving..." : "Save Stream Code Settings"}
-            </button>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="submit"
+                disabled={streamCodeLoading}
+                style={{
+                  padding: "10px 16px",
+                  background: "rgba(32,144,255,0.2)",
+                  border: "1px solid rgba(32,144,255,0.4)",
+                  borderRadius: "8px",
+                  color: "#38BDF8",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif",
+                  cursor: streamCodeLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                {streamCodeLoading ? "Saving..." : "Set & Activate Code"}
+              </button>
+
+              {streamCodeActive && (
+                <button
+                  type="button"
+                  onClick={handleDeactivateStreamCode}
+                  disabled={streamCodeLoading}
+                  style={{
+                    padding: "10px 14px",
+                    background: "rgba(239,68,68,0.12)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    borderRadius: "8px",
+                    color: "#F87171",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    fontFamily: "'Poppins', sans-serif",
+                    cursor: streamCodeLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Turn Off Code
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
