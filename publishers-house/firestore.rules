@@ -36,8 +36,11 @@ service cloud.firestore {
     }
 
     function isGuestCheckIn() {
-      return request.resource.data.keys().hasOnly(['fullName', 'phone', 'timestamp', 'date', 'type'])
-        && request.resource.data.type == 'weekend_service'
+      return request.resource.data.keys().hasOnly([
+          'fullName', 'phone', 'timestamp', 'date', 'type',
+          'mode', 'location', 'streamChannel', 'serviceCode',
+          'isGuest', 'userId', 'checkedInBy'
+        ])
         && request.resource.data.fullName is string
         && request.resource.data.phone is string
         && request.resource.data.fullName.size() > 0
@@ -134,6 +137,10 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.loggedBy == request.auth.uid)
         || (isUnitHead() && resource.data.unitId == userData().assignedUnitId);
       allow update, delete: if isAdmin();
+    }
+
+    match /attendance_headcounts/{docId} {
+      allow read, write: if isAdmin() || isUnitHead();
     }
 
     match /audit_logs/{docId} {

@@ -118,9 +118,22 @@ export default function AdminDashboard() {
           if (ts && new Date(ts) >= weekStart) weeklyGiving += (d.data().amountNGN || 0);
         });
 
-        // Last attendance record
-        const attSnap = await getDocs(query(collection(db, "attendance"), orderBy("date", "desc"), limit(1)));
-        const attendanceLastWeek = attSnap.docs[0]?.data()?.count || 0;
+        // Last attendance record: check headcounts first, fallback to counting attendance docs
+        let attendanceLastWeek = 0;
+        try {
+          const hcSnap = await getDocs(query(collection(db, "attendance_headcounts"), orderBy("date", "desc"), limit(1)));
+          if (!hcSnap.empty && hcSnap.docs[0].data()?.total) {
+            attendanceLastWeek = hcSnap.docs[0].data().total;
+          } else {
+            const attSnap = await getDocs(query(collection(db, "attendance"), orderBy("date", "desc"), limit(100)));
+            if (!attSnap.empty) {
+              const latestDate = attSnap.docs[0].data()?.date;
+              attendanceLastWeek = attSnap.docs.filter(d => d.data()?.date === latestDate).length;
+            }
+          }
+        } catch {
+          // ignore
+        }
 
         setKpi({ totalMembers, newThisMonth, weeklyGiving, attendanceLastWeek, pendingTestimonies, pendingPrayers });
       } catch {
