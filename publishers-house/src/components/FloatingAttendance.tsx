@@ -36,6 +36,7 @@ export default function FloatingAttendance() {
   // Input states
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Family / Guest check-in mode
   const [isCheckingInOther, setIsCheckingInOther] = useState(false);
@@ -47,14 +48,16 @@ export default function FloatingAttendance() {
 
   // Load identity from localStorage & Firebase Auth
   useEffect(() => {
+    let foundProfile = false;
     try {
       const stored = localStorage.getItem("tph_attendance_user");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === "object") {
+        if (parsed && typeof parsed === "object" && parsed.fullName) {
           setSavedUser(parsed);
-          if (parsed.fullName) setFullName(parsed.fullName);
+          setFullName(parsed.fullName);
           if (parsed.phone) setPhone(parsed.phone);
+          foundProfile = true;
         }
       }
     } catch {
@@ -64,11 +67,11 @@ export default function FloatingAttendance() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthUser(user);
-        if (user.displayName) {
-          setFullName((prev) => prev || user.displayName || "");
+        if (!foundProfile && user.displayName) {
+          setFullName(user.displayName);
         }
-        if (user.phoneNumber) {
-          setPhone((prev) => prev || user.phoneNumber || "");
+        if (!foundProfile && user.phoneNumber) {
+          setPhone(user.phoneNumber);
         }
       } else {
         setAuthUser(null);
@@ -110,16 +113,20 @@ export default function FloatingAttendance() {
     if (progressInterval.current) clearInterval(progressInterval.current);
   };
 
-  const effectiveSelfName = (fullName || savedUser?.fullName || authUser?.displayName || "").trim();
-  const effectiveSelfPhone = (phone || savedUser?.phone || authUser?.phoneNumber || "").trim();
-  const isRecognized = Boolean(effectiveSelfName);
+  const recognizedName = savedUser?.fullName || authUser?.displayName || "";
+  const recognizedPhone = savedUser?.phone || authUser?.phoneNumber || "";
+  const isRecognized = Boolean(recognizedName) && !isEditing;
+
+  const targetName = isCheckingInOther
+    ? otherName.trim()
+    : (isRecognized ? recognizedName.trim() : fullName.trim());
+  const targetPhone = isCheckingInOther
+    ? otherPhone.trim()
+    : (isRecognized ? (recognizedPhone.trim() || phone.trim()) : phone.trim());
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError("");
-
-    const targetName = isCheckingInOther ? otherName.trim() : effectiveSelfName;
-    const targetPhone = isCheckingInOther ? otherPhone.trim() : effectiveSelfPhone;
 
     if (!targetName) {
       setError("Please enter your full name.");
@@ -139,7 +146,7 @@ export default function FloatingAttendance() {
       };
 
       if (isCheckingInOther) {
-        payload.checkedInBy = effectiveSelfName || "Family/Friend";
+        payload.checkedInBy = (isRecognized ? recognizedName : fullName) || "Family/Friend";
       }
 
       // Submit via Server-Side API endpoint (bypasses Firestore client security rule issues)
@@ -160,6 +167,7 @@ export default function FloatingAttendance() {
         const toSave = { fullName: targetName, phone: targetPhone };
         localStorage.setItem("tph_attendance_user", JSON.stringify(toSave));
         setSavedUser(toSave);
+        setIsEditing(false);
       }
 
       setShowModal(false);
@@ -283,7 +291,7 @@ export default function FloatingAttendance() {
                   {isCheckingInOther
                     ? "Check In Guest / Family"
                     : isRecognized
-                    ? `Welcome, ${effectiveSelfName.split(" ")[0]}!`
+                    ? `Welcome, ${recognizedName.split(" ")[0]}!`
                     : "Sign Attendance"}
                 </h3>
               </div>
@@ -324,18 +332,17 @@ export default function FloatingAttendance() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#F8FAFC" }}>{effectiveSelfName}</div>
-                      <div style={{ fontSize: "11px", color: effectiveSelfPhone ? "#94A3B8" : "#F59E0B", marginTop: "2px" }}>
-                        {effectiveSelfPhone ? `Phone: ${effectiveSelfPhone}` : "No phone saved"}
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#F8FAFC" }}>{recognizedName}</div>
+                      <div style={{ fontSize: "11px", color: recognizedPhone ? "#94A3B8" : "#F59E0B", marginTop: "2px" }}>
+                        {recognizedPhone ? `Phone: ${recognizedPhone}` : "Phone: Not provided"}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setSavedUser(null);
-                        setFullName("");
-                        setPhone("");
-                        localStorage.removeItem("tph_attendance_user");
+                        setFullName(recognizedName);
+                        setPhone(recognizedPhone);
+                        setIsEditing(true);
                       }}
                       style={{
                         background: "none",
@@ -347,35 +354,9 @@ export default function FloatingAttendance() {
                         padding: 0,
                       }}
                     >
-                      Switch
+                      Switch / Edit
                     </button>
                   </div>
-
-                  {/* If recognized user has no phone, provide an input */}
-                  {!effectiveSelfPhone && (
-                    <div style={{ marginTop: "10px", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <label style={{ display: "block", fontSize: "10px", color: "#94A3B8", marginBottom: "4px" }}>
-                        Phone number (optional):
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="e.g. 08012345678"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "6px 10px",
-                          borderRadius: "6px",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.05)",
-                          color: "#FFF",
-                          fontSize: "12px",
-                          outline: "none",
-                          boxSizing: "border-box",
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               ) : (
                 /* Inputs for new attendee OR family member */
