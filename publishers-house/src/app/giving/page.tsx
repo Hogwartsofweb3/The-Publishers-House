@@ -2,9 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Script from "next/script";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CopyableAccount from "@/components/CopyableAccount";
+
+const PrivyCryptoGiving = dynamic(() => import("@/components/PrivyCryptoGiving"), {
+  ssr: false,
+  loading: () => (
+    <div style={{ padding: "24px", textAlign: "center", color: "#4A62A0", fontSize: "12px", fontFamily: "'Poppins', sans-serif" }}>
+      Loading Web3 wallet provider...
+    </div>
+  ),
+});
 
 // Extend Window to include PaystackPop
 declare global {
@@ -363,71 +373,83 @@ export default function GivingPage() {
                     </div>
                   </div>
 
-                  <div style={{ padding: "20px", background: "#F4F6FB", border: "1px solid #D3DAEC", borderRadius: "6px", marginBottom: "16px" }}>
-                    <span style={{ ...S.eyebrow, color: "#4A62A0", display: "block", marginBottom: "10px" }}>
-                      {currentCryptoLabel}
-                    </span>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <code style={{ fontSize: "12px", color: "#151A54", wordBreak: "break-all", fontFamily: "monospace", background: "#FFFFFF", padding: "12px", borderRadius: "4px", border: "1px solid #E8ECF7", lineHeight: "1.5" }}>
-                        {currentCryptoAddress}
-                      </code>
+                  {cryptoNetwork === "EVM" ? (
+                    <PrivyCryptoGiving
+                      displayAmount={displayAmount}
+                      name={name}
+                      email={email}
+                      category={category}
+                      churchAddress={CHURCH_EVM_ADDRESS}
+                    />
+                  ) : (
+                    <>
+                      <div style={{ padding: "20px", background: "#F4F6FB", border: "1px solid #D3DAEC", borderRadius: "6px", marginBottom: "16px" }}>
+                        <span style={{ ...S.eyebrow, color: "#4A62A0", display: "block", marginBottom: "10px" }}>
+                          {currentCryptoLabel}
+                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <code style={{ fontSize: "12px", color: "#151A54", wordBreak: "break-all", fontFamily: "monospace", background: "#FFFFFF", padding: "12px", borderRadius: "4px", border: "1px solid #E8ECF7", lineHeight: "1.5" }}>
+                            {currentCryptoAddress}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={handleCopyCrypto}
+                            style={{
+                              padding: "8px 16px",
+                              background: cryptoCopied ? "#16A34A" : "#0140C1",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              ...S.label,
+                              fontSize: "10px",
+                              letterSpacing: "0.14em",
+                              transition: "all 0.2s",
+                              alignSelf: "flex-start",
+                            }}
+                          >
+                            {cryptoCopied ? "ADDRESS COPIED! ✓" : "COPY ADDRESS"}
+                          </button>
+                        </div>
+                        <p style={{ ...S.readSmall, color: "#747CA1", fontSize: "11px", margin: "12px 0 0" }}>
+                          ⚠️ Please verify the network before sending to avoid token loss.
+                        </p>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={handleCopyCrypto}
+                        onClick={handleLogCrypto}
+                        disabled={loggingCrypto}
                         style={{
-                          padding: "8px 16px",
-                          background: cryptoCopied ? "#16A34A" : "#0140C1",
-                          color: "#FFFFFF",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          ...S.label,
-                          fontSize: "10px",
-                          letterSpacing: "0.14em",
+                          ...S.button,
+                          width: "100%",
+                          height: "46px",
+                          background: "transparent",
+                          border: "1px solid #0140C1",
+                          borderRadius: "2px",
+                          color: "#0140C1",
+                          cursor: loggingCrypto ? "not-allowed" : "pointer",
+                          marginBottom: "16px",
                           transition: "all 0.2s",
-                          alignSelf: "flex-start",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = "#0140C1";
+                          e.currentTarget.style.color = "#FFFFFF";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                          e.currentTarget.style.color = "#0140C1";
                         }}
                       >
-                        {cryptoCopied ? "ADDRESS COPIED! ✓" : "COPY ADDRESS"}
+                        {loggingCrypto ? "RECORDING GIFT..." : "I'VE TRANSFERRED MY CRYPTO GIFT"}
                       </button>
-                    </div>
-                    <p style={{ ...S.readSmall, color: "#747CA1", fontSize: "11px", margin: "12px 0 0" }}>
-                      ⚠️ Please verify the network before sending to avoid token loss.
-                    </p>
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={handleLogCrypto}
-                    disabled={loggingCrypto}
-                    style={{
-                      ...S.button,
-                      width: "100%",
-                      height: "46px",
-                      background: "transparent",
-                      border: "1px solid #0140C1",
-                      borderRadius: "2px",
-                      color: "#0140C1",
-                      cursor: loggingCrypto ? "not-allowed" : "pointer",
-                      marginBottom: "16px",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = "#0140C1";
-                      e.currentTarget.style.color = "#FFFFFF";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#0140C1";
-                    }}
-                  >
-                    {loggingCrypto ? "RECORDING GIFT..." : "I'VE TRANSFERRED MY CRYPTO GIFT"}
-                  </button>
-
-                  {cryptoLoggedMsg && (
-                    <div style={{ padding: "10px 14px", background: "#DCFCE7", border: "1px solid #86EFAC", borderRadius: "4px", color: "#166534", fontSize: "12px", fontFamily: "'Poppins', sans-serif", marginBottom: "16px", textAlign: "center" }}>
-                      {cryptoLoggedMsg}
-                    </div>
+                      {cryptoLoggedMsg && (
+                        <div style={{ padding: "10px 14px", background: "#DCFCE7", border: "1px solid #86EFAC", borderRadius: "4px", color: "#166534", fontSize: "12px", fontFamily: "'Poppins', sans-serif", marginBottom: "16px", textAlign: "center" }}>
+                          {cryptoLoggedMsg}
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
