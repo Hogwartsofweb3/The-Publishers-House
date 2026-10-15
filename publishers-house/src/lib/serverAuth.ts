@@ -69,9 +69,11 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
   const adminPrefixes = [
     "/portal/members",
     "/portal/attendance",
+    "/portal/events",
     "/portal/finance",
     "/portal/testimonies",
     "/portal/pastoral",
+    "/portal/courses",
     "/portal/facility",
     "/portal/audit",
   ];

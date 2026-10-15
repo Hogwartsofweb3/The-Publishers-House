@@ -12,7 +12,7 @@ export default function UnitCommandCenter() {
   const router = useRouter();
   const [user, setUser] = useState<PortalUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  
+
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
@@ -24,7 +24,6 @@ export default function UnitCommandCenter() {
   const [attendanceMessage, setAttendanceMessage] = useState("");
 
   useEffect(() => {
-    // Set initial date in useEffect to avoid hydration mismatch
     setDate(new Date().toISOString().split("T")[0]);
   }, []);
 
@@ -34,7 +33,7 @@ export default function UnitCommandCenter() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const portalUser = await getPortalUser(firebaseUser.uid);
-        if (portalUser && portalUser.role === "unit_head") {
+        if (portalUser && (portalUser.role === "unit_head" || portalUser.role === "admin")) {
           setUser(portalUser);
         } else {
           router.push("/portal/login");
@@ -58,12 +57,9 @@ export default function UnitCommandCenter() {
           where("assignedUnitId", "==", user.assignedUnitId)
         );
         const snap = await getDocs(q);
-        const fetchedMembers = snap.docs.map((d) => ({ uid: d.id, ...d.data() } as PortalUser));
-        // Simple client-side sort
-        fetchedMembers.sort((a, b) => a.displayName.localeCompare(b.displayName));
-        setMembers(fetchedMembers);
+        setMembers(snap.docs.map((doc) => doc.data() as PortalUser));
       } catch (err) {
-        console.error("Failed to fetch unit members:", err);
+        console.error("Error fetching unit members:", err);
       } finally {
         setLoadingMembers(false);
       }
@@ -72,117 +68,147 @@ export default function UnitCommandCenter() {
     fetchMembers();
   }, [user]);
 
-  const handleLogAttendance = async (e: React.FormEvent) => {
+  const handleRecordAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.assignedUnitId) return;
+    if (!headcount || !user?.assignedUnitId) return;
 
     setSavingAttendance(true);
     setAttendanceMessage("");
+
     try {
-      await addDoc(collection(db, "attendance"), {
-        type: "department",
+      await addDoc(collection(db, "unit_attendance"), {
         unitId: user.assignedUnitId,
+        unitName: activeUnit?.name || "Unknown Unit",
         date,
         headcount: parseInt(headcount, 10),
         notes,
-        timestamp: new Date().toISOString(),
-        loggedBy: user.uid
+        recordedBy: user.displayName,
+        recordedAt: new Date().toISOString(),
       });
-      setAttendanceMessage("Attendance logged successfully!");
+
+      setAttendanceMessage("Unit attendance recorded successfully ✓");
       setHeadcount("");
       setNotes("");
     } catch (err) {
-      console.error("Failed to log attendance:", err);
-      setAttendanceMessage("Failed to log attendance. Please try again.");
+      console.error("Error saving attendance:", err);
+      setAttendanceMessage("Failed to record attendance. Please try again.");
     } finally {
       setSavingAttendance(false);
-      setTimeout(() => setAttendanceMessage(""), 3000);
+      setTimeout(() => setAttendanceMessage(""), 4000);
     }
   };
 
   if (authLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0B0E14", display: "flex", alignItems: "center", justifyContent: "center", color: "#F8FAFC", fontFamily: "'Poppins', sans-serif" }}>
-        Loading...
+      <div style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+        Loading unit command center...
       </div>
     );
   }
 
-  if (!user) return null; // handled by redirect
+  if (!user) return null;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#0B0E14",
-        fontFamily: "'Poppins', sans-serif",
-        color: "#F8FAFC",
-        display: "flex",
-        flexDirection: "column",
-        padding: "32px 24px",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
+      <div>
         <h1
           style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: 28,
-            fontWeight: 700,
-            color: "#F8FAFC",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontWeight: 800,
+            fontSize: "28px",
+            lineHeight: "34px",
+            color: "#141C6E",
             margin: 0,
           }}
         >
           {activeUnit?.name || "Unit"} Command Center
         </h1>
-        <p style={{ color: "#94A3B8", marginTop: 6, fontSize: 14 }}>
-          Welcome back, {user.displayName}. Manage your unit below.
+        <p
+          style={{
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontWeight: 500,
+            fontSize: "13px",
+            color: "#4A5490",
+            margin: "6px 0 0",
+          }}
+        >
+          Welcome back, {user.displayName}. Unit leadership and Sunday duty management.
         </p>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
-        {/* Left Column: Roster */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "24px", alignItems: "start" }}>
+        {/* Left Column: Unit Roster */}
         <div
           style={{
-            flex: "1 1 500px",
-            background: "rgba(255, 255, 255, 0.02)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
-            borderRadius: 16,
-            padding: 24,
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(14, 21, 86, 0.05)",
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 0, marginBottom: 16 }}>
-            Unit Roster
-          </h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "#141C6E",
+                margin: 0,
+              }}
+            >
+              Unit Volunteer Roster
+            </h2>
+            <span
+              style={{
+                padding: "3px 10px",
+                borderRadius: "99px",
+                backgroundColor: "#E8EDFB",
+                color: "#1F46C8",
+                fontSize: "11px",
+                fontWeight: 700,
+              }}
+            >
+              {members.length} Assigned
+            </span>
+          </div>
+
           {loadingMembers ? (
-            <p style={{ color: "#94A3B8", fontSize: 14 }}>Loading members...</p>
+            <p style={{ color: "#4A5490", fontSize: "13px" }}>Loading members...</p>
           ) : members.length === 0 ? (
-            <p style={{ color: "#94A3B8", fontSize: 14 }}>No members found in this unit.</p>
+            <p style={{ color: "#4A5490", fontSize: "13px" }}>No members currently assigned to this unit.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.1)", textAlign: "left" }}>
-                    <th style={{ padding: "12px 8px", color: "#94A3B8", fontWeight: 500 }}>Name</th>
-                    <th style={{ padding: "12px 8px", color: "#94A3B8", fontWeight: 500 }}>Email</th>
-                    <th style={{ padding: "12px 8px", color: "#94A3B8", fontWeight: 500 }}>Role</th>
+                  <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
+                    <th style={{ padding: "10px 16px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Name</th>
+                    <th style={{ padding: "10px 16px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Email</th>
+                    <th style={{ padding: "10px 16px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Role</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((m) => (
-                    <tr key={m.uid} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                      <td style={{ padding: "12px 8px" }}>{m.displayName}</td>
-                      <td style={{ padding: "12px 8px", color: "#94A3B8" }}>{m.email}</td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <span style={{
-                          background: m.role === "unit_head" ? "rgba(32, 144, 255, 0.15)" : "rgba(16, 185, 129, 0.15)",
-                          color: m.role === "unit_head" ? "#2090FF" : "#10B981",
-                          padding: "4px 8px",
-                          borderRadius: 4,
-                          fontSize: 12,
-                          fontWeight: 500
-                        }}>
-                          {m.role === "unit_head" ? "Head" : "Member"}
+                    <tr key={m.uid} style={{ borderBottom: "1px solid #E8EDFB" }}>
+                      <td style={{ padding: "12px 16px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", fontWeight: 600, color: "#141C6E" }}>
+                        {m.displayName}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490" }}>
+                        {m.email}
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            backgroundColor: m.role === "unit_head" ? "#E8EDFB" : "#E4F5EA",
+                            color: m.role === "unit_head" ? "#1F46C8" : "#0F6B38",
+                          }}
+                        >
+                          {m.role === "unit_head" ? "Unit Head" : "Member"}
                         </span>
                       </td>
                     </tr>
@@ -193,107 +219,87 @@ export default function UnitCommandCenter() {
           )}
         </div>
 
-        {/* Right Column: Attendance */}
+        {/* Right Column: Attendance Form */}
         <div
           style={{
-            flex: "1 1 300px",
-            background: "rgba(255, 255, 255, 0.02)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
-            borderRadius: 16,
-            padding: 24,
-            alignSelf: "flex-start"
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(14, 21, 86, 0.05)",
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginTop: 0, marginBottom: 16 }}>
-            Log Attendance
+          <h2
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "16px",
+              fontWeight: 700,
+              color: "#141C6E",
+              margin: "0 0 16px",
+            }}
+          >
+            Record Unit Service Turnout
           </h2>
-          <form onSubmit={handleLogAttendance} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+          <form onSubmit={handleRecordAttendance} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94A3B8", marginBottom: 6 }}>Date</label>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Date</label>
               <input
                 type="date"
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  background: "rgba(0,0,0,0.2)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                  color: "#F8FAFC",
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: 14,
-                }}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
               />
             </div>
+
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94A3B8", marginBottom: 6 }}>Headcount</label>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Volunteers Present</label>
               <input
                 type="number"
-                min="0"
                 required
+                min="0"
+                placeholder="e.g. 12"
                 value={headcount}
                 onChange={(e) => setHeadcount(e.target.value)}
-                placeholder="Number of members present"
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  background: "rgba(0,0,0,0.2)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                  color: "#F8FAFC",
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: 14,
-                }}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E", outline: "none" }}
               />
             </div>
+
             <div>
-              <label style={{ display: "block", fontSize: 13, color: "#94A3B8", marginBottom: 6 }}>Notes (Optional)</label>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Notes / Absences</label>
               <textarea
+                rows={3}
+                placeholder="Mention any duty swaps or excused members..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any special remarks or challenges"
-                rows={3}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  background: "rgba(0,0,0,0.2)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                  color: "#F8FAFC",
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: 14,
-                  resize: "vertical",
-                }}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical" }}
               />
             </div>
+
+            {attendanceMessage && (
+              <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#0F6B38" }}>
+                {attendanceMessage}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={savingAttendance}
               style={{
-                background: "#D97706",
-                color: "#F8FAFC",
-                border: "none",
-                borderRadius: 8,
                 padding: "12px",
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: savingAttendance ? "not-allowed" : "pointer",
-                opacity: savingAttendance ? 0.7 : 1,
+                backgroundColor: "#1F46C8",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "8px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontWeight: 600,
+                fontSize: "13px",
+                cursor: "pointer",
               }}
             >
-              {savingAttendance ? "Saving..." : "Submit Log"}
+              {savingAttendance ? "Submitting..." : "Submit Unit Attendance"}
             </button>
-            {attendanceMessage && (
-              <p style={{ color: attendanceMessage.includes("Failed") ? "#EF4444" : "#10B981", fontSize: 13, marginTop: 4 }}>
-                {attendanceMessage}
-              </p>
-            )}
           </form>
         </div>
       </div>

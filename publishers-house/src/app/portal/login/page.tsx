@@ -31,7 +31,7 @@ export default function PortalLoginPage() {
 
   const finishSignIn = async (firebaseUser: User) => {
     const existing = await getPortalUser(firebaseUser.uid);
-    const portalUser = existing ?? await createOrUpdatePortalUser(firebaseUser);
+    const portalUser = existing ?? (await createOrUpdatePortalUser(firebaseUser));
     const session = await establishSession(firebaseUser);
     const role = (session.role as UserRole) || portalUser.role;
     const next = destinationFor(role);
@@ -57,7 +57,11 @@ export default function PortalLoginPage() {
       await finishSignIn(cred.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to sign in.";
-      if (msg.includes("user-not-found") || msg.includes("wrong-password") || msg.includes("invalid-credential")) {
+      if (
+        msg.includes("user-not-found") ||
+        msg.includes("wrong-password") ||
+        msg.includes("invalid-credential")
+      ) {
         setError("Invalid email or password.");
       } else {
         setError(msg);
@@ -73,12 +77,16 @@ export default function PortalLoginPage() {
     setContinueTo("");
     setLoading(true);
     try {
-      const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const cred = await signInWithPopup(auth, provider);
       await finishSignIn(cred.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign-in failed.";
       if (msg.includes("unauthorized-domain")) {
-        setError("Google sign-in is not allowed on this website yet. Add this site under Firebase Authentication, Settings, Authorized domains.");
+        setError(
+          "Google sign-in is not allowed on this website yet. Add this site under Firebase Authentication, Settings, Authorized domains."
+        );
       } else if (!msg.includes("popup-closed-by-user")) {
         setError(msg);
       }
@@ -106,43 +114,143 @@ export default function PortalLoginPage() {
   };
 
   return (
-    <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#0B0E14", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(32,144,255,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "10%", right: "10%", width: "300px", height: "300px", borderRadius: "50%", background: "radial-gradient(circle, rgba(217,119,6,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-      <div style={{ marginBottom: "48px", textAlign: "center" }}>
-        <img src="/images/nav-logo.png" alt="The Publishers House" style={{ height: "80px", marginBottom: "16px" }} />
-        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.3em", textTransform: "uppercase", color: "#D97706" }}>Administration Portal</div>
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        backgroundColor: "#0E1556",
+        backgroundImage: "radial-gradient(circle at 50% 20%, #1F46C8 0%, #0E1556 70%)",
+        padding: "24px",
+      }}
+    >
+      {/* Brand Header */}
+      <div style={{ marginBottom: "36px", textAlign: "center" }}>
+        <img
+          src="/images/nav-logo.png"
+          alt="The Publishers House"
+          style={{ height: "64px", marginBottom: "12px", filter: "brightness(0) invert(1)" }}
+        />
+        <div
+          style={{
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.25em",
+            textTransform: "uppercase",
+            color: "#A9C2FF",
+          }}
+        >
+          Administration & Member Portal
+        </div>
       </div>
 
-      <div style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "16px",
-        padding: "48px",
-        width: "100%",
-        maxWidth: "420px",
-        backdropFilter: "blur(12px)",
-      }}>
-        <h1 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "24px", color: "#F8FAFC", marginBottom: "8px", textAlign: "center" }}>Welcome Back</h1>
-        <p style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "14px", color: "#94A3B8", textAlign: "center", marginBottom: "36px" }}>Company of the Great</p>
+      {/* Login Card */}
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D5DCF2",
+          borderRadius: "20px",
+          padding: "40px",
+          width: "100%",
+          maxWidth: "440px",
+          boxShadow: "0 20px 40px rgba(14, 21, 86, 0.3)",
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontWeight: 800,
+            fontSize: "24px",
+            color: "#141C6E",
+            margin: "0 0 6px",
+            textAlign: "center",
+          }}
+        >
+          Welcome Back
+        </h1>
+        <p
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontStyle: "italic",
+            fontSize: "14px",
+            color: "#4A5490",
+            textAlign: "center",
+            margin: "0 0 28px",
+          }}
+        >
+          Company of the Great
+        </p>
 
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
           <div>
-            <label style={{ display: "block", fontFamily: "'Poppins', sans-serif", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#94A3B8", marginBottom: "8px" }}>Email Address</label>
+            <label
+              style={{
+                display: "block",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "#4A5490",
+                marginBottom: "6px",
+              }}
+            >
+              Email Address
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ width: "100%", padding: "13px 16px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#F8FAFC", fontFamily: "'Poppins', sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+              placeholder="you@thepublishershouse.org"
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "1px solid #D5DCF2",
+                backgroundColor: "#FFFFFF",
+                color: "#141C6E",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13.5px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
             />
           </div>
+
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#94A3B8" }}>Password</label>
-              <button type="button" onClick={handleReset} disabled={loading} style={{ background: "none", border: "none", padding: 0, color: "#2090FF", fontFamily: "'Poppins', sans-serif", fontSize: "11px", cursor: "pointer" }}>
-                Forgot password?
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <label
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  color: "#4A5490",
+                }}
+              >
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={handleReset}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  color: "#1F46C8",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Forgot?
               </button>
             </div>
             <input
@@ -150,42 +258,145 @@ export default function PortalLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ width: "100%", padding: "13px 16px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#F8FAFC", fontFamily: "'Poppins', sans-serif", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+              placeholder="••••••••"
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "1px solid #D5DCF2",
+                backgroundColor: "#FFFFFF",
+                color: "#141C6E",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13.5px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
             />
           </div>
-          {error && <p style={{ color: "#EF4444", fontSize: "13px", fontFamily: "'Poppins', sans-serif", margin: "0", textAlign: "center" }}>{error}</p>}
-          {info && <p style={{ color: "#10B981", fontSize: "13px", fontFamily: "'Poppins', sans-serif", margin: "0", textAlign: "center" }}>{info}</p>}
-          {continueTo ? (
-            <button
-              type="button"
-              onClick={() => router.push(continueTo)}
-              style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #0140C1 0%, #2090FF 100%)", color: "white", border: "none", borderRadius: "8px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", marginTop: "8px" }}
+
+          {error && (
+            <p
+              style={{
+                color: "#9B1C1C",
+                backgroundColor: "#FDE7E7",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                margin: 0,
+                textAlign: "center",
+              }}
             >
-              Continue
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ width: "100%", padding: "14px", background: loading ? "#374151" : "linear-gradient(135deg, #0140C1 0%, #2090FF 100%)", color: "white", border: "none", borderRadius: "8px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", marginTop: "8px", transition: "opacity 0.2s" }}
-            >
-              {loading ? "Signing In..." : "Sign In to Portal"}
-            </button>
+              {error}
+            </p>
           )}
+
+          {info && (
+            <div
+              style={{
+                color: "#0F6B38",
+                backgroundColor: "#E4F5EA",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                textAlign: "center",
+              }}
+            >
+              {info}
+              {continueTo && (
+                <button
+                  type="button"
+                  onClick={() => router.push(continueTo)}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    marginTop: "8px",
+                    padding: "8px",
+                    background: "#0F6B38",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Continue to Portal →
+                </button>
+              )}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "13px",
+              backgroundColor: "#1F46C8",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "10px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 600,
+              fontSize: "13px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: loading ? "not-allowed" : "pointer",
+              boxShadow: "0 3px 8px rgba(31, 70, 200, 0.3)",
+              transition: "opacity 0.2s",
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            {loading ? "Signing In..." : "Sign In to Portal"}
+          </button>
         </form>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#E8EDFB" }} />
+          <span style={{ fontSize: "11px", color: "#747CA1", textTransform: "uppercase", letterSpacing: "0.08em" }}>OR</span>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#E8EDFB" }} />
+        </div>
 
         <button
           type="button"
           onClick={handleGoogle}
-          disabled={loading || Boolean(continueTo)}
-          style={{ width: "100%", marginTop: "16px", padding: "14px", background: "transparent", color: "#F8FAFC", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "8px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.06em", cursor: loading ? "not-allowed" : "pointer" }}
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "12px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "10px",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontWeight: 600,
+            fontSize: "13px",
+            color: "#141C6E",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            cursor: loading ? "not-allowed" : "pointer",
+            transition: "background 0.15s",
+          }}
         >
-          Continue with Google
+          <span>Continue with Google</span>
         </button>
       </div>
 
-      <div style={{ marginTop: "40px", fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: "#4B5563", letterSpacing: "0.1em", textAlign: "center" }}>
-        Psalm 68:11 · Publishing the Word
+      {/* Footer Quote */}
+      <div
+        style={{
+          marginTop: "32px",
+          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+          fontSize: "11px",
+          color: "#A9C2FF",
+          letterSpacing: "0.08em",
+          textAlign: "center",
+        }}
+      >
+        Psalm 68:11 · The Lord gave the word: great was the company of those that published it.
       </div>
     </div>
   );

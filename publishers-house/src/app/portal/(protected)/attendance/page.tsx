@@ -7,11 +7,9 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   doc,
   getDoc,
   setDoc,
-  Timestamp,
 } from "firebase/firestore";
 
 interface AttendanceRecord {
@@ -41,30 +39,6 @@ interface HeadcountRecord {
   loggedBy?: string;
   updatedAt?: any;
 }
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#F8FAFC",
-  fontFamily: "'Poppins', sans-serif",
-  fontSize: "13px",
-  outline: "none",
-  boxSizing: "border-box" as const,
-};
-
-const labelStyle = {
-  display: "block",
-  fontFamily: "'Poppins', sans-serif",
-  fontSize: "10px",
-  fontWeight: 600 as const,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.12em",
-  color: "#94A3B8",
-  marginBottom: "6px",
-};
 
 export default function AttendanceAdminPage() {
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -96,7 +70,7 @@ export default function AttendanceAdminPage() {
   const [headcountLoading, setHeadcountLoading] = useState(false);
   const [headcountMsg, setHeadcountMsg] = useState("");
 
-  // 1. Fetch Stream Code Settings
+  // Fetch Stream Code Settings
   const fetchStreamSettings = async () => {
     try {
       const res = await fetch("/api/attendance/config");
@@ -110,11 +84,10 @@ export default function AttendanceAdminPage() {
     }
   };
 
-  // 2. Fetch Attendance Records & Headcount for Selected Date
+  // Fetch Attendance Records & Headcount for Selected Date
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      // Query digital attendance
       const q = query(
         collection(db, "attendance"),
         where("date", "==", selectedDate)
@@ -125,7 +98,6 @@ export default function AttendanceAdminPage() {
         ...(d.data() as Omit<AttendanceRecord, "id">),
       }));
 
-      // Sort by timestamp desc in JS
       items.sort((a, b) => {
         const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
         const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
@@ -135,7 +107,6 @@ export default function AttendanceAdminPage() {
       setRecords(items);
       setFilteredRecords(items);
 
-      // Query manual headcount for this date
       const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
       if (hcSnap.exists()) {
         setHeadcount(hcSnap.data() as HeadcountRecord);
@@ -164,7 +135,6 @@ export default function AttendanceAdminPage() {
     fetchAttendance();
   }, [selectedDate]);
 
-  // Search & Filter
   useEffect(() => {
     let list = records;
     if (search.trim()) {
@@ -183,11 +153,10 @@ export default function AttendanceAdminPage() {
     setFilteredRecords(list);
   }, [search, modeFilter, records]);
 
-  // Save Stream Code Setting via Admin Server API
   const handleSaveStreamCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!streamCode.trim()) {
-      setStreamCodeMsg("Please enter a code to activate (e.g. LIGHT-2026), or click Deactivate.");
+      setStreamCodeMsg("Please enter a code to activate (e.g. LIGHT-2026)");
       return;
     }
     setStreamCodeLoading(true);
@@ -202,12 +171,10 @@ export default function AttendanceAdminPage() {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to update stream code.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to update stream code.");
       setStreamCode(data.code || streamCode.trim().toUpperCase());
       setStreamCodeActive(true);
-      setStreamCodeMsg(data.message || "Stream code activated successfully ✓");
+      setStreamCodeMsg("Stream code activated successfully ✓");
       setTimeout(() => setStreamCodeMsg(""), 4000);
     } catch (err: any) {
       setStreamCodeMsg("Failed to save stream code: " + err.message);
@@ -216,7 +183,6 @@ export default function AttendanceAdminPage() {
     }
   };
 
-  // One-click Deactivate Stream Code
   const handleDeactivateStreamCode = async () => {
     setStreamCodeLoading(true);
     setStreamCodeMsg("");
@@ -224,15 +190,10 @@ export default function AttendanceAdminPage() {
       const res = await fetch("/api/attendance/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: "",
-          active: false,
-        }),
+        body: JSON.stringify({ code: "", active: false }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to deactivate stream code.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to deactivate stream code.");
       setStreamCode("");
       setStreamCodeActive(false);
       setStreamCodeMsg("Stream code requirement deactivated ✓");
@@ -244,7 +205,6 @@ export default function AttendanceAdminPage() {
     }
   };
 
-  // Save Usher Headcount
   const handleSaveHeadcount = async (e: React.FormEvent) => {
     e.preventDefault();
     setHeadcountLoading(true);
@@ -264,7 +224,7 @@ export default function AttendanceAdminPage() {
 
       await setDoc(doc(db, "attendance_headcounts", selectedDate), toSave);
       setHeadcount(toSave);
-      setHeadcountMsg("Official headcount saved ✓");
+      setHeadcountMsg("Official usher headcount saved ✓");
       setTimeout(() => setHeadcountMsg(""), 3500);
     } catch (err: any) {
       setHeadcountMsg("Failed to save headcount: " + err.message);
@@ -273,25 +233,20 @@ export default function AttendanceAdminPage() {
     }
   };
 
-  // Export to CSV
   const handleExportCSV = () => {
     if (filteredRecords.length === 0) {
       alert("No attendance records to export for this date.");
       return;
     }
-
     const headers = [
       "Full Name",
       "Phone",
       "Mode",
       "Location / Channel",
       "Member Type",
-      "Checked In By",
-      "Stream Code Entered",
       "Date",
       "Time",
     ];
-
     const rows = filteredRecords.map((r) => {
       const timeStr = r.timestamp?.toDate
         ? r.timestamp.toDate().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })
@@ -302,13 +257,10 @@ export default function AttendanceAdminPage() {
         `"${r.mode || "in_person"}"`,
         `"${r.location || r.streamChannel || ""}"`,
         `"${r.userId ? "Member" : "Guest"}"`,
-        `"${r.checkedInBy || "Self"}"`,
-        `"${r.serviceCode || ""}"`,
         `"${r.date || ""}"`,
         `"${timeStr}"`,
       ].join(",");
     });
-
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -319,403 +271,409 @@ export default function AttendanceAdminPage() {
     document.body.removeChild(link);
   };
 
-  // Compute breakdown metrics
-  const totalDigital = records.length;
-  const inPersonJos = records.filter(
-    (r) => r.mode === "in_person" && (r.location?.includes("Jos") || !r.location?.includes("Abuja"))
-  ).length;
-  const inPersonAbuja = records.filter(
-    (r) => r.mode === "in_person" && r.location?.includes("Abuja")
-  ).length;
-  const onlineCount = records.filter((r) => r.mode === "online").length;
+  const inPersonRecords = records.filter((r) => r.mode === "in_person");
+  const onlineRecords = records.filter((r) => r.mode === "online");
+  const guestCount = records.filter((r) => r.isGuest || !r.userId).length;
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "28px",
+          alignItems: "flex-end",
           flexWrap: "wrap",
           gap: "16px",
         }}
       >
         <div>
-          <div
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "10px",
-              color: "#D97706",
-              fontWeight: 600,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              marginBottom: "6px",
-            }}
-          >
-            Admin / Worship Services
-          </div>
           <h1
             style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
               fontWeight: 800,
-              fontSize: "clamp(24px, 3vw, 32px)",
-              color: "#F8FAFC",
+              fontSize: "28px",
+              lineHeight: "34px",
+              color: "#141C6E",
               margin: 0,
-              letterSpacing: "-0.02em",
             }}
           >
             Attendance & Headcounts
           </h1>
+          <p
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 500,
+              fontSize: "13px",
+              color: "#4A5490",
+              margin: "6px 0 0",
+            }}
+          >
+            In-person usher counts, virtual stream check-in validation, and attendee registry
+          </p>
         </div>
 
-        {/* Date Selector & Export */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "12px", color: "#94A3B8", fontFamily: "'Poppins', sans-serif" }}>
-              Service Date:
-            </span>
+            <label
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#4A5490",
+                textTransform: "uppercase",
+              }}
+            >
+              Date:
+            </label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               style={{
-                ...inputStyle,
-                width: "auto",
                 padding: "8px 12px",
-                fontSize: "12px",
+                borderRadius: "8px",
+                border: "1px solid #D5DCF2",
+                backgroundColor: "#FFFFFF",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13px",
+                color: "#141C6E",
+                outline: "none",
               }}
             />
           </div>
 
           <button
-            onClick={fetchAttendance}
-            style={{
-              padding: "9px 14px",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: "8px",
-              color: "#F8FAFC",
-              fontSize: "12px",
-              fontFamily: "'Poppins', sans-serif",
-              cursor: "pointer",
-            }}
-          >
-            ↻ Refresh
-          </button>
-
-          <button
             onClick={handleExportCSV}
             style={{
-              padding: "9px 16px",
-              background: "linear-gradient(135deg, #0140C1 0%, #2090FF 100%)",
-              border: "none",
-              borderRadius: "8px",
-              color: "#FFFFFF",
-              fontSize: "12px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D5DCF2",
+              borderRadius: "10px",
+              padding: "10px 16px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
               fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
+              fontSize: "13px",
+              color: "#141C6E",
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
             }}
           >
-            <span>↓</span> Export CSV
+            Export CSV
           </button>
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* KPI Cards Row */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: "14px",
-          marginBottom: "32px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
         }}
       >
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(32,144,255,0.2)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "12px",
-            padding: "20px",
+            padding: "18px 20px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={labelStyle}>Total Digital Sign-ins</span>
-            <span style={{ color: "#2090FF", fontSize: "16px" }}>✦</span>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Usher Headcount</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "30px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>
+            {headcount.total || (Number(headcount.men) + Number(headcount.women) + Number(headcount.children)) || "—"}
           </div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "32px", color: "#F8FAFC" }}>
-            {loading ? "..." : totalDigital}
-          </div>
-          <div style={{ fontSize: "11px", color: "#38BDF8", marginTop: "4px" }}>
-            Self check-ins recorded
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#0F6B38", marginTop: "2px" }}>
+            {headcount.men} Men · {headcount.women} Women · {headcount.children} Kids
           </div>
         </div>
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(16,185,129,0.2)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "12px",
-            padding: "20px",
+            padding: "18px 20px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={labelStyle}>In-Person (Jos)</span>
-            <span style={{ color: "#10B981", fontSize: "16px" }}>🏛️</span>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Digital Check-Ins</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "30px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>
+            {records.length}
           </div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "32px", color: "#F8FAFC" }}>
-            {loading ? "..." : inPersonJos}
-          </div>
-          <div style={{ fontSize: "11px", color: "#10B981", marginTop: "4px" }}>
-            The House of Bread
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#1F46C8", marginTop: "2px" }}>
+            Verified check-in submissions
           </div>
         </div>
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(217,119,6,0.2)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "12px",
-            padding: "20px",
+            padding: "18px 20px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={labelStyle}>In-Person (Abuja)</span>
-            <span style={{ color: "#D97706", fontSize: "16px" }}>📍</span>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Physical In-Person</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "30px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>
+            {inPersonRecords.length}
           </div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "32px", color: "#F8FAFC" }}>
-            {loading ? "..." : inPersonAbuja}
-          </div>
-          <div style={{ fontSize: "11px", color: "#F59E0B", marginTop: "4px" }}>
-            Abuja Outreach Center
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490", marginTop: "2px" }}>
+            Jos & Abuja campus attendees
           </div>
         </div>
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(139,92,246,0.2)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "12px",
-            padding: "20px",
+            padding: "18px 20px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={labelStyle}>Online Streamers</span>
-            <span style={{ color: "#8B5CF6", fontSize: "16px" }}>🌐</span>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Virtual Stream Viewers</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "30px", fontWeight: 800, color: "#7A5200", marginTop: "4px" }}>
+            {onlineRecords.length}
           </div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "32px", color: "#F8FAFC" }}>
-            {loading ? "..." : onlineCount}
-          </div>
-          <div style={{ fontSize: "11px", color: "#A78BFA", marginTop: "4px" }}>
-            YouTube / Mixlr / Telegram
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#7A5200", marginTop: "2px" }}>
+            Online stream validated
           </div>
         </div>
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "12px",
-            padding: "20px",
+            padding: "18px 20px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={labelStyle}>Usher Clicker Count</span>
-            <span style={{ color: "#F8FAFC", fontSize: "16px" }}>🏷️</span>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>First-Timers / Guests</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "30px", fontWeight: 800, color: "#0F6B38", marginTop: "4px" }}>
+            {guestCount}
           </div>
-          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "32px", color: "#F8FAFC" }}>
-            {headcount.total || "—"}
-          </div>
-          <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "4px" }}>
-            Men {headcount.men} · Women {headcount.women} · Kids {headcount.children}
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#0F6B38", marginTop: "2px" }}>
+            New seekers & visitors
           </div>
         </div>
       </div>
 
-      {/* Control Panels: Stream Code + Official Usher Logger */}
+      {/* Two Control Cards: Virtual Code Generator & Usher Headcount Form */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "20px",
-          marginBottom: "36px",
+          gridTemplateColumns: "1fr 1.2fr",
+          gap: "24px",
+          alignItems: "start",
         }}
       >
-        {/* Stream Code Panel */}
+        {/* Stream Code Card */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "14px",
-            padding: "22px",
+            padding: "24px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-            <div>
-              <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "15px", fontWeight: 700, color: "#F8FAFC", margin: 0 }}>
-                Virtual Stream Check-In Code
-              </h3>
-              <p style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "12px", color: "#94A3B8", margin: "4px 0 0" }}>
-                Announce during YouTube / Mixlr live stream to verify attendance.
-              </p>
-            </div>
-            {streamCodeActive && streamCode ? (
-              <span style={{ fontSize: "11px", color: "#10B981", background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>
-                ● ENFORCED: {streamCode}
-              </span>
-            ) : (
-              <span style={{ fontSize: "11px", color: "#94A3B8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: "20px" }}>
-                ○ INACTIVE (Open check-in)
-              </span>
-            )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "#141C6E",
+                margin: 0,
+              }}
+            >
+              Virtual Stream Validation Code
+            </h2>
+            <span
+              style={{
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: 700,
+                backgroundColor: streamCodeActive ? "#E4F5EA" : "#FFF2D6",
+                color: streamCodeActive ? "#0F6B38" : "#7A5200",
+              }}
+            >
+              {streamCodeActive ? "Active" : "Inactive"}
+            </span>
           </div>
+
+          <p
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "12px",
+              color: "#4A5490",
+              margin: "0 0 16px",
+            }}
+          >
+            Display this code on the YouTube/Mixlr livestream banner for online attendees to validate their check-in.
+          </p>
 
           <form onSubmit={handleSaveStreamCode} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
-              <label style={labelStyle}>Today's Stream Code</label>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
+                Active Service Code
+              </label>
               <input
                 type="text"
-                placeholder="e.g. LIGHT-2026 or HIGHTOWER"
+                placeholder="e.g. LIGHT-2026"
                 value={streamCode}
-                onChange={(e) => {
-                  setStreamCode(e.target.value.toUpperCase());
-                  if (e.target.value.trim()) setStreamCodeActive(true);
+                onChange={(e) => setStreamCode(e.target.value.toUpperCase())}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #D5DCF2",
+                  fontFamily: "monospace",
+                  fontWeight: 700,
+                  fontSize: "16px",
+                  color: "#1F46C8",
+                  letterSpacing: "0.1em",
+                  outline: "none",
                 }}
-                style={{ ...inputStyle, fontWeight: 700, letterSpacing: "0.1em", fontSize: "14px" }}
               />
             </div>
 
             {streamCodeMsg && (
               <div
                 style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                   fontSize: "12px",
-                  color: streamCodeMsg.includes("✓") ? "#10B981" : "#EF4444",
-                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600,
+                  color: streamCodeMsg.includes("Failed") ? "#9B1C1C" : "#0F6B38",
                 }}
               >
                 {streamCodeMsg}
               </div>
             )}
 
-            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "10px" }}>
               <button
                 type="submit"
                 disabled={streamCodeLoading}
                 style={{
-                  padding: "10px 16px",
-                  background: "rgba(32,144,255,0.2)",
-                  border: "1px solid rgba(32,144,255,0.4)",
+                  flex: 1,
+                  padding: "10px",
+                  backgroundColor: "#1F46C8",
+                  color: "#FFFFFF",
+                  border: "none",
                   borderRadius: "8px",
-                  color: "#38BDF8",
-                  fontSize: "12px",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                   fontWeight: 600,
-                  fontFamily: "'Poppins', sans-serif",
-                  cursor: streamCodeLoading ? "not-allowed" : "pointer",
+                  fontSize: "12.5px",
+                  cursor: "pointer",
                 }}
               >
-                {streamCodeLoading ? "Saving..." : "Set & Activate Code"}
+                {streamCodeLoading ? "Saving..." : "Set / Update Code"}
               </button>
 
               {streamCodeActive && (
                 <button
                   type="button"
                   onClick={handleDeactivateStreamCode}
-                  disabled={streamCodeLoading}
                   style={{
-                    padding: "10px 14px",
-                    background: "rgba(239,68,68,0.12)",
-                    border: "1px solid rgba(239,68,68,0.3)",
+                    padding: "10px 16px",
+                    backgroundColor: "#FDE7E7",
+                    color: "#9B1C1C",
+                    border: "1px solid #F8B4B4",
                     borderRadius: "8px",
-                    color: "#F87171",
-                    fontSize: "12px",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                     fontWeight: 600,
-                    fontFamily: "'Poppins', sans-serif",
-                    cursor: streamCodeLoading ? "not-allowed" : "pointer",
+                    fontSize: "12.5px",
+                    cursor: "pointer",
                   }}
                 >
-                  Turn Off Code
+                  Deactivate
                 </button>
               )}
             </div>
           </form>
         </div>
 
-        {/* Usher Official Headcount Logger */}
+        {/* Usher Headcount Form Card */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
             borderRadius: "14px",
-            padding: "22px",
+            padding: "24px",
           }}
         >
-          <div>
-            <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "15px", fontWeight: 700, color: "#F8FAFC", margin: 0 }}>
-              Official Usher Headcount Entry
-            </h3>
-            <p style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "12px", color: "#94A3B8", margin: "4px 0 0" }}>
-              In-house clicker tally for {selectedDate}.
-            </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "#141C6E",
+                margin: 0,
+              }}
+            >
+              Usher Official Headcount Entry
+            </h2>
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#4A5490",
+              }}
+            >
+              Date: {selectedDate}
+            </span>
           </div>
 
-          <form onSubmit={handleSaveHeadcount} style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+          <form onSubmit={handleSaveHeadcount} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={labelStyle}>Men</label>
+                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Men</label>
                 <input
                   type="number"
                   min="0"
                   value={headcount.men}
                   onChange={(e) => setHeadcount({ ...headcount, men: Number(e.target.value) })}
-                  style={inputStyle}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E", outline: "none" }}
                 />
               </div>
+
               <div>
-                <label style={labelStyle}>Women</label>
+                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Women</label>
                 <input
                   type="number"
                   min="0"
                   value={headcount.women}
                   onChange={(e) => setHeadcount({ ...headcount, women: Number(e.target.value) })}
-                  style={inputStyle}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E", outline: "none" }}
                 />
               </div>
+
               <div>
-                <label style={labelStyle}>Children</label>
+                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Children</label>
                 <input
                   type="number"
                   min="0"
                   value={headcount.children}
                   onChange={(e) => setHeadcount({ ...headcount, children: Number(e.target.value) })}
-                  style={inputStyle}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E", outline: "none" }}
                 />
               </div>
             </div>
 
             <div>
-              <label style={labelStyle}>Service Notes / Ushership Comments</label>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Service Notes (Optional)</label>
               <input
                 type="text"
-                placeholder="e.g. 1st service overflow occupied, 15 visitors recorded"
+                placeholder="e.g. 1st service peak count, rainy morning"
                 value={headcount.notes || ""}
                 onChange={(e) => setHeadcount({ ...headcount, notes: e.target.value })}
-                style={inputStyle}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
               />
             </div>
 
             {headcountMsg && (
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: headcountMsg.includes("✓") ? "#10B981" : "#EF4444",
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
+              <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#0F6B38" }}>
                 {headcountMsg}
               </div>
             )}
@@ -725,177 +683,206 @@ export default function AttendanceAdminPage() {
               disabled={headcountLoading}
               style={{
                 padding: "10px 16px",
-                background: "rgba(16,185,129,0.15)",
-                border: "1px solid rgba(16,185,129,0.3)",
+                backgroundColor: "#1F46C8",
+                color: "#FFFFFF",
+                border: "none",
                 borderRadius: "8px",
-                color: "#10B981",
-                fontSize: "12px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontWeight: 600,
-                fontFamily: "'Poppins', sans-serif",
-                cursor: headcountLoading ? "not-allowed" : "pointer",
-                alignSelf: "flex-start",
+                fontSize: "13px",
+                cursor: "pointer",
               }}
             >
-              {headcountLoading ? "Saving..." : "Save Official Headcount"}
+              {headcountLoading ? "Saving Headcount..." : "Save Official Headcount"}
             </button>
           </form>
         </div>
       </div>
 
-      {/* Roster Table Section */}
+      {/* Registry Table & Filters */}
       <div
         style={{
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D5DCF2",
           borderRadius: "14px",
-          padding: "24px",
+          overflow: "hidden",
         }}
       >
-        {/* Table Controls */}
         <div
           style={{
+            padding: "20px 24px",
+            borderBottom: "1px solid #E8EDFB",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "20px",
             flexWrap: "wrap",
-            gap: "12px",
+            gap: "14px",
           }}
         >
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "260px", maxWidth: "420px" }}>
             <input
               type="text"
-              placeholder="Search attendee or phone..."
+              placeholder="Filter attendees by name or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ ...inputStyle, width: "260px" }}
+              style={{
+                width: "100%",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px solid #D5DCF2",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "12.5px",
+                color: "#141C6E",
+                outline: "none",
+              }}
             />
-
-            <div style={{ display: "flex", gap: "6px" }}>
-              {[
-                { id: "all", label: "All" },
-                { id: "in_person", label: "🏛️ In-Person" },
-                { id: "online", label: "🌐 Online" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setModeFilter(tab.id)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: modeFilter === tab.id ? "1px solid #2090FF" : "1px solid rgba(255,255,255,0.08)",
-                    background: modeFilter === tab.id ? "rgba(32,144,255,0.18)" : "transparent",
-                    color: modeFilter === tab.id ? "#38BDF8" : "#94A3B8",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    fontFamily: "'Poppins', sans-serif",
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
           </div>
 
-          <span style={{ fontSize: "12px", color: "#94A3B8", fontFamily: "'Poppins', sans-serif" }}>
-            Showing {filteredRecords.length} of {records.length} attendees
-          </span>
+          <div style={{ display: "flex", gap: "6px" }}>
+            {["all", "in_person", "online"].map((m) => (
+              <button
+                key={m}
+                onClick={() => setModeFilter(m)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  backgroundColor: modeFilter === m ? "#1F46C8" : "#F4F6FB",
+                  color: modeFilter === m ? "#FFFFFF" : "#4A5490",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                {m === "all" ? "All Modes" : m === "in_person" ? "In-Person" : "Online Stream"}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Table */}
         <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "13px",
-              textAlign: "left",
-            }}
-          >
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                <th style={{ padding: "12px 14px", color: "#94A3B8", fontWeight: 600, fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Attendee</th>
-                <th style={{ padding: "12px 14px", color: "#94A3B8", fontWeight: 600, fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Phone</th>
-                <th style={{ padding: "12px 14px", color: "#94A3B8", fontWeight: 600, fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Mode & Location</th>
-                <th style={{ padding: "12px 14px", color: "#94A3B8", fontWeight: 600, fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Profile</th>
-                <th style={{ padding: "12px 14px", color: "#94A3B8", fontWeight: 600, fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Time</th>
+              <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Attendee</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Phone</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Mode</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Location / Channel</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Type</th>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Time</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRecords.length === 0 ? (
+              {loading && (
                 <tr>
-                  <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#64748B" }}>
-                    {loading ? "Loading attendance..." : "No attendance recorded for this date yet."}
+                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                    Loading attendance records...
                   </td>
                 </tr>
-              ) : (
-                filteredRecords.map((r) => {
-                  const timeStr = r.timestamp?.toDate
-                    ? r.timestamp.toDate().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })
-                    : "—";
+              )}
+              {!loading && filteredRecords.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                    No check-ins recorded for {selectedDate}.
+                  </td>
+                </tr>
+              )}
+              {filteredRecords.map((r) => {
+                const timeStr = r.timestamp?.toDate
+                  ? r.timestamp.toDate().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })
+                  : "—";
+                return (
+                  <tr
+                    key={r.id}
+                    style={{
+                      borderBottom: "1px solid #E8EDFB",
+                      transition: "background-color 0.15s",
+                    }}
+                  >
+                    <td style={{ padding: "14px 24px" }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "13.5px",
+                          fontWeight: 700,
+                          color: "#141C6E",
+                        }}
+                      >
+                        {r.fullName}
+                      </div>
+                    </td>
 
-                  return (
-                    <tr
-                      key={r.id}
+                    <td
                       style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.04)",
-                        transition: "background 0.15s",
+                        padding: "14px 20px",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "12px",
+                        color: "#141C6E",
                       }}
                     >
-                      <td style={{ padding: "12px 14px" }}>
-                        <div style={{ fontWeight: 600, color: "#F8FAFC" }}>{r.fullName}</div>
-                        {r.checkedInBy && (
-                          <div style={{ fontSize: "10px", color: "#38BDF8", marginTop: "2px" }}>
-                            ↳ Guest of {r.checkedInBy}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 14px", color: "#94A3B8" }}>{r.phone}</td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "3px 8px",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            background: r.mode === "online" ? "rgba(139,92,246,0.15)" : "rgba(16,185,129,0.15)",
-                            color: r.mode === "online" ? "#A78BFA" : "#10B981",
-                            marginRight: "6px",
-                          }}
-                        >
-                          {r.mode === "online" ? "Online" : "In-Person"}
-                        </span>
-                        <span style={{ fontSize: "12px", color: "#CBD5E1" }}>
-                          {r.location || (r.streamChannel ? `Via ${r.streamChannel}` : "Jos Center")}
-                        </span>
-                        {r.serviceCode && (
-                          <span style={{ fontSize: "10px", color: "#D97706", marginLeft: "6px" }}>
-                            (Code: {r.serviceCode})
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            color: r.userId ? "#38BDF8" : "#94A3B8",
-                            background: r.userId ? "rgba(56,189,248,0.1)" : "rgba(255,255,255,0.04)",
-                            padding: "2px 8px",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          {r.userId ? "Portal Member" : "Guest Check-in"}
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 14px", color: "#64748B", fontSize: "12px" }}>
-                        {timeStr}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                      {r.phone || "—"}
+                    </td>
+
+                    <td style={{ padding: "14px 20px" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 10px",
+                          borderRadius: "99px",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          backgroundColor: r.mode === "online" ? "#FFF2D6" : "#E8EDFB",
+                          color: r.mode === "online" ? "#7A5200" : "#1F46C8",
+                        }}
+                      >
+                        {r.mode === "online" ? "Virtual Stream" : "In-Person"}
+                      </span>
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "14px 20px",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "12px",
+                        color: "#4A5490",
+                      }}
+                    >
+                      {r.location || r.streamChannel || "Main Sanctuary"}
+                    </td>
+
+                    <td style={{ padding: "14px 20px" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          backgroundColor: r.userId ? "#E4F5EA" : "#FFF2D6",
+                          color: r.userId ? "#0F6B38" : "#7A5200",
+                        }}
+                      >
+                        {r.userId ? "Member" : "Guest"}
+                      </span>
+                    </td>
+
+                    <td
+                      style={{
+                        padding: "14px 24px",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "12px",
+                        color: "#4A5490",
+                      }}
+                    >
+                      {timeStr}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
