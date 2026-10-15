@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { usePrivy, useSendTransaction, useWallets } from "@privy-io/react-auth";
+import React, { useState } from "react";
+import { Buffer } from "buffer";
+
+// Ensure Buffer is available before web3 hooks evaluate
+if (typeof window !== "undefined") {
+  if (!(window as unknown as { Buffer?: typeof Buffer }).Buffer) {
+    (window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
+  }
+}
+
+import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 import PrivySafeProvider, { PrivyErrorBoundary } from "./PrivySafeProvider";
 
 const S = {
@@ -27,13 +36,12 @@ function PrivyGivingInner({
 }: PrivyCryptoGivingProps) {
   const { ready, authenticated, user, login, logout } = usePrivy();
   const { sendTransaction } = useSendTransaction();
-  const { wallets } = useWallets();
   const [isSending, setIsSending] = useState(false);
   const [txSuccess, setTxSuccess] = useState("");
   const [txError, setTxError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const activeWallet = wallets?.[0]?.address || user?.wallet?.address;
+  const activeWallet = user?.wallet?.address;
   const shortAddress = activeWallet
     ? `${activeWallet.slice(0, 6)}...${activeWallet.slice(-4)}`
     : "";
@@ -60,7 +68,6 @@ function PrivyGivingInner({
     setTxError("");
 
     try {
-      // Calculate ETH estimate (rough peg: ~1,600 NGN/USD, ~3,000 USD/ETH)
       const usdAmount = displayAmount / 1600;
       const ethAmount = usdAmount / 3000;
       const weiAmount = BigInt(Math.max(1, Math.floor(ethAmount * 10 ** 18)));
@@ -150,11 +157,12 @@ function PrivyGivingInner({
                 borderRadius: "4px",
                 fontSize: "10px",
                 color: "#FFFFFF",
-                cursor: "pointer",
+                cursor: !ready ? "not-allowed" : "pointer",
                 letterSpacing: "0.1em",
+                opacity: !ready ? 0.7 : 1,
               }}
             >
-              Connect Wallet
+              {!ready ? "Loading..." : "Connect Wallet"}
             </button>
           )}
         </div>
@@ -195,13 +203,14 @@ function PrivyGivingInner({
             border: "none",
             borderRadius: "2px",
             color: "#FFFFFF",
-            cursor: "pointer",
+            cursor: !ready ? "not-allowed" : "pointer",
             transition: "background 0.2s",
+            opacity: !ready ? 0.7 : 1,
           }}
           onMouseOver={(e) => (e.currentTarget.style.background = "#013091")}
           onMouseOut={(e) => (e.currentTarget.style.background = "#0140C1")}
         >
-          Connect Wallet & Give
+          {!ready ? "Loading Wallet Provider..." : "Connect Wallet & Give"}
         </button>
       )}
 

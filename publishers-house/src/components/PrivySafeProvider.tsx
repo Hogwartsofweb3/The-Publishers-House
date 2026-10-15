@@ -1,6 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Buffer } from "buffer";
+
+// Ensure Buffer is polyfilled on window and globalThis for web3 libraries in browser
+if (typeof window !== "undefined") {
+  if (!(window as unknown as { Buffer?: typeof Buffer }).Buffer) {
+    (window as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
+  }
+  if (!(globalThis as unknown as { Buffer?: typeof Buffer }).Buffer) {
+    (globalThis as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
+  }
+}
+
 import { PrivyProvider } from "@privy-io/react-auth";
 
 export class PrivyErrorBoundary extends React.Component<
