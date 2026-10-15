@@ -151,5 +151,21 @@ service cloud.firestore {
     match /pastoral_notes/{docId} {
       allow read, write: if isAdmin();
     }
+
+    // Portal & church configuration — admin-only read/write
+    match /settings/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Pastoral care pipeline entries
+    match /pastoral_care/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Catch-all: deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

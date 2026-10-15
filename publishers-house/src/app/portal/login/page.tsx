@@ -9,7 +9,7 @@ import {
   type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
-import { createOrUpdatePortalUser, getPortalUser, type UserRole } from "@/lib/portalAuth";
+import { getPortalUser, type UserRole } from "@/lib/portalAuth";
 import { establishSession } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
 
@@ -29,12 +29,16 @@ export default function PortalLoginPage() {
 
   const finishSignIn = async (firebaseUser: User) => {
     try {
-      let portalUser = await getPortalUser(firebaseUser.uid);
+      // Only allow users whose portal profile already exists (created by admin)
+      const portalUser = await getPortalUser(firebaseUser.uid);
       if (!portalUser) {
-        portalUser = await createOrUpdatePortalUser(firebaseUser);
+        setError(
+          "No portal account found for this email. Please contact the church admin to have your account created."
+        );
+        return;
       }
       const session = await establishSession(firebaseUser);
-      const role = (session.role as UserRole) || portalUser?.role || "member";
+      const role = (session.role as UserRole) || portalUser.role || "member";
       const next = destinationFor(role);
       router.push(next);
     } catch (err: unknown) {

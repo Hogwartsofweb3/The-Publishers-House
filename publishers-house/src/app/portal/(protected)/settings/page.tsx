@@ -40,7 +40,7 @@ const DEFAULT_SETTINGS: ChurchSettings = {
   instagramUrl: "https://instagram.com/thepublishershouse",
   telegramUrl: "https://t.me/thepublishershouse",
   defaultMemberTier: "regular",
-  allowSelfRegistration: true,
+  allowSelfRegistration: false,
   requireTestimonyApproval: true,
   notifyOnNewPrayer: true,
   notifyWeeklyGiving: true,
@@ -493,10 +493,11 @@ export default function PortalSettingsPage() {
                 />
                 <div>
                   <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", fontWeight: 600, color: "#141C6E" }}>
-                    Enable Member Self-Registration
+                    Allow Member Self-Registration (Not Recommended)
                   </div>
                   <div style={{ fontSize: "12px", color: "#64748B" }}>
-                    Allow website attendees to sign in with Google or create member profiles without manual admin pre-creation.
+                    <strong style={{ color: "#991B1B" }}>OFF by default.</strong> TPH policy: Admin staff create all member accounts manually.
+                    Enable only if you want anyone with a Google account to self-enrol as a portal member without admin pre-approval.
                   </div>
                 </div>
               </label>
