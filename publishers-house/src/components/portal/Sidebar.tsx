@@ -21,6 +21,7 @@ export const adminNav = [
   { href: "/portal/courses", label: "Courses", icon: "📖" },
   { href: "/portal/facility", label: "Facility", icon: "🏛️" },
   { href: "/portal/audit", label: "Audit Log", icon: "📋" },
+  { href: "/portal/settings", label: "Settings", icon: "⚙️" },
 ];
 
 const unitNav = [
@@ -267,21 +268,37 @@ export default function Sidebar({ user }: SidebarProps) {
           {!collapsed && (
             <button
               onClick={handleSignOut}
-              title="Sign Out"
+              title="Sign Out of Portal"
               style={{
-                background: "transparent",
-                border: "none",
-                color: "#A9C2FF",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "rgba(254, 226, 226, 0.12)",
+                border: "1px solid rgba(254, 202, 202, 0.2)",
+                color: "#FFA8A8",
                 cursor: "pointer",
-                padding: "4px 6px",
-                borderRadius: "4px",
-                fontSize: "13px",
-                transition: "color 0.2s",
+                padding: "6px 8px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontWeight: 600,
+                transition: "all 0.2s ease",
               }}
-              onMouseOver={(e) => (e.currentTarget.style.color = "#FF6B6B")}
-              onMouseOut={(e) => (e.currentTarget.style.color = "#A9C2FF")}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.3)";
+                e.currentTarget.style.color = "#FFFFFF";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(254, 226, 226, 0.12)";
+                e.currentTarget.style.color = "#FFA8A8";
+              }}
             >
-              ⤫
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              <span>Exit</span>
             </button>
           )}
         </div>

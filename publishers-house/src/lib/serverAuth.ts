@@ -76,6 +76,7 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
     "/portal/courses",
     "/portal/facility",
     "/portal/audit",
+    "/portal/settings",
   ];
 
   if (adminPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {

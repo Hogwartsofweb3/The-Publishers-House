@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   GoogleAuthProvider,
-  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -26,31 +25,28 @@ export default function PortalLoginPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [continueTo, setContinueTo] = useState("");
   const router = useRouter();
 
   const finishSignIn = async (firebaseUser: User) => {
-    const existing = await getPortalUser(firebaseUser.uid);
-    const portalUser = existing ?? (await createOrUpdatePortalUser(firebaseUser));
-    const session = await establishSession(firebaseUser);
-    const role = (session.role as UserRole) || portalUser.role;
-    const next = destinationFor(role);
-
-    if (!existing && !firebaseUser.emailVerified) {
-      await sendEmailVerification(firebaseUser);
-      setInfo("Check your inbox to verify your email. You can continue into the portal.");
-      setContinueTo(next);
-      return;
+    try {
+      let portalUser = await getPortalUser(firebaseUser.uid);
+      if (!portalUser) {
+        portalUser = await createOrUpdatePortalUser(firebaseUser);
+      }
+      const session = await establishSession(firebaseUser);
+      const role = (session.role as UserRole) || portalUser?.role || "member";
+      const next = destinationFor(role);
+      router.push(next);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not complete sign in.";
+      setError(msg);
     }
-
-    router.push(next);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setInfo("");
-    setContinueTo("");
     setLoading(true);
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -74,7 +70,6 @@ export default function PortalLoginPage() {
   const handleGoogle = async () => {
     setError("");
     setInfo("");
-    setContinueTo("");
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
@@ -99,13 +94,13 @@ export default function PortalLoginPage() {
     setError("");
     setInfo("");
     if (!email) {
-      setError("Enter your email address first.");
+      setError("Enter your email address first to reset password.");
       return;
     }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      setInfo("Password reset email sent. Check your inbox.");
+      setInfo("Password reset link sent to your email. Check your inbox.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not send the reset email.");
     } finally {
@@ -122,100 +117,106 @@ export default function PortalLoginPage() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#0E1556",
-        backgroundImage: "radial-gradient(circle at 50% 20%, #1F46C8 0%, #0E1556 70%)",
+        backgroundColor: "#151A54",
         padding: "24px",
+        overflow: "hidden",
       }}
     >
-      {/* Brand Header */}
-      <div style={{ marginBottom: "36px", textAlign: "center" }}>
+      {/* Background Congregation Photograph with Blue Tint Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "url('/images/hero-v2.webp')",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "rgba(21, 26, 84, 0.88)",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Top Right White Logo matching CMS Login */}
+      <div
+        style={{
+          position: "absolute",
+          top: "36px",
+          right: "44px",
+          zIndex: 2,
+        }}
+      >
         <img
           src="/images/nav-logo.png"
           alt="The Publishers House"
-          style={{ height: "64px", marginBottom: "12px", filter: "brightness(0) invert(1)" }}
+          style={{ height: "88px", width: "auto" }}
         />
-        <div
-          style={{
-            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-            fontSize: "11px",
-            fontWeight: 700,
-            letterSpacing: "0.25em",
-            textTransform: "uppercase",
-            color: "#A9C2FF",
-          }}
-        >
-          Administration & Member Portal
-        </div>
       </div>
 
-      {/* Login Card */}
+      {/* Centered White Rounded Card */}
       <div
         style={{
+          position: "relative",
+          zIndex: 2,
           backgroundColor: "#FFFFFF",
-          border: "1px solid #D5DCF2",
-          borderRadius: "20px",
-          padding: "40px",
+          padding: "48px 40px",
+          borderRadius: "14px",
+          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.25)",
           width: "100%",
-          maxWidth: "440px",
-          boxShadow: "0 20px 40px rgba(14, 21, 86, 0.3)",
+          maxWidth: "420px",
+          boxSizing: "border-box",
         }}
       >
         <h1
           style={{
-            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-            fontWeight: 800,
-            fontSize: "24px",
-            color: "#141C6E",
-            margin: "0 0 6px",
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 700,
+            fontSize: "26px",
+            color: "#151A54",
+            marginBottom: "28px",
             textAlign: "center",
+            letterSpacing: "-0.02em",
           }}
         >
-          Welcome Back
+          TPH Portal Login
         </h1>
-        <p
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontStyle: "italic",
-            fontSize: "14px",
-            color: "#4A5490",
-            textAlign: "center",
-            margin: "0 0 28px",
-          }}
-        >
-          Company of the Great
-        </p>
 
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
           <div>
             <label
               style={{
                 display: "block",
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "10.5px",
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
-                color: "#4A5490",
-                marginBottom: "6px",
+                color: "#4A62A0",
+                marginBottom: "8px",
               }}
             >
-              Email Address
+              Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="you@thepublishershouse.org"
+              placeholder="thepublishershouse007@gmail.com"
               style={{
                 width: "100%",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                border: "1px solid #D5DCF2",
-                backgroundColor: "#FFFFFF",
-                color: "#141C6E",
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "13.5px",
+                padding: "13px 16px",
+                borderRadius: "6px",
+                border: "1px solid #D3DAEC",
+                backgroundColor: "#EEF2FB",
+                color: "#151A54",
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "14px",
                 outline: "none",
                 boxSizing: "border-box",
               }}
@@ -223,15 +224,22 @@ export default function PortalLoginPage() {
           </div>
 
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "8px",
+              }}
+            >
               <label
                 style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "10.5px",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "11px",
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
-                  color: "#4A5490",
+                  color: "#4A62A0",
                 }}
               >
                 Password
@@ -239,18 +247,19 @@ export default function PortalLoginPage() {
               <button
                 type="button"
                 onClick={handleReset}
+                disabled={loading}
                 style={{
-                  background: "transparent",
+                  background: "none",
                   border: "none",
                   padding: 0,
-                  color: "#1F46C8",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "11px",
+                  color: "#0140C1",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "11.5px",
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
               >
-                Forgot?
+                Forgot password?
               </button>
             </div>
             <input
@@ -258,16 +267,16 @@ export default function PortalLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••"
+              placeholder="••••••••••••"
               style={{
                 width: "100%",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                border: "1px solid #D5DCF2",
-                backgroundColor: "#FFFFFF",
-                color: "#141C6E",
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "13.5px",
+                padding: "13px 16px",
+                borderRadius: "6px",
+                border: "1px solid #D3DAEC",
+                backgroundColor: "#EEF2FB",
+                color: "#151A54",
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "14px",
                 outline: "none",
                 boxSizing: "border-box",
               }}
@@ -277,13 +286,13 @@ export default function PortalLoginPage() {
           {error && (
             <p
               style={{
-                color: "#9B1C1C",
-                backgroundColor: "#FDE7E7",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                color: "#DC2626",
+                fontSize: "12.5px",
+                fontFamily: "'Poppins', sans-serif",
                 margin: 0,
+                padding: "8px 12px",
+                backgroundColor: "#FEE2E2",
+                borderRadius: "6px",
                 textAlign: "center",
               }}
             >
@@ -292,40 +301,20 @@ export default function PortalLoginPage() {
           )}
 
           {info && (
-            <div
+            <p
               style={{
-                color: "#0F6B38",
-                backgroundColor: "#E4F5EA",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                color: "#16A34A",
+                fontSize: "12.5px",
+                fontFamily: "'Poppins', sans-serif",
+                margin: 0,
+                padding: "8px 12px",
+                backgroundColor: "#DCFCE7",
+                borderRadius: "6px",
                 textAlign: "center",
               }}
             >
               {info}
-              {continueTo && (
-                <button
-                  type="button"
-                  onClick={() => router.push(continueTo)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    marginTop: "8px",
-                    padding: "8px",
-                    background: "#0F6B38",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Continue to Portal →
-                </button>
-              )}
-            </div>
+            </p>
           )}
 
           <button
@@ -334,30 +323,23 @@ export default function PortalLoginPage() {
             style={{
               width: "100%",
               padding: "13px",
-              backgroundColor: "#1F46C8",
-              color: "#FFFFFF",
+              backgroundColor: "#0140C1",
+              color: "white",
               border: "none",
-              borderRadius: "10px",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              borderRadius: "6px",
+              fontFamily: "'Poppins', sans-serif",
               fontWeight: 600,
-              fontSize: "13px",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
+              fontSize: "14px",
+              letterSpacing: "0.04em",
               cursor: loading ? "not-allowed" : "pointer",
-              boxShadow: "0 3px 8px rgba(31, 70, 200, 0.3)",
+              marginTop: "4px",
               transition: "opacity 0.2s",
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Signing In..." : "Sign In to Portal"}
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "20px 0" }}>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#E8EDFB" }} />
-          <span style={{ fontSize: "11px", color: "#747CA1", textTransform: "uppercase", letterSpacing: "0.08em" }}>OR</span>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#E8EDFB" }} />
-        </div>
 
         <button
           type="button"
@@ -365,38 +347,60 @@ export default function PortalLoginPage() {
           disabled={loading}
           style={{
             width: "100%",
-            padding: "12px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "10px",
-            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            marginTop: "12px",
+            padding: "13px",
+            backgroundColor: "white",
+            color: "#151A54",
+            border: "1px solid #D3DAEC",
+            borderRadius: "6px",
+            fontFamily: "'Poppins', sans-serif",
             fontWeight: 600,
-            fontSize: "13px",
-            color: "#141C6E",
+            fontSize: "14px",
+            cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "10px",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "background 0.15s",
           }}
         >
           <span>Continue with Google</span>
         </button>
       </div>
 
-      {/* Footer Quote */}
+      {/* Scripture & Subtitle Footer */}
       <div
         style={{
-          marginTop: "32px",
-          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-          fontSize: "11px",
-          color: "#A9C2FF",
-          letterSpacing: "0.08em",
+          position: "relative",
+          zIndex: 2,
+          marginTop: "36px",
           textAlign: "center",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
         }}
       >
-        Psalm 68:11 · The Lord gave the word: great was the company of those that published it.
+        <div
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 700,
+            fontSize: "11px",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: "rgba(255, 255, 255, 0.75)",
+          }}
+        >
+          Psalm 68:11
+        </div>
+        <div
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontStyle: "italic",
+            fontSize: "20px",
+            color: "#FFFFFF",
+          }}
+        >
+          Company of the Great
+        </div>
       </div>
     </div>
   );
