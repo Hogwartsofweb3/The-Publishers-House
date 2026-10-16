@@ -116,12 +116,15 @@ export default function PastoralCarePage() {
 
   const fetchVisitors = async () => {
     try {
-      const snap = await getDocs(query(collection(db, "visitors"), orderBy("createdAt", "desc")));
-      if (!snap.empty) {
-        setVisitors(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Visitor)));
-      } else {
-        setVisitors(SEED_VISITORS);
+      const res = await fetch("/api/portal/visitors");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.visitors && data.visitors.length > 0) {
+          setVisitors(data.visitors);
+          return;
+        }
       }
+      setVisitors(SEED_VISITORS);
     } catch {
       setVisitors(SEED_VISITORS);
     } finally {
@@ -138,7 +141,11 @@ export default function PastoralCarePage() {
       visitor.status === "new" ? "followup" : "established";
 
     try {
-      await updateDoc(doc(db, "visitors", visitor.id), { status: nextStatus });
+      await fetch("/api/portal/visitors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: visitor.id, status: nextStatus }),
+      });
     } catch {}
 
     setVisitors((prev) =>
@@ -151,7 +158,11 @@ export default function PastoralCarePage() {
   const handleSaveNotes = async () => {
     if (!selectedVisitor) return;
     try {
-      await updateDoc(doc(db, "visitors", selectedVisitor.id), { notes: notesEdit });
+      await fetch("/api/portal/visitors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedVisitor.id, notes: notesEdit }),
+      });
     } catch {}
     setVisitors((prev) =>
       prev.map((v) => (v.id === selectedVisitor.id ? { ...v, notes: notesEdit } : v))
@@ -165,23 +176,44 @@ export default function PastoralCarePage() {
     e.preventDefault();
     if (!form.name || !form.phone) return;
 
-    const id = `vis-${Date.now()}`;
-    const newVisitor: Visitor = {
-      id,
-      name: form.name,
-      phone: form.phone,
-      firstVisitDate: form.firstVisitDate,
-      assignedTo: form.assignedTo || "Pastoral Team",
-      notes: form.notes,
-      status: "new",
-      createdAt: new Date().toISOString(),
-    };
-
     try {
-      await addDoc(collection(db, "visitors"), newVisitor);
-    } catch {}
+      const res = await fetch("/api/portal/visitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok && data.visitor) {
+        setVisitors((prev) => [data.visitor, ...prev]);
+      } else {
+        const fallbackId = `vis-${Date.now()}`;
+        const newVisitor: Visitor = {
+          id: fallbackId,
+          name: form.name,
+          phone: form.phone,
+          firstVisitDate: form.firstVisitDate,
+          assignedTo: form.assignedTo || "Pastoral Team",
+          notes: form.notes,
+          status: "new",
+          createdAt: new Date().toISOString(),
+        };
+        setVisitors((prev) => [newVisitor, ...prev]);
+      }
+    } catch {
+      const fallbackId = `vis-${Date.now()}`;
+      const newVisitor: Visitor = {
+        id: fallbackId,
+        name: form.name,
+        phone: form.phone,
+        firstVisitDate: form.firstVisitDate,
+        assignedTo: form.assignedTo || "Pastoral Team",
+        notes: form.notes,
+        status: "new",
+        createdAt: new Date().toISOString(),
+      };
+      setVisitors((prev) => [newVisitor, ...prev]);
+    }
 
-    setVisitors((prev) => [newVisitor, ...prev]);
     setShowAddModal(false);
     setForm({
       name: "",

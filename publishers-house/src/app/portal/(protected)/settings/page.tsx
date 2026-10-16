@@ -58,9 +58,12 @@ export default function PortalSettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const snap = await getDoc(doc(db, "settings", "church_portal"));
-        if (snap.exists()) {
-          setForm({ ...DEFAULT_SETTINGS, ...snap.data() });
+        const res = await fetch("/api/portal/settings");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.exists && data.settings) {
+            setForm({ ...DEFAULT_SETTINGS, ...data.settings });
+          }
         }
       } catch (err) {
         console.error("Could not fetch church portal settings:", err);
@@ -76,10 +79,15 @@ export default function PortalSettingsPage() {
     setSaving(true);
     setSavedMsg("");
     try {
-      await setDoc(doc(db, "settings", "church_portal"), {
-        ...form,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      const res = await fetch("/api/portal/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save settings");
+      }
       setSavedMsg("Settings updated and saved successfully ✓");
       setTimeout(() => setSavedMsg(""), 4000);
     } catch (err: any) {

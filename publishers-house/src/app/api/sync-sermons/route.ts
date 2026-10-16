@@ -295,24 +295,6 @@ async function upsertSermons(sermons: Partial<SermonDoc>[]): Promise<{ added: nu
   return { added, skipped };
 }
 
-// ─── Telegram Notifier ────────────────────────────────────────────────────────
-async function sendTelegramNotification(count: number) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHANNEL_ID;
-  if (!token || !chatId || count === 0) return;
-
-  try {
-    const msg = `📖 *${count} new sermon${count > 1 ? "s" : ""} synced* to The Publishers House website!\n\nVisit: https://thepublishershouse.org/sermons`;
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: "Markdown" }),
-    });
-  } catch (err) {
-    console.warn("Telegram notification error:", err);
-  }
-}
-
 // ─── API Route Handler ────────────────────────────────────────────────────────
 export async function handleSync(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -371,11 +353,6 @@ export async function handleSync(req: NextRequest) {
     const { added, skipped } = await upsertSermons(allSermons);
     results.added = added;
     results.skipped = skipped;
-
-    // 4. Send Telegram notification if new sermons were added
-    if (added > 0) {
-      await sendTelegramNotification(added);
-    }
 
     console.log("Sermon sync finished:", results);
     return NextResponse.json({ success: true, ...results, notes });
