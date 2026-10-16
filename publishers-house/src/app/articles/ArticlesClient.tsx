@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { Article } from "@/lib/firebase";
-import { getAuthorAvatar } from "@/lib/authorAvatars";
+import { getAuthorAvatar, normalizeAuthor } from "@/lib/authorAvatars";
 
 const Navy    = "#151A54";
 const Blue500  = "#2090FF";
@@ -27,7 +27,8 @@ function DesiringGodArticleCard({ article }: { article: Article }) {
   const dateLabel = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()
     : "";
-  const avatar = getAuthorAvatar(article.author || "");
+  const displayAuthor = normalizeAuthor(article.author);
+  const avatar = getAuthorAvatar(displayAuthor || "");
 
   return (
     <article
@@ -109,7 +110,7 @@ function DesiringGodArticleCard({ article }: { article: Article }) {
           )}
           <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "12px", color: Navy,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {article.author}
+            {displayAuthor}
           </span>
         </div>
       </div>
@@ -193,7 +194,10 @@ export default function ArticlesClient({ initialArticles }: { initialArticles: A
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const uniqueCategories = Array.from(new Set(initialArticles.flatMap(a => a.categories || []))).filter(c => c && c !== "Uncategorized");
-  const uniqueAuthors    = Array.from(new Set(initialArticles.map(a => a.author))).filter(Boolean);
+  // Normalize and deduplicate author names
+  const uniqueAuthors = Array.from(
+    new Set(initialArticles.map(a => normalizeAuthor(a.author)).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
   const uniqueYears      = Array.from(new Set(initialArticles.map(a => a.publishedAt ? new Date(a.publishedAt).getFullYear().toString() : null).filter(Boolean))).sort((a, b) => (b! > a! ? 1 : -1));
 
   const filtered = initialArticles.filter(article => {
@@ -209,7 +213,8 @@ export default function ArticlesClient({ initialArticles }: { initialArticles: A
       const yr = article.publishedAt ? new Date(article.publishedAt).getFullYear().toString() : "";
       if (yr !== yearFilter) return false;
     }
-    if (authorFilter !== "All" && article.author !== authorFilter) return false;
+    // Compare using normalized author names so variants collapse to one filter
+    if (authorFilter !== "All" && normalizeAuthor(article.author) !== authorFilter) return false;
     return true;
   });
 

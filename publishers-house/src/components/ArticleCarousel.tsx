@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { getArticles } from "@/lib/firebase";
 import type { Article } from "@/lib/firebase";
+import { normalizeAuthor } from "@/lib/authorAvatars";
 
 // Fisher-Yates shuffle
 function shuffle<T>(arr: T[]): T[] {
@@ -97,6 +98,19 @@ export default function ArticleCarousel() {
   const [current, setCurrent] = useState(0);
   const [visible, setVisible] = useState(true);
   const [newestSlug, setNewestSlug] = useState<string>("influencer-culture-and-self-worth");
+  const [eyebrow, setEyebrow] = useState("From the Articles");
+  const [heading, setHeading] = useState("Worth Reading");
+  const [show, setShow] = useState(true);
+
+  // Fetch CMS settings for this section
+  useEffect(() => {
+    fetch("/api/home-data").then(r => r.json()).then(data => {
+      const s = data.settings || {};
+      if (s.articlesCarouselShow === false) setShow(false);
+      if (s.articlesCarouselEyebrow) setEyebrow(s.articlesCarouselEyebrow);
+      if (s.articlesCarouselHeading) setHeading(s.articlesCarouselHeading);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     getArticles(20).then((fetched) => {
@@ -138,7 +152,7 @@ export default function ArticleCarousel() {
     return () => clearTimeout(timer);
   }, [current, queue, newestSlug, advance]);
 
-  if (!queue.length) return null;
+  if (!queue.length || !show) return null;
 
   const article = queue[current];
   const cover = getCoverImage(article);
@@ -170,7 +184,7 @@ export default function ArticleCarousel() {
             marginBottom: "8px",
           }}
         >
-          From the Articles
+          {eyebrow}
         </div>
         <h2
           style={{
@@ -184,7 +198,7 @@ export default function ArticleCarousel() {
             margin: "0 0 32px",
           }}
         >
-          Worth Reading
+          {heading}
         </h2>
 
         {/* Card */}
@@ -290,7 +304,7 @@ export default function ArticleCarousel() {
                       color: Navy,
                     }}
                   >
-                    {article.author}
+                    {normalizeAuthor(article.author)}
                   </span>
                 )}
                 {dateLabel && (

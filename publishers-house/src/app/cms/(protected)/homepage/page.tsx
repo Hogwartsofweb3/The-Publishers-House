@@ -27,13 +27,13 @@ const row2: React.CSSProperties= { display:"grid", gridTemplateColumns:"1fr 1fr"
 const row3: React.CSSProperties= { display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"16px" };
 const row4: React.CSSProperties= { display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:"16px" };
 
-const TABS = ["hero","setman","gatherings","teaching","whoweare","announcement","giving"] as const;
+const TABS = ["hero","setman","gatherings","teaching","articles","whoweare","announcement","giving"] as const;
 type Tab = typeof TABS[number];
-const TAB_LABELS: Record<Tab, string> = { hero:"Hero", setman:"Welcome", gatherings:"This Week", teaching:"Latest Teaching", whoweare:"Who We Are", announcement:"Announcement", giving:"Giving" };
+const TAB_LABELS: Record<Tab, string> = { hero:"Hero", setman:"Welcome", gatherings:"This Week", teaching:"Latest Teaching", articles:"Articles Carousel", whoweare:"Who We Are", announcement:"Announcement", giving:"Giving" };
 
 const EMPTY_G = { day:"", date:"", month:"", title:"", desc:"", scripture:"", time:"", city:"Jos", theme:"", speaker:"Rev. Joshua Agunbiade", flierUrl:"", order:0, published:true };
 
-const DEF: Record<string, string|boolean> = {
+const DEF: Record<string, any> = {
   heroEyebrow:"Psalm 68:11", heroHeadline:"Company of the Great",
   heroSubtitle:"An apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
   heroBtn1Label:"Plan Your Visit", heroBtn1Url:"/about",
@@ -47,6 +47,10 @@ const DEF: Record<string, string|boolean> = {
   setmanBtnLabel:"Read More About Us", setmanBtnUrl:"/about",
   setmanPhotoUrl:"/images/rja-setman.jpg",
   gatheringsLabel:"Next Gatherings", gatheringsHeading:"This Week at the House",
+  gatheringsImages: ["/images/event-1.webp", "/images/event-2.webp", "/images/event-3.webp"],
+  articlesCarouselShow: true,
+  articlesCarouselEyebrow: "From the Articles",
+  articlesCarouselHeading: "Worth Reading",
   teachingEyebrow:"The Latest Teaching", teachingHeading:"Published This Week",
   teachingSeriesEyebrow:"Foundations · Part Eight", teachingTitle:"A Workman Unashamed",
   teachingDesc:"What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.",
@@ -275,6 +279,43 @@ export default function HomepageEditor() {
 
           {/* Gatherings list */}
           <h3 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"14px", color:Slate500, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 12px" }}>Current Gatherings ({gatherings.length})</h3>
+          {/* ── Gallery Photos Manager ── */}
+          <div style={{ ...card, marginTop:"24px" }}>
+            <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"16px", color:Navy, margin:"0 0 8px" }}>Event Gallery Photos</h2>
+            <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:"0 0 16px" }}>
+              These photos show under the gatherings list on the homepage. Add image URLs (https://… or /images/…).
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+              {((settings.gatheringsImages as string[]) || ["/images/event-1.webp","/images/event-2.webp","/images/event-3.webp"]).map((url: string, i: number) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"56px 1fr auto", gap:"10px", alignItems:"center" }}>
+                  <div style={{ width:"56px", height:"40px", borderRadius:"4px", backgroundImage:`url('${url}')`, backgroundSize:"cover", backgroundPosition:"center", border:`1px solid ${Paper300}`, flexShrink:0 }} />
+                  <input style={inp} value={url}
+                    onChange={e => {
+                      const imgs = [...(settings.gatheringsImages || ["/images/event-1.webp","/images/event-2.webp","/images/event-3.webp"])];
+                      imgs[i] = e.target.value;
+                      S("gatheringsImages", imgs);
+                    }}
+                    placeholder="https://... or /images/..." />
+                  <button onClick={() => {
+                    const imgs = [...(settings.gatheringsImages || ["/images/event-1.webp","/images/event-2.webp","/images/event-3.webp"])];
+                    imgs.splice(i, 1);
+                    S("gatheringsImages", imgs);
+                  }} style={btn("#FEE2E2",Red)}>✕</button>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:"12px", marginTop:"14px" }}>
+              <button type="button" onClick={() => {
+                const imgs = [...((settings.gatheringsImages as string[]) || ["/images/event-1.webp","/images/event-2.webp","/images/event-3.webp"])];
+                imgs.push("");
+                S("gatheringsImages", imgs);
+              }} style={btn(Paper200,Navy)}>+ Add Photo</button>
+              <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), opacity:saving?0.6:1 }}>{saving?"Saving...":"Save Gallery Photos"}</button>
+            </div>
+          </div>
+
+          {/* Gatherings list */}
+          <h3 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"14px", color:Slate500, textTransform:"uppercase", letterSpacing:"0.14em", margin:"24px 0 12px" }}>Current Gatherings ({gatherings.length})</h3>
           {gatherings.length===0 && <p style={{ fontFamily:"'Poppins',sans-serif", color:Slate500, textAlign:"center", padding:"40px 0" }}>No gatherings yet. Add your first one above.</p>}
           {gatherings.map(g => (
             <div key={g.id} style={{ backgroundColor:White, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
@@ -448,6 +489,32 @@ export default function HomepageEditor() {
           </div>
           <div style={{ marginTop:"24px" }}>
             <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), opacity:saving?0.6:1 }}>{saving?"Saving...":"Save Teaching Section"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* ───── ARTICLES CAROUSEL TAB ───── */}
+      {tab==="articles" && (
+        <div style={card}>
+          <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:"0 0 8px" }}>Articles Carousel — "From the Articles"</h2>
+          <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:"0 0 24px" }}>
+            Controls the "Worth Reading" carousel on the homepage. The carousel automatically cycles through the most recent published articles. Use the fields below to edit the section labels or hide the section entirely.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+            <label style={{ display:"flex", alignItems:"center", gap:"10px", fontFamily:"'Poppins',sans-serif", fontSize:"13px", color:Navy, cursor:"pointer" }}>
+              <input type="checkbox" checked={settings.articlesCarouselShow !== false} onChange={e => S("articlesCarouselShow", e.target.checked)} />
+              Show "From the Articles" section on the homepage
+            </label>
+            {FRow([["Eyebrow Label","articlesCarouselEyebrow","From the Articles"],["Section Heading","articlesCarouselHeading","Worth Reading"]])}
+            <div style={{ backgroundColor:Paper100, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"16px" }}>
+              <p style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"12px", color:Navy, margin:"0 0 8px", textTransform:"uppercase", letterSpacing:"0.1em" }}>How the carousel works</p>
+              <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:0, lineHeight:"1.6em" }}>
+                Articles are automatically fetched from the Articles database, starting with the most recently published one, then cycling through the rest in random order. The newest article displays 2 seconds longer. To feature or exclude specific articles, edit them directly in the Articles CMS editor.
+              </p>
+            </div>
+          </div>
+          <div style={{ marginTop:"24px" }}>
+            <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), opacity:saving?0.6:1 }}>{saving?"Saving...":"Save Articles Section"}</button>
           </div>
         </div>
       )}

@@ -400,8 +400,11 @@ export default function HomeContent() {
             ))}
           </div>
           <div className="tph-grid-3 tph-mobile-hide" style={{ height:"300px" }}>
-            {["event-1.webp","event-2.webp","event-3.webp"].map((img, i) => (
-              <div key={i} style={{ backgroundImage:`url('/images/${img}')`, backgroundSize:"cover", backgroundPosition:"center", borderRadius:"4px" }} />
+            {((s.gatheringsImages as string[] | undefined)?.length
+              ? (s.gatheringsImages as string[])
+              : ["/images/event-1.webp", "/images/event-2.webp", "/images/event-3.webp"]
+            ).map((img: string, i: number) => (
+              <div key={i} style={{ backgroundImage:`url('${img}')`, backgroundSize:"cover", backgroundPosition:"center", borderRadius:"4px" }} />
             ))}
           </div>
         </div>
