@@ -57,11 +57,12 @@ const T = {
     lineHeight: "1.2em",
   },
   readBody: {
-    fontFamily: "var(--font-poppins)",
+    fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)",
     fontWeight: 400,
-    fontSize: "15.5px",
-    lineHeight: "1.75em",
-    color: "#2C344E",
+    fontSize: "17px",
+    lineHeight: "1.68em",
+    color: "#151A54",
+    maxWidth: "64ch",
   },
 };
 

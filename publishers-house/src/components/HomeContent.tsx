@@ -28,7 +28,7 @@ const T = {
   displayS:  { fontFamily:"'Poppins', sans-serif", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
   epigraph:  { fontFamily:"'Playfair Display', serif", fontWeight:400, fontStyle:"italic" as const, fontSize:"clamp(24px,3vw,36px)", lineHeight:"1.3em" },
   readLede:  { fontFamily:"'Playfair Display', serif", fontWeight:400, fontSize:"20px", lineHeight:"1.55em" },
-  readBody:  { fontFamily:"'Poppins', sans-serif", fontWeight:400, fontSize:"16px", lineHeight:"1.7em" },
+  readBody:  { fontFamily:"var(--font-serif, 'Playfair Display', Georgia, serif)", fontWeight:400, fontSize:"17px", lineHeight:"1.68em" },
   readSmall: { fontFamily:"'Poppins', sans-serif", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
   eyebrow:   { fontFamily:"'Poppins', sans-serif", fontWeight:600, fontSize: "10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
   label:     { fontFamily:"'Poppins', sans-serif", fontWeight:600, fontSize: "11px", lineHeight:"1.6em", letterSpacing:"0.16em", textTransform:"uppercase" as const },

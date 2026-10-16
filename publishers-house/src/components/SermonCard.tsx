@@ -17,7 +17,7 @@ const T = {
   displayS:  { fontFamily: "var(--font-headline, var(--font-poppins))", fontWeight: 700, fontSize: "16px", lineHeight: "1.25em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
   eyebrow:   { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
   colophon:  { fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
-  readBody:  { fontFamily: "var(--font-poppins)", fontWeight: 400, fontSize: "14px", lineHeight: "1.6em" },
+  readBody:  { fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)", fontWeight: 400, fontSize: "14px", lineHeight: "1.65em" },
   button:    { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const, cursor: "pointer" },
 };
 
@@ -152,17 +152,18 @@ export default function SermonCard({ sermon }: { sermon: Sermon }) {
         <p
           style={{
             ...T.readBody,
-            color: Slate500,
+            color: Slate600,
             margin: 0,
             flex: 1,
             paddingBottom: "16px",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
           }}
         >
-          {sermon.summary
-            ? `${sermon.summary.slice(0, 140)}...`
-            : sermon.speaker
-            ? `Teaching by ${sermon.speaker}.`
-            : "Teaching from The Publishers House."}
+          {sermon.summary ||
+            (sermon.speaker ? `Teaching by ${sermon.speaker}.` : "Teaching from The Publishers House.")}
         </p>
 
         <div
