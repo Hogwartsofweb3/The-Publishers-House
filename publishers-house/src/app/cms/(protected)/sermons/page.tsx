@@ -42,7 +42,11 @@ export default function SermonsEditor() {
       const res = await fetch("/api/sync-sermons?key=tph-cron-2026-secure");
       const data = await res.json();
       if (data.success) {
-        setSyncResult(`✓ Sync finished: ${data.added} added, ${data.skipped} existing`);
+        let msg = `✓ Sync finished: ${data.added} new sermons added, ${data.skipped} existing up-to-date`;
+        if (data.notes && data.notes.length > 0) {
+          msg += ` (${data.notes.join("; ")})`;
+        }
+        setSyncResult(msg);
         fetchSermons();
       } else {
         setSyncResult(`Sync error: ${data.error || "Failed"}`);
@@ -51,7 +55,7 @@ export default function SermonsEditor() {
       setSyncResult(`Sync error: ${e.message}`);
     } finally {
       setSyncing(false);
-      setTimeout(() => setSyncResult(null), 8000);
+      setTimeout(() => setSyncResult(null), 12000);
     }
   };
 

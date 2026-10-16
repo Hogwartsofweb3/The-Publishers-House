@@ -41,9 +41,27 @@ function parseDuration(isoDuration: string): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// Extract series from title pattern like "Title || Speaker || Series || Date"
+function extractSeriesFromTitle(rawTitle: string, defaultSeries: string): string {
+  if (defaultSeries && !defaultSeries.toLowerCase().startsWith("uploads from")) {
+    return defaultSeries;
+  }
+  if (rawTitle.includes("||")) {
+    const parts = rawTitle.split("||").map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 3) {
+      return parts[2]; // e.g., "FOUNDATIONS", "THE FORGE", "PEREZ"
+    }
+    if (parts.length === 2) {
+      return parts[1]; // e.g., "The Latter Rain - 2"
+    }
+  }
+  return "";
+}
+
 // ─── YouTube Fetcher ──────────────────────────────────────────────────────────
 async function fetchYouTubePlaylists(apiKey: string, playlistIds: string[]) {
   const sermons: Partial<SermonDoc>[] = [];
+  const seenVideoIds = new Set<string>();
 
   for (const playlistId of playlistIds) {
     try {
@@ -78,9 +96,12 @@ async function fetchYouTubePlaylists(apiKey: string, playlistIds: string[]) {
 
         const videoIds: string[] = (data.items || [])
           .map((item: any) => item.snippet?.resourceId?.videoId)
-          .filter(Boolean);
+          .filter((id: string) => id && !seenVideoIds.has(id));
 
         if (videoIds.length === 0) break;
+
+        // Mark as seen in this sync batch
+        videoIds.forEach((id) => seenVideoIds.add(id));
 
         // Fetch video details (duration, clean snippet)
         const detailUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(",")}&key=${apiKey}`;
@@ -103,12 +124,13 @@ async function fetchYouTubePlaylists(apiKey: string, playlistIds: string[]) {
           const detail = detailMap.get(videoId);
           const publishedAt = snippet.publishedAt?.split("T")[0] || new Date().toISOString().split("T")[0];
           const duration = parseDuration(detail?.contentDetails?.duration || "");
+          const series = extractSeriesFromTitle(snippet.title || "", playlistTitle);
 
           sermons.push({
             title: snippet.title || "Untitled Sermon",
             speaker: "Rev. Joshua Agunbiade",
             date: publishedAt,
-            series: playlistTitle || "",
+            series,
             videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
             audioUrl: "",
             coverImageUrl: ytThumb(videoId),
@@ -155,11 +177,17 @@ async function getSpotifyToken(clientId: string, clientSecret: string): Promise<
   }
 }
 
-async function fetchSpotifyEpisodes(clientId: string, clientSecret: string, showId: string) {
+async function fetchSpotifyEpisodes(
+  clientId: string,
+  clientSecret: string,
+  showId: string
+): Promise<{ sermons: Partial<SermonDoc>[]; error?: string }> {
   const sermons: Partial<SermonDoc>[] = [];
   try {
     const token = await getSpotifyToken(clientId, clientSecret);
-    if (!token) return sermons;
+    if (!token) {
+      return { sermons, error: "Spotify authentication failed" };
+    }
 
     let url: string | null = `https://api.spotify.com/v1/shows/${showId}/episodes?limit=50&market=US`;
 
@@ -170,7 +198,11 @@ async function fetchSpotifyEpisodes(clientId: string, clientSecret: string, show
       if (!res.ok) {
         const text = await res.text();
         console.warn(`Spotify episodes fetch returned ${res.status}:`, text);
-        break;
+        const reason =
+          res.status === 403
+            ? "Spotify API requires an active Spotify Premium subscription on the developer account."
+            : `Spotify API error (${res.status})`;
+        return { sermons, error: reason };
       }
       const data: any = await res.json();
 
@@ -203,11 +235,11 @@ async function fetchSpotifyEpisodes(clientId: string, clientSecret: string, show
 
       url = data.next || null;
     }
-  } catch (err) {
+    return { sermons };
+  } catch (err: any) {
     console.warn("Spotify fetch error (non-fatal):", err);
+    return { sermons, error: err?.message || "Spotify fetch failed" };
   }
-
-  return sermons;
 }
 
 // ─── Firestore Upsert ─────────────────────────────────────────────────────────
@@ -298,27 +330,41 @@ export async function handleSync(req: NextRequest) {
   const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
   const spotifyShowId = process.env.SPOTIFY_SHOW_ID;
 
-  const playlistIds = (process.env.YOUTUBE_PLAYLIST_IDS || "")
+  // Explicit user-configured playlists
+  const rawPlaylistIds = (process.env.YOUTUBE_PLAYLIST_IDS || "")
     .split(",")
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
+
+  // TPH official channel ID: UCftePCYyyP3s6HmxipOi9VQ
+  // The channel's automatic uploads playlist is "UUftePCYyyP3s6HmxipOi9VQ".
+  // Adding this at the front ensures EVERY video uploaded to the channel is synced immediately,
+  // even if it was not manually assigned to a YouTube Studio playlist!
+  const channelUploadsPlaylist = process.env.YOUTUBE_CHANNEL_UPLOADS_PLAYLIST || "UUftePCYyyP3s6HmxipOi9VQ";
+  const playlistIds = Array.from(new Set([channelUploadsPlaylist, ...rawPlaylistIds]));
 
   try {
     const results = { youtube: 0, spotify: 0, added: 0, skipped: 0 };
     const allSermons: Partial<SermonDoc>[] = [];
+    const notes: string[] = [];
 
-    // 1. Fetch YouTube
+    // 1. Fetch YouTube (Channel Uploads + Playlists)
     if (ytApiKey && playlistIds.length > 0) {
       const ytSermons = await fetchYouTubePlaylists(ytApiKey, playlistIds);
       results.youtube = ytSermons.length;
       allSermons.push(...ytSermons);
+    } else if (!ytApiKey) {
+      notes.push("YouTube API key missing in environment");
     }
 
     // 2. Fetch Spotify (graceful fallback)
     if (spotifyClientId && spotifyClientSecret && spotifyShowId) {
-      const spSermons = await fetchSpotifyEpisodes(spotifyClientId, spotifyClientSecret, spotifyShowId);
-      results.spotify = spSermons.length;
-      allSermons.push(...spSermons);
+      const spResult = await fetchSpotifyEpisodes(spotifyClientId, spotifyClientSecret, spotifyShowId);
+      results.spotify = spResult.sermons.length;
+      allSermons.push(...spResult.sermons);
+      if (spResult.error) {
+        notes.push(`Spotify: ${spResult.error}`);
+      }
     }
 
     // 3. Upsert to Firestore
@@ -332,7 +378,7 @@ export async function handleSync(req: NextRequest) {
     }
 
     console.log("Sermon sync finished:", results);
-    return NextResponse.json({ success: true, ...results });
+    return NextResponse.json({ success: true, ...results, notes });
   } catch (err: any) {
     console.error("Sermon sync error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
