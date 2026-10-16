@@ -8,6 +8,7 @@ export async function GET() {
   let settings: any = {};
   let gatherings: any[] = [];
   let latestSermon: any = null;
+  let latestSermons: any[] = [];
 
   // 1. Load manual CMS overrides from homeSettings/main
   try {
@@ -23,43 +24,45 @@ export async function GET() {
       .filter((g: any) => g.published !== false);
   } catch (e) {}
 
-  // 3. Latest published sermon, ordered by date in Firestore
+  // 3. Top 5 latest published sermons, ordered by date descending
   try {
     const snap = await getDocs(
       query(
         collection(db, "sermons"),
         where("published", "==", true),
         orderBy("date", "desc"),
-        limit(1)
+        limit(5)
       )
     );
     if (!snap.empty) {
-      const d = snap.docs[0];
-      const data = d.data();
-      const videoId = (() => {
-        const url: string = data.videoUrl || "";
-        const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-        return m ? m[1] : null;
-      })();
-      latestSermon = {
-        id: d.id,
-        title: data.title || "",
-        speaker: data.speaker || "",
-        series: data.series || "",
-        date: data.date || "",
-        scripture: data.scripture || "",
-        duration: data.duration || "",
-        summary: data.summary || "",
-        videoUrl: data.videoUrl || "",
-        audioUrl: data.audioUrl || "",
-        thumbnailUrl: videoId
-          ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-          : "/images/sermon-v2.webp",
-      };
+      latestSermons = snap.docs.map((d) => {
+        const data = d.data();
+        const videoId = (() => {
+          const url: string = data.videoUrl || "";
+          const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+          return m ? m[1] : null;
+        })();
+        return {
+          id: d.id,
+          title: data.title || "",
+          speaker: data.speaker || "Dr. Joshua Agunbiade",
+          series: data.series || "",
+          date: data.date || "",
+          scripture: data.scripture || "",
+          duration: data.duration || "",
+          summary: data.summary || "",
+          videoUrl: data.videoUrl || "",
+          audioUrl: data.audioUrl || "",
+          thumbnailUrl: data.coverImageUrl || (videoId
+            ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            : "/images/sermon-v2.webp"),
+        };
+      });
+      latestSermon = latestSermons[0] || null;
     }
   } catch (e) {}
 
-  return NextResponse.json({ settings, gatherings, latestSermon }, {
+  return NextResponse.json({ settings, gatherings, latestSermon, latestSermons }, {
     headers: {
       "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
     },

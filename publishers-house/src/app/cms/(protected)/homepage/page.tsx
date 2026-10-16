@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, setDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, setDoc, where, limit } from "firebase/firestore";
 import Link from "next/link";
 
 /* ── tokens ── */
@@ -76,6 +76,7 @@ export default function HomepageEditor() {
   const [tab, setTab] = useState<Tab>("gatherings");
   const [settings, setSettings] = useState<any>({ ...DEF });
   const [gatherings, setGatherings] = useState<any[]>([]);
+  const [liveSermons, setLiveSermons] = useState<any[]>([]);
   const [gForm, setGForm] = useState({ ...EMPTY_G });
   const [editId, setEditId] = useState<string|null>(null);
   const [saving, setSaving] = useState(false);
@@ -94,8 +95,24 @@ export default function HomepageEditor() {
     const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order","asc")));
     setGatherings(snap.docs.map(d => ({ id:d.id, ...d.data() })));
   };
+  const fetchLiveSermons = async () => {
+    try {
+      const q = query(
+        collection(db, "sermons"),
+        where("published", "==", true),
+        orderBy("date", "desc"),
+        limit(5)
+      );
+      const snap = await getDocs(q);
+      setLiveSermons(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (e) {}
+  };
 
-  useEffect(() => { fetchSettings(); fetchGatherings(); }, []);
+  useEffect(() => {
+    fetchSettings();
+    fetchGatherings();
+    fetchLiveSermons();
+  }, []);
 
   const saveSettings = async () => {
     setSaving(true);
@@ -283,22 +300,151 @@ export default function HomepageEditor() {
         </>
       )}
 
-      {/* ───── TEACHING TAB ───── */}
+      {/* ───── TEACHING TAB (5-SERMON CAROUSEL) ───── */}
       {tab==="teaching" && (
         <div style={card}>
-          <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:"0 0 24px" }}>Latest Teaching Section</h2>
-          <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
-            {FRow([["Section Eyebrow","teachingEyebrow"],["Section Heading","teachingHeading"]])}
-            {FRow([["Series Eyebrow (e.g. Foundations · Part 8)","teachingSeriesEyebrow","Foundations · Part Eight"],["Sermon Image URL","teachingImageUrl","/images/sermon-v2.webp"]])}
-            {F("Sermon Title","teachingTitle","A Workman Unashamed")}
-            {F("Description","teachingDesc","",true)}
-            {FRow([["Button 1 Label","teachingBtn1Label","Listen — 48:12"],["Button 1 URL","teachingBtn1Url","/resources"]])}
-            {FRow([["Button 2 Label","teachingBtn2Label","Read the Transcript"],["Button 2 URL","teachingBtn2Url","/resources"]])}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"12px", marginBottom:"24px" }}>
             <div>
-              <label style={lbl}>Colophon (comma-separated — Scripture, Series, Speaker, City, Duration)</label>
-              <input style={inp} value={settings.teachingColophon??""} onChange={e => S("teachingColophon",e.target.value)} placeholder="2 Timothy 2:15,Foundations,Dr. Joshua Agunbiade,Jos,48:12" />
-              <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, marginTop:"6px" }}>Separate each item with a comma. First item shows in blue.</p>
+              <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:0 }}>
+                The Latest Teaching (5-Sermon Carousel)
+              </h2>
+              <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:"4px 0 0" }}>
+                Displays the 5 most recent teachings in chronological order with unique overviews.
+              </p>
             </div>
+
+            {/* Mode Switcher */}
+            <div style={{ display:"flex", gap:"6px", backgroundColor:Paper100, padding:"4px", borderRadius:"6px" }}>
+              <button
+                type="button"
+                onClick={() => S("teachingMode", "auto")}
+                style={{
+                  ...btn((settings.teachingMode || "auto") === "auto" ? Blue700 : "transparent", (settings.teachingMode || "auto") === "auto" ? White : Navy),
+                  padding:"6px 14px",
+                  fontSize:"10px",
+                }}
+              >
+                ⚡ Automatic (5 Most Recent)
+              </button>
+              <button
+                type="button"
+                onClick={() => S("teachingMode", "manual")}
+                style={{
+                  ...btn(settings.teachingMode === "manual" ? Blue700 : "transparent", settings.teachingMode === "manual" ? White : Navy),
+                  padding:"6px 14px",
+                  fontSize:"10px",
+                }}
+              >
+                ✏️ Manual Overrides
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:"20px" }}>
+            {/* Section Headings */}
+            <div style={row2}>
+              {F("Section Eyebrow","teachingEyebrow","The Latest Teaching")}
+              {F("Section Heading","teachingHeading","Published This Week")}
+            </div>
+
+            {(settings.teachingMode || "auto") === "auto" ? (
+              /* Automatic Mode View */
+              <div style={{ backgroundColor:Paper100, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"20px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px", flexWrap:"wrap", gap:"8px" }}>
+                  <div>
+                    <span style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"12px", color:Navy, textTransform:"uppercase", letterSpacing:"0.1em" }}>
+                      Live 5 Carousel Slides (Auto-fetched from database)
+                    </span>
+                    <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, margin:"2px 0 0" }}>
+                      Ranked from most recent to 5th most recent by publication / upload date.
+                    </p>
+                  </div>
+                  <Link
+                    href="/cms/sermons"
+                    style={{
+                      fontFamily:"'Poppins',sans-serif",
+                      fontSize:"11px",
+                      fontWeight:600,
+                      color:Blue700,
+                      textDecoration:"none",
+                    }}
+                  >
+                    Edit Sermon Overviews in Sermons CMS →
+                  </Link>
+                </div>
+
+                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+                  {liveSermons.map((s, idx) => {
+                    const rankLabels = ["01 · Latest Release", "02 · 2nd Most Recent", "03 · 3rd Most Recent", "04 · 4th Most Recent", "05 · 5th Most Recent"];
+                    return (
+                      <div
+                        key={s.id || idx}
+                        style={{
+                          backgroundColor:White,
+                          border:`1px solid ${Paper200}`,
+                          borderRadius:"6px",
+                          padding:"12px 16px",
+                          display:"grid",
+                          gridTemplateColumns:"auto 1fr auto",
+                          gap:"14px",
+                          alignItems:"center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily:"'Poppins',sans-serif",
+                            fontSize:"10px",
+                            fontWeight:700,
+                            padding:"3px 8px",
+                            borderRadius:"12px",
+                            backgroundColor:idx === 0 ? "#DCFCE7" : Paper200,
+                            color:idx === 0 ? Green : Slate500,
+                            textTransform:"uppercase",
+                          }}
+                        >
+                          {rankLabels[idx]}
+                        </span>
+                        <div style={{ minWidth:0 }}>
+                          <div style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"13.5px", color:Navy, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            {s.title}
+                          </div>
+                          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"12px", color:Slate500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginTop:"2px" }}>
+                            {s.summary || "(No custom overview yet — using YouTube description)"}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, whiteSpace:"nowrap" }}>
+                          {s.duration || s.date || "—"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {liveSermons.length === 0 && (
+                    <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:0, textAlign:"center", padding:"16px 0" }}>
+                      Loading live sermons preview...
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Manual Mode Form */
+              <div style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
+                <div style={{ padding:"12px 16px", backgroundColor:"#FEF3C7", border:"1px solid #FDE68A", borderRadius:"6px" }}>
+                  <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:"#92400E", margin:0, fontWeight:600 }}>
+                    ⚠️ Manual Overrides Active: The fields below will override the primary teaching card.
+                  </p>
+                </div>
+                {FRow([["Series Eyebrow (e.g. Foundations · Part 8)","teachingSeriesEyebrow","Foundations · Part Eight"],["Sermon Image URL","teachingImageUrl","/images/sermon-v2.webp"]])}
+                {F("Sermon Title","teachingTitle","A Workman Unashamed")}
+                {F("Description / Overview Synopsis","teachingDesc","",true)}
+                {FRow([["Button 1 Label","teachingBtn1Label","Listen — 48:12"],["Button 1 URL","teachingBtn1Url","/resources"]])}
+                {FRow([["Button 2 Label","teachingBtn2Label","Read the Transcript"],["Button 2 URL","teachingBtn2Url","/resources"]])}
+                <div>
+                  <label style={lbl}>Colophon (comma-separated — Scripture, Series, Speaker, City, Duration)</label>
+                  <input style={inp} value={settings.teachingColophon??""} onChange={e => S("teachingColophon",e.target.value)} placeholder="2 Timothy 2:15,Foundations,Dr. Joshua Agunbiade,Jos,48:12" />
+                  <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, marginTop:"6px" }}>Separate each item with a comma. First item shows in blue.</p>
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ marginTop:"24px" }}>
             <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), opacity:saving?0.6:1 }}>{saving?"Saving...":"Save Teaching Section"}</button>

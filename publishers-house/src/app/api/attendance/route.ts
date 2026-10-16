@@ -11,36 +11,55 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const fullName = typeof body?.fullName === "string" ? body.fullName.trim() : "";
-    const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
-    const mode = body?.mode === "online" ? "online" : "in_person";
-    const location = typeof body?.location === "string" ? body.location.trim() : "Jos (House of Bread)";
-    const streamChannel = typeof body?.streamChannel === "string" ? body.streamChannel.trim() : "none";
-    const serviceCode = typeof body?.serviceCode === "string" ? body.serviceCode.trim().toUpperCase() : "";
-    const checkedInBy = typeof body?.checkedInBy === "string" ? body.checkedInBy.trim() : "";
-    const type = "weekend_service";
+    // Support either single attendee or { attendees: [...] } for group/family check-ins
+    const attendeesList: Array<{
+      fullName: string;
+      phone?: string;
+      mode?: string;
+      location?: string;
+      streamChannel?: string;
+      serviceCode?: string;
+      checkedInBy?: string;
+    }> = Array.isArray(body?.attendees) && body.attendees.length > 0
+      ? body.attendees
+      : [body];
 
-    if (!fullName) {
+    const validAttendees = attendeesList
+      .map((a) => ({
+        fullName: typeof a?.fullName === "string" ? a.fullName.trim() : "",
+        phone: typeof a?.phone === "string" ? a.phone.trim() : "",
+        mode: a?.mode === "online" ? "online" : (body?.mode === "online" ? "online" : "in_person"),
+        location: typeof a?.location === "string" ? a.location.trim() : (typeof body?.location === "string" ? body.location.trim() : "Jos (House of Bread)"),
+        streamChannel: typeof a?.streamChannel === "string" ? a.streamChannel.trim() : (typeof body?.streamChannel === "string" ? body.streamChannel.trim() : "none"),
+        serviceCode: typeof a?.serviceCode === "string" ? a.serviceCode.trim().toUpperCase() : (typeof body?.serviceCode === "string" ? body.serviceCode.trim().toUpperCase() : ""),
+        checkedInBy: typeof a?.checkedInBy === "string" ? a.checkedInBy.trim() : (typeof body?.checkedInBy === "string" ? body.checkedInBy.trim() : ""),
+      }))
+      .filter((a) => Boolean(a.fullName));
+
+    if (validAttendees.length === 0) {
       return NextResponse.json({ error: "Please enter your full name." }, { status: 400 });
     }
 
     const db = getAdminDb();
 
     // Verify stream code if worshipping online
-    if (mode === "online") {
+    const hasOnline = validAttendees.some((a) => a.mode === "online");
+    if (hasOnline) {
       try {
         const streamSettingSnap = await db.collection("homeSettings").doc("attendance").get();
         if (streamSettingSnap.exists) {
           const config = streamSettingSnap.data();
           if (config?.streamCodeActive && config?.streamCode) {
             const expectedCode = String(config.streamCode).trim().toUpperCase();
-            if (!serviceCode) {
+            const onlineAttendee = validAttendees.find((a) => a.mode === "online");
+            const codeToTest = onlineAttendee?.serviceCode || "";
+            if (!codeToTest) {
               return NextResponse.json(
                 { error: "Please enter the Stream Check-In Code announced during the service." },
                 { status: 400 }
               );
             }
-            if (serviceCode !== expectedCode) {
+            if (codeToTest !== expectedCode) {
               return NextResponse.json(
                 { error: "Invalid stream check-in code. Please check the code shown on the stream." },
                 { status: 400 }
@@ -67,37 +86,42 @@ export async function POST(req: Request) {
     }
 
     const todayDate = new Date().toISOString().split("T")[0];
+    const createdIds: string[] = [];
 
-    const record: Record<string, any> = {
-      fullName,
-      phone: phone || "Not Provided",
-      mode,
-      location: mode === "in_person" ? location : "Online Stream",
-      streamChannel: mode === "online" ? streamChannel : "none",
-      type,
-      date: todayDate,
-      timestamp: new Date(),
-      isGuest: !userId,
-    };
+    for (const att of validAttendees) {
+      const record: Record<string, any> = {
+        fullName: att.fullName,
+        phone: att.phone || "Not Provided",
+        mode: att.mode,
+        location: att.mode === "in_person" ? att.location : "Online Stream",
+        streamChannel: att.mode === "online" ? att.streamChannel : "none",
+        type: "weekend_service",
+        date: todayDate,
+        timestamp: new Date(),
+        isGuest: !userId || Boolean(att.checkedInBy),
+      };
 
-    if (serviceCode) {
-      record.serviceCode = serviceCode;
+      if (att.serviceCode) {
+        record.serviceCode = att.serviceCode;
+      }
+
+      if (userId && !att.checkedInBy) {
+        record.userId = userId;
+      }
+
+      if (att.checkedInBy) {
+        record.checkedInBy = att.checkedInBy;
+      }
+
+      const docRef = await db.collection("attendance").add(record);
+      createdIds.push(docRef.id);
     }
-
-    if (userId && !checkedInBy) {
-      record.userId = userId;
-    }
-
-    if (checkedInBy) {
-      record.checkedInBy = checkedInBy;
-    }
-
-    const docRef = await db.collection("attendance").add(record);
 
     return NextResponse.json({
       ok: true,
-      id: docRef.id,
-      message: "Attendance confirmed successfully.",
+      ids: createdIds,
+      count: createdIds.length,
+      message: `Attendance confirmed successfully for ${createdIds.length} person${createdIds.length > 1 ? "s" : ""}.`,
     });
   } catch (error: any) {
     console.error("Attendance submission API error:", error);

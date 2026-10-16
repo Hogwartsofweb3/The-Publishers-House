@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import LatestTeachingCarousel from "@/components/LatestTeachingCarousel";
 const ArticleCarousel = dynamic(() => import("@/components/ArticleCarousel"), {
   ssr: false,
   loading: () => <div style={{ minHeight: "360px", backgroundColor: "#0B0E14" }} />,
@@ -110,6 +111,7 @@ export default function HomeContent() {
   const [s, setS] = useState<any>({ ...D });
   const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
   const [latestSermon, setLatestSermon] = useState<any>(null);
+  const [latestSermons, setLatestSermons] = useState<any[]>([]);
   const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
@@ -132,6 +134,7 @@ export default function HomeContent() {
           setS((prev: any) => ({ ...prev, ...data.settings }));
         }
         if (data.gatherings?.length > 0) setGatherings(data.gatherings);
+        if (data.latestSermons?.length > 0) setLatestSermons(data.latestSermons);
         if (data.latestSermon) setLatestSermon(data.latestSermon);
       })
       .catch(() => {});
@@ -404,38 +407,12 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ══════════════ LATEST TEACHING ══════════════ */}
-      <section className="tph-section" style={{ backgroundColor:Paper100 }}>
-        <div className="tph-inner">
-          <div style={{ ...T.eyebrow, color:Slate500, marginBottom:"8px" }}>{teach.eyebrow}</div>
-          <h2 style={{ ...T.displayM, color:Navy, marginBottom:"40px" }}>{teach.heading}</h2>
-          <a
-            href={teach.btn1Url}
-            style={{ textDecoration:"none", display:"block" }}
-          >
-            <div className="tph-two-col" style={{ gap:"0", border:`1px solid ${Paper300}`, borderRadius:"4px", overflow:"hidden", cursor:"pointer" }}>
-              <div style={{ backgroundImage:`url('${teach.imageUrl}')`, backgroundSize:"cover", backgroundPosition:"center", minHeight:"340px", height:"100%" }} />
-              <div style={{ padding:"40px", display:"flex", flexDirection:"column", justifyContent:"center", gap:"16px" }}>
-                <div style={{ ...T.eyebrow, color:Blue500 }}>{teach.seriesEyebrow}</div>
-                <h3 style={{ ...T.displayL, color:Navy, margin:0, fontSize:"clamp(24px,3vw,36px)" }}>{teach.title}</h3>
-                <p style={{ ...T.readBody, color:Slate600, margin:0 }}>{teach.desc}</p>
-                <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-                  <span style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{teach.btn1Label}</span>
-                  <Link href={teach.btn2Url} onClick={e => e.stopPropagation()} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${Paper300}`, color:Navy, textDecoration:"none" }}>{teach.btn2Label}</Link>
-                </div>
-                <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap", paddingTop:"16px", borderTop:`1px solid ${Paper200}` }}>
-                  {teach.colophon.map((item: string, i: number, arr: string[]) => (
-                    <span key={i} style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                      <span style={{ ...T.colophon, color: i===0 ? Blue700 : Slate500 }}>{item}</span>
-                      {i < arr.length-1 && <span style={{ ...T.colophon, color:Paper400 }}>·</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </a>
-        </div>
-      </section>
+      {/* ══════════════ LATEST TEACHING (5-SERMON CAROUSEL) ══════════════ */}
+      <LatestTeachingCarousel
+        sermons={latestSermons}
+        cmsSettings={cmsSettings}
+        defaultTeaching={teach}
+      />
 
       {/* ══════════════ FROM THE ARTICLES (WORTH READING) ══════════════ */}
       <ArticleCarousel />

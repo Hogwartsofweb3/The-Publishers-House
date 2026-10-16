@@ -102,9 +102,11 @@ export default function SermonsEditor() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
-  // Search & Filter controls
+  // Search, Filter & Pagination controls
   const [search, setSearch] = useState("");
   const [overviewFilter, setOverviewFilter] = useState<"all" | "needs_overview" | "has_overview">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | "all">(50);
 
   const fetchSermons = async () => {
     try {
@@ -119,6 +121,11 @@ export default function SermonsEditor() {
   useEffect(() => {
     fetchSermons();
   }, []);
+
+  // Reset to page 1 whenever search, filter, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, overviewFilter, pageSize]);
 
   const handleManualSync = async () => {
     setSyncing(true);
@@ -207,16 +214,18 @@ export default function SermonsEditor() {
     fetchSermons();
   };
 
-  // Filtered sermons list
+  // Filtered sermons list (checks title, series, speaker, date, scripture, summary)
   const filteredSermons = useMemo(() => {
     return sermons.filter((s) => {
-      const q = search.toLowerCase();
+      const q = search.toLowerCase().trim();
       const matchesSearch =
         !q ||
         (s.title && s.title.toLowerCase().includes(q)) ||
         (s.series && s.series.toLowerCase().includes(q)) ||
         (s.speaker && s.speaker.toLowerCase().includes(q)) ||
-        (s.date && s.date.includes(q));
+        (s.date && s.date.includes(q)) ||
+        (s.scripture && s.scripture.toLowerCase().includes(q)) ||
+        (s.summary && s.summary.toLowerCase().includes(q));
 
       if (!matchesSearch) return false;
 
@@ -232,6 +241,23 @@ export default function SermonsEditor() {
   }, [sermons]);
 
   const customOverviewCount = sermons.length - needsOverviewCount;
+
+  // Pagination calculations
+  const totalItems = filteredSermons.length;
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(totalItems / (pageSize as number)));
+  const effectiveCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = pageSize === "all" ? 0 : (effectiveCurrentPage - 1) * (pageSize as number);
+  const endIndex = pageSize === "all" ? totalItems : Math.min(startIndex + (pageSize as number), totalItems);
+  const paginatedSermons = filteredSermons.slice(startIndex, endIndex);
+
+  const goToPage = (p: number) => {
+    const target = Math.max(1, Math.min(p, totalPages));
+    setCurrentPage(target);
+    const el = document.getElementById("sermons-list-anchor");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <div style={{ padding: "32px", maxWidth: "1160px", margin: "0 auto" }}>
@@ -661,7 +687,7 @@ export default function SermonsEditor() {
         {/* Search input */}
         <input
           type="text"
-          placeholder="Search by sermon title, series, speaker, or date (e.g. Latter Rain, 2026-10)..."
+          placeholder="Search by sermon title, series, speaker, date, scripture, or keywords in overview..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -672,11 +698,197 @@ export default function SermonsEditor() {
             border: `1px solid ${S.Paper400}`,
           }}
         />
+
+        {/* ── Top Pagination Bar ── */}
+        {totalItems > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "14px",
+              backgroundColor: S.White,
+              border: `1px solid ${S.Paper300}`,
+              borderRadius: "8px",
+              padding: "14px 20px",
+              marginTop: "16px",
+            }}
+          >
+            {/* Left: Summary & Per-page toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "12px",
+                  color: S.Slate500,
+                  fontWeight: 500,
+                }}
+              >
+                Showing <strong style={{ color: S.Navy }}>{totalItems === 0 ? 0 : startIndex + 1}–{endIndex}</strong> of{" "}
+                <strong style={{ color: S.Navy }}>{totalItems}</strong> sermons
+              </span>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate500 }}>
+                  Per page:
+                </span>
+                {([50, 100, "all"] as const).map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setPageSize(sz)}
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "4px 10px",
+                      borderRadius: "4px",
+                      border: `1px solid ${pageSize === sz ? S.Blue700 : S.Paper300}`,
+                      backgroundColor: pageSize === sz ? S.Blue700 : S.Paper100,
+                      color: pageSize === sz ? S.White : S.Navy,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {sz === "all" ? `All (${totalItems})` : sz}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Page navigation pills */}
+            {pageSize !== "all" && totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  disabled={effectiveCurrentPage <= 1}
+                  onClick={() => goToPage(1)}
+                  style={{
+                    ...S.btn(
+                      effectiveCurrentPage <= 1 ? S.Paper100 : S.Paper200,
+                      effectiveCurrentPage <= 1 ? S.Paper400 : S.Navy
+                    ),
+                    padding: "6px 10px",
+                    cursor: effectiveCurrentPage <= 1 ? "not-allowed" : "pointer",
+                    opacity: effectiveCurrentPage <= 1 ? 0.6 : 1,
+                  }}
+                  title="First page"
+                >
+                  « First
+                </button>
+                <button
+                  type="button"
+                  disabled={effectiveCurrentPage <= 1}
+                  onClick={() => goToPage(effectiveCurrentPage - 1)}
+                  style={{
+                    ...S.btn(
+                      effectiveCurrentPage <= 1 ? S.Paper100 : S.Paper200,
+                      effectiveCurrentPage <= 1 ? S.Paper400 : S.Navy
+                    ),
+                    padding: "6px 10px",
+                    cursor: effectiveCurrentPage <= 1 ? "not-allowed" : "pointer",
+                    opacity: effectiveCurrentPage <= 1 ? 0.6 : 1,
+                  }}
+                  title="Previous page"
+                >
+                  ‹ Prev
+                </button>
+
+                {/* Page numbers */}
+                {(() => {
+                  if (totalPages <= 7) {
+                    return Array.from({ length: totalPages }, (_, i) => i + 1);
+                  }
+                  const pages: (number | string)[] = [];
+                  if (effectiveCurrentPage <= 4) {
+                    pages.push(1, 2, 3, 4, 5, "...", totalPages);
+                  } else if (effectiveCurrentPage >= totalPages - 3) {
+                    pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                  } else {
+                    pages.push(1, "...", effectiveCurrentPage - 1, effectiveCurrentPage, effectiveCurrentPage + 1, "...", totalPages);
+                  }
+                  return pages;
+                })().map((num, idx) => {
+                  if (num === "...") {
+                    return (
+                      <span key={`dots-top-${idx}`} style={{ padding: "0 4px", color: S.Slate500, fontSize: "12px" }}>
+                        …
+                      </span>
+                    );
+                  }
+                  const isCurrent = num === effectiveCurrentPage;
+                  return (
+                    <button
+                      key={`page-top-${num}`}
+                      type="button"
+                      onClick={() => goToPage(num as number)}
+                      style={{
+                        fontFamily: "'Poppins', sans-serif",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        minWidth: "32px",
+                        height: "32px",
+                        padding: "0 6px",
+                        borderRadius: "4px",
+                        border: isCurrent ? `1px solid ${S.Blue700}` : `1px solid ${S.Paper300}`,
+                        backgroundColor: isCurrent ? S.Blue700 : S.White,
+                        color: isCurrent ? S.White : S.Navy,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  disabled={effectiveCurrentPage >= totalPages}
+                  onClick={() => goToPage(effectiveCurrentPage + 1)}
+                  style={{
+                    ...S.btn(
+                      effectiveCurrentPage >= totalPages ? S.Paper100 : S.Paper200,
+                      effectiveCurrentPage >= totalPages ? S.Paper400 : S.Navy
+                    ),
+                    padding: "6px 10px",
+                    cursor: effectiveCurrentPage >= totalPages ? "not-allowed" : "pointer",
+                    opacity: effectiveCurrentPage >= totalPages ? 0.6 : 1,
+                  }}
+                  title="Next page"
+                >
+                  Next ›
+                </button>
+                <button
+                  type="button"
+                  disabled={effectiveCurrentPage >= totalPages}
+                  onClick={() => goToPage(totalPages)}
+                  style={{
+                    ...S.btn(
+                      effectiveCurrentPage >= totalPages ? S.Paper100 : S.Paper200,
+                      effectiveCurrentPage >= totalPages ? S.Paper400 : S.Navy
+                    ),
+                    padding: "6px 10px",
+                    cursor: effectiveCurrentPage >= totalPages ? "not-allowed" : "pointer",
+                    opacity: effectiveCurrentPage >= totalPages ? 0.6 : 1,
+                  }}
+                  title="Last page"
+                >
+                  Last »
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Anchor for smooth scroll on page change */}
+      <div id="sermons-list-anchor" style={{ scrollMarginTop: "24px" }} />
 
       {/* ── Sermons List ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {filteredSermons.slice(0, 50).map((s) => {
+        {paginatedSermons.map((s) => {
           const isGeneric = isGenericOverview(s.summary);
           return (
             <div
@@ -754,6 +966,7 @@ export default function SermonsEditor() {
                   {s.speaker || "Dr. Joshua Agunbiade"} · {s.date}{" "}
                   {s.series && `· Series: ${s.series}`}
                   {s.duration && ` · Duration: ${s.duration}`}
+                  {s.scripture && ` · Scripture: ${s.scripture}`}
                 </div>
 
                 {/* Overview preview snippet */}
@@ -819,18 +1032,100 @@ export default function SermonsEditor() {
           );
         })}
 
-        {filteredSermons.length > 50 && (
-          <p
+        {/* ── Bottom Pagination Bar ── */}
+        {totalItems > 0 && pageSize !== "all" && totalPages > 1 && (
+          <div
             style={{
-              textAlign: "center",
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "12px",
-              color: S.Slate500,
-              padding: "16px 0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "14px",
+              backgroundColor: S.White,
+              border: `1px solid ${S.Paper300}`,
+              borderRadius: "8px",
+              padding: "16px 20px",
+              marginTop: "20px",
             }}
           >
-            Showing first 50 results. Use the search bar above to narrow down to any specific sermon.
-          </p>
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "12px",
+                color: S.Slate500,
+              }}
+            >
+              Page <strong style={{ color: S.Navy }}>{effectiveCurrentPage}</strong> of{" "}
+              <strong style={{ color: S.Navy }}>{totalPages}</strong> ({totalItems} total sermons)
+            </span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                disabled={effectiveCurrentPage <= 1}
+                onClick={() => goToPage(1)}
+                style={{
+                  ...S.btn(
+                    effectiveCurrentPage <= 1 ? S.Paper100 : S.Paper200,
+                    effectiveCurrentPage <= 1 ? S.Paper400 : S.Navy
+                  ),
+                  padding: "6px 12px",
+                  cursor: effectiveCurrentPage <= 1 ? "not-allowed" : "pointer",
+                  opacity: effectiveCurrentPage <= 1 ? 0.6 : 1,
+                }}
+              >
+                « First
+              </button>
+              <button
+                type="button"
+                disabled={effectiveCurrentPage <= 1}
+                onClick={() => goToPage(effectiveCurrentPage - 1)}
+                style={{
+                  ...S.btn(
+                    effectiveCurrentPage <= 1 ? S.Paper100 : S.Paper200,
+                    effectiveCurrentPage <= 1 ? S.Paper400 : S.Navy
+                  ),
+                  padding: "6px 12px",
+                  cursor: effectiveCurrentPage <= 1 ? "not-allowed" : "pointer",
+                  opacity: effectiveCurrentPage <= 1 ? 0.6 : 1,
+                }}
+              >
+                ‹ Previous
+              </button>
+              <button
+                type="button"
+                disabled={effectiveCurrentPage >= totalPages}
+                onClick={() => goToPage(effectiveCurrentPage + 1)}
+                style={{
+                  ...S.btn(
+                    effectiveCurrentPage >= totalPages ? S.Paper100 : S.Paper200,
+                    effectiveCurrentPage >= totalPages ? S.Paper400 : S.Navy
+                  ),
+                  padding: "6px 12px",
+                  cursor: effectiveCurrentPage >= totalPages ? "not-allowed" : "pointer",
+                  opacity: effectiveCurrentPage >= totalPages ? 0.6 : 1,
+                }}
+              >
+                Next ›
+              </button>
+              <button
+                type="button"
+                disabled={effectiveCurrentPage >= totalPages}
+                onClick={() => goToPage(totalPages)}
+                style={{
+                  ...S.btn(
+                    effectiveCurrentPage >= totalPages ? S.Paper100 : S.Paper200,
+                    effectiveCurrentPage >= totalPages ? S.Paper400 : S.Navy
+                  ),
+                  padding: "6px 12px",
+                  cursor: effectiveCurrentPage >= totalPages ? "not-allowed" : "pointer",
+                  opacity: effectiveCurrentPage >= totalPages ? 0.6 : 1,
+                }}
+              >
+                Last »
+              </button>
+            </div>
+          </div>
         )}
 
         {filteredSermons.length === 0 && (
