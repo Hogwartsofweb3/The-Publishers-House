@@ -3,7 +3,22 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
-  serverExternalPackages: ["firebase-admin"],
+  // Externalize all firebase-admin subpath packages so they never get
+  // bundled into the client/edge bundle (prevents "Can't resolve 'tls'" etc.)
+  serverExternalPackages: [
+    "firebase-admin",
+    "firebase-admin/app",
+    "firebase-admin/auth",
+    "firebase-admin/firestore",
+    "firebase-admin/storage",
+    "@google-cloud/firestore",
+    "@google-cloud/storage",
+    "google-auth-library",
+    "googleapis-common",
+    "gaxios",
+    "https-proxy-agent",
+    "agent-base",
+  ],
   async redirects() {
     return [
       // Redirect bare domain → www so Google always indexes www version
@@ -23,12 +38,27 @@ const nextConfig: NextConfig = {
       "@farcaster/mini-app-solana": "./src/lib/empty.js",
     },
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
       "@farcaster/mini-app-solana": false,
     };
+
+    // On the client bundle, stub out Node.js built-ins that firebase-admin
+    // and its deps (gaxios, https-proxy-agent) try to require.
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        tls: false,
+        net: false,
+        fs: false,
+        dns: false,
+        child_process: false,
+        http2: false,
+      };
+    }
+
     return config;
   },
   images: {
