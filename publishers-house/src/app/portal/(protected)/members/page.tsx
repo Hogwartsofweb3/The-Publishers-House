@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, doc, updateDoc, setDoc } from "firebase/firestore";
-import { UNITS, type PortalUser, type UserRole, type ActivityTier, getRoleLabel } from "@/lib/portalAuth";
+import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
+  { value: "super_admin", label: "Super Admin" },
   { value: "admin", label: "Administrator" },
+  { value: "portal_manager", label: "Portal Manager" },
   { value: "unit_head", label: "Unit Head" },
   { value: "member", label: "Member" },
 ];
@@ -18,98 +19,31 @@ const TIER_OPTIONS: { value: ActivityTier; label: string }[] = [
   { value: "leader", label: "Leader" },
 ];
 
-// Seed fallback members if collection is empty
-const SEED_MEMBERS: PortalUser[] = [
-  {
-    uid: "seed-1",
-    displayName: "Joshua Agunbiade",
-    email: "pastor.joshua@tph.org",
-    phone: "+234 803 123 4567",
-    role: "admin",
-    assignedUnitId: "pastoral",
-    activityTier: "leader",
-    createdAt: "2024-01-15T00:00:00.000Z",
-    lastLogin: "2026-10-15T10:00:00.000Z",
-  },
-  {
-    uid: "seed-2",
-    displayName: "Damilare Agunbiade",
-    email: "pastor.damilare@tph.org",
-    phone: "+234 802 987 6543",
-    role: "admin",
-    assignedUnitId: "worship",
-    activityTier: "leader",
-    createdAt: "2024-01-15T00:00:00.000Z",
-    lastLogin: "2026-10-14T14:30:00.000Z",
-  },
-  {
-    uid: "seed-3",
-    displayName: "Ibidun Suraju",
-    email: "ibidun.suraju@tph.org",
-    phone: "+234 805 234 5678",
-    role: "unit_head",
-    assignedUnitId: "media",
-    activityTier: "leader",
-    createdAt: "2024-03-10T00:00:00.000Z",
-    lastLogin: "2026-10-15T08:15:00.000Z",
-  },
-  {
-    uid: "seed-4",
-    displayName: "Ayomide Johnson",
-    email: "ayomide.j@gmail.com",
-    phone: "+234 814 345 6789",
-    role: "member",
-    assignedUnitId: "ushering",
-    activityTier: "active",
-    createdAt: "2024-05-18T00:00:00.000Z",
-    lastLogin: "2026-10-12T19:00:00.000Z",
-  },
-  {
-    uid: "seed-5",
-    displayName: "Chinedu Eze",
-    email: "chinedu.eze@outlook.com",
-    phone: "+234 703 456 7890",
-    role: "member",
-    assignedUnitId: "editorial",
-    activityTier: "active",
-    createdAt: "2024-08-01T00:00:00.000Z",
-    lastLogin: "2026-10-13T11:45:00.000Z",
-  },
-  {
-    uid: "seed-6",
-    displayName: "Grace Pam",
-    email: "grace.pam@yahoo.com",
-    phone: "+234 809 567 8901",
-    role: "member",
-    assignedUnitId: "children",
-    activityTier: "regular",
-    createdAt: "2025-01-10T00:00:00.000Z",
-    lastLogin: "2026-10-11T16:20:00.000Z",
-  },
-  {
-    uid: "seed-7",
-    displayName: "Emmanuel Olatunji",
-    email: "emmanuel.olatunji@gmail.com",
-    phone: "+234 816 678 9012",
-    role: "member",
-    assignedUnitId: "protocol",
-    activityTier: "regular",
-    createdAt: "2025-02-22T00:00:00.000Z",
-    lastLogin: "2026-10-09T09:10:00.000Z",
-  },
-];
-
 export default function MembersPage() {
+  const { campus: globalCampus } = usePortal();
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [filtered, setFiltered] = useState<PortalUser[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [unitFilter, setUnitFilter] = useState("all");
+  const [campusFilter, setCampusFilter] = useState<"all" | Campus>("all");
   const [loading, setLoading] = useState(true);
+
+  // Modals State
   const [editUser, setEditUser] = useState<PortalUser | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [activeMenuUid, setActiveMenuUid] = useState<string | null>(null);
+  const [unitAssignUser, setUnitAssignUser] = useState<PortalUser | null>(null);
+  const [invitationModal, setInvitationModal] = useState<{
+    user: PortalUser;
+    tempPassword?: string;
+    emailHtml?: string;
+  } | null>(null);
 
+  const [msg, setMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Add Member Form State
   const [addForm, setAddForm] = useState({
     displayName: "",
     email: "",
@@ -117,23 +51,21 @@ export default function MembersPage() {
     role: "member" as UserRole,
     assignedUnitId: "",
     activityTier: "regular" as ActivityTier,
+    campus: "jos" as Campus,
+    createAuthImmediately: true,
   });
 
   const fetchMembers = async () => {
+    setLoading(true);
     try {
-      const q = query(collection(db, "users"), orderBy("displayName", "asc"));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const data = snap.docs.map((d) => ({ ...d.data() } as PortalUser));
-        setMembers(data);
-        setFiltered(data);
-      } else {
-        setMembers(SEED_MEMBERS);
-        setFiltered(SEED_MEMBERS);
+      const res = await fetch("/api/portal/members");
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.members)) {
+        setMembers(json.members);
+        setFiltered(json.members);
       }
-    } catch {
-      setMembers(SEED_MEMBERS);
-      setFiltered(SEED_MEMBERS);
+    } catch (err) {
+      console.error("Failed to fetch members:", err);
     } finally {
       setLoading(false);
     }
@@ -142,6 +74,13 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers();
   }, []);
+
+  // Sync with global campus if changed in header
+  useEffect(() => {
+    if (globalCampus) {
+      setCampusFilter(globalCampus);
+    }
+  }, [globalCampus]);
 
   useEffect(() => {
     let result = members;
@@ -160,67 +99,184 @@ export default function MembersPage() {
     if (unitFilter !== "all") {
       result = result.filter((m) => m.assignedUnitId === unitFilter);
     }
+    if (campusFilter !== "all") {
+      result = result.filter((m) => (m.campus || "jos") === campusFilter);
+    }
     setFiltered(result);
-  }, [search, roleFilter, unitFilter, members]);
+  }, [search, roleFilter, unitFilter, campusFilter, members]);
 
+  // Handle Member Details Update (including Email!)
   const handleUpdate = async () => {
     if (!editUser) return;
+    setSubmitting(true);
     try {
-      await updateDoc(doc(db, "users", editUser.uid), {
-        role: editUser.role,
-        activityTier: editUser.activityTier,
-        assignedUnitId: editUser.assignedUnitId || "",
-        phone: editUser.phone || "",
-        displayName: editUser.displayName || "",
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_member",
+          uid: editUser.uid,
+          displayName: editUser.displayName,
+          email: editUser.email,
+          phone: editUser.phone,
+          role: editUser.role,
+          assignedUnitId: editUser.assignedUnitId,
+          activityTier: editUser.activityTier,
+          campus: editUser.campus || "jos",
+        }),
       });
-      setMsg("Member updated successfully ✓");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+
+      setMsg("Member details updated successfully ✓");
       setEditUser(null);
       fetchMembers();
     } catch (err: any) {
-      setMembers((prev) =>
-        prev.map((m) => (m.uid === editUser.uid ? editUser : m))
-      );
-      setMsg("Member updated locally ✓");
-      setEditUser(null);
+      alert("Failed to update: " + err.message);
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setMsg(""), 3500);
     }
-    setTimeout(() => setMsg(""), 3000);
   };
 
+  // Handle Add Member
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.displayName || !addForm.email) return;
-
-    const newUid = `user-${Date.now()}`;
-    const newMember: PortalUser = {
-      uid: newUid,
-      displayName: addForm.displayName,
-      email: addForm.email,
-      phone: addForm.phone,
-      role: addForm.role,
-      assignedUnitId: addForm.assignedUnitId || undefined,
-      activityTier: addForm.activityTier,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-    };
+    if (!addForm.displayName) return;
+    setSubmitting(true);
 
     try {
-      await setDoc(doc(db, "users", newUid), newMember);
-    } catch {
-      // Local state fallback
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_member",
+          ...addForm,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to add member");
+
+      setShowAddModal(false);
+      setAddForm({
+        displayName: "",
+        email: "",
+        phone: "",
+        role: "member",
+        assignedUnitId: "",
+        activityTier: "regular",
+        campus: "jos",
+        createAuthImmediately: true,
+      });
+
+      if (json.tempPassword) {
+        setInvitationModal({
+          user: json.member,
+          tempPassword: json.tempPassword,
+          emailHtml: json.emailHtml,
+        });
+      } else {
+        setMsg("Member enrolled successfully ✓");
+        setTimeout(() => setMsg(""), 3500);
+      }
+      fetchMembers();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle Create Account / Send Invite
+  const handleCreateAccount = async (member: PortalUser) => {
+    if (!member.email) {
+      alert("Please add an email address for this member first by editing their details.");
+      setEditUser(member);
+      return;
     }
 
-    setMembers((prev) => [newMember, ...prev]);
-    setShowAddModal(false);
-    setAddForm({
-      displayName: "",
-      email: "",
-      phone: "",
-      role: "member",
-      assignedUnitId: "",
-      activityTier: "regular",
-    });
-    setMsg("Member enrolled successfully ✓");
-    setTimeout(() => setMsg(""), 3000);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_account",
+          uid: member.uid,
+          email: member.email,
+          displayName: member.displayName,
+          role: member.role,
+          phone: member.phone,
+          assignedUnitId: member.assignedUnitId,
+          campus: member.campus,
+          activityTier: member.activityTier,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to create account");
+
+      setInvitationModal({
+        user: json.user,
+        tempPassword: json.tempPassword,
+        emailHtml: json.emailHtml,
+      });
+      fetchMembers();
+    } catch (err: any) {
+      alert("Error creating account: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle Delete Member
+  const handleDeleteMember = async (member: PortalUser) => {
+    if (!confirm(`Are you sure you want to delete ${member.displayName}? This will delete their portal profile and login access.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_member",
+          uid: member.uid,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete");
+
+      setMsg("Member account deleted successfully ✓");
+      setTimeout(() => setMsg(""), 3000);
+      fetchMembers();
+    } catch (err: any) {
+      alert("Error deleting member: " + err.message);
+    }
+  };
+
+  // Handle Assign Unit
+  const handleSaveUnitAssignment = async (unitId: string) => {
+    if (!unitAssignUser) return;
+    try {
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assign_unit",
+          uid: unitAssignUser.uid,
+          assignedUnitId: unitId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to assign unit");
+
+      setUnitAssignUser(null);
+      setMsg("Unit assignment updated ✓");
+      setTimeout(() => setMsg(""), 3000);
+      fetchMembers();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
   };
 
   const getInitials = (name?: string) => {
@@ -231,24 +287,24 @@ export default function MembersPage() {
   };
 
   const exportCSV = () => {
-    const headers = "Name,Email,Phone,Role,Unit,Tier,Joined\n";
+    const headers = "Full Name,Email,Phone,Role,Unit,Tier,Campus,Joined Date\n";
     const rows = filtered
       .map(
         (m) =>
-          `"${m.displayName}","${m.email}","${m.phone || ""}","${m.role}","${m.assignedUnitId || "None"}","${m.activityTier}","${m.createdAt}"`
+          `"${m.displayName}","${m.email}","${m.phone || ""}","${m.role}","${m.assignedUnitId || "None"}","${m.activityTier}","${m.campus || "jos"}","${m.createdAt}"`
       )
       .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv" });
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `TPH-Members-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `TPH-Members-${campusFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-      {/* Page Header (Figma 311:2076) */}
+      {/* Page Header */}
       <div
         style={{
           display: "flex",
@@ -259,42 +315,56 @@ export default function MembersPage() {
         }}
       >
         <div>
+          <div
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#5FCD48",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              marginBottom: "8px",
+            }}
+          >
+            Directory · Community
+          </div>
           <h1
             style={{
               fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontWeight: 800,
               fontSize: "28px",
-              lineHeight: "34px",
+              fontWeight: 800,
               color: "#141C6E",
+              letterSpacing: "-0.02em",
               margin: 0,
             }}
           >
-            Members
+            Members Directory
           </h1>
           <p
             style={{
               fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontWeight: 500,
               fontSize: "13px",
               color: "#4A5490",
-              margin: "6px 0 0",
+              marginTop: "6px",
+              marginBottom: 0,
             }}
           >
-            Company of the Great · Comprehensive Member Directory
+            Official registry of church members, leaders, and portal accounts.
           </p>
         </div>
 
+        {/* Action Buttons */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           {msg && (
             <span
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "12px",
-                fontWeight: 600,
                 color: "#0F6B38",
+                fontWeight: 600,
                 backgroundColor: "#E4F5EA",
-                padding: "6px 12px",
-                borderRadius: "6px",
+                padding: "6px 14px",
+                borderRadius: "8px",
               }}
             >
               {msg}
@@ -304,43 +374,47 @@ export default function MembersPage() {
           <button
             onClick={exportCSV}
             style={{
-              backgroundColor: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 18px",
+              borderRadius: "8px",
               border: "1px solid #D5DCF2",
-              borderRadius: "10px",
-              padding: "10px 16px",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontWeight: 600,
-              fontSize: "13px",
+              backgroundColor: "#FFFFFF",
               color: "#141C6E",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "12.5px",
+              fontWeight: 600,
               cursor: "pointer",
-              transition: "all 0.15s ease",
             }}
           >
-            Export CSV
+            <span>📥 Export to CSV</span>
           </button>
 
           <button
             onClick={() => setShowAddModal(true)}
             style={{
-              backgroundColor: "#1F46C8",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 20px",
+              borderRadius: "8px",
               border: "none",
-              borderRadius: "10px",
-              padding: "10px 18px",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontWeight: 600,
-              fontSize: "13px",
+              backgroundColor: "#1F46C8",
               color: "#FFFFFF",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "12.5px",
+              fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 2px 6px rgba(31, 70, 200, 0.25)",
-              transition: "all 0.15s ease",
+              boxShadow: "0 2px 8px rgba(31, 70, 200, 0.25)",
             }}
           >
-            + Add Member
+            <span>+ Add Member</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Counters Strip */}
+      {/* KPI Stats Strip */}
       <div
         style={{
           display: "grid",
@@ -348,57 +422,29 @@ export default function MembersPage() {
           gap: "16px",
         }}
       >
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "12px",
-            padding: "16px 20px",
-          }}
-        >
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Total Registered</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "26px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>{members.length}</div>
+        <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Total Members</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>{members.length}</div>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "12px",
-            padding: "16px 20px",
-          }}
-        >
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Active Leaders & Core</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "26px", fontWeight: 800, color: "#0F6B38", marginTop: "4px" }}>
-            {members.filter((m) => m.activityTier === "leader" || m.activityTier === "active").length}
+        <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Portal Accounts</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>
+            {members.filter((m) => m.hasAccount || m.role === "admin" || m.role === "super_admin").length}
           </div>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "12px",
-            padding: "16px 20px",
-          }}
-        >
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Rostered in Church Units</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "26px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>
-            {members.filter((m) => !!m.assignedUnitId).length}
+        <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Assigned to Units</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#0F6B38", marginTop: "4px" }}>
+            {members.filter((m) => m.assignedUnitId).length}
           </div>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "12px",
-            padding: "16px 20px",
-          }}
-        >
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Seekers & New Visitors</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "26px", fontWeight: 800, color: "#7A5200", marginTop: "4px" }}>
-            {members.filter((m) => m.activityTier === "seeker").length}
+        <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Active Leaders</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#7A5200", marginTop: "4px" }}>
+            {members.filter((m) => m.activityTier === "leader" || m.role === "super_admin" || m.role === "admin" || m.role === "unit_head").length}
           </div>
         </div>
       </div>
@@ -406,86 +452,104 @@ export default function MembersPage() {
       {/* Filter and Search Bar */}
       <div
         style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #D5DCF2",
-          borderRadius: "14px",
-          padding: "16px 20px",
           display: "flex",
-          gap: "14px",
-          flexWrap: "wrap",
+          gap: "12px",
           alignItems: "center",
-          justifyContent: "space-between",
+          flexWrap: "wrap",
+          padding: "16px 20px",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "12px",
+          border: "1px solid #D5DCF2",
         }}
       >
-        <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "280px", maxWidth: "480px" }}>
+        <div style={{ flex: 1, minWidth: "240px" }}>
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search by name, email, or phone number..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: "100%",
-              padding: "10px 16px",
+              padding: "9px 14px",
               borderRadius: "8px",
               border: "1px solid #D5DCF2",
               fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
               fontSize: "13px",
               color: "#141C6E",
               outline: "none",
+              boxSizing: "border-box",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-          {/* Role Filters */}
-          <div style={{ display: "flex", gap: "4px", backgroundColor: "#F4F6FB", padding: "4px", borderRadius: "8px" }}>
-            {["all", "admin", "unit_head", "member"].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRoleFilter(r)}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "6px",
-                  border: "none",
-                  backgroundColor: roleFilter === r ? "#1F46C8" : "transparent",
-                  color: roleFilter === r ? "#FFFFFF" : "#4A5490",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {r === "all" ? "All Roles" : getRoleLabel(r as UserRole)}
-              </button>
-            ))}
-          </div>
+        {/* Campus Filter */}
+        <select
+          value={campusFilter}
+          onChange={(e) => setCampusFilter(e.target.value as any)}
+          style={{
+            padding: "9px 14px",
+            borderRadius: "8px",
+            border: "1px solid #D5DCF2",
+            backgroundColor: "#FFFFFF",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "12.5px",
+            fontWeight: 600,
+            color: "#141C6E",
+            outline: "none",
+          }}
+        >
+          <option value="all">🌐 All Campuses</option>
+          <option value="jos">📍 Jos Headquarters</option>
+          <option value="abuja">📍 Abuja Campus</option>
+        </select>
 
-          {/* Unit Filter */}
-          <select
-            value={unitFilter}
-            onChange={(e) => setUnitFilter(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "1px solid #D5DCF2",
-              backgroundColor: "#FFFFFF",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontSize: "12px",
-              color: "#141C6E",
-              outline: "none",
-            }}
-          >
-            <option value="all">All Church Units</option>
-            {UNITS.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Role Filter */}
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          style={{
+            padding: "9px 14px",
+            borderRadius: "8px",
+            border: "1px solid #D5DCF2",
+            backgroundColor: "#FFFFFF",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "12.5px",
+            fontWeight: 600,
+            color: "#141C6E",
+            outline: "none",
+          }}
+        >
+          <option value="all">All Roles</option>
+          {ROLE_OPTIONS.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Unit Filter */}
+        <select
+          value={unitFilter}
+          onChange={(e) => setUnitFilter(e.target.value)}
+          style={{
+            padding: "9px 14px",
+            borderRadius: "8px",
+            border: "1px solid #D5DCF2",
+            backgroundColor: "#FFFFFF",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "12.5px",
+            fontWeight: 600,
+            color: "#141C6E",
+            outline: "none",
+          }}
+        >
+          <option value="all">All Church Units</option>
+          {UNITS.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Members Table */}
@@ -494,38 +558,43 @@ export default function MembersPage() {
           backgroundColor: "#FFFFFF",
           border: "1px solid #D5DCF2",
           borderRadius: "14px",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Member</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Member</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Email Address</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Phone</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Role</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Church Unit</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Activity Tier</th>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", textAlign: "right" }}>Action</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Campus</th>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     Loading members directory...
                   </td>
                 </tr>
               )}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     No members found matching your search.
                   </td>
                 </tr>
               )}
               {filtered.map((m) => {
                 const unit = UNITS.find((u) => u.id === m.assignedUnitId);
+                const hasPortalAccess = m.hasAccount || m.role === "admin" || m.role === "super_admin";
+                const isMenuOpen = activeMenuUid === m.uid;
+
                 return (
                   <tr
                     key={m.uid}
@@ -534,15 +603,15 @@ export default function MembersPage() {
                       transition: "background-color 0.15s",
                     }}
                   >
-                    {/* Member Name + Email */}
-                    <td style={{ padding: "14px 24px" }}>
+                    {/* Member Name */}
+                    <td style={{ padding: "14px 20px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                         <div
                           style={{
                             width: "36px",
                             height: "36px",
                             borderRadius: "18px",
-                            backgroundColor: m.role === "admin" ? "#141C6E" : "#1F46C8",
+                            backgroundColor: getRoleColor(m.role),
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -566,17 +635,25 @@ export default function MembersPage() {
                           >
                             {m.displayName}
                           </div>
-                          <div
-                            style={{
-                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                              fontSize: "11px",
-                              color: "#4A5490",
-                            }}
-                          >
-                            {m.email}
-                          </div>
+                          {hasPortalAccess && (
+                            <span style={{ fontSize: "10px", color: "#0F6B38", fontWeight: 700 }}>
+                              ✓ Portal Account Active
+                            </span>
+                          )}
                         </div>
                       </div>
+                    </td>
+
+                    {/* Email (Separate Column as Requested) */}
+                    <td
+                      style={{
+                        padding: "14px 20px",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "12.5px",
+                        color: m.email ? "#1F46C8" : "#94A3B8",
+                      }}
+                    >
+                      {m.email || "(No email set)"}
                     </td>
 
                     {/* Phone */}
@@ -601,18 +678,8 @@ export default function MembersPage() {
                           fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                           fontSize: "11px",
                           fontWeight: 600,
-                          backgroundColor:
-                            m.role === "admin"
-                              ? "#FFF2D6"
-                              : m.role === "unit_head"
-                              ? "#E8EDFB"
-                              : "#E4F5EA",
-                          color:
-                            m.role === "admin"
-                              ? "#7A5200"
-                              : m.role === "unit_head"
-                              ? "#1F46C8"
-                              : "#0F6B38",
+                          backgroundColor: `${getRoleColor(m.role)}1A`,
+                          color: getRoleColor(m.role),
                         }}
                       >
                         {getRoleLabel(m.role)}
@@ -670,25 +737,169 @@ export default function MembersPage() {
                       </span>
                     </td>
 
-                    {/* Action */}
-                    <td style={{ padding: "14px 24px", textAlign: "right" }}>
+                    {/* Campus */}
+                    <td style={{ padding: "14px 20px", fontSize: "12px", color: "#141C6E", textTransform: "capitalize" }}>
+                      {m.campus || "jos"}
+                    </td>
+
+                    {/* Vertical Three Dots Action Menu (⋮) */}
+                    <td style={{ padding: "14px 24px", textAlign: "right", position: "relative" }}>
                       <button
-                        onClick={() => setEditUser({ ...m })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuUid(isMenuOpen ? null : m.uid);
+                        }}
                         style={{
-                          backgroundColor: "#FFFFFF",
+                          backgroundColor: isMenuOpen ? "#E8EDFB" : "#F4F6FB",
                           border: "1px solid #D5DCF2",
                           borderRadius: "8px",
-                          padding: "6px 14px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: "#141C6E",
+                          width: "32px",
+                          height: "32px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           cursor: "pointer",
-                          transition: "all 0.15s ease",
+                          color: "#141C6E",
+                          fontSize: "18px",
+                          fontWeight: 800,
                         }}
+                        title="Actions"
                       >
-                        Edit
+                        ⋮
                       </button>
+
+                      {/* Dropdown Menu */}
+                      {isMenuOpen && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: "absolute",
+                            right: "24px",
+                            top: "44px",
+                            backgroundColor: "#FFFFFF",
+                            border: "1px solid #D5DCF2",
+                            borderRadius: "10px",
+                            boxShadow: "0 8px 24px rgba(20, 28, 110, 0.15)",
+                            zIndex: 50,
+                            minWidth: "190px",
+                            padding: "6px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "2px",
+                            textAlign: "left",
+                          }}
+                        >
+                          {/* Create Account / Send Invite */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuUid(null);
+                              handleCreateAccount(m);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              border: "none",
+                              borderRadius: "6px",
+                              backgroundColor: "transparent",
+                              color: "#1F46C8",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              textAlign: "left",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#EEF2FB")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          >
+                            <span>⚡</span>
+                            <span>{hasPortalAccess ? "Resend Account Invite" : "Create Account & Invite"}</span>
+                          </button>
+
+                          {/* Assign to Unit */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuUid(null);
+                              setUnitAssignUser(m);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              border: "none",
+                              borderRadius: "6px",
+                              backgroundColor: "transparent",
+                              color: "#141C6E",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              textAlign: "left",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#EEF2FB")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          >
+                            <span>🏢</span>
+                            <span>Assign to Unit</span>
+                          </button>
+
+                          {/* Edit Details */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuUid(null);
+                              setEditUser({ ...m });
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              border: "none",
+                              borderRadius: "6px",
+                              backgroundColor: "transparent",
+                              color: "#141C6E",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              textAlign: "left",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#EEF2FB")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          >
+                            <span>✏️</span>
+                            <span>Edit Details</span>
+                          </button>
+
+                          <div style={{ height: "1px", backgroundColor: "#E8EDFB", margin: "4px 0" }} />
+
+                          {/* Delete Account */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuUid(null);
+                              handleDeleteMember(m);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              border: "none",
+                              borderRadius: "6px",
+                              backgroundColor: "transparent",
+                              color: "#DC2626",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              textAlign: "left",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                          >
+                            <span>🗑️</span>
+                            <span>Delete Account</span>
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -698,7 +909,7 @@ export default function MembersPage() {
         </div>
       </div>
 
-      {/* Edit Member Modal */}
+      {/* Edit Member Modal (With Editable Email!) */}
       {editUser && (
         <div
           style={{
@@ -720,7 +931,7 @@ export default function MembersPage() {
               borderRadius: "16px",
               padding: "32px",
               width: "100%",
-              maxWidth: "500px",
+              maxWidth: "520px",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
             }}
           >
@@ -730,7 +941,8 @@ export default function MembersPage() {
                 fontWeight: 800,
                 fontSize: "20px",
                 color: "#141C6E",
-                margin: "0 0 6px",
+                marginTop: 0,
+                marginBottom: "8px",
               }}
             >
               Edit Member Details
@@ -738,117 +950,158 @@ export default function MembersPage() {
             <p
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "13px",
                 color: "#4A5490",
-                margin: "0 0 24px",
+                marginTop: 0,
+                marginBottom: "24px",
               }}
             >
-              Update role, church unit, contact, and spiritual tier
+              Modify personal details, email address, role, and department.
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdate();
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name *</label>
                 <input
                   type="text"
-                  value={editUser.displayName || ""}
+                  required
+                  value={editUser.displayName}
                   onChange={(e) => setEditUser({ ...editUser, displayName: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                 />
               </div>
 
+              {/* Editable Email Field */}
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone Number</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Email Address (Required for Sign In) *</label>
                 <input
-                  type="text"
-                  value={editUser.phone || ""}
-                  onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  type="email"
+                  required
+                  value={editUser.email || ""}
+                  onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Portal Role</label>
-                <select
-                  value={editUser.role}
-                  onChange={(e) => setEditUser({ ...editUser, role: e.target.value as UserRole })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
-                >
-                  {ROLE_OPTIONS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone Number</label>
+                  <input
+                    type="text"
+                    value={editUser.phone || ""}
+                    onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Campus</label>
+                  <select
+                    value={editUser.campus || "jos"}
+                    onChange={(e) => setEditUser({ ...editUser, campus: e.target.value as any })}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                  >
+                    <option value="jos">Jos Headquarters</option>
+                    <option value="abuja">Abuja Campus</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Portal Role</label>
+                  <select
+                    value={editUser.role}
+                    onChange={(e) => setEditUser({ ...editUser, role: e.target.value as UserRole })}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                  >
+                    {ROLE_OPTIONS.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Activity Tier</label>
+                  <select
+                    value={editUser.activityTier}
+                    onChange={(e) => setEditUser({ ...editUser, activityTier: e.target.value as ActivityTier })}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                  >
+                    {TIER_OPTIONS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Church Unit</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Church Unit</label>
                 <select
                   value={editUser.assignedUnitId || ""}
                   onChange={(e) => setEditUser({ ...editUser, assignedUnitId: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                 >
-                  <option value="">None / General Congregation</option>
+                  <option value="">No Unit Assigned</option>
                   {UNITS.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Activity Tier</label>
-                <select
-                  value={editUser.activityTier}
-                  onChange={(e) => setEditUser({ ...editUser, activityTier: e.target.value as ActivityTier })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    backgroundColor: "#1F46C8",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                  }}
                 >
-                  {TIER_OPTIONS.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
+                  {submitting ? "Saving Updates..." : "Save Member Details"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditUser(null)}
+                  style={{
+                    padding: "12px 20px",
+                    backgroundColor: "#F4F6FB",
+                    color: "#141C6E",
+                    border: "1px solid #D5DCF2",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "12.5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "12px", marginTop: "28px" }}>
-              <button
-                onClick={handleUpdate}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: "#1F46C8",
-                  color: "#FFFFFF",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  cursor: "pointer",
-                }}
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setEditUser(null)}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #D5DCF2",
-                  color: "#4A5490",
-                  borderRadius: "10px",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Add Member Modal (Figma 311:3909) */}
+      {/* Add New Member Modal */}
       {showAddModal && (
         <div
           style={{
@@ -880,133 +1133,161 @@ export default function MembersPage() {
                 fontWeight: 800,
                 fontSize: "20px",
                 color: "#141C6E",
-                margin: "0 0 6px",
+                marginTop: 0,
+                marginBottom: "8px",
               }}
             >
-              Add New Member
+              Enroll New Church Member
             </h2>
             <p
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "13px",
                 color: "#4A5490",
-                margin: "0 0 24px",
+                marginTop: 0,
+                marginBottom: "24px",
               }}
             >
-              Enroll a church member into the portal database
+              Add a new believer to the directory and optionally generate their portal credentials.
             </p>
 
             <form onSubmit={handleAddMember} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name *</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. John Doe"
+                  placeholder="e.g. Samuel Adekunle"
                   value={addForm.displayName}
                   onChange={(e) => setAddForm({ ...addForm, displayName: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Email *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="john@example.com"
-                    value={addForm.email}
-                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Email Address</label>
+                <input
+                  type="email"
+                  placeholder="e.g. samuel@gmail.com"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
 
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone Number</label>
                   <input
                     type="text"
                     placeholder="+234 800 000 0000"
                     value={addForm.phone}
                     onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                   />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Campus</label>
+                  <select
+                    value={addForm.campus}
+                    onChange={(e) => setAddForm({ ...addForm, campus: e.target.value as any })}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                  >
+                    <option value="jos">Jos Headquarters</option>
+                    <option value="abuja">Abuja Campus</option>
+                  </select>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Role</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Portal Role</label>
                   <select
                     value={addForm.role}
                     onChange={(e) => setAddForm({ ...addForm, role: e.target.value as UserRole })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                   >
                     {ROLE_OPTIONS.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Activity Tier</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Activity Tier</label>
                   <select
                     value={addForm.activityTier}
                     onChange={(e) => setAddForm({ ...addForm, activityTier: e.target.value as ActivityTier })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                   >
                     {TIER_OPTIONS.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Assign to Church Unit</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Church Unit</label>
                 <select
                   value={addForm.assignedUnitId}
                   onChange={(e) => setAddForm({ ...addForm, assignedUnitId: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
                 >
-                  <option value="">None / General Congregation</option>
+                  <option value="">No Unit Assigned</option>
                   {UNITS.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
+              {addForm.email && (
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#141C6E", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={addForm.createAuthImmediately}
+                    onChange={(e) => setAddForm({ ...addForm, createAuthImmediately: e.target.checked })}
+                  />
+                  Create portal login account and generate temporary password immediately
+                </label>
+              )}
+
+              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
                 <button
                   type="submit"
+                  disabled={submitting}
                   style={{
                     flex: 1,
                     padding: "12px",
                     backgroundColor: "#1F46C8",
                     color: "#FFFFFF",
                     border: "none",
-                    borderRadius: "10px",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontWeight: 600,
+                    borderRadius: "8px",
+                    fontWeight: 700,
                     fontSize: "13px",
-                    cursor: "pointer",
+                    cursor: submitting ? "not-allowed" : "pointer",
                   }}
                 >
-                  Create Member
+                  {submitting ? "Enrolling..." : "Enroll Member"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   style={{
-                    flex: 1,
-                    padding: "12px",
-                    backgroundColor: "#FFFFFF",
+                    padding: "12px 20px",
+                    backgroundColor: "#F4F6FB",
+                    color: "#141C6E",
                     border: "1px solid #D5DCF2",
-                    color: "#4A5490",
-                    borderRadius: "10px",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    borderRadius: "8px",
                     fontWeight: 600,
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -1014,6 +1295,258 @@ export default function MembersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Account Invitation & Temp Password Modal */}
+      {invitationModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(14, 21, 86, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 110,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D5DCF2",
+              borderRadius: "16px",
+              padding: "36px",
+              width: "100%",
+              maxWidth: "600px",
+              boxShadow: "0 20px 40px rgba(14, 21, 86, 0.25)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <div style={{ fontSize: "36px", marginBottom: "8px" }}>🎉</div>
+              <h2
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 800,
+                  fontSize: "20px",
+                  color: "#141C6E",
+                  margin: "0 0 6px",
+                }}
+              >
+                Portal Account Created!
+              </h2>
+              <p
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "13px",
+                  color: "#4A5490",
+                  margin: 0,
+                }}
+              >
+                Account generated for <strong>{invitationModal.user.displayName}</strong> ({invitationModal.user.email}).
+              </p>
+            </div>
+
+            {/* Credentials Card */}
+            <div
+              style={{
+                backgroundColor: "#F4F6FB",
+                border: "1px solid #D5DCF2",
+                borderRadius: "10px",
+                padding: "20px",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#747CA1", textTransform: "uppercase", marginBottom: "8px" }}>
+                Temporary Login Credentials
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "13px", color: "#4A5490" }}>Sign-In Email:</span>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#141C6E" }}>{invitationModal.user.email}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "13px", color: "#4A5490" }}>Temporary Password:</span>
+                <span style={{ fontSize: "16px", fontWeight: 800, color: "#0140C1", fontFamily: "monospace", backgroundColor: "#FFFFFF", padding: "4px 10px", borderRadius: "6px", border: "1px dashed #2090FF" }}>
+                  {invitationModal.tempPassword}
+                </span>
+              </div>
+            </div>
+
+            {/* Warning Note */}
+            <div
+              style={{
+                backgroundColor: "#FEF3C7",
+                borderLeft: "4px solid #D97706",
+                padding: "12px 16px",
+                borderRadius: "4px",
+                marginBottom: "24px",
+                fontSize: "12.5px",
+                color: "#92400E",
+                lineHeight: "1.5",
+              }}
+            >
+              ⚠️ <strong>Security Requirement:</strong> The user will be automatically prompted to change this temporary password immediately upon their first sign-in.
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `Welcome to The Publishers House Portal!\nEmail: ${invitationModal.user.email}\nTemporary Password: ${invitationModal.tempPassword}\nSign in: https://thepublishershouse.org/portal/login\n(You will be required to change your password on first login).`
+                  );
+                  alert("✓ Credentials copied to clipboard!");
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#1F46C8",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontWeight: 700,
+                  fontSize: "12.5px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                📋 Copy Credentials & Login Link
+              </button>
+
+              <button
+                onClick={() => setInvitationModal(null)}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: "#F4F6FB",
+                  color: "#141C6E",
+                  border: "1px solid #D5DCF2",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "12.5px",
+                  cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unit Assignment Modal */}
+      {unitAssignUser && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backdropFilter: "blur(4px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D5DCF2",
+              borderRadius: "16px",
+              padding: "32px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontWeight: 800,
+                fontSize: "18px",
+                color: "#141C6E",
+                margin: "0 0 8px",
+              }}
+            >
+              Assign Church Unit
+            </h2>
+            <p
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13px",
+                color: "#4A5490",
+                margin: "0 0 20px",
+              }}
+            >
+              Select the ministry department for <strong>{unitAssignUser.displayName}</strong>.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "300px", overflowY: "auto", marginBottom: "20px" }}>
+              <button
+                onClick={() => handleSaveUnitAssignment("")}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #D5DCF2",
+                  backgroundColor: !unitAssignUser.assignedUnitId ? "#EEF2FB" : "#FFFFFF",
+                  color: "#141C6E",
+                  fontWeight: 600,
+                  fontSize: "12.5px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                🚫 Remove from all units (Unassigned)
+              </button>
+              {UNITS.map((u) => {
+                const selected = unitAssignUser.assignedUnitId === u.id;
+                return (
+                  <button
+                    key={u.id}
+                    onClick={() => handleSaveUnitAssignment(u.id)}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      border: selected ? "2px solid #1F46C8" : "1px solid #D5DCF2",
+                      backgroundColor: selected ? "#EEF2FB" : "#FFFFFF",
+                      color: selected ? "#1F46C8" : "#141C6E",
+                      fontWeight: selected ? 700 : 500,
+                      fontSize: "12.5px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span>{u.name}</span>
+                    {selected && <span>✓ Active</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setUnitAssignUser(null)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                backgroundColor: "#F4F6FB",
+                color: "#141C6E",
+                border: "1px solid #D5DCF2",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

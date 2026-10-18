@@ -101,6 +101,10 @@ export default function SermonsEditor() {
   const [msg, setMsg] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [ytPasteUrl, setYtPasteUrl] = useState("");
+  const [ytFetching, setYtFetching] = useState(false);
+  const [ytMsg, setYtMsg] = useState("");
+
 
   // Search, Filter & Pagination controls
   const [search, setSearch] = useState("");
@@ -151,8 +155,44 @@ export default function SermonsEditor() {
     }
   };
 
+  // ── YouTube Quick-Paste Auto-fill ──────────────────────────────────────
+  const handleYtAutoFill = async () => {
+    const url = ytPasteUrl.trim();
+    if (!url) return;
+    setYtFetching(true);
+    setYtMsg("");
+    try {
+      const match = url.match(/(?:v=|youtu\.be\/|\/embed\/)([A-Za-z0-9_-]{11})/);
+      const videoId = match?.[1];
+      if (!videoId) throw new Error("Could not extract YouTube video ID from URL");
+
+      const res = await fetch(`/api/sync-sermons/yt-meta?videoId=${videoId}`);
+      if (!res.ok) throw new Error("YouTube metadata fetch failed");
+      const meta = await res.json();
+
+      setForm((prev: any) => ({
+        ...prev,
+        title: meta.title || prev.title,
+        coverImageUrl: meta.thumbnailUrl || prev.coverImageUrl,
+        duration: meta.duration || prev.duration,
+        date: meta.publishedAt ? meta.publishedAt.split("T")[0] : prev.date,
+        summary: (!isGenericOverview(meta.description) && meta.description)
+          ? meta.description.slice(0, 800)
+          : prev.summary,
+        videoUrl: url,
+      }));
+      setYtMsg("✓ Auto-filled from YouTube");
+      setYtPasteUrl("");
+    } catch (e: any) {
+      setYtMsg("Error: " + e.message);
+    }
+    setYtFetching(false);
+    setTimeout(() => setYtMsg(""), 5000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setLoading(true);
     try {
       const data = {
@@ -388,10 +428,45 @@ export default function SermonsEditor() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+          {/* ── YouTube Quick-Paste Auto-fill ─────────────────────────────── */}
+          {!editingId && (
+            <div style={{ padding: "16px 20px", backgroundColor: "#F0F7FF", border: "1px solid #B8D4F8", borderRadius: "6px" }}>
+              <label style={{ ...S.label, color: S.Blue700, marginBottom: "10px" }}>⚡ YouTube Quick-Paste Auto-fill</label>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate600, margin: "0 0 10px", lineHeight: "1.5em" }}>
+                Paste a YouTube video URL below and click <strong>Auto-fill</strong> — the title, thumbnail, date, duration, and video URL will be imported automatically.
+              </p>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <input
+                  type="url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={ytPasteUrl}
+                  onChange={e => setYtPasteUrl(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleYtAutoFill())}
+                  style={{ ...S.input, flex: 1, border: "1px solid #B8D4F8", backgroundColor: "#FFFFFF" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleYtAutoFill}
+                  disabled={ytFetching || !ytPasteUrl.trim()}
+                  style={{ ...S.btn(S.Blue700, S.White), opacity: (ytFetching || !ytPasteUrl.trim()) ? 0.6 : 1, whiteSpace: "nowrap" }}
+                >
+                  {ytFetching ? "Fetching..." : "Auto-fill →"}
+                </button>
+              </div>
+              {ytMsg && (
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: ytMsg.startsWith("✓") ? S.Green : S.Red, margin: "8px 0 0", fontWeight: 600 }}>
+                  {ytMsg}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Row 1: Title & Speaker */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
             <div>
               <label style={S.label}>Sermon Title *</label>
+
               <input
                 type="text"
                 placeholder="e.g. THE RAIN OF WORDS"

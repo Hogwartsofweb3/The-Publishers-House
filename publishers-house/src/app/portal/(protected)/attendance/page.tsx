@@ -70,6 +70,11 @@ export default function AttendanceAdminPage() {
   const [headcountLoading, setHeadcountLoading] = useState(false);
   const [headcountMsg, setHeadcountMsg] = useState("");
 
+  // Move Attendee to Member State
+  const [enrollAttendee, setEnrollAttendee] = useState<{ fullName: string; phone: string; email: string } | null>(null);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [createAccountImmediately, setCreateAccountImmediately] = useState(true);
+
   // Fetch Stream Code Settings
   const fetchStreamSettings = async () => {
     try {
@@ -107,18 +112,33 @@ export default function AttendanceAdminPage() {
       setRecords(items);
       setFilteredRecords(items);
 
-      const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
-      if (hcSnap.exists()) {
-        setHeadcount(hcSnap.data() as HeadcountRecord);
-      } else {
-        setHeadcount({
-          date: selectedDate,
-          men: 0,
-          women: 0,
-          children: 0,
-          total: 0,
-          notes: "",
-        });
+      try {
+        const hcRes = await fetch(`/api/portal/headcount?date=${selectedDate}`);
+        if (hcRes.ok) {
+          const hcJson = await hcRes.json();
+          if (hcJson.exists && hcJson.data) {
+            setHeadcount(hcJson.data as HeadcountRecord);
+          } else {
+            setHeadcount({
+              date: selectedDate,
+              men: 0,
+              women: 0,
+              children: 0,
+              total: 0,
+              notes: "",
+            });
+          }
+        } else {
+          const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
+          if (hcSnap.exists()) {
+            setHeadcount(hcSnap.data() as HeadcountRecord);
+          }
+        }
+      } catch {
+        const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
+        if (hcSnap.exists()) {
+          setHeadcount(hcSnap.data() as HeadcountRecord);
+        }
       }
     } catch (err) {
       console.error("Error fetching attendance records:", err);
@@ -222,7 +242,17 @@ export default function AttendanceAdminPage() {
         updatedAt: new Date().toISOString(),
       };
 
-      await setDoc(doc(db, "attendance_headcounts", selectedDate), toSave);
+      const res = await fetch("/api/portal/headcount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toSave),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Server failed to save headcount");
+      }
+
       setHeadcount(toSave);
       setHeadcountMsg("Official usher headcount saved ✓");
       setTimeout(() => setHeadcountMsg(""), 3500);
@@ -772,19 +802,20 @@ export default function AttendanceAdminPage() {
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Location / Channel</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Type</th>
                 <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Time</th>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", textAlign: "right" }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     Loading attendance records...
                   </td>
                 </tr>
               )}
               {!loading && filteredRecords.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     No check-ins recorded for {selectedDate}.
                   </td>
                 </tr>
@@ -880,6 +911,27 @@ export default function AttendanceAdminPage() {
                     >
                       {timeStr}
                     </td>
+
+                    {/* Action: Add to Members */}
+                    <td style={{ padding: "14px 24px", textAlign: "right" }}>
+                      <button
+                        onClick={() => setEnrollAttendee({ fullName: r.fullName, phone: r.phone || "", email: "" })}
+                        style={{
+                          backgroundColor: "#EEF2FB",
+                          color: "#1F46C8",
+                          border: "1px solid #C4D3FA",
+                          borderRadius: "6px",
+                          padding: "6px 12px",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        + Add Member
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -887,6 +939,167 @@ export default function AttendanceAdminPage() {
           </table>
         </div>
       </div>
+
+      {/* Enroll Attendee as Member Modal */}
+      {enrollAttendee && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(14, 21, 86, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              padding: "32px",
+              maxWidth: "500px",
+              width: "100%",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
+              border: "1px solid #D5DCF2",
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "18px",
+                fontWeight: 800,
+                color: "#141C6E",
+                margin: "0 0 8px",
+              }}
+            >
+              Move Attendee to Church Membership
+            </h2>
+            <p
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "12.5px",
+                color: "#4A5490",
+                margin: "0 0 20px",
+              }}
+            >
+              Enroll <strong>{enrollAttendee.fullName}</strong> into the church member directory and optionally generate their portal access credentials.
+            </p>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setEnrollLoading(true);
+                try {
+                  const res = await fetch("/api/portal/members", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "add_member",
+                      displayName: enrollAttendee.fullName,
+                      phone: enrollAttendee.phone,
+                      email: enrollAttendee.email,
+                      role: "member",
+                      activityTier: "active",
+                      campus: "jos",
+                      createAuthImmediately: Boolean(enrollAttendee.email && createAccountImmediately),
+                    }),
+                  });
+                  const json = await res.json();
+                  if (!res.ok) throw new Error(json.error || "Failed to enroll member");
+
+                  alert(`✓ ${enrollAttendee.fullName} has been successfully added to church membership!` + (json.tempPassword ? `\nTemporary password: ${json.tempPassword}` : ""));
+                  setEnrollAttendee(null);
+                } catch (err: any) {
+                  alert("Error: " + err.message);
+                } finally {
+                  setEnrollLoading(false);
+                }
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={enrollAttendee.fullName}
+                  onChange={(e) => setEnrollAttendee({ ...enrollAttendee, fullName: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>Phone Number</label>
+                <input
+                  type="text"
+                  value={enrollAttendee.phone}
+                  onChange={(e) => setEnrollAttendee({ ...enrollAttendee, phone: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>Email Address (Required for Portal Login)</label>
+                <input
+                  type="email"
+                  value={enrollAttendee.email}
+                  placeholder="e.g. member@gmail.com"
+                  onChange={(e) => setEnrollAttendee({ ...enrollAttendee, email: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#141C6E", cursor: "pointer", marginTop: "4px" }}>
+                <input
+                  type="checkbox"
+                  checked={createAccountImmediately}
+                  onChange={(e) => setCreateAccountImmediately(e.target.checked)}
+                />
+                Generate portal login account & temporary password immediately
+              </label>
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                <button
+                  type="submit"
+                  disabled={enrollLoading}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    backgroundColor: "#1F46C8",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "12.5px",
+                    cursor: enrollLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {enrollLoading ? "Enrolling..." : "Confirm & Add to Membership"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnrollAttendee(null)}
+                  style={{
+                    padding: "10px 16px",
+                    backgroundColor: "#F4F6FB",
+                    color: "#141C6E",
+                    border: "1px solid #D5DCF2",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

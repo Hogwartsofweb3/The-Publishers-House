@@ -99,7 +99,9 @@ const hardcodedLeadership = [
 ];
 
 import { getLeadership } from "@/lib/firebase";
-export const revalidate = 3600; // Cache on edge CDN for 1 hour for fast ~20ms TTFB
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { DEFAULT_ABOUT_DATA } from "@/app/api/cms/about/route";
+export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function AboutPage() {
   // Safe fetch with 1.5s timeout so cold starts never hang TTFB
@@ -107,6 +109,16 @@ export default async function AboutPage() {
     getLeadership(),
     new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 1500))
   ]).catch(() => []);
+
+  let aboutData = DEFAULT_ABOUT_DATA;
+  try {
+    const docSnap = await getAdminDb().collection("settings").doc("church_about").get();
+    if (docSnap.exists) {
+      aboutData = { ...DEFAULT_ABOUT_DATA, ...(docSnap.data() as any) };
+    }
+  } catch (err) {
+    // Fall back to default
+  }
 
   const leadership = cmsLeaders.length > 0 
     ? cmsLeaders.map((l) => ({
@@ -150,16 +162,17 @@ export default async function AboutPage() {
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
+            <span style={{ ...S.eyebrow, color: "#2090FF" }}>{aboutData.heroEyebrow || "Psalm 68:11 · Company of the Great"}</span>
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
-              About the Publishers House
+              {aboutData.heroHeadline || "About the Publishers House"}
             </h1>
             <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
-              An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God&apos;s Word to every sphere of society.
+              {aboutData.heroLede || "An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God's Word to every sphere of society."}
             </p>
           </div>
         </section>
 
-        {/* STORY */}
+        {/* STORY & MANDATE */}
         <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
             style={{
@@ -177,21 +190,63 @@ export default async function AboutPage() {
                 <p style={{ ...S.readSmall, color: "#4A62A0" }}>
                   Established 2020 · Jos, Plateau State · Other branches all over Nigeria
                 </p>
+                {aboutData.vision && (
+                  <div style={{ marginTop: "16px", padding: "16px", background: "#FFFFFF", borderRadius: "4px", border: "1px solid #C4CEE5" }}>
+                    <span style={{ ...S.eyebrow, color: "#0140C1", display: "block", marginBottom: "6px" }}>Our Vision</span>
+                    <p style={{ ...S.readSmall, color: "#151A54", fontSize: "13px", margin: 0 }}>{aboutData.vision}</p>
+                  </div>
+                )}
+                {aboutData.mission && (
+                  <div style={{ marginTop: "8px", padding: "16px", background: "#FFFFFF", borderRadius: "4px", border: "1px solid #C4CEE5" }}>
+                    <span style={{ ...S.eyebrow, color: "#0140C1", display: "block", marginBottom: "6px" }}>Our Mission</span>
+                    <p style={{ ...S.readSmall, color: "#151A54", fontSize: "13px", margin: 0 }}>{aboutData.mission}</p>
+                  </div>
+                )}
               </div>
               {/* Body text */}
               <div style={{ flex: 1 }}>
-                <p style={{ ...S.readBody, color: "#151A54" }}>
-                  The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.
-                  <br /><br />
-                  The ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.
-                  <br /><br />
-                  Inspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God&apos;s message, declaring His truth with conviction, excellence and global impact.
-                  <br /><br />
-                  From Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.
-                  <br /><br />
-                  We are given to much prayer, immersed in the word of God and passionate searchers of God&apos;s presence.
+                <p style={{ ...S.readBody, color: "#151A54", whiteSpace: "pre-line" }}>
+                  {aboutData.history || `The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.\n\nThe ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.\n\nInspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God's message, declaring His truth with conviction, excellence and global impact.\n\nFrom Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.\n\nWe are given to much prayer, immersed in the word of God and passionate searchers of God's presence.`}
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TENETS OF FAITH (BELIEFS) */}
+        <section className="tph-section" style={{ background: "#FFFFFF" }}>
+          <div className="tph-inner" style={{ display: "flex", flexDirection: "column", gap: "36px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Our Tenets of Faith</span>
+              <h2 style={{ ...S.displayL, color: "#151A54" }}>What we believe</h2>
+            </div>
+            <div className="tph-grid-3">
+              {aboutData.beliefs?.map((belief: any, idx: number) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: "#F4F6FB",
+                    border: "1px solid #D3DAEC",
+                    borderRadius: "6px",
+                    padding: "28px 24px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "14px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ ...S.displayS, color: "#151A54", fontSize: "17px" }}>{belief.title}</span>
+                    {belief.scripture && (
+                      <span style={{ ...S.scripture, color: "#0140C1", background: "#E8ECF7", padding: "3px 8px", borderRadius: "3px", fontSize: "10px" }}>
+                        {belief.scripture}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ ...S.readSmall, color: "#4A62A0", margin: 0, lineHeight: "1.6em" }}>
+                    {belief.body}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

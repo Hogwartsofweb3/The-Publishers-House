@@ -3,8 +3,9 @@ import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
-export type UserRole = "admin" | "unit_head" | "member";
+export type UserRole = "super_admin" | "admin" | "portal_manager" | "unit_head" | "member";
 export type ActivityTier = "seeker" | "regular" | "active" | "leader";
+export type Campus = "jos" | "abuja";
 
 export interface PortalUser {
   uid: string;
@@ -14,6 +15,10 @@ export interface PortalUser {
   role: UserRole;
   assignedUnitId?: string;
   activityTier: ActivityTier;
+  campus?: Campus;
+  mustChangePassword?: boolean;
+  tempPassword?: string;
+  hasAccount?: boolean;
   createdAt: string;
   lastLogin: string;
   photoURL?: string;
@@ -85,17 +90,23 @@ export async function createOrUpdatePortalUser(user: User, role: UserRole = "mem
 
 export function getRoleLabel(role: UserRole): string {
   switch (role) {
+    case "super_admin": return "Super Admin";
     case "admin": return "Administrator";
+    case "portal_manager": return "Portal Manager";
     case "unit_head": return "Unit Head";
     case "member": return "Member";
+    default: return "Member";
   }
 }
 
 export function getRoleColor(role: UserRole): string {
   switch (role) {
+    case "super_admin": return "#E11D48";
     case "admin": return "#D97706";
+    case "portal_manager": return "#7C3AED";
     case "unit_head": return "#2090FF";
     case "member": return "#10B981";
+    default: return "#64748B";
   }
 }
 

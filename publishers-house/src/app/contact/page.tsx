@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 // Shared style constants (Figma Design Tokens)
 const S = {
@@ -39,7 +40,30 @@ const S = {
   Button: { height: "48px", padding: "0 26px", borderRadius: "2px", display: "inline-flex", alignItems: "center", justifyContent: "center" },
 };
 
-export default function ContactPage() {
+const DEFAULT_CONTACT = {
+  josAddress: "The House of Bread, Korinjoh House, British, Jos, Plateau State",
+  josMapUrl: "https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria",
+  josPhone: "+234 816 797 6888",
+  josWhatsapp: "https://wa.link/xr46nk",
+  josEmail: "thepublishershouse1@gmail.com",
+  servicesSunday: "Sunday 9:00 AM WAT",
+  servicesThursday: "Thursday 5:00 PM WAT",
+  abujaInfo: "Abuja Apostolic Camp, monthly. Venue to be supplied.",
+};
+
+async function getContactData() {
+  try {
+    const doc = await getAdminDb().collection("settings").doc("church_contact").get();
+    if (!doc.exists) return DEFAULT_CONTACT;
+    return { ...DEFAULT_CONTACT, ...doc.data() };
+  } catch {
+    return DEFAULT_CONTACT;
+  }
+}
+
+export default async function ContactPage() {
+  const contact = await getContactData();
+
   return (
     <div style={{ backgroundColor: S.Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Navbar />
@@ -97,45 +121,45 @@ export default function ContactPage() {
               {/* WhatsApp */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>WhatsApp</div>
-                <a href="https://api.whatsapp.com/send?phone=2348167976888&text=Hi%2C%20I%20want%20to%20reach%20the%20WhatsApp%20representative%20of%20The%20Publishers%20House." target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-word" }}>wa.link/xr46nk</a>
+                <a href={contact.josWhatsapp} target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-word" }}>wa.link/xr46nk</a>
               </div>
               
               {/* Phone */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Phone</div>
-                <a href="tel:+2348167976888" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "none" }}>+234 816 797 6888</a>
+                <a href={`tel:${contact.josPhone.replace(/\s/g, "")}`} style={{ ...S.ReadBody, color: S.Navy, textDecoration: "none" }}>{contact.josPhone}</a>
               </div>
 
               {/* Email */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Email</div>
-                <a href="mailto:thepublishershouse1@gmail.com" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-all" }}>thepublishershouse1@gmail.com</a>
+                <a href={`mailto:${contact.josEmail}`} style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-all" }}>{contact.josEmail}</a>
               </div>
 
               {/* Address */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Address</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>The House of Bread, Korinjoh House, British, Jos, Plateau State</div>
+                <div style={{ ...S.ReadBody, color: S.Navy }}>{contact.josAddress}</div>
               </div>
 
               {/* Services */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Services</div>
                 <div style={{ ...S.ReadBody, color: S.Navy }}>
-                  Sunday 9:00 AM WAT<br />
-                  Thursday 5:00 PM WAT
+                  {contact.servicesSunday}<br />
+                  {contact.servicesThursday}
                 </div>
               </div>
 
               {/* Abuja */}
               <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Abuja</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>Abuja Apostolic Camp, monthly. Venue to be supplied.</div>
+                <div style={{ ...S.ReadBody, color: S.Navy }}>{contact.abujaInfo}</div>
               </div>
             </div>
 
             <a
-              href="https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria"
+              href={contact.josMapUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -155,7 +179,7 @@ export default function ContactPage() {
 
             {/* Static Map — clicking opens Google Maps */}
             <a
-              href="https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria"
+              href={contact.josMapUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "block", marginTop: "16px", borderRadius: "4px", overflow: "hidden", border: `1px solid ${S.Paper300}` }}
@@ -274,7 +298,7 @@ export default function ContactPage() {
             </button>
             <div style={{ ...S.ReadSmall, color: S.Slate500, marginTop: "8px", textAlign: "center", fontSize: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
               <span>We reply within two working days.</span>
-              <span>NB: Your message can be a prayer request, a testimony, an enquiry.<br/>You're free to share anything at all.</span>
+              <span>NB: Your message can be a prayer request, a testimony, an enquiry.<br/>You&apos;re free to share anything at all.</span>
             </div>
           </div>
           </div>

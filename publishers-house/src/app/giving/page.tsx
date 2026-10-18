@@ -99,17 +99,42 @@ export default function GivingPage() {
   const [loggingCrypto, setLoggingCrypto] = useState(false);
   const [cryptoLoggedMsg, setCryptoLoggedMsg] = useState("");
 
-  const categories = ["Tithe", "Offering", "Special Projects", "Thanksgiving"];
+  // Dynamic CMS Giving Data
+  const [liveSterling, setLiveSterling] = useState(sterlingAccounts);
+  const [liveGtb, setLiveGtb] = useState(gtbAccounts);
+  const [liveEvm, setLiveEvm] = useState(CHURCH_EVM_ADDRESS);
+  const [liveSol, setLiveSol] = useState(CHURCH_SOL_ADDRESS);
+  const [liveSui, setLiveSui] = useState(CHURCH_SUI_ADDRESS);
+  const [categories, setCategories] = useState(["Tithe", "Offering", "Special Projects", "Thanksgiving"]);
+  const [accountName, setAccountName] = useState("THE PUBLISHERS HOUSE MINISTRY");
+
+  useEffect(() => {
+    fetch("/api/cms/giving")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data) {
+          if (data.sterlingAccounts?.length) setLiveSterling(data.sterlingAccounts);
+          if (data.gtbAccounts?.length) setLiveGtb(data.gtbAccounts);
+          if (data.evmAddress) setLiveEvm(data.evmAddress);
+          if (data.solAddress) setLiveSol(data.solAddress);
+          if (data.suiAddress) setLiveSui(data.suiAddress);
+          if (data.categories?.length) setCategories(data.categories);
+          if (data.accountName) setAccountName(data.accountName);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const amounts = [5000, 10000, 25000];
 
   const displayAmount = amount === "other" ? (Number(otherAmount) || 0) : amount;
 
   const currentCryptoAddress =
     cryptoNetwork === "SOL"
-      ? CHURCH_SOL_ADDRESS
+      ? liveSol
       : cryptoNetwork === "SUI"
-      ? CHURCH_SUI_ADDRESS
-      : CHURCH_EVM_ADDRESS;
+      ? liveSui
+      : liveEvm;
 
   const currentCryptoLabel =
     cryptoNetwork === "SOL"
@@ -595,15 +620,15 @@ export default function GivingPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <p style={{ ...S.readSmall, color: "#4A62A0", margin: 0, textTransform: "uppercase" }}>
                     Guaranty Trust Bank<br />
-                    Name: THE PUBLISHERS HOUSE MINISTRY<br />
+                    Name: {accountName}<br />
                     Sort Code: 058-203312<br />
                     Swift Code: GTBINGLA<br />
                     Bank Address: Jos 1-Jengre Road
                   </p>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  {gtbAccounts.map((acc) => (
-                    <CopyableAccount key={acc.currency} currency={acc.currency} number={acc.number} />
+                  {liveGtb.map((acc) => (
+                    <CopyableAccount key={acc.currency + acc.number} currency={acc.currency} number={acc.number} />
                   ))}
                 </div>
               </div>
@@ -612,8 +637,8 @@ export default function GivingPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
                 <p style={{ ...S.readSmall, color: "#4A62A0", margin: 0, textTransform: "uppercase" }}>Sterling Bank</p>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  {sterlingAccounts.map((acc) => (
-                    <CopyableAccount key={acc.currency} currency={acc.currency} number={acc.number} />
+                  {liveSterling.map((acc) => (
+                    <CopyableAccount key={acc.currency + acc.number} currency={acc.currency} number={acc.number} />
                   ))}
                 </div>
               </div>

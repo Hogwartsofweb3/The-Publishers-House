@@ -10,6 +10,13 @@ const modules = [
   { name: "Programs", path: "/cms/programs", description: "Manage recurring church programs (FOL, Services, etc.).", icon: "🏛️" },
   { name: "Leadership", path: "/cms/leadership", description: "Update pastoral and leadership profiles.", icon: "👤" },
   { name: "Transactions", path: "/cms/transactions", description: "View financial donations (Crypto and Fiat).", icon: "💳" },
+  { name: "Announcement Bar", path: "/cms/announcements", description: "Toggle the global pinned banner across every page.", icon: "📢" },
+  { name: "Contact & Campuses", path: "/cms/contact", description: "Edit addresses, service times, prayer hotlines, socials.", icon: "📞" },
+  { name: "About Page", path: "/cms/about", description: "Edit vision, mission, history, and tenets of faith.", icon: "✝️" },
+  { name: "Giving & Banking", path: "/cms/giving", description: "Manage bank accounts and crypto donation addresses.", icon: "💰" },
+  { name: "SEO & Social Share", path: "/cms/seo", description: "Control what appears when church links are shared.", icon: "🔍" },
+  { name: "Media Library", path: "/cms/media", description: "Upload and manage banners, flyers, and photos.", icon: "🖼️" },
+  { name: "Resources", path: "/cms/resources", description: "Manage study tracks and downloadable materials.", icon: "📚" },
 ];
 
 export default function CMSDashboard() {
@@ -32,7 +39,7 @@ export default function CMSDashboard() {
       <div style={{ marginTop: "48px", padding: "24px", backgroundColor: "#E8ECF7", borderRadius: "8px" }}>
         <h3 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "16px", color: "#151A54", marginBottom: "8px" }}>Welcome to the Content Manager</h3>
         <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14px", color: "#4A62A0", margin: 0 }}>
-          This CMS is actively being built in Phase 4. Soon you will be able to click on these modules to add, edit, and publish content directly to The Publishers House website!
+          The CMS is live. Use the modules above to manage every part of The Publishers House website.
         </p>
       </div>
     </div>

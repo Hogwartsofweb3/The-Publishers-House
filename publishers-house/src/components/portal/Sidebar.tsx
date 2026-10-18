@@ -44,11 +44,40 @@ interface SidebarProps {
   user: PortalUser;
 }
 
+import { usePortal } from "@/lib/portalContext";
+
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const navItems = user.role === "admin" ? adminNav : user.role === "unit_head" ? unitNav : memberNav;
+  let activeRole = user.role;
+  let activeUser = user;
+  try {
+    const ctx = usePortal();
+    if (ctx.effectiveUser) {
+      activeRole = ctx.effectiveUser.role;
+      activeUser = ctx.effectiveUser;
+    }
+  } catch {}
+
+  const isSuperOrAdmin = activeRole === "super_admin" || activeRole === "admin";
+  const isManager = activeRole === "portal_manager";
+  const navItems = isSuperOrAdmin
+    ? adminNav
+    : isManager
+    ? [
+        { href: "/portal", label: "Dashboard", icon: "◈" },
+        { href: "/portal/members", label: "Members", icon: "◉" },
+        { href: "/portal/attendance", label: "Attendance", icon: "✦" },
+        { href: "/portal/events", label: "Events", icon: "▦" },
+        { href: "/portal/courses", label: "Courses", icon: "📖" },
+        { href: "/portal/facility", label: "Facility", icon: "🏛️" },
+        { href: "/portal/audit", label: "Audit Log", icon: "📋" },
+        { href: "/portal/settings", label: "Settings", icon: "⚙️" },
+      ]
+    : activeRole === "unit_head"
+    ? unitNav
+    : memberNav;
 
   const handleSignOut = async () => {
     await clearSession();

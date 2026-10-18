@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Figma: EL-e6d41dfd — Navbar: row, padding 16px 100px, space-between, navy bg (#151A54), bottom border 1px #6496EF
-// Nav links: UI/Label — Poppins SemiBold 11px, 0.16em tracking, UPPERCASE, white
+export const RESOURCE_SUBPAGES = [
+  { slug: "how-to-preach-the-gospel", label: "How to Preach the Gospel" },
+  { slug: "basic-prayer-classes", label: "Basic Prayer Classes" },
+  { slug: "40-days-prayer-and-fasting", label: "40 DAYS PRAYER & FASTING: DEVOTIONAL" },
+  { slug: "the-doctrine-of-christ", label: "The doctrine of Christ" },
+  { slug: "work-and-increase", label: "Work & Increase" },
+  { slug: "grace-for-grace", label: "Grace for Grace" },
+];
 
 const navLinks = [
   { label: "Home", href: "/", isHome: true },
   { label: "About", href: "/about" },
   { label: "Sermons and Talks", href: "/sermons" },
-  { label: "Resources", href: "/resources" },
+  { label: "Resources", href: "/resources", hasDropdown: true },
   { label: "Programs", href: "/programs" },
   { label: "Events", href: "/events" },
   { label: "Articles", href: "/articles" },
@@ -20,7 +26,20 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [mobileResourcesOpen, setMobileResourcesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [announcement, setAnnouncement] = useState<{
+    active: boolean;
+    badge: string;
+    message: string;
+    linkText?: string;
+    linkUrl?: string;
+    bgColor?: string;
+  } | null>(null);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -28,7 +47,31 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMenuOpen(false);
+    setResourcesOpen(false);
+  }, [pathname]);
+
+  // Fetch Global Announcement Banner
+  useEffect(() => {
+    fetch("/api/announcements")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.active && data.message) setAnnouncement(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setResourcesOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setResourcesOpen(false);
+    }, 200);
+  };
 
   return (
     <nav
@@ -41,11 +84,59 @@ export default function Navbar() {
         background: "#151A54",
         borderBottom: "1px solid #6496EF",
         transition: "box-shadow 250ms ease",
-        boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.3)" : "none",
+        boxShadow: scrolled ? "0 4px 25px rgba(0,0,0,0.35)" : "none",
       }}
     >
+      {/* Global Urgent Church Announcement Bar (controllable from CMS) */}
+      {announcement?.active && (
+        <div
+          style={{
+            backgroundColor: announcement.bgColor || "#0140C1",
+            color: "#FFFFFF",
+            padding: "8px 24px",
+            fontSize: "12px",
+            fontFamily: "'Poppins', sans-serif",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            textAlign: "center",
+            borderBottom: "1px solid rgba(255,255,255,0.18)",
+            lineHeight: 1.4,
+          }}
+        >
+          <span
+            style={{
+              backgroundColor: "rgba(255,255,255,0.22)",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              fontWeight: 700,
+              fontSize: "10px",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            {announcement.badge || "Announcement"}
+          </span>
+          <span style={{ fontWeight: 500 }}>{announcement.message}</span>
+          {announcement.linkUrl && (
+            <Link
+              href={announcement.linkUrl}
+              style={{
+                color: "#FFFFFF",
+                fontWeight: 700,
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+              }}
+            >
+              {announcement.linkText || "View Details →"}
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className="nav-container">
-        {/* Logo — Figma: EL-5efdc068 — logo mark + "The\nPublishers\nHouse" Poppins Bold 12px UPPER 0.16em */}
+        {/* Logo */}
         <Link
           href="/"
           style={{
@@ -55,7 +146,6 @@ export default function Navbar() {
             textDecoration: "none",
           }}
         >
-          {/* Real Navbar Logo */}
           <picture>
             <source srcSet="/images/nav-logo-opt.webp" type="image/webp" />
             <img
@@ -72,7 +162,7 @@ export default function Navbar() {
           </picture>
         </Link>
 
-        {/* Right side: nav links + Give button grouped together */}
+        {/* Right side: nav links + Give button */}
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
           <ul
             style={{
@@ -86,7 +176,150 @@ export default function Navbar() {
             className="nav-desktop"
           >
             {navLinks.map((link) => {
-              const active = link.href === "/" ? pathname === "/" : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              const active =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
+
+              if (link.hasDropdown) {
+                return (
+                  <li
+                    key={link.href}
+                    style={{ position: "relative" }}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Link
+                        href={link.href}
+                        style={{
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                          lineHeight: "1.6em",
+                          letterSpacing: "0.16em",
+                          textTransform: "uppercase",
+                          color: active ? "#6496EF" : "#FFFFFF",
+                          textDecoration: "none",
+                          paddingBottom: "2px",
+                          borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
+                          transition: "color 150ms ease",
+                        }}
+                      >
+                        {link.label}
+                      </Link>
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setResourcesOpen(!resourcesOpen);
+                        }}
+                        style={{
+                          color: active ? "#6496EF" : "#FFFFFF",
+                          fontSize: "10px",
+                          lineHeight: 1,
+                          transform: resourcesOpen ? "rotate(180deg)" : "none",
+                          transition: "transform 150ms ease",
+                        }}
+                      >
+                        ▾
+                      </span>
+                    </div>
+
+                    {/* Resources Dropdown Menu (Gospel In Life Reference Style) */}
+                    {resourcesOpen && (
+                      <div
+                        ref={dropdownRef}
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: "0",
+                          paddingTop: "14px",
+                          zIndex: 350,
+                          minWidth: "260px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            backgroundColor: "#FFFFFF",
+                            borderRadius: "4px",
+                            border: "1px solid #D3DAEC",
+                            boxShadow: "0 12px 32px rgba(21, 26, 84, 0.22)",
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                          }}
+                        >
+                          {/* All Resources Item */}
+                          <Link
+                            href="/resources"
+                            style={{
+                              padding: "14px 20px",
+                              fontFamily: "'Poppins', sans-serif",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              color: "#151A54",
+                              textDecoration: "none",
+                              borderBottom: "1px solid #E8ECF7",
+                              backgroundColor: "#F4F6FB",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#E8ECF7")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#F4F6FB")}
+                          >
+                            <span>All Resources</span>
+                            <span style={{ fontSize: "14px", color: "#0140C1" }}>→</span>
+                          </Link>
+
+                          {/* Subpages / Categorized Sermons */}
+                          {RESOURCE_SUBPAGES.map((sub) => {
+                            const isCurrent = pathname === `/resources/${sub.slug}`;
+                            return (
+                              <Link
+                                key={sub.slug}
+                                href={`/resources/${sub.slug}`}
+                                style={{
+                                  padding: "12px 20px",
+                                  fontFamily: "'Playfair Display', serif",
+                                  fontSize: "14px",
+                                  color: isCurrent ? "#0140C1" : "#151A54",
+                                  fontWeight: isCurrent ? 700 : 500,
+                                  textDecoration: "none",
+                                  borderBottom: "1px solid #F4F6FB",
+                                  transition: "all 120ms ease",
+                                  display: "block",
+                                  backgroundColor: isCurrent ? "#F4F6FB" : "#FFFFFF",
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor = "#F4F6FB";
+                                  e.currentTarget.style.color = "#0140C1";
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor = isCurrent ? "#F4F6FB" : "#FFFFFF";
+                                  e.currentTarget.style.color = isCurrent ? "#0140C1" : "#151A54";
+                                }}
+                              >
+                                {sub.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              }
+
               return (
                 <li key={link.href}>
                   <Link
@@ -105,7 +338,7 @@ export default function Navbar() {
                       borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
                       display: "flex",
                       alignItems: "center",
-                      gap: "6px"
+                      gap: "6px",
                     }}
                   >
                     {link.isHome ? (
@@ -158,37 +391,22 @@ export default function Navbar() {
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           onClick={() => setMenuOpen(!menuOpen)}
           style={{
-            display: "none",
             background: "none",
             border: "none",
             cursor: "pointer",
             padding: "8px",
+            display: "none",
             flexDirection: "column",
             gap: "5px",
           }}
         >
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              style={{
-                display: "block",
-                width: "24px",
-                height: "2px",
-                background: "#FFFFFF",
-                borderRadius: "2px",
-                transition: "all 250ms ease",
-                transform:
-                  menuOpen && i === 0 ? "rotate(45deg) translate(5px, 5px)"
-                  : menuOpen && i === 1 ? "scaleX(0)"
-                  : menuOpen && i === 2 ? "rotate(-45deg) translate(5px, -5px)"
-                  : "none",
-              }}
-            />
-          ))}
+          <span style={{ display: "block", width: "24px", height: "2px", background: "#FFFFFF", borderRadius: "2px" }} />
+          <span style={{ display: "block", width: "24px", height: "2px", background: "#FFFFFF", borderRadius: "2px" }} />
+          <span style={{ display: "block", width: "24px", height: "2px", background: "#FFFFFF", borderRadius: "2px" }} />
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Drawer */}
       {menuOpen && (
         <div
           style={{
@@ -199,7 +417,74 @@ export default function Navbar() {
         >
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
             {navLinks.map((link) => {
-              const active = link.href === "/" ? pathname === "/" : (pathname === link.href || pathname.startsWith(link.href + "/"));
+              const active =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
+
+              if (link.hasDropdown) {
+                return (
+                  <li key={link.href}>
+                    <div
+                      onClick={() => setMobileResourcesOpen(!mobileResourcesOpen)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "12px 16px",
+                        fontFamily: "'Poppins', sans-serif",
+                        fontWeight: 600,
+                        fontSize: "11px",
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        color: active ? "#6496EF" : "#FFFFFF",
+                        borderBottom: "1px solid rgba(100,150,239,0.2)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span>{link.label}</span>
+                      <span>{mobileResourcesOpen ? "▴" : "▾"}</span>
+                    </div>
+
+                    {mobileResourcesOpen && (
+                      <div style={{ backgroundColor: "rgba(0,0,0,0.2)", padding: "8px 0" }}>
+                        <Link
+                          href="/resources"
+                          style={{
+                            display: "block",
+                            padding: "8px 24px",
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color: "#6496EF",
+                            textDecoration: "none",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          • All Resources Hub
+                        </Link>
+                        {RESOURCE_SUBPAGES.map((sub) => (
+                          <Link
+                            key={sub.slug}
+                            href={`/resources/${sub.slug}`}
+                            style={{
+                              display: "block",
+                              padding: "8px 24px",
+                              fontFamily: "'Playfair Display', serif",
+                              fontSize: "13px",
+                              color: "#FFFFFF",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                );
+              }
+
               return (
                 <li key={link.href}>
                   <Link

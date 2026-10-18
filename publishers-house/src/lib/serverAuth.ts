@@ -3,7 +3,7 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { SESSION_COOKIE } from "@/lib/sessionCookie";
 import type { ActivityTier, PortalUser, UserRole } from "@/lib/portalAuth";
 
-const ROLES: UserRole[] = ["admin", "unit_head", "member"];
+const ROLES: UserRole[] = ["super_admin", "admin", "portal_manager", "unit_head", "member"];
 const TIERS: ActivityTier[] = ["seeker", "regular", "active", "leader"];
 
 export async function requirePortalUser(): Promise<PortalUser | null> {
@@ -17,7 +17,7 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
     if (!snap.exists) return null;
 
     const data = snap.data() || {};
-    const role = data.role as UserRole;
+    const role = (data.role as UserRole) || "member";
     if (!ROLES.includes(role)) return null;
 
     const rawTier = data.activityTier as ActivityTier;
@@ -31,6 +31,8 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
       role,
       assignedUnitId: typeof data.assignedUnitId === "string" ? data.assignedUnitId : undefined,
       activityTier,
+      campus: data.campus || "jos",
+      mustChangePassword: Boolean(data.mustChangePassword),
       createdAt: typeof data.createdAt === "string" ? data.createdAt : "",
       lastLogin: typeof data.lastLogin === "string" ? data.lastLogin : "",
       photoURL: typeof data.photoURL === "string" ? data.photoURL : undefined,
@@ -42,7 +44,7 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
 }
 
 export function portalHomeFor(role: UserRole): string {
-  if (role === "admin") return "/portal";
+  if (role === "super_admin" || role === "admin" || role === "portal_manager") return "/portal";
   if (role === "unit_head") return "/portal/unit";
   return "/portal/member";
 }
@@ -50,20 +52,36 @@ export function portalHomeFor(role: UserRole): string {
 export function canAccessPortal(pathname: string, role: UserRole): boolean {
   if (pathname === "/portal/login") return true;
 
+  const isSuperOrAdmin = role === "super_admin" || role === "admin";
+
   if (pathname === "/portal" || pathname === "/portal/") {
-    return role === "admin";
+    return isSuperOrAdmin || role === "portal_manager";
   }
 
   if (pathname === "/portal/units" || pathname.startsWith("/portal/units/")) {
-    return role === "admin";
+    return isSuperOrAdmin;
   }
 
   if (pathname === "/portal/unit" || pathname.startsWith("/portal/unit/")) {
-    return role === "unit_head" || role === "admin";
+    return role === "unit_head" || isSuperOrAdmin;
   }
 
   if (pathname === "/portal/member" || pathname.startsWith("/portal/member/")) {
     return true;
+  }
+
+  // Portal manager handles management & settings, but not sensitive pastoral / private care
+  if (role === "portal_manager") {
+    const managerAllowed = [
+      "/portal/members",
+      "/portal/attendance",
+      "/portal/events",
+      "/portal/courses",
+      "/portal/facility",
+      "/portal/audit",
+      "/portal/settings",
+    ];
+    return managerAllowed.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
   }
 
   const adminPrefixes = [
@@ -80,8 +98,8 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
   ];
 
   if (adminPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    return role === "admin";
+    return isSuperOrAdmin;
   }
 
-  return role === "admin";
+  return isSuperOrAdmin;
 }
