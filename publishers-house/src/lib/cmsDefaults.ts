@@ -79,8 +79,15 @@ export type ResourceTrack = {
     speaker: string;
     duration: string;
     youtubeUrl?: string;
+    audioUrl?: string;
     pdfUrl?: string;
     notesUrl?: string;
+    scripture?: string;
+    overview?: string;
+    description?: string;
+    date?: string;
+    tags?: string;
+    published?: boolean;
   }[];
 };
 

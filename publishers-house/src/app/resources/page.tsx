@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { TRACK_DETAILS } from "@/lib/cmsDefaults";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Resources & Study Guides | The Publishers House",
   description:
     "Explore categorized biblical teaching series, prayer school curriculum, 40-day devotionals, and downloadable apostolic study guides.",
 };
-
 
 const DOWNLOADABLE_GUIDES = [
   {
@@ -38,7 +40,26 @@ const DOWNLOADABLE_GUIDES = [
   },
 ];
 
-export default function ResourcesHubPage() {
+export default async function ResourcesHubPage() {
+  let tracks = { ...TRACK_DETAILS };
+  try {
+    const docSnap = await getAdminDb().collection("settings").doc("resources_tracks").get();
+    if (docSnap.exists) {
+      const live = docSnap.data()?.tracks || {};
+      for (const [slug, custom] of Object.entries(live) as [string, any][]) {
+        if (tracks[slug] && custom) {
+          tracks[slug] = {
+            ...tracks[slug],
+            title: custom.title || tracks[slug].title,
+            description: custom.description || tracks[slug].description,
+            materials: (custom.materials && custom.materials.length > 0)
+              ? custom.materials.filter((m: any) => m && m.published !== false)
+              : tracks[slug].materials,
+          };
+        }
+      }
+    }
+  } catch (err) {}
   return (
     <>
       <Navbar />
@@ -160,7 +181,7 @@ export default function ResourcesHubPage() {
                 gap: "24px",
               }}
             >
-              {Object.entries(TRACK_DETAILS).map(([slug, track]) => (
+              {Object.entries(tracks).map(([slug, track]) => (
                 <div
                   key={slug}
                   style={{

@@ -24,21 +24,47 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
   const { slug } = await params;
   let track = TRACK_DETAILS[slug];
 
-  // Try fetching custom overrides from Firestore
+  // Fetch live track data from Firestore (settings/resources_tracks or fallback to resource_tracks/slug)
   try {
-    const docSnap = await getAdminDb().collection("resource_tracks").doc(slug).get();
-    if (docSnap.exists) {
-      const custom = docSnap.data();
-      if (custom) {
-        track = {
-          ...track,
-          ...custom,
-          materials: custom.materials?.length ? custom.materials : track?.materials,
-        };
+    const settingsDoc = await getAdminDb().collection("settings").doc("resources_tracks").get();
+    let custom: any = null;
+    if (settingsDoc.exists) {
+      const allTracks = settingsDoc.data()?.tracks || {};
+      custom = allTracks[slug];
+    }
+    if (!custom) {
+      const directDoc = await getAdminDb().collection("resource_tracks").doc(slug).get();
+      if (directDoc.exists) {
+        custom = directDoc.data();
       }
     }
+
+    if (custom) {
+      const rawMaterials: any[] = custom.materials && Array.isArray(custom.materials) ? custom.materials : [];
+      const normalizedMaterials = rawMaterials
+        .filter((m) => m && m.published !== false)
+        .map((m, i) => ({
+          part: m.part || (m.series ? m.series : `Part ${i + 1}`),
+          title: m.title || "Untitled Teaching",
+          speaker: m.speaker || "Dr. Joshua Agunbiade",
+          duration: m.duration || "Study Session",
+          scripture: m.scripture || "",
+          overview: m.overview || m.description || "",
+          youtubeUrl: m.youtubeUrl || (m.url && (m.url.includes("youtu") || m.type === "Video") ? m.url : ""),
+          audioUrl: m.audioUrl || (m.url && (m.url.includes(".mp3") || m.type === "Audio") ? m.url : ""),
+          pdfUrl: m.pdfUrl || (m.url && (m.url.includes(".pdf") || m.type === "PDF") ? m.url : ""),
+          notesUrl: m.notesUrl || "",
+        }));
+
+      track = {
+        ...track,
+        title: custom.title || track?.title,
+        description: custom.description || track?.description,
+        materials: normalizedMaterials.length > 0 ? normalizedMaterials : track?.materials,
+      };
+    }
   } catch (err) {
-    // Fall back to static track details
+    console.error("Error fetching resource track:", err);
   }
 
   if (!track) notFound();
@@ -224,12 +250,17 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
                     </div>
                     <div>
                       <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        {m.part} · {m.speaker}
+                        {m.part} · {m.speaker} {m.scripture ? `· ${m.scripture}` : ""}
                       </div>
                       <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "17px", fontWeight: 700, color: "#151A54", margin: "4px 0 0" }}>
                         {m.title}
                       </h3>
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", color: "#747CA1", marginTop: "4px" }}>
+                      {m.overview && (
+                        <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14px", color: "#4A62A0", margin: "6px 0 0", lineHeight: "1.55em", maxWidth: "680px" }}>
+                          {m.overview}
+                        </p>
+                      )}
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", color: "#747CA1", marginTop: "6px" }}>
                         Duration: {m.duration}
                       </div>
                     </div>
@@ -237,55 +268,109 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
 
                   {/* Action Buttons */}
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    <Link
-                      href="/sermons"
-                      style={{
-                        padding: "10px 18px",
-                        backgroundColor: "#FFFFFF",
-                        border: "1px solid #D3DAEC",
-                        borderRadius: "4px",
-                        color: "#151A54",
-                        fontFamily: "'Poppins', sans-serif",
-                        fontWeight: 600,
-                        fontSize: "11px",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>▶</span>
-                      <span>Listen & Watch</span>
-                    </Link>
+                    {m.youtubeUrl ? (
+                      <a
+                        href={m.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px 18px",
+                          backgroundColor: "#FFFFFF",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "4px",
+                          color: "#151A54",
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <span>▶</span>
+                        <span>Watch Video</span>
+                      </a>
+                    ) : m.audioUrl ? (
+                      <a
+                        href={m.audioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px 18px",
+                          backgroundColor: "#FFFFFF",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "4px",
+                          color: "#151A54",
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <span>🎧</span>
+                        <span>Listen Audio</span>
+                      </a>
+                    ) : (
+                      <Link
+                        href="/sermons"
+                        style={{
+                          padding: "10px 18px",
+                          backgroundColor: "#FFFFFF",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "4px",
+                          color: "#151A54",
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <span>▶</span>
+                        <span>Listen & Watch</span>
+                      </Link>
+                    )}
 
-                    <a
-                      href={m.pdfUrl || "#"}
-                      download={m.pdfUrl ? true : undefined}
-                      target={m.pdfUrl ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: "10px 18px",
-                        backgroundColor: "#0140C1",
-                        border: "none",
-                        borderRadius: "4px",
-                        color: "#FFFFFF",
-                        fontFamily: "'Poppins', sans-serif",
-                        fontWeight: 600,
-                        fontSize: "11px",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        textDecoration: "none",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>📥</span>
-                      <span>Download PDF</span>
-                    </a>
+                    {m.pdfUrl && (
+                      <a
+                        href={m.pdfUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px 18px",
+                          backgroundColor: "#0140C1",
+                          border: "none",
+                          borderRadius: "4px",
+                          color: "#FFFFFF",
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          textDecoration: "none",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <span>📥</span>
+                        <span>Download PDF</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
