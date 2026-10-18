@@ -1,14 +1,10 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { TRACK_DETAILS } from "./[slug]/page";
 
-export const metadata: Metadata = {
-  title: "Resources & Study Guides | The Publishers House",
-  description:
-    "Explore categorized biblical teaching series, prayer school curriculum, 40-day devotionals, and downloadable apostolic study guides.",
-};
 
 const DOWNLOADABLE_GUIDES = [
   {
