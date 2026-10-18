@@ -1,9 +1,14 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { TRACK_DETAILS } from "./[slug]/page";
+import { TRACK_DETAILS } from "@/lib/cmsDefaults";
+
+export const metadata: Metadata = {
+  title: "Resources & Study Guides | The Publishers House",
+  description:
+    "Explore categorized biblical teaching series, prayer school curriculum, 40-day devotionals, and downloadable apostolic study guides.",
+};
 
 
 const DOWNLOADABLE_GUIDES = [
@@ -255,9 +260,11 @@ export default function ResourcesHubPage() {
                     <div style={{ fontSize: "11px", color: "#747CA1", marginBottom: "12px", fontFamily: "monospace" }}>
                       {doc.size}
                     </div>
-                    <button
-                      onClick={() => alert(`Downloading "${doc.title}"...`)}
+                    <a
+                      href="#courses"
                       style={{
+                        display: "block",
+                        textAlign: "center",
                         width: "100%",
                         padding: "10px",
                         backgroundColor: "#0140C1",
@@ -269,11 +276,12 @@ export default function ResourcesHubPage() {
                         fontSize: "11px",
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
-                        cursor: "pointer",
+                        textDecoration: "none",
+                        boxSizing: "border-box",
                       }}
                     >
-                      Download Document 📥
-                    </button>
+                      Access Study Guide 📥
+                    </a>
                   </div>
                 </div>
               ))}
