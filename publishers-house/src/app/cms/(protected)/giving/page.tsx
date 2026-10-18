@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { DEFAULT_GIVING_DATA } from "@/app/api/cms/giving/route";
+import { DEFAULT_GIVING_DATA } from "@/lib/cmsDefaults";
 
 const S = {
   Navy: "#151A54",

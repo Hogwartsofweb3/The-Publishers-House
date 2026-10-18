@@ -100,7 +100,7 @@ const hardcodedLeadership = [
 
 import { getLeadership } from "@/lib/firebase";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { DEFAULT_ABOUT_DATA } from "@/app/api/cms/about/route";
+import { DEFAULT_ABOUT_DATA } from "@/lib/cmsDefaults";
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function AboutPage() {

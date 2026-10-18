@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { DEFAULT_ABOUT_DATA } from "@/app/api/cms/about/route";
+import { DEFAULT_ABOUT_DATA } from "@/lib/cmsDefaults";
 
 const S = {
   Navy: "#151A54",
