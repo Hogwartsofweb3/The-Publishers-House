@@ -281,6 +281,34 @@ export default function Navbar() {
                             <span style={{ fontSize: "14px", color: "#0140C1" }}>→</span>
                           </Link>
 
+                          {/* Sermons and Talks Subpage */}
+                          <Link
+                            href="/sermons"
+                            style={{
+                              padding: "13px 20px",
+                              fontFamily: "'Poppins', sans-serif",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              color: "#0140C1",
+                              textDecoration: "none",
+                              borderBottom: "1px solid #D3DAEC",
+                              backgroundColor: "#FFFFFF",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#F4F6FB")}
+                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#FFFFFF")}
+                          >
+                            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span>▶</span>
+                              <span>Sermons & Audio Teachings</span>
+                            </span>
+                            <span style={{ fontSize: "14px", color: "#0140C1" }}>→</span>
+                          </Link>
+
                           {/* Subpages / Categorized Sermons */}
                           {RESOURCE_SUBPAGES.map((sub) => {
                             const isCurrent = pathname === `/resources/${sub.slug}`;
@@ -462,6 +490,21 @@ export default function Navbar() {
                           }}
                         >
                           • All Resources Hub
+                        </Link>
+                        <Link
+                          href="/sermons"
+                          style={{
+                            display: "block",
+                            padding: "8px 24px",
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color: "#FFFFFF",
+                            textDecoration: "none",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          • Sermons & Audio Teachings
                         </Link>
                         {RESOURCE_SUBPAGES.map((sub) => (
                           <Link

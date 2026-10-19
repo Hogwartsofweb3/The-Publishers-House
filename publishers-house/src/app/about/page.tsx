@@ -162,17 +162,17 @@ export default async function AboutPage() {
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
-            <span style={{ ...S.eyebrow, color: "#2090FF" }}>{aboutData.heroEyebrow || "Psalm 68:11 · Company of the Great"}</span>
+            <span style={{ ...S.eyebrow, color: "#2090FF" }}>PSALM 68:11</span>
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
-              {aboutData.heroHeadline || "About the Publishers House"}
+              ABOUT THE PUBLISHERS HOUSE
             </h1>
             <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
-              {aboutData.heroLede || "An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God's Word to every sphere of society."}
+              An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God&apos;s Word to every sphere of society.
             </p>
           </div>
         </section>
 
-        {/* STORY & MANDATE */}
+        {/* WHO WE ARE */}
         <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
             style={{
@@ -190,70 +190,31 @@ export default async function AboutPage() {
                 <p style={{ ...S.readSmall, color: "#4A62A0" }}>
                   Established 2020 · Jos, Plateau State · Other branches all over Nigeria
                 </p>
-                {aboutData.vision && (
-                  <div style={{ marginTop: "16px", padding: "16px", background: "#FFFFFF", borderRadius: "4px", border: "1px solid #C4CEE5" }}>
-                    <span style={{ ...S.eyebrow, color: "#0140C1", display: "block", marginBottom: "6px" }}>Our Vision</span>
-                    <p style={{ ...S.readSmall, color: "#151A54", fontSize: "13px", margin: 0 }}>{aboutData.vision}</p>
-                  </div>
-                )}
-                {aboutData.mission && (
-                  <div style={{ marginTop: "8px", padding: "16px", background: "#FFFFFF", borderRadius: "4px", border: "1px solid #C4CEE5" }}>
-                    <span style={{ ...S.eyebrow, color: "#0140C1", display: "block", marginBottom: "6px" }}>Our Mission</span>
-                    <p style={{ ...S.readSmall, color: "#151A54", fontSize: "13px", margin: 0 }}>{aboutData.mission}</p>
-                  </div>
-                )}
               </div>
-              {/* Body text */}
-              <div style={{ flex: 1 }}>
-                <p style={{ ...S.readBody, color: "#151A54", whiteSpace: "pre-line" }}>
-                  {aboutData.history || `The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.\n\nThe ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.\n\nInspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God's message, declaring His truth with conviction, excellence and global impact.\n\nFrom Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.\n\nWe are given to much prayer, immersed in the word of God and passionate searchers of God's presence.`}
+              {/* Body text: 5 exact paragraphs */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                  The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.
+                </p>
+                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                  The ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.
+                </p>
+                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                  Inspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God&apos;s message, declaring His truth with conviction, excellence and global impact.
+                </p>
+                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                  From Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.
+                </p>
+                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                  We are given to much prayer, immersed in the word of God and passionate searchers of God’s presence.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* TENETS OF FAITH (BELIEFS) */}
-        <section className="tph-section" style={{ background: "#FFFFFF" }}>
-          <div className="tph-inner" style={{ display: "flex", flexDirection: "column", gap: "36px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Our Tenets of Faith</span>
-              <h2 style={{ ...S.displayL, color: "#151A54" }}>What we believe</h2>
-            </div>
-            <div className="tph-grid-3">
-              {aboutData.beliefs?.map((belief: any, idx: number) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: "#F4F6FB",
-                    border: "1px solid #D3DAEC",
-                    borderRadius: "6px",
-                    padding: "28px 24px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ ...S.displayS, color: "#151A54", fontSize: "17px" }}>{belief.title}</span>
-                    {belief.scripture && (
-                      <span style={{ ...S.scripture, color: "#0140C1", background: "#E8ECF7", padding: "3px 8px", borderRadius: "3px", fontSize: "10px" }}>
-                        {belief.scripture}
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ ...S.readSmall, color: "#4A62A0", margin: 0, lineHeight: "1.6em" }}>
-                    {belief.body}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ══════════════════════════════════════════════════════════
-            WHAT TO EXPECT — Figma: #31:4379 — EL-8f527725
-            padding 96px 100px, bg #E8ECF7
+            WHAT TO EXPECT — Exactly as in Screenshot 2
         ══════════════════════════════════════════════════════════ */}
         <section style={{ background: "#E8ECF7" }}>
           <div
@@ -317,11 +278,11 @@ export default async function AboutPage() {
                 },
                 {
                   title: "Children",
-                  body: "Children are welcome in the service. We do not currently run a separate children's programme during the main service.",
+                  body: "You can enjoy God's presence when you fellowship with us; rest assured that your children are safe and being taught and engaged by trained teachers in a very comfortable environment.",
                 },
                 {
                   title: "Will I be singled out?",
-                  body: "No. First-time visitors are not asked to stand, raise hands or do anything that draws attention to them. Come and settle in.",
+                  body: "We would usually welcome visitors and have a brief chat with them to shower them with hospitality and give them more information about the church operations.",
                 },
               ].map((item) => (
                 <div

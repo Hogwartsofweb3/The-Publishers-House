@@ -17,31 +17,187 @@ interface Edition {
   }[];
 }
 
-// Mock historical data (since we don't have this in CMS yet)
+// Historical data for each flagship program
 const MOCK_EDITIONS: Record<string, Edition[]> = {
   "festival-of-light": [
     {
-      year: 2023,
-      theme: "The City Set on a Hill",
-      speakers: ["Rev. Joshua Agunbiade", "Apostle Arome Osayi"],
+      year: 2024,
+      theme: "A City Set on a Hill",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
       location: "Jos, Plateau State",
       photos: ["/images/fol-gallery-1.png", "/images/fol-gallery-2.png"],
       sermons: [
-        { id: "fol23-1", title: "Let There Be Light", speaker: "Rev. Joshua Agunbiade", duration: "1h 45m" },
-        { id: "fol23-2", title: "The Apostolic Order", speaker: "Apostle Arome Osayi", duration: "2h 15m" }
-      ]
+        { id: "fol24-1", title: "The Shining Light of Zion", speaker: "Dr. Joshua Agunbiade", duration: "1h 50m" },
+        { id: "fol24-2", title: "Arise, Shine for Thy Light Is Come", speaker: "Pastor Damilare Ayodele", duration: "1h 35m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "The Sent Ones",
+      speakers: ["Dr. Joshua Agunbiade", "Apostle Arome Osayi"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-2.png", "/images/fol-gallery-3.png"],
+      sermons: [
+        { id: "fol23-1", title: "Let There Be Light", speaker: "Dr. Joshua Agunbiade", duration: "1h 45m" },
+        { id: "fol23-2", title: "The Apostolic Order", speaker: "Apostle Arome Osayi", duration: "2h 15m" },
+      ],
     },
     {
       year: 2022,
       theme: "Illuminated",
-      speakers: ["Rev. Joshua Agunbiade", "Pst. Damilare"],
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
       location: "Jos, Plateau State",
       photos: ["/images/fol-gallery-3.png"],
       sermons: [
-        { id: "fol22-1", title: "The Lamp and the Light", speaker: "Rev. Joshua Agunbiade", duration: "1h 30m" }
-      ]
-    }
-  ]
+        { id: "fol22-1", title: "The Lamp and the Light", speaker: "Dr. Joshua Agunbiade", duration: "1h 30m" },
+      ],
+    },
+    {
+      year: 2021,
+      theme: "The Light Has Come",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-1.png"],
+      sermons: [
+        { id: "fol21-1", title: "In Him Was Life, and the Life Was the Light of Men", speaker: "Dr. Joshua Agunbiade", duration: "1h 40m" },
+      ],
+    },
+  ],
+  "merismos": [
+    {
+      year: 2024,
+      theme: "Rightly Dividing the Word of Truth",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Boniface Onah"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-1.png"],
+      sermons: [
+        { id: "mer24-1", title: "Piercing Even to the Dividing Asunder", speaker: "Dr. Joshua Agunbiade", duration: "2h 05m" },
+        { id: "mer24-2", title: "Discerning Spirit and Soul", speaker: "Pastor Boniface Onah", duration: "1h 40m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "The Quick and Powerful Word",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-2.png"],
+      sermons: [
+        { id: "mer23-1", title: "The Sword of the Spirit", speaker: "Dr. Joshua Agunbiade", duration: "1h 55m" },
+      ],
+    },
+    {
+      year: 2022,
+      theme: "Discerning the Intentions of the Heart",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-3.png"],
+      sermons: [
+        { id: "mer22-1", title: "The Incorruptible Seed of the Word", speaker: "Dr. Joshua Agunbiade", duration: "1h 35m" },
+      ],
+    },
+  ],
+  "jesus-convention": [
+    {
+      year: 2024,
+      theme: "The Risen Christ and His Eternal Dominion",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Ngbede Odeh"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-1.png"],
+      sermons: [
+        { id: "jc24-1", title: "That I May Know Him", speaker: "Dr. Joshua Agunbiade", duration: "2h 10m" },
+        { id: "jc24-2", title: "The Power of His Resurrection", speaker: "Pastor Ngbede Odeh", duration: "1h 45m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "Beholding the Lamb of God",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-2.png"],
+      sermons: [
+        { id: "jc23-1", title: "The Finished Work on Calvary", speaker: "Dr. Joshua Agunbiade", duration: "1h 50m" },
+      ],
+    },
+    {
+      year: 2022,
+      theme: "The Mystery of Godliness",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Theophilus Makinde"],
+      location: "Jos, Plateau State",
+      photos: ["/images/fol-gallery-3.png"],
+      sermons: [
+        { id: "jc22-1", title: "God Was Manifest in the Flesh", speaker: "Dr. Joshua Agunbiade", duration: "1h 30m" },
+      ],
+    },
+  ],
+  "the-forge": [
+    {
+      year: 2024,
+      theme: "The Altar of Prayer and Corporate Travail",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Theophilus Makinde"],
+      location: "The House of Bread, Jos",
+      photos: ["/images/fol-gallery-2.png"],
+      sermons: [
+        { id: "fg24-1", title: "Is Not My Word Like As A Fire?", speaker: "Dr. Joshua Agunbiade", duration: "2h 30m" },
+        { id: "fg24-2", title: "Travail and the Birth of Movements", speaker: "Pastor Theophilus Makinde", duration: "2h 00m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "Men of Fire and Devotion",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "The House of Bread, Jos",
+      photos: ["/images/fol-gallery-3.png"],
+      sermons: [
+        { id: "fg23-1", title: "Building Altars of Prevailing Prayer", speaker: "Dr. Joshua Agunbiade", duration: "2h 15m" },
+      ],
+    },
+  ],
+  "abuja-apostolic-camp": [
+    {
+      year: 2024,
+      theme: "Awakening the Capital",
+      speakers: ["Dr. Joshua Agunbiade", "Pastor Boniface Onah"],
+      location: "Abuja, FCT",
+      photos: ["/images/fol-gallery-1.png"],
+      sermons: [
+        { id: "aac24-1", title: "The Apostolic Mandate for the Marketplace", speaker: "Dr. Joshua Agunbiade", duration: "1h 55m" },
+        { id: "aac24-2", title: "Spiritual Alignment and Kingdom Impact", speaker: "Pastor Boniface Onah", duration: "1h 40m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "A Foundation for the Sent",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "Abuja, FCT",
+      photos: ["/images/fol-gallery-2.png"],
+      sermons: [
+        { id: "aac23-1", title: "Publishers in the Nations", speaker: "Dr. Joshua Agunbiade", duration: "1h 45m" },
+      ],
+    },
+  ],
+  "sunday-midweek": [
+    {
+      year: 2024,
+      theme: "Corporate Worship, Expository Doctrine & Fellowship",
+      speakers: ["Dr. Joshua Agunbiade", "Associate Pastors"],
+      location: "The House of Bread, Jos",
+      photos: ["/images/fol-gallery-1.png"],
+      sermons: [
+        { id: "sm24-1", title: "The Apostolic Doctrine & The Apostles' Fellowship", speaker: "Dr. Joshua Agunbiade", duration: "1h 40m" },
+        { id: "sm24-2", title: "Midweek Corporate Prayer and Supplication", speaker: "Pastor Damilare Ayodele", duration: "1h 25m" },
+      ],
+    },
+    {
+      year: 2023,
+      theme: "Steadfast in the Word",
+      speakers: ["Dr. Joshua Agunbiade"],
+      location: "The House of Bread, Jos",
+      photos: ["/images/fol-gallery-2.png"],
+      sermons: [
+        { id: "sm23-1", title: "Growing in the Accurate Knowledge of Christ", speaker: "Dr. Joshua Agunbiade", duration: "1h 35m" },
+      ],
+    },
+  ],
 };
 
 export default function ProgramEditionsClient({ programSlug, programName }: { programSlug: string, programName: string }) {
@@ -52,12 +208,12 @@ export default function ProgramEditionsClient({ programSlug, programName }: { pr
     {
       year: new Date().getFullYear(),
       theme: "The Apostolic Mandate",
-      speakers: ["Rev. Joshua Agunbiade"],
+      speakers: ["Dr. Joshua Agunbiade"],
       location: "Jos, Nigeria",
       photos: [],
       sermons: [
-        { id: "demo-1", title: "Foundations", speaker: "Rev. Joshua Agunbiade", duration: "1h 10m" },
-        { id: "demo-2", title: "The Sent Ones", speaker: "Rev. Joshua Agunbiade", duration: "1h 25m" }
+        { id: "demo-1", title: "Foundations of Truth", speaker: "Dr. Joshua Agunbiade", duration: "1h 10m" },
+        { id: "demo-2", title: "The Sent Ones", speaker: "Dr. Joshua Agunbiade", duration: "1h 25m" }
       ]
     }
   ];
@@ -69,10 +225,10 @@ export default function ProgramEditionsClient({ programSlug, programName }: { pr
   const activeEdition = editions.find(e => e.year === activeYear) || editions[0];
 
   return (
-    <div style={{ display: "flex", maxWidth: "1200px", margin: "0 auto", minHeight: "600px", padding: "40px 24px" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", maxWidth: "1200px", margin: "0 auto", minHeight: "600px", padding: "40px 24px" }}>
       
       {/* Sidebar: Year Navigation */}
-      <div style={{ width: "220px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.1)", paddingRight: "24px" }}>
+      <div style={{ width: "220px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.1)", paddingRight: "24px", minWidth: "160px" }}>
         <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "14px", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "24px" }}>
           Timeline
         </h3>
@@ -102,7 +258,7 @@ export default function ProgramEditionsClient({ programSlug, programName }: { pr
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, paddingLeft: "40px" }}>
+      <div style={{ flex: 1, minWidth: "280px" }}>
         {activeEdition && (
           <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
             

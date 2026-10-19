@@ -60,6 +60,22 @@ export default async function ResourcesHubPage() {
       }
     }
   } catch (err) {}
+
+  let hubData = {
+    heroEyebrow: "Equipping the Saints · Psalm 68:11",
+    heroHeadline: "Resources & Study Guides",
+    heroDescription:
+      "Systematic teaching series, prayer class manuals, devotionals, and foundational apostolic courses designed to establish believers in Christ.",
+    heroImage: "/images/teaching-and-resources.jpg",
+  };
+
+  try {
+    const hubDoc = await getAdminDb().collection("settings").doc("resources_hub").get();
+    if (hubDoc.exists) {
+      hubData = { ...hubData, ...(hubDoc.data() as any) };
+    }
+  } catch (err) {}
+
   return (
     <>
       <Navbar />
@@ -76,6 +92,33 @@ export default async function ResourcesHubPage() {
           }}
           className="tph-hero"
         >
+          {/* Hero background image with blue overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+            }}
+          >
+            <img
+              src={hubData.heroImage || "/images/teaching-and-resources.jpg"}
+              alt="Teaching and Resources"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 25%",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(21, 26, 84, 0.88)",
+              }}
+            />
+          </div>
+
           <div style={{ maxWidth: "1000px", margin: "0 auto", position: "relative", zIndex: 1 }}>
             <div
               style={{
@@ -88,7 +131,7 @@ export default async function ResourcesHubPage() {
                 marginBottom: "16px",
               }}
             >
-              Equipping the Saints · Psalm 68:11
+              {hubData.heroEyebrow}
             </div>
 
             <h1
@@ -103,7 +146,7 @@ export default async function ResourcesHubPage() {
                 textTransform: "uppercase",
               }}
             >
-              Resources & Study Guides
+              {hubData.heroHeadline}
             </h1>
 
             <p
@@ -116,7 +159,7 @@ export default async function ResourcesHubPage() {
                 maxWidth: "760px",
               }}
             >
-              Systematic teaching series, prayer class manuals, devotionals, and foundational apostolic courses designed to establish believers in Christ.
+              {hubData.heroDescription}
             </p>
 
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
@@ -159,7 +202,7 @@ export default async function ResourcesHubPage() {
           </div>
         </section>
 
-        {/* 6 Specialized Resource Tracks */}
+        {/* Specialized Resource Tracks + Sermons */}
         <section id="courses" style={{ padding: "80px 100px", backgroundColor: "#F4F6FB" }} className="tph-section">
           <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
             <div style={{ marginBottom: "40px" }}>
@@ -181,6 +224,61 @@ export default async function ResourcesHubPage() {
                 gap: "24px",
               }}
             >
+              {/* Dedicated Sermons Card */}
+              <div
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "2px solid #2090FF",
+                  borderRadius: "10px",
+                  padding: "32px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: "0 4px 16px rgba(32, 144, 255, 0.08)",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "10.5px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "10px" }}>
+                    Audio &amp; Video Messages
+                  </div>
+                  <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "20px", fontWeight: 800, color: "#151A54", margin: "0 0 10px", textTransform: "uppercase" }}>
+                    Sermons &amp; Audio Teachings
+                  </h3>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", fontWeight: 600, color: "#D97706", textTransform: "uppercase", marginBottom: "14px" }}>
+                    Romans 10:17
+                  </div>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14.5px", lineHeight: "1.6em", color: "#4A62A0", margin: "0 0 24px" }}>
+                    Explore all Sunday services, midweek doctrines, conferences, and intensive prayer teachings with instant audio and video streaming.
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "16px", borderTop: "1px solid #E8ECF7" }}>
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 600, color: "#0140C1" }}>
+                    All Sermons Catalog
+                  </span>
+                  <Link
+                    href="/sermons"
+                    style={{
+                      backgroundColor: "#0140C1",
+                      color: "#FFFFFF",
+                      padding: "8px 18px",
+                      borderRadius: "4px",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "11px",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Open Sermons →
+                  </Link>
+                </div>
+              </div>
+
               {Object.entries(tracks).map(([slug, track]) => (
                 <div
                   key={slug}
@@ -232,77 +330,6 @@ export default async function ResourcesHubPage() {
                     >
                       Open Track →
                     </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Downloadable Materials Section */}
-        <section style={{ padding: "80px 100px 100px", backgroundColor: "#FFFFFF" }} className="tph-section">
-          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "36px" }}>
-              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#0140C1", marginBottom: "8px" }}>
-                Printable & Digital Materials
-              </div>
-              <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "30px", fontWeight: 800, color: "#151A54", margin: 0, textTransform: "uppercase" }}>
-                Downloadable PDF Study Guides
-              </h2>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))", gap: "20px" }}>
-              {DOWNLOADABLE_GUIDES.map((doc, i) => (
-                <div
-                  key={i}
-                  style={{
-                    backgroundColor: "#F4F6FB",
-                    border: "1px solid #D3DAEC",
-                    borderRadius: "8px",
-                    padding: "24px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#2090FF", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      {doc.category}
-                    </span>
-                    <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "16px", fontWeight: 700, color: "#151A54", margin: "8px 0" }}>
-                      {doc.title}
-                    </h3>
-                    <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "13.5px", color: "#4A62A0", lineHeight: "1.5em", margin: "0 0 16px" }}>
-                      {doc.desc}
-                    </p>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: "11px", color: "#747CA1", marginBottom: "12px", fontFamily: "monospace" }}>
-                      {doc.size}
-                    </div>
-                    <a
-                      href="#courses"
-                      style={{
-                        display: "block",
-                        textAlign: "center",
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: "#0140C1",
-                        color: "#FFFFFF",
-                        border: "none",
-                        borderRadius: "4px",
-                        fontFamily: "'Poppins', sans-serif",
-                        fontWeight: 700,
-                        fontSize: "11px",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        textDecoration: "none",
-                        boxSizing: "border-box",
-                      }}
-                    >
-                      Access Study Guide 📥
-                    </a>
                   </div>
                 </div>
               ))}

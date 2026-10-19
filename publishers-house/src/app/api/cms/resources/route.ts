@@ -20,9 +20,21 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ tracks });
+    const hubDoc = await getAdminDb().collection("settings").doc("resources_hub").get();
+    const hub = hubDoc.exists
+      ? hubDoc.data()
+      : {
+          heroEyebrow: "Equipping the Saints · Psalm 68:11",
+          heroHeadline: "Resources & Study Guides",
+          heroDescription:
+            "Systematic teaching series, prayer class manuals, devotionals, and foundational apostolic courses designed to establish believers in Christ.",
+          heroImage: "/images/teaching-and-resources.jpg",
+          downloadables: [],
+        };
+
+    return NextResponse.json({ tracks, hub });
   } catch {
-    return NextResponse.json({ tracks: {} });
+    return NextResponse.json({ tracks: {}, hub: {} });
   }
 }
 
@@ -30,20 +42,29 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const tracks = body.tracks || {};
+    const hub = body.hub || null;
     const updatedAt = new Date().toISOString();
 
     const batch = getAdminDb().batch();
 
-    // 1. Write unified tracks map to settings/resources_tracks
-    const settingsRef = getAdminDb().collection("settings").doc("resources_tracks");
-    batch.set(settingsRef, { tracks, updatedAt }, { merge: true });
+    // 1. Write unified tracks map to settings/resources_tracks if provided
+    if (body.tracks) {
+      const settingsRef = getAdminDb().collection("settings").doc("resources_tracks");
+      batch.set(settingsRef, { tracks, updatedAt }, { merge: true });
 
-    // 2. Also write each track document directly to resource_tracks/[slug]
-    for (const [slug, trackData] of Object.entries(tracks)) {
-      if (slug && trackData && typeof trackData === "object") {
-        const trackRef = getAdminDb().collection("resource_tracks").doc(slug);
-        batch.set(trackRef, { ...(trackData as object), slug, updatedAt }, { merge: true });
+      // 2. Also write each track document directly to resource_tracks/[slug]
+      for (const [slug, trackData] of Object.entries(tracks)) {
+        if (slug && trackData && typeof trackData === "object") {
+          const trackRef = getAdminDb().collection("resource_tracks").doc(slug);
+          batch.set(trackRef, { ...(trackData as object), slug, updatedAt }, { merge: true });
+        }
       }
+    }
+
+    // 3. Write main /resources hub settings if provided
+    if (hub) {
+      const hubRef = getAdminDb().collection("settings").doc("resources_hub");
+      batch.set(hubRef, { ...hub, updatedAt }, { merge: true });
     }
 
     await batch.commit();

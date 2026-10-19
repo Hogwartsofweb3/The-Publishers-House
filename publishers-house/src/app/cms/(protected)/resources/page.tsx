@@ -100,11 +100,51 @@ const emptyMaterial: ResourceMaterial = {
 };
 
 export default function ResourcesEditor() {
+  const [activeTab, setActiveTab] = useState<"hub" | "tracks">("hub");
   const [activeTrack, setActiveTrack] = useState(TRACK_LIST[0].slug);
   const [trackData, setTrackData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+
+  // Main /resources Hub State
+  const [hubForm, setHubForm] = useState({
+    heroEyebrow: "Equipping the Saints · Psalm 68:11",
+    heroHeadline: "Resources & Study Guides",
+    heroDescription:
+      "Systematic teaching series, prayer class manuals, devotionals, and foundational apostolic courses designed to establish believers in Christ.",
+    heroImage: "/images/teaching-and-resources.jpg",
+    downloadables: [
+      {
+        title: "40 Days of Prayer & Fasting Devotional (PDF)",
+        category: "Devotional",
+        desc: "Complete 40-day scripture reading plan, prayer confessions, and fasting guidelines.",
+        size: "4.2 MB · PDF",
+        fileUrl: "",
+      },
+      {
+        title: "How to Preach the Gospel: Evangelism Field Manual",
+        category: "Apostolic Training",
+        desc: "Practical steps, scriptures, and conviction points for witnessing on streets and campuses.",
+        size: "2.1 MB · PDF",
+        fileUrl: "",
+      },
+      {
+        title: "The Doctrine of Christ Study Outline",
+        category: "Theology & Foundations",
+        desc: "Comprehensive expositional notes on Hebrews 6:1-2, baptisms, and eternal judgment.",
+        size: "3.5 MB · PDF",
+        fileUrl: "",
+      },
+      {
+        title: "Daily Faith Confessions & Kingdom Decrees",
+        category: "Spiritual Life",
+        desc: "Scriptural confessions for health, wisdom, divine guidance, and financial increase.",
+        size: "1.2 MB · PDF",
+        fileUrl: "",
+      },
+    ],
+  });
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -121,6 +161,20 @@ export default function ResourcesEditor() {
     fetch("/api/cms/resources")
       .then((r) => r.json())
       .then((data) => {
+        if (data.hub && data.hub.heroHeadline) {
+          setHubForm((prev) => ({
+            ...prev,
+            heroEyebrow: data.hub.heroEyebrow || prev.heroEyebrow,
+            heroHeadline: data.hub.heroHeadline || prev.heroHeadline,
+            heroDescription: data.hub.heroDescription || prev.heroDescription,
+            heroImage: data.hub.heroImage || prev.heroImage,
+            downloadables:
+              data.hub.downloadables && data.hub.downloadables.length > 0
+                ? data.hub.downloadables
+                : prev.downloadables,
+          }));
+        }
+
         const live = data.tracks || {};
         // Initialize with default materials if not set in Firestore
         const merged: Record<string, any> = {};
@@ -282,7 +336,44 @@ export default function ResourcesEditor() {
     setTimeout(() => setMsg(""), 4000);
   };
 
-  // Save all tracks to API
+  const updateHubField = (field: string, value: string) => {
+    setHubForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateDownloadable = (idx: number, field: string, value: string) => {
+    setHubForm((prev) => {
+      const list = [...prev.downloadables];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, downloadables: list };
+    });
+  };
+
+  const addDownloadable = () => {
+    setHubForm((prev) => ({
+      ...prev,
+      downloadables: [
+        ...prev.downloadables,
+        {
+          title: "New Study Guide",
+          category: "General",
+          desc: "Description of study material or field manual...",
+          size: "PDF",
+          fileUrl: "",
+        },
+      ],
+    }));
+  };
+
+  const removeDownloadable = (idx: number) => {
+    if (!confirm("Remove this downloadable guide?")) return;
+    setHubForm((prev) => {
+      const list = [...prev.downloadables];
+      list.splice(idx, 1);
+      return { ...prev, downloadables: list };
+    });
+  };
+
+  // Save all tracks and main hub settings to API
   const saveAllChanges = async () => {
     setSaving(true);
     setMsg("");
@@ -290,7 +381,7 @@ export default function ResourcesEditor() {
       const res = await fetch("/api/cms/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tracks: trackData }),
+        body: JSON.stringify({ tracks: trackData, hub: hubForm }),
       });
       const json = await res.json();
       if (json.ok) {
@@ -329,7 +420,7 @@ export default function ResourcesEditor() {
             Resources & Study Guides
           </h1>
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: S.Slate500, margin: "4px 0 0" }}>
-            Manage study tracks and curriculum sessions that appear on /resources and subpages
+            Manage the main /resources hub page and individual study track subpages
           </p>
         </div>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -360,6 +451,229 @@ export default function ResourcesEditor() {
         </div>
       </div>
 
+      {/* Top Tab Bar: Main Hub vs Subpages */}
+      <div style={{ display: "flex", gap: "12px", marginBottom: "28px", borderBottom: `2px solid ${S.Paper200}`, paddingBottom: "12px" }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab("hub")}
+          style={{
+            ...S.btn(activeTab === "hub" ? S.Navy : S.Paper100, activeTab === "hub" ? S.White : S.Navy),
+            padding: "10px 20px",
+            fontSize: "12px",
+            borderRadius: "6px",
+            border: activeTab === "hub" ? `1px solid ${S.Navy}` : `1px solid ${S.Paper300}`,
+          }}
+        >
+          ⚙️ Main Resources Page (/resources)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("tracks")}
+          style={{
+            ...S.btn(activeTab === "tracks" ? S.Navy : S.Paper100, activeTab === "tracks" ? S.White : S.Navy),
+            padding: "10px 20px",
+            fontSize: "12px",
+            borderRadius: "6px",
+            border: activeTab === "tracks" ? `1px solid ${S.Navy}` : `1px solid ${S.Paper300}`,
+          }}
+        >
+          📚 Study Tracks &amp; Subpages (/resources/[slug])
+        </button>
+      </div>
+
+      {/* TAB 1: MAIN /resources HUB EDITOR */}
+      {activeTab === "hub" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+          {/* Hero Section Card */}
+          <div style={{ backgroundColor: S.White, border: `1px solid ${S.Paper300}`, borderRadius: "10px", padding: "28px", boxShadow: "0 2px 8px rgba(21, 26, 84, 0.04)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "18px", color: S.Navy, margin: 0 }}>
+                Hero Section Settings (/resources)
+              </h2>
+              <a
+                href="/resources"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Blue500, textDecoration: "none", fontWeight: 600 }}
+              >
+                View Public Page ↗
+              </a>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                <div>
+                  <label style={S.label}>Hero Eyebrow Text</label>
+                  <input
+                    type="text"
+                    style={S.input}
+                    value={hubForm.heroEyebrow}
+                    onChange={(e) => updateHubField("heroEyebrow", e.target.value)}
+                    placeholder="e.g. Equipping the Saints · Psalm 68:11"
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>Hero Headline</label>
+                  <input
+                    type="text"
+                    style={S.input}
+                    value={hubForm.heroHeadline}
+                    onChange={(e) => updateHubField("heroHeadline", e.target.value)}
+                    placeholder="e.g. Resources & Study Guides"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={S.label}>Hero Description / Subtitle</label>
+                <textarea
+                  style={{ ...S.input, minHeight: "80px", resize: "vertical" }}
+                  value={hubForm.heroDescription}
+                  onChange={(e) => updateHubField("heroDescription", e.target.value)}
+                  placeholder="Systematic teaching series, prayer class manuals, devotionals..."
+                />
+              </div>
+
+              <div>
+                <label style={S.label}>Hero Background Image URL</label>
+                <input
+                  type="text"
+                  style={S.input}
+                  value={hubForm.heroImage}
+                  onChange={(e) => updateHubField("heroImage", e.target.value)}
+                  placeholder="/images/teaching-and-resources.jpg"
+                />
+                {hubForm.heroImage && (
+                  <div style={{ marginTop: "12px", height: "140px", borderRadius: "6px", overflow: "hidden", position: "relative", border: `1px solid ${S.Paper300}` }}>
+                    <img
+                      src={hubForm.heroImage}
+                      alt="Hero Preview"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21, 26, 84, 0.88)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ color: "#FFFFFF", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600 }}>
+                        Overlay Preview (Dark Blue)
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Printable & Digital Materials (Downloadable Guides) */}
+          <div style={{ backgroundColor: S.White, border: `1px solid ${S.Paper300}`, borderRadius: "10px", padding: "28px", boxShadow: "0 2px 8px rgba(21, 26, 84, 0.04)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "18px", color: S.Navy, margin: 0 }}>
+                    Printable & Digital Materials
+                  </h2>
+                  <span style={{ backgroundColor: S.Paper200, color: S.Slate600, padding: "2px 8px", borderRadius: "12px", fontSize: "10.5px", fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>
+                    CMS Stored
+                  </span>
+                </div>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: S.Slate500, margin: "6px 0 0" }}>
+                  Manage downloadable PDF study guides, manuals, and booklets. These remain preserved in CMS and can be re-enabled whenever materials are ready.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addDownloadable}
+                style={S.btn(S.Navy, S.White)}
+              >
+                + Add Study Guide
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {hubForm.downloadables.map((item, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    border: `1px solid ${S.Paper300}`,
+                    borderRadius: "8px",
+                    padding: "20px",
+                    backgroundColor: S.Paper100,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 700, color: S.Blue700, textTransform: "uppercase" }}>
+                      Item #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeDownloadable(idx)}
+                      style={{ background: "none", border: "none", color: S.Red, cursor: "pointer", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600 }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "16px", marginBottom: "12px" }}>
+                    <div>
+                      <label style={S.label}>Category</label>
+                      <input
+                        type="text"
+                        style={S.input}
+                        value={item.category}
+                        onChange={(e) => updateDownloadable(idx, "category", e.target.value)}
+                        placeholder="e.g. Devotional, Apostolic Training"
+                      />
+                    </div>
+                    <div>
+                      <label style={S.label}>Guide Title</label>
+                      <input
+                        type="text"
+                        style={S.input}
+                        value={item.title}
+                        onChange={(e) => updateDownloadable(idx, "title", e.target.value)}
+                        placeholder="e.g. 40 Days of Prayer & Fasting Devotional (PDF)"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: "12px" }}>
+                    <label style={S.label}>Description</label>
+                    <textarea
+                      style={{ ...S.input, minHeight: "60px", resize: "vertical" }}
+                      value={item.desc}
+                      onChange={(e) => updateDownloadable(idx, "desc", e.target.value)}
+                      placeholder="Brief overview of what this study guide contains..."
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "16px" }}>
+                    <div>
+                      <label style={S.label}>File Size / Format</label>
+                      <input
+                        type="text"
+                        style={S.input}
+                        value={item.size}
+                        onChange={(e) => updateDownloadable(idx, "size", e.target.value)}
+                        placeholder="e.g. 4.2 MB · PDF"
+                      />
+                    </div>
+                    <div>
+                      <label style={S.label}>File Download URL</label>
+                      <input
+                        type="url"
+                        style={S.input}
+                        value={item.fileUrl || ""}
+                        onChange={(e) => updateDownloadable(idx, "fileUrl", e.target.value)}
+                        placeholder="https://... (Direct link to PDF)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: STUDY TRACKS & SUBPAGES */}
+      {activeTab === "tracks" && (
       <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
         {/* Track Sidebar Tabs */}
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "240px", flexShrink: 0 }}>
@@ -598,6 +912,7 @@ export default function ResourcesEditor() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ====================================================================
           MODAL: ADD / EDIT RESOURCE TEACHING (Matching Screenshot 2 exactly)

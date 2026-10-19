@@ -85,6 +85,33 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
           }}
           className="tph-hero"
         >
+          {/* Hero background image with blue overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+            }}
+          >
+            <img
+              src="/images/teaching-and-resources.jpg"
+              alt={track.title}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 25%",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(21, 26, 84, 0.88)",
+              }}
+            />
+          </div>
+
           <div style={{ maxWidth: "1000px", margin: "0 auto", position: "relative", zIndex: 1 }}>
             {/* Breadcrumbs */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>

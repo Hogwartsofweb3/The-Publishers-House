@@ -116,14 +116,44 @@ export default async function ProgramsPage() {
         <section
           className="tph-hero"
           style={{
+            position: "relative",
             background: "#151A54",
             display: "flex",
             flexDirection: "column",
             gap: "18px",
+            overflow: "hidden",
+            borderBottom: "4px solid #2090FF",
           }}
         >
-          <div className="tph-inner" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#D3DAEC" }}>
+          {/* Hero background image with blue overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+            }}
+          >
+            <img
+              src="/images/programs-hero.jpg"
+              alt="Flagship Programs"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 25%",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(21, 26, 84, 0.88)",
+              }}
+            />
+          </div>
+
+          <div className="tph-inner" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: "18px" }}>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#2090FF" }}>
               Ephesians 4:12
             </span>
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
