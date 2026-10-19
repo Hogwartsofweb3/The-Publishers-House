@@ -60,11 +60,29 @@ export default async function SermonsPage() {
             minHeight: "360px"
           }}
         >
-          {/* We use the same image but styled as dark blue overlay like the mockup */}
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/sermon-hero-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center", zIndex: 0, opacity: 0.15, mixBlendMode: "luminosity" }} />
+          {/* Background image */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "url('/images/sermon-hero-bg.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center 25%",
+              zIndex: 0,
+            }}
+          />
+          {/* Mid Blue Overlay */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.78) 0%, rgba(1, 64, 193, 0.58) 100%)",
+              zIndex: 1,
+            }}
+          />
           
           <div style={{ position: "relative", zIndex: 2, maxWidth: "800px" }}>
-            <div style={{ ...T.eyebrow, color: "rgba(255,255,255,0.7)", marginBottom: "16px" }}>2 TIMOTHY 2:15</div>
+            <div style={{ ...T.eyebrow, color: "#2090FF", marginBottom: "16px" }}>2 TIMOTHY 2:15</div>
             <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>Teachings and<br/>Resources</h1>
             <p style={{ ...T.readLede, color: "rgba(255,255,255,0.85)", margin: 0, maxWidth: "600px" }}>
               Every message preached in this house, searchable by title, series, speaker or Scripture reference.

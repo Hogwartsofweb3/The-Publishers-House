@@ -52,7 +52,7 @@ export default async function ArticlesPage() {
           style={{ display: "flex", flexDirection: "column", gap: "16px" }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/articles-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)", zIndex: 1 }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.78) 0%, rgba(1, 64, 193, 0.58) 100%)", zIndex: 1 }} />
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
             <h1 style={{ ...S.DisplayXL, color: "#FFFFFF", margin: 0 }}>Articles and essays</h1>
             <p style={{ ...S.ReadLede, color: "rgba(255,255,255,0.85)", maxWidth: "720px", margin: 0 }}>

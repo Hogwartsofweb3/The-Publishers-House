@@ -89,7 +89,7 @@ export default async function EventsPage() {
         <section className="tph-hero" style={{ display: "flex", alignItems: "center", minHeight: "420px" }}>
           <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/events-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center 20%", zIndex: 0 }} />
           {/* Dark blue overlay matching the design */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)", zIndex: 1 }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.78) 0%, rgba(1, 64, 193, 0.58) 100%)", zIndex: 1 }} />
           
           <div className="tph-inner" style={{ position: "relative", zIndex: 2 }}>
             <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "16px" }}>Acts 2:42</div>

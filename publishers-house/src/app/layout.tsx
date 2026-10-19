@@ -61,6 +61,16 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/MAIN-TPH-LOGO-B-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/MAIN-TPH-LOGO-B-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [
+      { url: "/MAIN-TPH-LOGO-B-256x256.png" },
+    ],
+  },
 };
 
 import Providers from "@/components/Providers";
@@ -73,6 +83,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${montserrat.variable} ${playfair.variable}`}>
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/MAIN-TPH-LOGO-B-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/MAIN-TPH-LOGO-B-16x16.png" />
+        <link rel="apple-touch-icon" href="/MAIN-TPH-LOGO-B-256x256.png" />
         {/* Preconnect to Google Fonts and Firebase CDN to reduce DNS lookup latency */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

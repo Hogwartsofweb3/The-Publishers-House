@@ -107,7 +107,7 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
               style={{
                 position: "absolute",
                 inset: 0,
-                background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)",
+                background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.78) 0%, rgba(1, 64, 193, 0.58) 100%)",
               }}
             />
           </div>
