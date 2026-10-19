@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await requirePortalUser();
-    if (!user || user.role !== "admin") {
+    if (!user || (user.role !== "admin" && user.role !== "super_admin" && user.role !== "portal_manager")) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 

@@ -9,12 +9,12 @@ import {
   type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
-import { getPortalUser, type UserRole } from "@/lib/portalAuth";
+import { getPortalUser, createOrUpdatePortalUser, type UserRole } from "@/lib/portalAuth";
 import { establishSession } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
 
 function destinationFor(role: UserRole) {
-  if (role === "admin") return "/portal";
+  if (role === "admin" || role === "super_admin" || role === "portal_manager") return "/portal";
   if (role === "unit_head") return "/portal/unit";
   return "/portal/member";
 }
@@ -29,13 +29,21 @@ export default function PortalLoginPage() {
 
   const finishSignIn = async (firebaseUser: User) => {
     try {
-      // Only allow users whose portal profile already exists (created by admin)
-      const portalUser = await getPortalUser(firebaseUser.uid);
+      const userEmail = (firebaseUser.email || "").toLowerCase();
+      const isSuperAdminEmail =
+        userEmail === "joshuaagunbiade@gmail.com" ||
+        userEmail === "thepublishershouse007@gmail.com";
+
+      let portalUser = await getPortalUser(firebaseUser.uid);
       if (!portalUser) {
-        setError(
-          "No portal account found for this email. Please contact the church admin to have your account created."
-        );
-        return;
+        if (isSuperAdminEmail) {
+          portalUser = await createOrUpdatePortalUser(firebaseUser, "super_admin");
+        } else {
+          setError(
+            "No portal account found for this email. Please contact the church admin to have your account created."
+          );
+          return;
+        }
       }
       const session = await establishSession(firebaseUser);
       const role = (session.role as UserRole) || portalUser.role || "member";

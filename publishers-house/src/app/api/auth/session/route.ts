@@ -5,7 +5,7 @@ import { SESSION_COOKIE, SESSION_MAX_AGE_MS } from "@/lib/sessionCookie";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ROLES = ["admin", "unit_head", "member"];
+const ROLES = ["super_admin", "admin", "portal_manager", "unit_head", "member"];
 
 export async function POST(req: Request) {
   const hasB64 = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
@@ -27,11 +27,40 @@ export async function POST(req: Request) {
     const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(idToken);
     const snap = await getAdminDb().collection("users").doc(decoded.uid).get();
+
+    const userEmail = (decoded.email || "").toLowerCase();
+    const isSuperAdminEmail =
+      userEmail === "joshuaagunbiade@gmail.com" ||
+      userEmail === "thepublishershouse007@gmail.com";
+
+    let role = snap.data()?.role;
+
     if (!snap.exists) {
-      return NextResponse.json({ error: "No portal profile" }, { status: 403 });
+      if (isSuperAdminEmail) {
+        // Auto-provision Super Admin profile for seamless Google Sign-In & login
+        const now = new Date().toISOString();
+        const isJoshua = userEmail === "joshuaagunbiade@gmail.com";
+        const autoData = {
+          uid: decoded.uid,
+          email: decoded.email || "",
+          displayName: isJoshua ? "Rev. Joshua Agunbiade" : (decoded.name || "Site Moderator"),
+          role: "super_admin",
+          activityTier: "leader",
+          campus: "jos",
+          createdAt: now,
+          lastLogin: now,
+          photoURL: decoded.picture || null,
+        };
+        await getAdminDb().collection("users").doc(decoded.uid).set(autoData, { merge: true });
+        role = "super_admin";
+      } else {
+        return NextResponse.json({ error: "No portal profile" }, { status: 403 });
+      }
+    } else if (isSuperAdminEmail && role !== "super_admin") {
+      await getAdminDb().collection("users").doc(decoded.uid).set({ role: "super_admin" }, { merge: true });
+      role = "super_admin";
     }
 
-    const role = snap.data()?.role;
     if (typeof role !== "string" || !ROLES.includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 403 });
     }

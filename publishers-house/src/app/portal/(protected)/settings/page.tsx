@@ -6,6 +6,8 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
+import { usePortal } from "@/lib/portalContext";
+import MemberSettings from "@/components/portal/MemberSettings";
 
 interface ChurchSettings {
   churchName: string;
@@ -48,6 +50,12 @@ const DEFAULT_SETTINGS: ChurchSettings = {
 };
 
 export default function PortalSettingsPage() {
+  const { effectiveUser } = usePortal();
+  const isChurchAdmin =
+    effectiveUser.role === "admin" ||
+    effectiveUser.role === "super_admin" ||
+    effectiveUser.role === "portal_manager";
+
   const [activeTab, setActiveTab] = useState<"general" | "portal" | "notifications" | "security">("general");
   const [form, setForm] = useState<ChurchSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -56,6 +64,10 @@ export default function PortalSettingsPage() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
+    if (!isChurchAdmin) {
+      setLoading(false);
+      return;
+    }
     const loadSettings = async () => {
       try {
         const res = await fetch("/api/portal/settings");
@@ -143,6 +155,10 @@ export default function PortalSettingsPage() {
     letterSpacing: "0.08em",
     marginBottom: "6px",
   };
+
+  if (!isChurchAdmin) {
+    return <MemberSettings user={effectiveUser} />;
+  }
 
   return (
     <div>

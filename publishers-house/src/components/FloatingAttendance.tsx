@@ -25,8 +25,8 @@ const Navy      = "#151A54";
 const NavyDark  = "#0F1338";
 const Blue700   = "#0140C1";
 const Blue500   = "#2090FF";
-const AmberGold = "#D97706";
-const AmberWarm = "#F59E0B";
+const AmberGold = "#2090FF";
+const AmberWarm = "#6496EF";
 const Slate500  = "#747CA1";
 const Slate400  = "#94A3B8";
 const White     = "#FFFFFF";
@@ -681,7 +681,7 @@ export default function FloatingAttendance() {
                         <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: AmberWarm }}>
                           Stream Check-In Code *
                         </label>
-                        <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                        <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(32,144,255,0.15)", border: "1px solid rgba(32,144,255,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
                           CODE REQUIRED
                         </span>
                       </div>
@@ -696,7 +696,7 @@ export default function FloatingAttendance() {
                           padding: "10px 12px",
                           borderRadius: "6px",
                           border: `1px solid ${AmberWarm}`,
-                          background: "rgba(245,158,11,0.08)",
+                          background: "rgba(32,144,255,0.08)",
                           color: White,
                           fontSize: "13px",
                           fontWeight: 700,

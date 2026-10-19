@@ -107,7 +107,7 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundColor: "rgba(21, 26, 84, 0.88)",
+                background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)",
               }}
             />
           </div>
@@ -144,7 +144,7 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#D97706",
+                color: "#2090FF",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 marginBottom: "20px",

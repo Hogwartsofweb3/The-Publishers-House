@@ -101,8 +101,8 @@ export function getRoleLabel(role: UserRole): string {
 
 export function getRoleColor(role: UserRole): string {
   switch (role) {
-    case "super_admin": return "#E11D48";
-    case "admin": return "#D97706";
+    case "super_admin": return "#0140C1";
+    case "admin": return "#1F46C8";
     case "portal_manager": return "#7C3AED";
     case "unit_head": return "#2090FF";
     case "member": return "#10B981";

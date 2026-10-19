@@ -114,7 +114,7 @@ export default async function ResourcesHubPage() {
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundColor: "rgba(21, 26, 84, 0.88)",
+                background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)",
               }}
             />
           </div>
@@ -247,7 +247,7 @@ export default async function ResourcesHubPage() {
                   <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "20px", fontWeight: 800, color: "#151A54", margin: "0 0 10px", textTransform: "uppercase" }}>
                     Sermons &amp; Audio Teachings
                   </h3>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", fontWeight: 600, color: "#D97706", textTransform: "uppercase", marginBottom: "14px" }}>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", fontWeight: 600, color: "#0140C1", textTransform: "uppercase", marginBottom: "14px" }}>
                     Romans 10:17
                   </div>
                   <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14.5px", lineHeight: "1.6em", color: "#4A62A0", margin: "0 0 24px" }}>
@@ -301,7 +301,7 @@ export default async function ResourcesHubPage() {
                     <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "20px", fontWeight: 800, color: "#151A54", margin: "0 0 10px", textTransform: "uppercase" }}>
                       {track.title}
                     </h3>
-                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", fontWeight: 600, color: "#D97706", textTransform: "uppercase", marginBottom: "14px" }}>
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", fontWeight: 600, color: "#0140C1", textTransform: "uppercase", marginBottom: "14px" }}>
                       {track.scripture}
                     </div>
                     <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14.5px", lineHeight: "1.6em", color: "#4A62A0", margin: "0 0 24px" }}>

@@ -108,10 +108,9 @@ function PortalHeaderAndContent({
     }
   };
 
-  const canImpersonate =
-    user.role === "super_admin" ||
-    user.role === "admin" ||
-    user.email.toLowerCase() === "joshuaagunbiade@gmail.com";
+  const isModerator =
+    user.email.toLowerCase() === "thepublishershouse007@gmail.com";
+  const canImpersonate = isModerator;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F4F6FB" }}>
@@ -194,73 +193,76 @@ function PortalHeaderAndContent({
 
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             
-            {/* Campus Filter Dropdown */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Campus:</span>
-              <select
-                value={campus}
-                onChange={(e) => setCampus(e.target.value as any)}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  border: "1px solid #D5DCF2",
-                  backgroundColor: "#F4F6FB",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#141C6E",
-                  outline: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="all">🌐 All Campuses</option>
-                <option value="jos">📍 Jos Headquarters</option>
-                <option value="abuja">📍 Abuja Campus</option>
-              </select>
-            </div>
+            {/* Moderator-Only Controls: Campus Filter & Role Preview Impersonation */}
+            {isModerator && (
+              <>
+                {/* Campus Filter Dropdown */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Campus:</span>
+                  <select
+                    value={campus}
+                    onChange={(e) => setCampus(e.target.value as any)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "8px",
+                      border: "1px solid #D5DCF2",
+                      backgroundColor: "#F4F6FB",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#141C6E",
+                      outline: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="all">🌐 All Campuses</option>
+                    <option value="jos">📍 Jos Headquarters</option>
+                    <option value="abuja">📍 Abuja Campus</option>
+                  </select>
+                </div>
 
-            {/* Role Preview Mode Impersonation Dropdown */}
-            {canImpersonate && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <select
-                  value={previewRole || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val) {
-                      exitPreview();
-                    } else if (val === "unit_head_ushering") {
-                      startPreview("unit_head", "ushering");
-                    } else if (val === "unit_head_media") {
-                      startPreview("unit_head", "media_technical");
-                    } else if (val === "unit_head_worship") {
-                      startPreview("unit_head", "worship");
-                    } else {
-                      startPreview(val as UserRole);
-                    }
-                  }}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #C4B5FD",
-                    backgroundColor: previewRole ? "#EDE9FE" : "#F4F6FB",
-                    color: previewRole ? "#6D28D9" : "#141C6E",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  <option value="">👁️ Role Preview: Normal</option>
-                  <option value="super_admin">Viewing as Super Admin</option>
-                  <option value="admin">Viewing as Administrator</option>
-                  <option value="portal_manager">Viewing as Portal Manager (007)</option>
-                  <option value="unit_head_ushering">Preview as Unit Head (Ushering)</option>
-                  <option value="unit_head_media">Preview as Unit Head (Media)</option>
-                  <option value="unit_head_worship">Preview as Unit Head (Worship)</option>
-                  <option value="member">Preview as Regular Member</option>
-                </select>
-              </div>
+                {/* Role Preview Mode Impersonation Dropdown */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <select
+                    value={previewRole || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) {
+                        exitPreview();
+                      } else if (val === "unit_head_ushering") {
+                        startPreview("unit_head", "ushering");
+                      } else if (val === "unit_head_media") {
+                        startPreview("unit_head", "media_technical");
+                      } else if (val === "unit_head_worship") {
+                        startPreview("unit_head", "worship");
+                      } else {
+                        startPreview(val as UserRole);
+                      }
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid #C4B5FD",
+                      backgroundColor: previewRole ? "#EDE9FE" : "#F4F6FB",
+                      color: previewRole ? "#6D28D9" : "#141C6E",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      outline: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="">👁️ Role Preview: Normal</option>
+                    <option value="super_admin">Viewing as Super Admin</option>
+                    <option value="admin">Viewing as Administrator</option>
+                    <option value="portal_manager">Viewing as Portal Manager (007)</option>
+                    <option value="unit_head_ushering">Preview as Unit Head (Ushering)</option>
+                    <option value="unit_head_media">Preview as Unit Head (Media)</option>
+                    <option value="unit_head_worship">Preview as Unit Head (Worship)</option>
+                    <option value="member">Preview as Regular Member</option>
+                  </select>
+                </div>
+              </>
             )}
 
             {/* Online Indicator */}

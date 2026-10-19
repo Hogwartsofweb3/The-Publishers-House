@@ -147,7 +147,7 @@ export default async function ProgramsPage() {
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundColor: "rgba(21, 26, 84, 0.88)",
+                background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)",
               }}
             />
           </div>

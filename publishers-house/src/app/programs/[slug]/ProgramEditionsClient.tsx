@@ -240,10 +240,10 @@ export default function ProgramEditionsClient({ programSlug, programName }: { pr
               style={{
                 textAlign: "left",
                 padding: "12px 16px",
-                background: activeYear === ed.year ? "rgba(217, 119, 6, 0.15)" : "transparent",
-                border: activeYear === ed.year ? "1px solid rgba(217, 119, 6, 0.3)" : "1px solid transparent",
+                background: activeYear === ed.year ? "rgba(32, 144, 255, 0.15)" : "transparent",
+                border: activeYear === ed.year ? "1px solid rgba(32, 144, 255, 0.3)" : "1px solid transparent",
                 borderRadius: "8px",
-                color: activeYear === ed.year ? "#D97706" : "#F8FAFC",
+                color: activeYear === ed.year ? "#2090FF" : "#F8FAFC",
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: "18px",
                 fontWeight: activeYear === ed.year ? 700 : 500,
@@ -265,7 +265,7 @@ export default function ProgramEditionsClient({ programSlug, programName }: { pr
             {/* Edition Header */}
             <div>
               <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-                <span style={{ padding: "4px 12px", background: "#D97706", color: "#fff", borderRadius: "100px", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                <span style={{ padding: "4px 12px", background: "#2090FF", color: "#fff", borderRadius: "100px", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 700 }}>
                   {activeEdition.year}
                 </span>
                 <span style={{ color: "#94A3B8", fontFamily: "'Poppins', sans-serif", fontSize: "14px" }}>

@@ -159,7 +159,7 @@ export default async function AboutPage() {
               style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
             />
           </picture>
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(21,26,84,0.88)", zIndex: 1 }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.65) 0%, rgba(1, 64, 193, 0.38) 100%)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
             <span style={{ ...S.eyebrow, color: "#2090FF" }}>PSALM 68:11</span>
