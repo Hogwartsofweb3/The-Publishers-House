@@ -44,13 +44,23 @@ const memberNav = [
 
 interface SidebarProps {
   user: PortalUser;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+  collapsed?: boolean;
+  setCollapsed?: (val: boolean) => void;
 }
 
 import { usePortal } from "@/lib/portalContext";
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, mobileOpen = false, onCloseMobile, collapsed: externalCollapsed, setCollapsed: externalSetCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+
+  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
+  const toggleCollapse = (next: boolean) => {
+    if (externalSetCollapsed) externalSetCollapsed(next);
+    else setInternalCollapsed(next);
+  };
 
   let activeRole = user.role;
   let activeUser = user;
@@ -95,79 +105,106 @@ export default function Sidebar({ user }: SidebarProps) {
   };
 
   return (
-    <aside
-      style={{
-        width: collapsed ? "72px" : "264px",
-        minHeight: "100vh",
-        backgroundColor: "#0E1556",
-        display: "flex",
-        flexDirection: "column",
-        transition: "width 0.25s ease",
-        flexShrink: 0,
-        position: "fixed",
-        top: 0,
-        left: 0,
-        bottom: 0,
-        zIndex: 40,
-        overflow: "hidden",
-      }}
-    >
-      {/* Brand Header */}
+    <>
+      {/* Mobile Backdrop */}
       <div
+        className={`portal-sidebar-backdrop ${mobileOpen ? "active" : ""}`}
+        onClick={onCloseMobile}
+        aria-hidden="true"
+      />
+
+      <aside
+        className={`portal-sidebar-drawer ${mobileOpen ? "open" : ""}`}
         style={{
-          padding: collapsed ? "24px 14px 20px" : "28px 24px 24px",
+          width: isCollapsed ? "72px" : "264px",
+          minHeight: "100vh",
+          backgroundColor: "#0E1556",
           display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          borderBottom: "1px solid rgba(169, 194, 255, 0.12)",
+          flexDirection: "column",
+          flexShrink: 0,
+          top: 0,
+          left: 0,
+          bottom: 0,
+          overflow: "hidden",
         }}
       >
-        {!collapsed && (
-          <div>
-            <div
-              style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontWeight: 600,
-                fontSize: "11px",
-                lineHeight: "18.7px",
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                color: "#FFFFFF",
-              }}
-            >
-              The Publishers House
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-serif, 'Playfair Display', serif)",
-                fontStyle: "italic",
-                fontWeight: 400,
-                fontSize: "14px",
-                color: "#A9C2FF",
-                marginTop: "4px",
-              }}
-            >
-              Admin dashboard
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
+        {/* Brand Header */}
+        <div
           style={{
-            background: "transparent",
-            border: "none",
-            color: "#A9C2FF",
-            cursor: "pointer",
-            fontSize: "18px",
-            padding: "4px",
-            lineHeight: 1,
-            marginTop: collapsed ? "0" : "2px",
+            padding: isCollapsed ? "24px 14px 20px" : "28px 24px 24px",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            borderBottom: "1px solid rgba(169, 194, 255, 0.12)",
           }}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? "›" : "‹"}
-        </button>
-      </div>
+          {!isCollapsed && (
+            <div>
+              <div
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 600,
+                  fontSize: "11px",
+                  lineHeight: "18.7px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "#FFFFFF",
+                }}
+              >
+                The Publishers House
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-serif, 'Playfair Display', serif)",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "14px",
+                  color: "#A9C2FF",
+                  marginTop: "4px",
+                }}
+              >
+                Admin dashboard
+              </div>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Mobile Close Button */}
+            <button
+              onClick={onCloseMobile}
+              className="portal-mobile-hamburger"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#A9C2FF",
+                cursor: "pointer",
+                fontSize: "20px",
+                padding: "2px 6px",
+                lineHeight: 1,
+              }}
+              title="Close navigation drawer"
+            >
+              ✕
+            </button>
+
+            {/* Desktop Collapse Button */}
+            <button
+              onClick={() => toggleCollapse(!isCollapsed)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#A9C2FF",
+                cursor: "pointer",
+                fontSize: "18px",
+                padding: "4px",
+                lineHeight: 1,
+                marginTop: isCollapsed ? "0" : "2px",
+              }}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? "›" : "‹"}
+            </button>
+          </div>
+        </div>
 
       {/* Nav List */}
       <nav
@@ -192,11 +229,12 @@ export default function Sidebar({ user }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => onCloseMobile?.()}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "12px",
-                padding: collapsed ? "12px 0" : "11px 16px",
+                padding: isCollapsed ? "12px 0" : "11px 16px",
                 borderRadius: "10px",
                 backgroundColor: active ? "#1F46C8" : "transparent",
                 color: active ? "#FFFFFF" : "#C9D6FF",
@@ -205,7 +243,7 @@ export default function Sidebar({ user }: SidebarProps) {
                 fontSize: "13.5px",
                 fontWeight: active ? 600 : 500,
                 transition: "all 0.15s ease",
-                justifyContent: collapsed ? "center" : "flex-start",
+                justifyContent: isCollapsed ? "center" : "flex-start",
               }}
               onMouseOver={(e) => {
                 if (!active) {
@@ -221,7 +259,7 @@ export default function Sidebar({ user }: SidebarProps) {
               }}
             >
               <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.icon}</span>
-              {!collapsed && (
+              {!isCollapsed && (
                 <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {item.label}
                 </span>
@@ -234,12 +272,12 @@ export default function Sidebar({ user }: SidebarProps) {
       {/* User Footer matching Figma */}
       <div
         style={{
-          padding: collapsed ? "16px 12px" : "18px 20px",
+          padding: isCollapsed ? "16px 12px" : "18px 20px",
           borderTop: "1px solid #2F5BE0",
           backgroundColor: "#0E1556",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: collapsed ? "center" : "flex-start" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: isCollapsed ? "center" : "flex-start" }}>
           {/* Avatar Badge */}
           <div
             style={{
@@ -265,7 +303,7 @@ export default function Sidebar({ user }: SidebarProps) {
             </span>
           </div>
 
-          {!collapsed && (
+          {!isCollapsed && (
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
@@ -296,7 +334,7 @@ export default function Sidebar({ user }: SidebarProps) {
             </div>
           )}
 
-          {!collapsed && (
+          {!isCollapsed && (
             <button
               onClick={handleSignOut}
               title="Sign Out of Portal"
@@ -335,5 +373,6 @@ export default function Sidebar({ user }: SidebarProps) {
         </div>
       </div>
     </aside>
+    </>
   );
 }

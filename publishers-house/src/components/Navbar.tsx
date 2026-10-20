@@ -386,31 +386,58 @@ export default function Navbar() {
             })}
           </ul>
 
-          {/* Give Button */}
-          <Link
-            href="/giving"
-            className="nav-give-btn"
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 600,
-              fontSize: "12px",
-              lineHeight: "1em",
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#151A54",
-              background: "#FFFFFF",
-              border: "1px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "0 26px",
-              height: "48px",
-              display: "inline-flex",
-              alignItems: "center",
-              textDecoration: "none",
-              transition: "background 150ms ease",
-            }}
-          >
-            Give
-          </Link>
+          {/* Action Buttons: Portal & Give */}
+          <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Link
+              href="/portal"
+              className="nav-portal-btn"
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "12px",
+                lineHeight: "1em",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "#151A54",
+                background: "#FFFFFF",
+                border: "1px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "0 26px",
+                height: "48px",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                transition: "all 150ms ease",
+              }}
+            >
+              Portal
+            </Link>
+
+            <Link
+              href="/giving"
+              className="nav-give-btn"
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 600,
+                fontSize: "12px",
+                lineHeight: "1em",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "#151A54",
+                background: "#FFFFFF",
+                border: "1px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "0 26px",
+                height: "48px",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                transition: "all 150ms ease",
+              }}
+            >
+              Give
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Hamburger */}
@@ -558,7 +585,27 @@ export default function Navbar() {
                 </li>
               );
             })}
-            <li style={{ marginTop: "16px" }}>
+            <li style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <Link
+                href="/portal"
+                style={{
+                  display: "block",
+                  textAlign: "center",
+                  padding: "14px 26px",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#151A54",
+                  background: "#FFFFFF",
+                  border: "1px solid #FFFFFF",
+                  borderRadius: "2px",
+                  textDecoration: "none",
+                }}
+              >
+                Login to Portal
+              </Link>
               <Link
                 href="/giving"
                 style={{
@@ -570,8 +617,8 @@ export default function Navbar() {
                   fontSize: "12px",
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  color: "#151A54",
-                  background: "#2090FF",
+                  color: "#FFFFFF",
+                  background: "#0140C1",
                   borderRadius: "2px",
                   textDecoration: "none",
                 }}
@@ -595,7 +642,9 @@ export default function Navbar() {
         
         @media (max-width: 768px) {
           .nav-desktop { display: none !important; }
+          .nav-actions { display: none !important; }
           .nav-give-btn { display: none !important; }
+          .nav-portal-btn { display: none !important; }
           .nav-hamburger { display: flex !important; }
           .nav-container { padding: 16px 20px !important; }
         }

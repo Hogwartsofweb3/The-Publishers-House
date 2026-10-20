@@ -41,6 +41,10 @@ function PortalHeaderAndContent({
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+  // Mobile Drawer & Sidebar Collapse State
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const handleSignOut = async () => {
     try {
       await clearSession();
@@ -113,9 +117,15 @@ function PortalHeaderAndContent({
   const canImpersonate = isModerator;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F4F6FB" }}>
-      <Sidebar user={effectiveUser} />
-      <main style={{ flex: 1, marginLeft: "264px", minHeight: "100vh", overflow: "auto" }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#F4F6FB", overflowX: "hidden" }}>
+      <Sidebar
+        user={effectiveUser}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
+      <main className={`portal-main-content ${sidebarCollapsed ? "collapsed" : ""}`}>
         
         {/* Impersonation Banner */}
         {previewRole && (
@@ -163,35 +173,47 @@ function PortalHeaderAndContent({
 
         {/* Top bar matching Figma */}
         <div
+          className="portal-topbar"
           style={{
-            height: "64px",
-            borderBottom: "1px solid #D5DCF2",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 40px",
-            backgroundColor: "#FFFFFF",
             position: "sticky",
             top: previewRole ? "40px" : 0,
             zIndex: 30,
           }}
         >
-          {/* Section Breadcrumb */}
-          <div
-            style={{
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            <span style={{ color: "#1F46C8" }}>TPH ADMIN</span>
-            <span style={{ color: "#D5DCF2", margin: "0 8px" }}>/</span>
-            <span style={{ color: "#141C6E" }}>{getSectionTitle()}</span>
+          {/* Left: Mobile Hamburger & Section Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="portal-mobile-hamburger"
+              aria-label="Open sidebar menu"
+              title="Open Navigation Drawer"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              <span style={{ color: "#1F46C8" }}>TPH</span>
+              <span style={{ color: "#D5DCF2", margin: "0 6px" }}>/</span>
+              <span style={{ color: "#141C6E" }}>{getSectionTitle()}</span>
+            </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
             
             {/* Moderator-Only Controls: Campus Filter & Role Preview Impersonation */}
             {isModerator && (
@@ -352,7 +374,7 @@ function PortalHeaderAndContent({
         </div>
 
         {/* Content Page area */}
-        <div style={{ padding: "36px 40px", maxWidth: "1600px", margin: "0 auto" }}>
+        <div className="portal-content-pad" style={{ maxWidth: "1600px", margin: "0 auto" }}>
           {children}
         </div>
       </main>

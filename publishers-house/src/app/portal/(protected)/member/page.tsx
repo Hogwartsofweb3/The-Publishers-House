@@ -26,6 +26,69 @@ export default function FashionableMemberDashboard() {
   const [continueItem, setContinueItem] = useState<PlaybackRecord | null>(null);
   const [recentlyPlayed, setRecentlyPlayed] = useState<PlaybackRecord[]>([]);
 
+  // Upcoming Events Carousel State
+  const [eventSlide, setEventSlide] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
+
+  const UPCOMING_EVENTS = [
+    {
+      id: "shout-of-a-king",
+      badge: "Flagship Event",
+      category: "Annual Apostolic Convocation",
+      title: "Shout of a King",
+      scripture: "Numbers 23:21",
+      date: "Coming This Season",
+      venue: "The House of Bread, Korinjoh House, Jos",
+      time: "Evening Rallies & Morning Conclaves",
+      summary: "Annual apostolic victory and high praise convocation. A sacred assembly where the voice of triumph resounds, unveiling kingdom dominion, healing, and prophetic empowerment.",
+      themeColor: "#F59E0B",
+      bgGradient: "linear-gradient(135deg, #0E1556 0%, #1E1B4B 45%, #0B0E14 100%)",
+      glowColor: "rgba(245, 158, 11, 0.22)",
+      href: "/events",
+      actionText: "View Convocation Details →",
+    },
+    {
+      id: "merismos",
+      badge: "Apostolic Conclave",
+      category: "Doctrinal Deep-Dive Encounter",
+      title: "Merismos",
+      scripture: "Hebrews 4:12",
+      date: "Annual Believers Conclave",
+      venue: "Jos Headquarters Sanctuary",
+      time: "Intensive Word Exposition",
+      summary: "A power-packed encounter where the Word of God is rightly divided—discerning soul and spirit, joints and marrow—purifying apostolic doctrine and igniting personal consecration.",
+      themeColor: "#2090FF",
+      bgGradient: "linear-gradient(135deg, #0E1556 0%, #0369A1 45%, #0B0E14 100%)",
+      glowColor: "rgba(32, 144, 255, 0.28)",
+      href: "/programs",
+      actionText: "Explore Merismos Curriculum →",
+    },
+    {
+      id: "sunday-service-oct-25",
+      badge: "Next Gathering",
+      category: "Sunday Corporate Encounter",
+      title: "Sunday Word & Worship Encounter",
+      scripture: "Acts 2:42",
+      date: "Sunday, 25th October 2026",
+      venue: "The House of Bread, Korinjoh House, British, Jos",
+      time: "9:00 AM West Africa Time",
+      summary: "Join Dr. Joshua Agunbiade and the Company of the Great for our weekly apostolic assembly. Experience the undiluted preaching of the Word, corporate worship, and divine transformation.",
+      themeColor: "#10B981",
+      bgGradient: "linear-gradient(135deg, #0E1556 0%, #065F46 45%, #0B0E14 100%)",
+      glowColor: "rgba(16, 185, 129, 0.25)",
+      href: "/contact",
+      actionText: "Service Details & Directions →",
+    },
+  ];
+
+  useEffect(() => {
+    if (carouselPaused) return;
+    const timer = setInterval(() => {
+      setEventSlide((prev) => (prev + 1) % UPCOMING_EVENTS.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [carouselPaused, UPCOMING_EVENTS.length]);
+
   // Fast action states
   const [prayerContent, setPrayerContent] = useState("");
   const [prayerSubmitting, setPrayerSubmitting] = useState(false);
@@ -213,43 +276,142 @@ export default function FashionableMemberDashboard() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "32px", maxWidth: "1280px", margin: "0 auto" }}>
       
-      {/* ── 1. PROPHETIC HERO BANNER ───────────────────────────────── */}
+      {/* ── 1. PERSONALIZED WELCOME GREETING (ABOVE THE CARD) ───────── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
+            <span
+              style={{
+                padding: "3px 10px",
+                borderRadius: "20px",
+                backgroundColor: "rgba(31, 70, 200, 0.1)",
+                border: "1px solid rgba(31, 70, 200, 0.25)",
+                color: "#1F46C8",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+              }}
+            >
+              Company of the Great · Psalm 68:11
+            </span>
+            <span style={{ fontSize: "12px", color: "#94A3B8" }}>•</span>
+            <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 500, fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+              {todayLabel}
+            </span>
+          </div>
+
+          <h1
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 800,
+              fontSize: "clamp(26px, 3.5vw, 36px)",
+              lineHeight: "1.15em",
+              margin: "0 0 10px",
+              color: "#0E1556",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Welcome back, {user.displayName}!
+          </h1>
+          <p
+            style={{
+              fontFamily: "var(--font-serif, 'Playfair Display', serif)",
+              fontStyle: "italic",
+              fontSize: "16px",
+              color: "#4A62A0",
+              margin: 0,
+              maxWidth: "760px",
+              lineHeight: "1.6em",
+            }}
+          >
+            &ldquo;The Lord gave the word: great was the company of those that published it.&rdquo; Stand equipped in biblical doctrine, fervent prayer, and righteous service.
+          </p>
+        </div>
+
+        {/* Member Status & Campus Badges */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 14px",
+              borderRadius: "8px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D5DCF2",
+              boxShadow: "0 2px 8px rgba(14,21,86,0.04)",
+              color: "#141C6E",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10B981" }} />
+            <span>Campus: {user.campus === "abuja" ? "Abuja Center" : "Jos Sanctuary"}</span>
+          </div>
+          <div
+            style={{
+              padding: "7px 14px",
+              borderRadius: "8px",
+              backgroundColor: "#EEF2FB",
+              border: "1px solid #D5DCF2",
+              color: "#0140C1",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            {getTierLabel(user.activityTier)} • {unitName || "General Assembly"}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. UPCOMING EVENTS CAROUSEL (THE BLUE CARD) ──────────────── */}
       <div
+        onMouseEnter={() => setCarouselPaused(true)}
+        onMouseLeave={() => setCarouselPaused(false)}
         style={{
           position: "relative",
           borderRadius: "16px",
           padding: "36px 40px",
-          backgroundColor: "#0E1556",
+          background: UPCOMING_EVENTS[eventSlide].bgGradient,
           color: "#FFFFFF",
           overflow: "hidden",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+          border: `1px solid rgba(255, 255, 255, 0.14)`,
+          boxShadow: `0 12px 36px rgba(14, 21, 86, 0.22)`,
+          transition: "all 0.4s ease",
         }}
       >
-        {/* Decorative background glow */}
+        {/* Decorative background glow matching current event theme */}
         <div
           style={{
             position: "absolute",
-            top: "-50px",
-            right: "-50px",
-            width: "320px",
-            height: "320px",
+            top: "-60px",
+            right: "-60px",
+            width: "360px",
+            height: "360px",
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(32, 144, 255, 0.25) 0%, transparent 70%)",
+            background: `radial-gradient(circle, ${UPCOMING_EVENTS[eventSlide].glowColor} 0%, transparent 70%)`,
             pointerEvents: "none",
+            transition: "all 0.5s ease",
           }}
         />
 
-        <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "24px" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* Top Row: Category Eyebrow, Badge & Carousel Navigation Controls */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <span
                 style={{
                   padding: "4px 10px",
                   borderRadius: "20px",
-                  backgroundColor: "rgba(32, 144, 255, 0.2)",
-                  border: "1px solid rgba(32, 144, 255, 0.4)",
-                  color: "#A9C2FF",
+                  backgroundColor: "rgba(255, 255, 255, 0.12)",
+                  border: `1px solid ${UPCOMING_EVENTS[eventSlide].themeColor}88`,
+                  color: UPCOMING_EVENTS[eventSlide].themeColor,
                   fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                   fontSize: "11px",
                   fontWeight: 700,
@@ -257,72 +419,219 @@ export default function FashionableMemberDashboard() {
                   letterSpacing: "0.14em",
                 }}
               >
-                Company of the Great · Psalm 68:11
+                {UPCOMING_EVENTS[eventSlide].badge}
               </span>
-              <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>•</span>
-              <span style={{ fontSize: "12px", color: "#A9C2FF", fontWeight: 500 }}>{todayLabel}</span>
+              <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>•</span>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  color: "#A9C2FF",
+                  fontWeight: 600,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {UPCOMING_EVENTS[eventSlide].category}
+              </span>
             </div>
 
-            <h1
-              style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontWeight: 800,
-                fontSize: "clamp(26px, 3.5vw, 36px)",
-                lineHeight: "1.15em",
-                margin: "0 0 10px",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Welcome back, {user.displayName}!
-            </h1>
-            <p
-              style={{
-                fontFamily: "var(--font-serif, 'Playfair Display', serif)",
-                fontStyle: "italic",
-                fontSize: "16px",
-                color: "rgba(255,255,255,0.85)",
-                margin: 0,
-                maxWidth: "680px",
-                lineHeight: "1.6em",
-              }}
-            >
-              &ldquo;The Lord gave the word: great was the company of those that published it.&rdquo; Stand equipped in biblical doctrine, fervent prayer, and righteous service.
-            </p>
+            {/* Carousel Arrow Controls */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "rgba(255,255,255,0.6)", marginRight: "6px" }}>
+                {eventSlide + 1} / {UPCOMING_EVENTS.length}
+              </span>
+              <button
+                onClick={() => setEventSlide((prev) => (prev - 1 + UPCOMING_EVENTS.length) % UPCOMING_EVENTS.length)}
+                aria-label="Previous event"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  transition: "background 0.2s ease",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.22)")}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
+              >
+                ‹
+              </button>
+              <button
+                onClick={() => setEventSlide((prev) => (prev + 1) % UPCOMING_EVENTS.length)}
+                aria-label="Next event"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  transition: "background 0.2s ease",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.22)")}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
+              >
+                ›
+              </button>
+            </div>
           </div>
 
-          {/* Quick Badges */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 600,
-              }}
-            >
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10B981" }} />
-              <span>Campus: {user.campus === "abuja" ? "Abuja Center" : "Jos Sanctuary"}</span>
+          {/* Main Event Content */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "28px", alignItems: "center" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontWeight: 800,
+                    fontSize: "clamp(24px, 3.2vw, 34px)",
+                    lineHeight: "1.15em",
+                    margin: 0,
+                    letterSpacing: "-0.01em",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {UPCOMING_EVENTS[eventSlide].title}
+                </h2>
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    fontSize: "11px",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontWeight: 600,
+                    color: "#A9C2FF",
+                  }}
+                >
+                  {UPCOMING_EVENTS[eventSlide].scripture}
+                </span>
+              </div>
+
+              {/* Date & Location Line */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "12px",
+                  flexWrap: "wrap",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "13px",
+                  color: UPCOMING_EVENTS[eventSlide].themeColor,
+                  fontWeight: 600,
+                }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <span>📅</span>
+                  <span>{UPCOMING_EVENTS[eventSlide].date}</span>
+                </span>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#E2E8F0" }}>
+                  <span>⏰</span>
+                  <span>{UPCOMING_EVENTS[eventSlide].time}</span>
+                </span>
+              </div>
+
+              {/* Summary Description */}
+              <p
+                style={{
+                  fontFamily: "var(--font-serif, 'Playfair Display', serif)",
+                  fontSize: "15.5px",
+                  color: "rgba(255, 255, 255, 0.88)",
+                  margin: 0,
+                  maxWidth: "760px",
+                  lineHeight: "1.65em",
+                }}
+              >
+                {UPCOMING_EVENTS[eventSlide].summary}
+              </p>
             </div>
-            <div
-              style={{
-                padding: "6px 14px",
-                borderRadius: "8px",
-                backgroundColor: "rgba(32, 144, 255, 0.15)",
-                color: "#2090FF",
-                fontSize: "11px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              {getTierLabel(user.activityTier)} • {unitName || "General Assembly"}
+
+            {/* Action CTA */}
+            <div style={{ flexShrink: 0 }}>
+              <Link
+                href={UPCOMING_EVENTS[eventSlide].href}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "13px 24px",
+                  borderRadius: "8px",
+                  backgroundColor: "#FFFFFF",
+                  color: "#0E1556",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = UPCOMING_EVENTS[eventSlide].themeColor;
+                  e.currentTarget.style.color = "#FFFFFF";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = "#FFFFFF";
+                  e.currentTarget.style.color = "#0E1556";
+                }}
+              >
+                {UPCOMING_EVENTS[eventSlide].actionText}
+              </Link>
             </div>
+          </div>
+
+          {/* Bottom Tabs / Direct Slide Selectors */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginTop: "24px",
+              paddingTop: "16px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+              flexWrap: "wrap",
+            }}
+          >
+            {UPCOMING_EVENTS.map((ev, idx) => {
+              const isActive = idx === eventSlide;
+              return (
+                <button
+                  key={ev.id}
+                  onClick={() => setEventSlide(idx)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "6px",
+                    backgroundColor: isActive ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.06)",
+                    border: isActive ? `1px solid ${ev.themeColor}` : "1px solid rgba(255,255,255,0.12)",
+                    color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.65)",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "11px",
+                    fontWeight: isActive ? 700 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {idx + 1}. {ev.title}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

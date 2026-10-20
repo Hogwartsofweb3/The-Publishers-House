@@ -741,5 +741,119 @@ html, body {
 }
 .sermon-mobile-card-body { flex: 1; min-width: 0; }
 
+/* ============================================================
+   PORTAL MOBILE & DESKTOP RESPONSIVENESS
+   ============================================================ */
+.portal-main-content {
+  flex: 1;
+  margin-left: 264px;
+  min-height: 100vh;
+  min-width: 0;
+  max-width: 100vw;
+  box-sizing: border-box;
+  transition: margin-left 0.25s ease;
+}
+
+.portal-main-content.collapsed {
+  margin-left: 72px;
+}
+
+.portal-sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  background-color: #0E1556;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s ease;
+}
+
+.portal-sidebar-backdrop {
+  display: none;
+}
+
+.portal-mobile-hamburger {
+  display: none !important;
+}
+
+.portal-topbar {
+  height: 64px;
+  border-bottom: 1px solid #D5DCF2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  background-color: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.portal-content-pad {
+  padding: 32px 40px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .portal-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  .portal-main-content.collapsed {
+    margin-left: 0 !important;
+  }
+
+  .portal-sidebar-drawer {
+    width: 280px !important;
+    z-index: 500 !important;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .portal-sidebar-drawer.open {
+    transform: translateX(0) !important;
+  }
+
+  .portal-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(14, 21, 86, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 490;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .portal-sidebar-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .portal-mobile-hamburger {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    color: #141C6E;
+  }
+
+  .portal-topbar {
+    padding: 0 16px !important;
+  }
+
+  .portal-content-pad {
+    padding: 20px 14px !important;
+  }
+}
+
+
 
 

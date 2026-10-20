@@ -266,6 +266,77 @@ export default function Footer() {
           >
             PSALM 68:11 (KJV)
           </span>
+
+          {/* Legal & Policy Navigation */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "18px",
+              marginTop: "16px",
+              paddingTop: "16px",
+              borderTop: "1px solid rgba(232, 236, 247, 0.15)",
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.65)",
+              }}
+            >
+              © {new Date().getFullYear()} The Publishers House. All rights reserved.
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>•</span>
+            <Link
+              href="/privacy"
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#E8ECF7",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                transition: "color 150ms ease",
+              }}
+            >
+              Privacy Policy
+            </Link>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>•</span>
+            <Link
+              href="/permissions"
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#E8ECF7",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                transition: "color 150ms ease",
+              }}
+            >
+              Copyright & Permissions
+            </Link>
+            <span style={{ color: "rgba(255,255,255,0.3)" }}>•</span>
+            <Link
+              href="/portal"
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#6496EF",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <span>Portal Login</span>
+              <span>→</span>
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
