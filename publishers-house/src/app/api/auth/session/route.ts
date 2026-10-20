@@ -26,16 +26,33 @@ export async function POST(req: Request) {
 
     const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(idToken);
-    const snap = await getAdminDb().collection("users").doc(decoded.uid).get();
-
     const userEmail = (decoded.email || "").toLowerCase();
     const isSuperAdminEmail =
       userEmail === "joshuaagunbiade@gmail.com" ||
       userEmail === "thepublishershouse007@gmail.com";
 
-    let role = snap.data()?.role;
+    let snap = await getAdminDb().collection("users").doc(decoded.uid).get();
+    let userData = snap.exists ? snap.data() : null;
 
-    if (!snap.exists) {
+    // Fallback: If not found by UID, search by email to link pre-created member records
+    if (!userData && userEmail) {
+      const emailQuery = await getAdminDb()
+        .collection("users")
+        .where("email", "==", userEmail)
+        .limit(1)
+        .get();
+      if (!emailQuery.empty) {
+        userData = emailQuery.docs[0].data();
+        await getAdminDb().collection("users").doc(decoded.uid).set(
+          { ...userData, uid: decoded.uid },
+          { merge: true }
+        );
+      }
+    }
+
+    let role = userData?.role;
+
+    if (!userData) {
       if (isSuperAdminEmail) {
         // Auto-provision Super Admin profile for seamless Google Sign-In & login
         const now = new Date().toISOString();

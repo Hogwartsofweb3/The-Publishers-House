@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   GoogleAuthProvider,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
-import { getPortalUser, createOrUpdatePortalUser, type UserRole } from "@/lib/portalAuth";
+import type { UserRole } from "@/lib/portalAuth";
 import { establishSession } from "@/lib/clientSession";
 import { useRouter } from "next/navigation";
 
@@ -27,31 +29,48 @@ export default function PortalLoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Listen for redirect sign-in return (especially on mobile browsers)
+  useEffect(() => {
+    let active = true;
+    getRedirectResult(auth)
+      .then(async (cred) => {
+        if (cred && cred.user && active) {
+          setLoading(true);
+          await finishSignIn(cred.user);
+        }
+      })
+      .catch((err: unknown) => {
+        console.error("Redirect check:", err);
+        const msg = err instanceof Error ? err.message : "";
+        if (active && msg && !msg.includes("Database is closing") && !msg.includes("popup-closed")) {
+          setError(msg);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const finishSignIn = async (firebaseUser: User) => {
     try {
-      const userEmail = (firebaseUser.email || "").toLowerCase();
-      const isSuperAdminEmail =
-        userEmail === "joshuaagunbiade@gmail.com" ||
-        userEmail === "thepublishershouse007@gmail.com";
-
-      let portalUser = await getPortalUser(firebaseUser.uid);
-      if (!portalUser) {
-        if (isSuperAdminEmail) {
-          portalUser = await createOrUpdatePortalUser(firebaseUser, "super_admin");
-        } else {
-          setError(
-            "No portal account found for this email. Please contact the church admin to have your account created."
-          );
-          return;
-        }
-      }
+      // Establish session with server (uses Firebase Admin to verify profile & set cookie)
       const session = await establishSession(firebaseUser);
-      const role = (session.role as UserRole) || portalUser.role || "member";
+      const role = (session.role as UserRole) || "member";
       const next = destinationFor(role);
       router.push(next);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not complete sign in.";
-      setError(msg);
+      if (msg.includes("No portal profile")) {
+        setError(
+          "No portal account found for this email. Please contact the church admin to have your account created."
+        );
+      } else {
+        setError(msg);
+      }
     }
   };
 
@@ -61,7 +80,7 @@ export default function PortalLoginPage() {
     setInfo("");
     setLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       await finishSignIn(cred.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to sign in.";
@@ -70,7 +89,11 @@ export default function PortalLoginPage() {
         msg.includes("wrong-password") ||
         msg.includes("invalid-credential")
       ) {
-        setError("Invalid email or password.");
+        setError(
+          "Invalid email or password. If your account was created with Google, tap 'Continue with Google' or click 'Forgot password?'."
+        );
+      } else if (msg.includes("Database is closing")) {
+        setError("Connection refreshed. Please try signing in again.");
       } else {
         setError(msg);
       }
@@ -83,17 +106,42 @@ export default function PortalLoginPage() {
     setError("");
     setInfo("");
     setLoading(true);
+
+    const isMobile =
+      typeof window !== "undefined" &&
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const cred = await signInWithPopup(auth, provider);
-      await finishSignIn(cred.user);
+
+      try {
+        const cred = await signInWithPopup(auth, provider);
+        await finishSignIn(cred.user);
+      } catch (popupErr: any) {
+        const pmsg = String(popupErr?.message || "");
+        // If Database is closing/hidden or popup is disrupted on mobile, fall back to signInWithRedirect
+        if (
+          isMobile ||
+          pmsg.includes("Database is closing") ||
+          pmsg.includes("popup-blocked")
+        ) {
+          console.warn("Mobile or popup disruption, switching to signInWithRedirect:", pmsg);
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw popupErr;
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign-in failed.";
       if (msg.includes("unauthorized-domain")) {
         setError(
           "Google sign-in is not allowed on this website yet. Add this site under Firebase Authentication, Settings, Authorized domains."
         );
+      } else if (msg.includes("Database is closing")) {
+        setError("Connection refreshed. Please tap 'Continue with Google' again.");
       } else if (!msg.includes("popup-closed-by-user")) {
         setError(msg);
       }
