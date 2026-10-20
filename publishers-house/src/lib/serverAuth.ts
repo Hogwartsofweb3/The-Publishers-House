@@ -52,18 +52,19 @@ export function portalHomeFor(role: UserRole): string {
 export function canAccessPortal(pathname: string, role: UserRole): boolean {
   if (pathname === "/portal/login") return true;
 
-  const isSuperOrAdmin = role === "super_admin" || role === "admin";
+  const isSuperOrAdminOrManager =
+    role === "super_admin" || role === "admin" || role === "portal_manager";
 
   if (pathname === "/portal" || pathname === "/portal/") {
-    return isSuperOrAdmin || role === "portal_manager";
+    return isSuperOrAdminOrManager;
   }
 
   if (pathname === "/portal/units" || pathname.startsWith("/portal/units/")) {
-    return isSuperOrAdmin;
+    return isSuperOrAdminOrManager;
   }
 
   if (pathname === "/portal/unit" || pathname.startsWith("/portal/unit/")) {
-    return role === "unit_head" || isSuperOrAdmin;
+    return role === "unit_head" || isSuperOrAdminOrManager;
   }
 
   if (pathname === "/portal/member" || pathname.startsWith("/portal/member/")) {
@@ -75,20 +76,7 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
     return true;
   }
 
-  // Portal manager handles management & settings, but not sensitive pastoral / private care
-  if (role === "portal_manager") {
-    const managerAllowed = [
-      "/portal/members",
-      "/portal/attendance",
-      "/portal/events",
-      "/portal/courses",
-      "/portal/facility",
-      "/portal/audit",
-    ];
-    return managerAllowed.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  }
-
-  const adminPrefixes = [
+  const managementPrefixes = [
     "/portal/members",
     "/portal/attendance",
     "/portal/events",
@@ -100,9 +88,9 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
     "/portal/audit",
   ];
 
-  if (adminPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    return isSuperOrAdmin;
+  if (managementPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return isSuperOrAdminOrManager;
   }
 
-  return isSuperOrAdmin;
+  return isSuperOrAdminOrManager;
 }

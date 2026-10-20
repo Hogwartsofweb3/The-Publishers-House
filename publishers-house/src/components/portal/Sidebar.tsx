@@ -72,21 +72,12 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
     }
   } catch {}
 
-  const isSuperOrAdmin = activeRole === "super_admin" || activeRole === "admin";
-  const isManager = activeRole === "portal_manager";
-  const navItems = isSuperOrAdmin
+  const isSuperOrAdminOrManager =
+    activeRole === "super_admin" ||
+    activeRole === "admin" ||
+    activeRole === "portal_manager";
+  const navItems = isSuperOrAdminOrManager
     ? adminNav
-    : isManager
-    ? [
-        { href: "/portal", label: "Dashboard", icon: "◈" },
-        { href: "/portal/members", label: "Members", icon: "◉" },
-        { href: "/portal/attendance", label: "Attendance", icon: "✦" },
-        { href: "/portal/events", label: "Events", icon: "▦" },
-        { href: "/portal/courses", label: "Courses", icon: "📖" },
-        { href: "/portal/facility", label: "Facility", icon: "🏛️" },
-        { href: "/portal/audit", label: "Audit Log", icon: "📋" },
-        { href: "/portal/settings", label: "Settings", icon: "⚙️" },
-      ]
     : activeRole === "unit_head"
     ? unitNav
     : memberNav;
@@ -289,18 +280,27 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
+              overflow: "hidden",
             }}
           >
-            <span
-              style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontWeight: 600,
-                fontSize: "12px",
-                color: "#FFFFFF",
-              }}
-            >
-              {getInitials(user.displayName)}
-            </span>
+            {activeUser.photoURL ? (
+              <img
+                src={activeUser.photoURL}
+                alt={activeUser.displayName}
+                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  color: "#FFFFFF",
+                }}
+              >
+                {getInitials(activeUser.displayName)}
+              </span>
+            )}
           </div>
 
           {!isCollapsed && (

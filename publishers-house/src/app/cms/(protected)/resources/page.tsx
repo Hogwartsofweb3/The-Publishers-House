@@ -917,56 +917,115 @@ export default function ResourcesEditor() {
       {/* ====================================================================
           MODAL: ADD / EDIT RESOURCE TEACHING (Matching Screenshot 2 exactly)
          ==================================================================== */}
+      {/* ── Slide-Over Drawer: Add / Edit Resource Teaching (comes from left side) ── */}
       {modalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15, 23, 42, 0.75)",
-            backdropFilter: "blur(4px)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setModalOpen(false);
-          }}
-        >
+        <>
+          {/* Backdrop overlay (click to close) */}
           <div
+            onClick={() => setModalOpen(false)}
             style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(14, 21, 86, 0.65)",
+              backdropFilter: "blur(3px)",
+              zIndex: 9998,
+            }}
+          />
+
+          {/* Left Slide-over Drawer Panel */}
+          <aside
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: "min(720px, 92vw)",
               backgroundColor: S.White,
-              borderRadius: "12px",
-              maxWidth: "840px",
-              width: "100%",
-              maxHeight: "92vh",
-              overflowY: "auto",
-              padding: "36px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: `1px solid ${S.Paper300}`,
+              zIndex: 9999,
+              boxShadow: "8px 0 36px rgba(0, 0, 0, 0.28)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              animation: "resDrawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
-            {/* Modal Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", borderBottom: `1px solid ${S.Paper200}`, paddingBottom: "16px" }}>
-              <h2 style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "22px", color: S.Navy, margin: 0, textTransform: "uppercase" }}>
-                {editingIndex !== null ? "Edit Resource Material" : "Add New Resource"}
-              </h2>
+            <style>{`
+              @keyframes resDrawerIn {
+                from { transform: translateX(-100%); }
+                to { transform: translateX(0); }
+              }
+            `}</style>
+
+            {/* Drawer Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "20px 28px",
+                borderBottom: `1px solid ${S.Paper300}`,
+                backgroundColor: "#FFFFFF",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1, paddingRight: "16px" }}>
+                <h2
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 700,
+                    fontSize: "19px",
+                    color: S.Navy,
+                    margin: 0,
+                  }}
+                >
+                  {editingIndex !== null ? "Edit Resource Material" : "Add New Resource"}
+                </h2>
+                <p
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: "13px",
+                    color: S.Slate600,
+                    margin: "3px 0 0",
+                    fontStyle: "italic",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {TRACK_LIST.find((t) => t.slug === activeTrack)?.label || "Track Material"}
+                </p>
+              </div>
+
+              {/* Hamburger / Close Button */}
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
                 style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  color: S.Slate500,
+                  background: S.Paper100,
+                  border: `1px solid ${S.Paper300}`,
+                  borderRadius: "8px",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
-                  padding: "4px 8px",
+                  color: S.Navy,
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  flexShrink: 0,
                 }}
+                title="Close Drawer (Click outside or ✕)"
+                aria-label="Close Drawer"
               >
                 ✕
               </button>
             </div>
+
+            {/* Scrollable Form Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
 
             {/* ⚡ YOUTUBE QUICK-PASTE AUTO-FILL (matching screenshot 2) */}
             <div
@@ -1226,9 +1285,10 @@ export default function ResourcesEditor() {
                   {editingIndex !== null ? "Update Resource" : "Add Resource"}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+              </form>
+            </div>
+          </aside>
+        </>
       )}
     </div>
   );

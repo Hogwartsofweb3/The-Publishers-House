@@ -7,7 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function CMSProtectedLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePortalUser();
-  if (!user || user.role !== "admin") redirect("/cms/login");
+  const allowedRoles = ["admin", "super_admin", "portal_manager"];
+  const isAllowed =
+    user &&
+    (allowedRoles.includes(user.role) ||
+      user.email === "thepublishershouse007@gmail.com" ||
+      user.email === "joshuaagunbiade@gmail.com");
+  if (!isAllowed) redirect("/cms/login");
 
   return <CmsShell>{children}</CmsShell>;
 }

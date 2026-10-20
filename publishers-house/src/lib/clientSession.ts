@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
 
-export async function establishSession(user: User): Promise<{ role: string }> {
+export async function establishSession(user: User): Promise<{ role: string; email: string }> {
   const idToken = await user.getIdToken(true);
   const res = await fetch("/api/auth/session", {
     method: "POST",
@@ -11,7 +11,10 @@ export async function establishSession(user: User): Promise<{ role: string }> {
   if (!res.ok) {
     throw new Error(typeof body.error === "string" ? body.error : "Could not start a secure session.");
   }
-  return { role: typeof body.role === "string" ? body.role : "member" };
+  return {
+    role: typeof body.role === "string" ? body.role : "member",
+    email: typeof body.email === "string" ? body.email : (user.email || ""),
+  };
 }
 
 export async function clearSession() {

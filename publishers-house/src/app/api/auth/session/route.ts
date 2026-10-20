@@ -27,9 +27,8 @@ export async function POST(req: Request) {
     const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(idToken);
     const userEmail = (decoded.email || "").toLowerCase();
-    const isSuperAdminEmail =
-      userEmail === "joshuaagunbiade@gmail.com" ||
-      userEmail === "thepublishershouse007@gmail.com";
+    const isJoshua = userEmail === "joshuaagunbiade@gmail.com";
+    const isPortalManager = userEmail === "thepublishershouse007@gmail.com";
 
     let snap = await getAdminDb().collection("users").doc(decoded.uid).get();
     let userData = snap.exists ? snap.data() : null;
@@ -53,15 +52,17 @@ export async function POST(req: Request) {
     let role = userData?.role;
 
     if (!userData) {
-      if (isSuperAdminEmail) {
-        // Auto-provision Super Admin profile for seamless Google Sign-In & login
+      if (isJoshua || isPortalManager) {
+        // Auto-provision profile for seamless Google Sign-In & login
         const now = new Date().toISOString();
-        const isJoshua = userEmail === "joshuaagunbiade@gmail.com";
+        const roleToSet = isJoshua ? "super_admin" : "portal_manager";
         const autoData = {
           uid: decoded.uid,
-          email: decoded.email || "",
-          displayName: isJoshua ? "Rev. Joshua Agunbiade" : (decoded.name || "Site Moderator"),
-          role: "super_admin",
+          email: decoded.email || userEmail,
+          displayName: isJoshua
+            ? "Rev. Joshua Agunbiade"
+            : (decoded.name || "Project Manager"),
+          role: roleToSet,
           activityTier: "leader",
           campus: "jos",
           createdAt: now,
@@ -69,13 +70,19 @@ export async function POST(req: Request) {
           photoURL: decoded.picture || null,
         };
         await getAdminDb().collection("users").doc(decoded.uid).set(autoData, { merge: true });
-        role = "super_admin";
+        role = roleToSet;
       } else {
         return NextResponse.json({ error: "No portal profile" }, { status: 403 });
       }
-    } else if (isSuperAdminEmail && role !== "super_admin") {
-      await getAdminDb().collection("users").doc(decoded.uid).set({ role: "super_admin" }, { merge: true });
-      role = "super_admin";
+    } else {
+      // Sync canonical roles for leadership
+      if (isJoshua && role !== "super_admin") {
+        await getAdminDb().collection("users").doc(decoded.uid).set({ role: "super_admin" }, { merge: true });
+        role = "super_admin";
+      } else if (isPortalManager && role !== "portal_manager") {
+        await getAdminDb().collection("users").doc(decoded.uid).set({ role: "portal_manager" }, { merge: true });
+        role = "portal_manager";
+      }
     }
 
     if (typeof role !== "string" || !ROLES.includes(role)) {
@@ -86,7 +93,8 @@ export async function POST(req: Request) {
     const res = NextResponse.json({
       ok: true,
       role,
-      assignedUnitId: snap.data()?.assignedUnitId || null,
+      email: userEmail,
+      assignedUnitId: userData?.assignedUnitId || null,
     });
     const host = req.headers.get("host") || "";
     const isApexOrSub = host.includes("thepublishershouse.org");

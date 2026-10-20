@@ -97,6 +97,7 @@ export default function SermonsEditor() {
   const [sermons, setSermons] = useState<any[]>([]);
   const [form, setForm] = useState({ ...emptySermon });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -215,6 +216,7 @@ export default function SermonsEditor() {
       }
       setForm({ ...emptySermon });
       setEditingId(null);
+      setIsDrawerOpen(false);
       fetchSermons();
     } catch (err: any) {
       setMsg("Error: " + err.message);
@@ -240,7 +242,7 @@ export default function SermonsEditor() {
       published: s.published !== false,
     });
     setEditingId(s.id);
-    window.scrollTo({ top: 120, behavior: "smooth" });
+    setIsDrawerOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -351,10 +353,25 @@ export default function SermonsEditor() {
             </span>
           )}
           <button
+            onClick={() => {
+              setForm({ ...emptySermon });
+              setEditingId(null);
+              setIsDrawerOpen(true);
+            }}
+            style={{
+              ...S.btn(S.Blue700, S.White),
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            + Add New Sermon
+          </button>
+          <button
             onClick={handleManualSync}
             disabled={syncing}
             style={{
-              ...S.btn(S.Blue700, S.White),
+              ...S.btn(S.Paper200, S.Navy),
               opacity: syncing ? 0.6 : 1,
               display: "flex",
               alignItems: "center",
@@ -375,318 +392,385 @@ export default function SermonsEditor() {
         </div>
       </div>
 
-      {/* ── Form Card ── */}
-      <div
-        style={{
-          backgroundColor: S.White,
-          border: `1px solid ${S.Paper300}`,
-          borderRadius: "8px",
-          padding: "32px",
-          marginBottom: "40px",
-          boxShadow: "0 2px 8px rgba(21, 26, 84, 0.04)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-          <div>
-            <h2
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 700,
-                fontSize: "20px",
-                color: S.Navy,
-                margin: 0,
-              }}
-            >
-              {editingId ? "Edit Sermon & Overview" : "Add New Sermon"}
-            </h2>
-            {editingId && (
-              <p
-                style={{
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: "13px",
-                  color: S.Slate600,
-                  margin: "4px 0 0",
-                  fontStyle: "italic",
-                }}
-              >
-                Currently editing: &ldquo;{form.title}&rdquo;
-              </p>
-            )}
-          </div>
-          {editingId && (
-            <button
-              type="button"
-              onClick={() => {
-                setForm({ ...emptySermon });
-                setEditingId(null);
-              }}
-              style={S.btn(S.Paper200, S.Navy)}
-            >
-              Cancel Edit
-            </button>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-
-          {/* ── YouTube Quick-Paste Auto-fill ─────────────────────────────── */}
-          {!editingId && (
-            <div style={{ padding: "16px 20px", backgroundColor: "#F0F7FF", border: "1px solid #B8D4F8", borderRadius: "6px" }}>
-              <label style={{ ...S.label, color: S.Blue700, marginBottom: "10px" }}>⚡ YouTube Quick-Paste Auto-fill</label>
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate600, margin: "0 0 10px", lineHeight: "1.5em" }}>
-                Paste a YouTube video URL below and click <strong>Auto-fill</strong> — the title, thumbnail, date, duration, and video URL will be imported automatically.
-              </p>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <input
-                  type="url"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={ytPasteUrl}
-                  onChange={e => setYtPasteUrl(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleYtAutoFill())}
-                  style={{ ...S.input, flex: 1, border: "1px solid #B8D4F8", backgroundColor: "#FFFFFF" }}
-                />
-                <button
-                  type="button"
-                  onClick={handleYtAutoFill}
-                  disabled={ytFetching || !ytPasteUrl.trim()}
-                  style={{ ...S.btn(S.Blue700, S.White), opacity: (ytFetching || !ytPasteUrl.trim()) ? 0.6 : 1, whiteSpace: "nowrap" }}
-                >
-                  {ytFetching ? "Fetching..." : "Auto-fill →"}
-                </button>
-              </div>
-              {ytMsg && (
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: ytMsg.startsWith("✓") ? S.Green : S.Red, margin: "8px 0 0", fontWeight: 600 }}>
-                  {ytMsg}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Row 1: Title & Speaker */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-            <div>
-              <label style={S.label}>Sermon Title *</label>
-
-              <input
-                type="text"
-                placeholder="e.g. THE RAIN OF WORDS"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Speaker *</label>
-              <input
-                type="text"
-                placeholder="e.g. Dr. Joshua Agunbiade"
-                value={form.speaker}
-                onChange={(e) => setForm({ ...form, speaker: e.target.value })}
-                required
-                style={S.input}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Date, Series, Scripture, Duration */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
-            <div>
-              <label style={S.label}>Date *</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                required
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Series / Programme</label>
-              <input
-                type="text"
-                placeholder="e.g. The Latter Rain"
-                value={form.series}
-                onChange={(e) => setForm({ ...form, series: e.target.value })}
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Scripture Reference</label>
-              <input
-                type="text"
-                placeholder="e.g. 2 TIMOTHY 2:15"
-                value={form.scripture}
-                onChange={(e) => setForm({ ...form, scripture: e.target.value })}
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Duration</label>
-              <input
-                type="text"
-                placeholder="e.g. 1:24:56"
-                value={form.duration}
-                onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                style={S.input}
-              />
-            </div>
-          </div>
-
-          {/* ── OVERVIEW / SYNOPSIS (HIGH IMPORTANCE SECTION) ── */}
+      {/* ── Slide-Over Drawer (Comes from the left side, preserving list scroll) ── */}
+      {isDrawerOpen && (
+        <>
+          {/* Backdrop overlay (click to close) */}
           <div
+            onClick={() => {
+              setIsDrawerOpen(false);
+              setEditingId(null);
+            }}
             style={{
-              padding: "20px",
-              backgroundColor: S.Paper100,
-              border: `1px solid ${S.Paper300}`,
-              borderRadius: "6px",
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(14, 21, 86, 0.65)",
+              backdropFilter: "blur(3px)",
+              zIndex: 9998,
+            }}
+          />
+
+          {/* Left Slide-over Drawer Panel */}
+          <aside
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: "min(680px, 92vw)",
+              backgroundColor: S.White,
+              zIndex: 9999,
+              boxShadow: "8px 0 36px rgba(0, 0, 0, 0.28)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              animation: "sermonDrawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-              <label style={{ ...S.label, color: S.Blue700, fontSize: "12px", marginBottom: 0 }}>
-                ★ Overview / Message Synopsis
-              </label>
-              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate500 }}>
-                {form.summary ? `${form.summary.length} characters` : "Empty"}
-              </span>
-            </div>
-            <p
+            <style>{`
+              @keyframes sermonDrawerIn {
+                from { transform: translateX(-100%); }
+                to { transform: translateX(0); }
+              }
+            `}</style>
+
+            {/* Drawer Header */}
+            <div
               style={{
-                fontFamily: "var(--font-poppins)",
-                fontSize: "12px",
-                color: S.Slate600,
-                margin: "0 0 10px",
-                lineHeight: "1.5em",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "20px 28px",
+                borderBottom: `1px solid ${S.Paper300}`,
+                backgroundColor: "#FFFFFF",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
               }}
             >
-              Write a unique, concise synopsis for this teaching. This overview appears on the{" "}
-              <strong>sermon card</strong>, on the <strong>sermon detail page</strong>, and on the{" "}
-              <strong>homepage</strong> when featured as &ldquo;The Latest Teaching&rdquo;.
-            </p>
-            <textarea
-              placeholder="e.g. In this teaching, Dr. Joshua Agunbiade expounds on the divine provisions of the Latter Rain, highlighting how believers are spiritually equipped for harvest..."
-              value={form.summary}
-              onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              rows={4}
-              style={{
-                ...S.input,
-                minHeight: "110px",
-                resize: "vertical",
-                lineHeight: "1.68em",
-                padding: "12px",
-                fontSize: "15px",
-                fontFamily: "'Playfair Display', Georgia, serif",
-                color: S.Navy,
-              }}
-            />
-          </div>
-
-          {/* Row 4: URLs */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
-            <div>
-              <label style={S.label}>YouTube / Video URL</label>
-              <input
-                type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={form.videoUrl}
-                onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Audio URL (MP3 / Podcast Link)</label>
-              <input
-                type="url"
-                placeholder="https://... (Direct audio stream)"
-                value={form.audioUrl}
-                onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
-                style={S.input}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Study Guide URL</label>
-              <input
-                type="url"
-                placeholder="https://... (PDF Study Guide)"
-                value={form.studyGuideUrl}
-                onChange={(e) => setForm({ ...form, studyGuideUrl: e.target.value })}
-                style={S.input}
-              />
-            </div>
-          </div>
-
-          {/* Row 5: Tags & Published Toggle */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px", alignItems: "center" }}>
-            <div>
-              <label style={S.label}>Tags (Comma-Separated)</label>
-              <input
-                type="text"
-                placeholder="Faith, Grace, Righteousness, Camp 2026"
-                value={form.tags}
-                onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                style={S.input}
-              />
-            </div>
-            <div style={{ paddingTop: "20px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  id="pub"
-                  checked={form.published}
-                  onChange={(e) => setForm({ ...form, published: e.target.checked })}
-                  style={{ width: "18px", height: "18px", accentColor: S.Blue700 }}
-                />
-                <span
+              <div style={{ minWidth: 0, flex: 1, paddingRight: "16px" }}>
+                <h2
                   style={{
                     fontFamily: "'Poppins', sans-serif",
-                    fontSize: "13px",
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontSize: "19px",
                     color: S.Navy,
+                    margin: 0,
                   }}
                 >
-                  Published on Website
-                </span>
-              </label>
-            </div>
-          </div>
+                  {editingId ? "Edit Sermon & Overview" : "Add New Sermon"}
+                </h2>
+                {editingId && form.title && (
+                  <p
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontSize: "13px",
+                      color: S.Slate600,
+                      margin: "3px 0 0",
+                      fontStyle: "italic",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Editing: &ldquo;{form.title}&rdquo;
+                  </p>
+                )}
+              </div>
 
-          {msg && (
-            <p
-              style={{
-                color: msg.startsWith("Error") ? S.Red : S.Green,
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "13px",
-                fontWeight: 600,
-                margin: 0,
-              }}
-            >
-              {msg}
-            </p>
-          )}
-
-          <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ ...S.btn(S.Blue700, "#fff"), opacity: loading ? 0.6 : 1 }}
-            >
-              {loading ? "Saving..." : editingId ? "Update Sermon & Overview" : "Add Sermon"}
-            </button>
-            {editingId && (
+              {/* Hamburger / Close Button */}
               <button
                 type="button"
                 onClick={() => {
-                  setForm({ ...emptySermon });
+                  setIsDrawerOpen(false);
                   setEditingId(null);
                 }}
-                style={S.btn(S.Paper200, S.Navy)}
+                style={{
+                  background: S.Paper100,
+                  border: `1px solid ${S.Paper300}`,
+                  borderRadius: "8px",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: S.Navy,
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+                title="Close Drawer (Esc / Click Outside)"
+                aria-label="Close Drawer"
               >
-                Cancel
+                ✕
               </button>
-            )}
-          </div>
-        </form>
-      </div>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                {/* ── YouTube Quick-Paste Auto-fill ─────────────────────────────── */}
+                {!editingId && (
+                  <div style={{ padding: "16px 20px", backgroundColor: "#F0F7FF", border: "1px solid #B8D4F8", borderRadius: "6px" }}>
+                    <label style={{ ...S.label, color: S.Blue700, marginBottom: "8px" }}>⚡ YouTube Quick-Paste Auto-fill</label>
+                    <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate600, margin: "0 0 10px", lineHeight: "1.5em" }}>
+                      Paste a YouTube video URL below and click <strong>Auto-fill</strong> — the title, thumbnail, date, duration, and video URL will be imported automatically.
+                    </p>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      <input
+                        type="url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={ytPasteUrl}
+                        onChange={e => setYtPasteUrl(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleYtAutoFill())}
+                        style={{ ...S.input, flex: 1, border: "1px solid #B8D4F8", backgroundColor: "#FFFFFF" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleYtAutoFill}
+                        disabled={ytFetching || !ytPasteUrl.trim()}
+                        style={{ ...S.btn(S.Blue700, S.White), opacity: (ytFetching || !ytPasteUrl.trim()) ? 0.6 : 1, whiteSpace: "nowrap" }}
+                      >
+                        {ytFetching ? "Fetching..." : "Auto-fill →"}
+                      </button>
+                    </div>
+                    {ytMsg && (
+                      <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: ytMsg.startsWith("✓") ? S.Green : S.Red, margin: "8px 0 0", fontWeight: 600 }}>
+                        {ytMsg}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Row 1: Title & Speaker */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div>
+                    <label style={S.label}>Sermon Title *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. THE RAIN OF WORDS"
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                      required
+                      style={S.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={S.label}>Speaker *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Joshua Agunbiade"
+                      value={form.speaker}
+                      onChange={(e) => setForm({ ...form, speaker: e.target.value })}
+                      required
+                      style={S.input}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Date, Series, Scripture, Duration */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
+                  <div>
+                    <label style={S.label}>Date *</label>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={(e) => setForm({ ...form, date: e.target.value })}
+                      required
+                      style={S.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={S.label}>Series / Programme</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. The Latter Rain"
+                      value={form.series}
+                      onChange={(e) => setForm({ ...form, series: e.target.value })}
+                      style={S.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={S.label}>Scripture Reference</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 2 TIMOTHY 2:15"
+                      value={form.scripture}
+                      onChange={(e) => setForm({ ...form, scripture: e.target.value })}
+                      style={S.input}
+                    />
+                  </div>
+                  <div>
+                    <label style={S.label}>Duration</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1:24:56"
+                      value={form.duration}
+                      onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                      style={S.input}
+                    />
+                  </div>
+                </div>
+
+                {/* ── OVERVIEW / SYNOPSIS (HIGH IMPORTANCE SECTION) ── */}
+                <div
+                  style={{
+                    padding: "18px",
+                    backgroundColor: S.Paper100,
+                    border: `1px solid ${S.Paper300}`,
+                    borderRadius: "6px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+                    <label style={{ ...S.label, color: S.Blue700, fontSize: "12px", marginBottom: 0 }}>
+                      ★ Overview / Message Synopsis
+                    </label>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate500 }}>
+                      {form.summary ? `${form.summary.length} characters` : "Empty"}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-poppins)",
+                      fontSize: "11.5px",
+                      color: S.Slate600,
+                      margin: "0 0 10px",
+                      lineHeight: "1.5em",
+                    }}
+                  >
+                    Write a unique, concise synopsis for this teaching. This overview appears on the{" "}
+                    <strong>sermon card</strong> and on the <strong>sermon detail page</strong>.
+                  </p>
+                  <textarea
+                    placeholder="e.g. In this teaching, Dr. Joshua Agunbiade expounds on the divine provisions of the Latter Rain, highlighting how believers are spiritually equipped for harvest..."
+                    value={form.summary}
+                    onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                    rows={4}
+                    style={{
+                      ...S.input,
+                      minHeight: "110px",
+                      resize: "vertical",
+                      lineHeight: "1.65em",
+                      padding: "12px",
+                      fontSize: "14px",
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      color: S.Navy,
+                    }}
+                  />
+                </div>
+
+                {/* Row 4: URLs */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div>
+                    <label style={S.label}>YouTube / Video URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={form.videoUrl}
+                      onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+                      style={S.input}
+                    />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <div>
+                      <label style={S.label}>Audio URL (MP3 / Podcast)</label>
+                      <input
+                        type="url"
+                        placeholder="https://... (Direct audio stream)"
+                        value={form.audioUrl}
+                        onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
+                        style={S.input}
+                      />
+                    </div>
+                    <div>
+                      <label style={S.label}>Study Guide URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://... (PDF Study Guide)"
+                        value={form.studyGuideUrl}
+                        onChange={(e) => setForm({ ...form, studyGuideUrl: e.target.value })}
+                        style={S.input}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 5: Tags & Published Toggle */}
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px", alignItems: "center" }}>
+                  <div>
+                    <label style={S.label}>Tags (Comma-Separated)</label>
+                    <input
+                      type="text"
+                      placeholder="Faith, Grace, Righteousness, Camp 2026"
+                      value={form.tags}
+                      onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                      style={S.input}
+                    />
+                  </div>
+                  <div style={{ paddingTop: "18px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        id="pub"
+                        checked={form.published}
+                        onChange={(e) => setForm({ ...form, published: e.target.checked })}
+                        style={{ width: "18px", height: "18px", accentColor: S.Blue700 }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: "'Poppins', sans-serif",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: S.Navy,
+                        }}
+                      >
+                        Published
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {msg && (
+                  <p
+                    style={{
+                      color: msg.startsWith("Error") ? S.Red : S.Green,
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      margin: 0,
+                    }}
+                  >
+                    {msg}
+                  </p>
+                )}
+
+                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{ ...S.btn(S.Blue700, "#fff"), opacity: loading ? 0.6 : 1 }}
+                  >
+                    {loading ? "Saving..." : editingId ? "Update Sermon & Overview" : "Add Sermon"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({ ...emptySermon });
+                      setEditingId(null);
+                      setIsDrawerOpen(false);
+                    }}
+                    style={S.btn(S.Paper200, S.Navy)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </aside>
+        </>
+      )}
 
       {/* ── Search & Filter Section ── */}
       <div style={{ marginBottom: "24px" }}>
