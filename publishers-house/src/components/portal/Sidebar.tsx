@@ -154,7 +154,13 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
                   marginTop: "4px",
                 }}
               >
-                Admin dashboard
+                {user.role === "admin" || user.role === "super_admin"
+                  ? "Admin dashboard"
+                  : user.role === "portal_manager"
+                  ? "Management portal"
+                  : user.role === "unit_head"
+                  ? "Unit Head portal"
+                  : "Member portal"}
               </div>
             </div>
           )}

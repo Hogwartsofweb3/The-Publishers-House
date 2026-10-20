@@ -398,15 +398,25 @@ export async function POST(req: NextRequest) {
 
     // 6. PASSWORD CHANGED
     if (action === "password_changed") {
-      const { uid } = body;
+      const { uid, newPassword } = body;
       if (uid) {
-        await adminDb.collection("users").doc(uid).update({
-          mustChangePassword: false,
-          tempPassword: null,
-          passwordChangedAt: new Date().toISOString(),
-        });
+        if (newPassword && typeof newPassword === "string" && newPassword.length >= 6) {
+          try {
+            await adminAuth.updateUser(uid, { password: newPassword });
+          } catch (authErr) {
+            console.error("Failed to update password in Firebase Auth:", authErr);
+          }
+        }
+        await adminDb.collection("users").doc(uid).set(
+          {
+            mustChangePassword: false,
+            tempPassword: null,
+            passwordChangedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
       }
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, message: "Password updated successfully" });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

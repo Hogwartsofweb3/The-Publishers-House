@@ -41,9 +41,15 @@ export default function PortalLoginPage() {
         }
       })
       .catch((err: unknown) => {
-        console.error("Redirect check:", err);
+        console.warn("Portal redirect check notice:", err);
         const msg = err instanceof Error ? err.message : "";
-        if (active && msg && !msg.includes("Database is closing") && !msg.includes("popup-closed")) {
+        if (
+          active &&
+          msg &&
+          !msg.includes("Database is closing") &&
+          !msg.includes("popup-closed") &&
+          !msg.includes("argument-error")
+        ) {
           setError(msg);
         }
       })

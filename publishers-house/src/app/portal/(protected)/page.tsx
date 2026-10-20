@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import Link from "next/link";
+import { usePortal } from "@/lib/portalContext";
 
 interface KPIData {
   totalMembers: number;
@@ -36,6 +37,7 @@ interface ActivityItem {
 }
 
 export default function AdminDashboard() {
+  const { effectiveUser } = usePortal();
   const [kpi, setKpi] = useState<KPIData>({
     totalMembers: 342,
     newThisMonth: 12,
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
               margin: "6px 0 0",
             }}
           >
-            {todayStr} · Welcome back, Admin
+            {todayStr} · Welcome back, {effectiveUser.displayName || "Admin"}
           </p>
         </div>
 
@@ -274,36 +276,15 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 4 Stat Cards Row (Figma 311:1884) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "20px",
-        }}
-      >
+      {/* 4 Stat Cards Row (Figma 311:1884, Responsive 2x2 on Mobile) */}
+      <div className="portal-kpi-grid">
         {/* Card 1: Total members */}
-        <Link
-          href="/portal/members"
-          style={{ textDecoration: "none" }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D5DCF2",
-              borderRadius: "14px",
-              padding: "22px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              cursor: "pointer",
-            }}
-          >
+        <Link href="/portal/members" style={{ textDecoration: "none" }}>
+          <div className="portal-kpi-card">
             <span
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 600,
                 color: "#4A5490",
                 textTransform: "uppercase",
@@ -313,6 +294,7 @@ export default function AdminDashboard() {
               Total Members
             </span>
             <div
+              className="portal-kpi-val"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "34px",
@@ -323,7 +305,7 @@ export default function AdminDashboard() {
             >
               {loading ? "..." : kpi.totalMembers.toLocaleString()}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div className="portal-kpi-sub" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span
                 style={{
                   display: "inline-block",
@@ -343,27 +325,12 @@ export default function AdminDashboard() {
         </Link>
 
         {/* Card 2: Upcoming events */}
-        <Link
-          href="/portal/events"
-          style={{ textDecoration: "none" }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D5DCF2",
-              borderRadius: "14px",
-              padding: "22px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              cursor: "pointer",
-            }}
-          >
+        <Link href="/portal/events" style={{ textDecoration: "none" }}>
+          <div className="portal-kpi-card">
             <span
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 600,
                 color: "#4A5490",
                 textTransform: "uppercase",
@@ -373,6 +340,7 @@ export default function AdminDashboard() {
               Upcoming Events
             </span>
             <div
+              className="portal-kpi-val"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "34px",
@@ -384,11 +352,15 @@ export default function AdminDashboard() {
               {events.length}
             </div>
             <div
+              className="portal-kpi-sub"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "12px",
                 color: "#1F46C8",
                 fontWeight: 600,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
               Next: Sunday Worship, 18 Oct
@@ -397,27 +369,12 @@ export default function AdminDashboard() {
         </Link>
 
         {/* Card 3: Monthly giving */}
-        <Link
-          href="/portal/finance"
-          style={{ textDecoration: "none" }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D5DCF2",
-              borderRadius: "14px",
-              padding: "22px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              cursor: "pointer",
-            }}
-          >
+        <Link href="/portal/finance" style={{ textDecoration: "none" }}>
+          <div className="portal-kpi-card">
             <span
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 600,
                 color: "#4A5490",
                 textTransform: "uppercase",
@@ -427,6 +384,7 @@ export default function AdminDashboard() {
               Monthly Giving
             </span>
             <div
+              className="portal-kpi-val"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "34px",
@@ -437,7 +395,7 @@ export default function AdminDashboard() {
             >
               ₦{kpi.monthlyGiving.toLocaleString()}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div className="portal-kpi-sub" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span
                 style={{
                   display: "inline-block",
@@ -457,27 +415,12 @@ export default function AdminDashboard() {
         </Link>
 
         {/* Card 4: Active volunteers & units */}
-        <Link
-          href="/portal/units"
-          style={{ textDecoration: "none" }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D5DCF2",
-              borderRadius: "14px",
-              padding: "22px 24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              cursor: "pointer",
-            }}
-          >
+        <Link href="/portal/units" style={{ textDecoration: "none" }}>
+          <div className="portal-kpi-card">
             <span
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 600,
                 color: "#4A5490",
                 textTransform: "uppercase",
@@ -487,6 +430,7 @@ export default function AdminDashboard() {
               Active Units & Teams
             </span>
             <div
+              className="portal-kpi-val"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "34px",
@@ -498,6 +442,7 @@ export default function AdminDashboard() {
               12 Units
             </div>
             <div
+              className="portal-kpi-sub"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "12px",
@@ -511,15 +456,8 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Main Grid: Events Table on Left, Actions & Insights on Right */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: "24px",
-          alignItems: "start",
-        }}
-      >
+      {/* Main Grid: Events Table on Left, Actions & Insights on Right (Stacks on mobile) */}
+      <div className="portal-two-col">
         {/* Left Column: Events Table + Audit Activity */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Upcoming & Recent Events (Figma 311:1912) */}

@@ -881,6 +881,79 @@ html, body {
   }
 }
 
+.portal-moderator-strip {
+  display: flex;
+}
+
+@media (min-width: 1025px) {
+  .portal-moderator-strip {
+    display: none !important;
+  }
+}
+
+/* Responsive KPI Cards for Piggyvest-standard mobile layout */
+.portal-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.portal-kpi-card {
+  background-color: #FFFFFF;
+  border: 1px solid #D5DCF2;
+  border-radius: 14px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.portal-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(20, 28, 110, 0.08);
+}
+
+@media (max-width: 1024px) {
+  .portal-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .portal-kpi-card {
+    padding: 15px 14px !important;
+    border-radius: 12px !important;
+    gap: 6px !important;
+  }
+
+  .portal-kpi-val {
+    font-size: 24px !important;
+    line-height: 28px !important;
+  }
+
+  .portal-kpi-sub {
+    font-size: 11px !important;
+  }
+}
+
+.portal-two-col {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .portal-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+
+
 
 
 

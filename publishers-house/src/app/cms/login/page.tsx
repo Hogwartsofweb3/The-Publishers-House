@@ -58,9 +58,16 @@ export default function CMSLoginPage() {
         }
       })
       .catch((err: unknown) => {
-        console.error("CMS Redirect check:", err);
+        console.warn("CMS Redirect check notice:", err);
         const msg = err instanceof Error ? err.message : "";
-        if (active && msg && !msg.includes("Database is closing") && !msg.includes("popup-closed")) {
+        // Only surface actionable auth errors, never background/init glitches
+        if (
+          active &&
+          msg &&
+          !msg.includes("Database is closing") &&
+          !msg.includes("popup-closed") &&
+          !msg.includes("argument-error")
+        ) {
           setError(msg);
         }
       })

@@ -69,16 +69,21 @@ function PortalHeaderAndContent({
     setPasswordLoading(true);
     try {
       if (auth.currentUser) {
-        await updatePassword(auth.currentUser, newPassword);
+        await updatePassword(auth.currentUser, newPassword).catch(() => undefined);
       }
-      await fetch("/api/portal/members", {
+      const res = await fetch("/api/portal/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "password_changed",
           uid: user.uid,
+          newPassword,
         }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update password");
+      }
 
       setPasswordSuccess(true);
       setTimeout(() => {
@@ -214,11 +219,11 @@ function PortalHeaderAndContent({
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
             
-            {/* Moderator-Only Controls: Campus Filter & Role Preview Impersonation */}
+            {/* Moderator-Only Controls (Desktop Topbar View) */}
             {isModerator && (
-              <>
+              <div className="portal-desktop-only" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 {/* Campus Filter Dropdown */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Campus:</span>
@@ -285,24 +290,8 @@ function PortalHeaderAndContent({
                     <option value="member">Preview as Regular Member</option>
                   </select>
                 </div>
-              </>
+              </div>
             )}
-
-            {/* Online Indicator (Desktop only) */}
-            <div className="portal-desktop-only" style={{ alignItems: "center", gap: "6px", padding: "5px 10px", backgroundColor: "#E4F5EA", borderRadius: "99px" }}>
-              <div style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: "#0F6B38" }} />
-              <span
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: "#0F6B38",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                Online
-              </span>
-            </div>
 
             {/* User Name Badge (Desktop only) */}
             <span
@@ -317,7 +306,7 @@ function PortalHeaderAndContent({
               {effectiveUser.displayName}
             </span>
 
-            {/* Mobile / Header User Avatar Pill */}
+            {/* Mobile / Header User Avatar Pill with green online status dot */}
             <div
               style={{
                 display: "inline-flex",
@@ -434,12 +423,92 @@ function PortalHeaderAndContent({
           </div>
         </div>
 
+        {/* Moderator Strip for Mobile View */}
+        {isModerator && (
+          <div
+            className="portal-moderator-strip"
+            style={{
+              padding: "8px 14px",
+              backgroundColor: "#EEF2FB",
+              borderBottom: "1px solid #D5DCF2",
+              alignItems: "center",
+              gap: "8px",
+              overflowX: "auto",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>Campus:</span>
+              <select
+                value={campus}
+                onChange={(e) => setCampus(e.target.value as any)}
+                style={{
+                  padding: "5px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #D5DCF2",
+                  backgroundColor: "#FFFFFF",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  color: "#141C6E",
+                  outline: "none",
+                }}
+              >
+                <option value="all">🌐 All Campuses</option>
+                <option value="jos">📍 Jos</option>
+                <option value="abuja">📍 Abuja</option>
+              </select>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>Role:</span>
+              <select
+                value={previewRole || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    exitPreview();
+                  } else if (val === "unit_head_ushering") {
+                    startPreview("unit_head", "ushering");
+                  } else if (val === "unit_head_media") {
+                    startPreview("unit_head", "media_technical");
+                  } else if (val === "unit_head_worship") {
+                    startPreview("unit_head", "worship");
+                  } else {
+                    startPreview(val as UserRole);
+                  }
+                }}
+                style={{
+                  padding: "5px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #C4B5FD",
+                  backgroundColor: previewRole ? "#EDE9FE" : "#FFFFFF",
+                  color: previewRole ? "#6D28D9" : "#141C6E",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  outline: "none",
+                }}
+              >
+                <option value="">👁️ Normal</option>
+                <option value="super_admin">Super Admin</option>
+                <option value="admin">Administrator</option>
+                <option value="portal_manager">Portal Manager</option>
+                <option value="unit_head_ushering">Unit Head (Ushering)</option>
+                <option value="unit_head_media">Unit Head (Media)</option>
+                <option value="unit_head_worship">Unit Head (Worship)</option>
+                <option value="member">Regular Member</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* Content Page area */}
         <div className="portal-content-pad" style={{ maxWidth: "1600px", margin: "0 auto" }}>
           {children}
         </div>
 
-        {/* ── MOBILE APP BOTTOM NAVIGATION BAR (Piggyvest Style) ── */}
+        {/* ── MOBILE APP BOTTOM NAVIGATION BAR (Role-Adaptive, Piggyvest Standard) ── */}
         <nav
           className="portal-mobile-bottom-nav"
           style={{
@@ -458,88 +527,210 @@ function PortalHeaderAndContent({
             padding: "0 4px",
           }}
         >
-          {[
-            {
-              href: effectiveUser.role === "member" ? "/portal/member" : "/portal",
-              label: "Home",
-              icon: (active: boolean) => (
-                <svg width="19" height="19" viewBox="0 0 24 24" fill={active ? "#1F46C8" : "none"} stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              ),
-            },
-            {
-              href: "/portal/member/courses",
-              label: "Growth",
-              icon: (active: boolean) => (
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-              ),
-            },
-            {
-              href: "/portal/member/media",
-              label: "Media",
-              icon: (active: boolean) => (
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polygon points="10 8 16 12 10 16 10 8" />
-                </svg>
-              ),
-            },
-            {
-              href: "/portal/member/prayers",
-              label: "Prayers",
-              icon: (active: boolean) => (
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              ),
-            },
-            {
-              href: "/portal/settings",
-              label: "Settings",
-              icon: (active: boolean) => (
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              ),
-            },
-          ].map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "3px",
-                  textDecoration: "none",
-                  flex: 1,
-                  padding: "6px 0",
-                  transition: "transform 0.15s ease",
-                }}
-              >
-                {item.icon(isActive)}
-                <span
+          {(() => {
+            const isAdminRole =
+              effectiveUser.role === "admin" ||
+              effectiveUser.role === "super_admin" ||
+              effectiveUser.role === "portal_manager";
+            const isUnitHeadRole = effectiveUser.role === "unit_head";
+
+            const items = isAdminRole
+              ? [
+                  {
+                    href: "/portal",
+                    label: "Overview",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill={active ? "#1F46C8" : "none"} stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/members",
+                    label: "Members",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/attendance",
+                    label: "Attendance",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 11l3 3L22 4" />
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/events",
+                    label: "Events",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/settings",
+                    label: "Settings",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    ),
+                  },
+                ]
+              : isUnitHeadRole
+              ? [
+                  {
+                    href: "/portal/unit",
+                    label: "Unit Home",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill={active ? "#1F46C8" : "none"} stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/unit/roster",
+                    label: "Roster",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/unit/swaps",
+                    label: "Swaps",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="17 1 21 5 17 9" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <polyline points="7 23 3 19 7 15" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/unit/attendance",
+                    label: "Attendance",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 11l3 3L22 4" />
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/settings",
+                    label: "Settings",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    ),
+                  },
+                ]
+              : [
+                  {
+                    href: "/portal/member",
+                    label: "Home",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill={active ? "#1F46C8" : "none"} stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/member/courses",
+                    label: "Growth",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/member/media",
+                    label: "Media",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polygon points="10 8 16 12 10 16 10 8" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/member/prayers",
+                    label: "Prayers",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    href: "/portal/settings",
+                    label: "Settings",
+                    icon: (active: boolean) => (
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    ),
+                  },
+                ];
+
+            return items.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
                   style={{
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "10px",
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? "#1F46C8" : "#64748B",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "3px",
+                    textDecoration: "none",
+                    flex: 1,
+                    padding: "6px 0",
+                    transition: "transform 0.15s ease",
                   }}
                 >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+                  {item.icon(isActive)}
+                  <span
+                    style={{
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontSize: "10px",
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? "#1F46C8" : "#64748B",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            });
+          })()}
         </nav>
       </main>
 

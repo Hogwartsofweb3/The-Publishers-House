@@ -10,6 +10,8 @@ interface PortalContextType {
   previewUnitId: string | null;
   startPreview: (role: UserRole, unitId?: string) => void;
   exitPreview: () => void;
+  currentUser: PortalUser;
+  updateCurrentUser: (partial: Partial<PortalUser>) => void;
   effectiveUser: PortalUser;
   isSuperAdmin: boolean;
 }
@@ -23,9 +25,40 @@ export function PortalProvider({
   user: PortalUser;
   children: React.ReactNode;
 }) {
+  const [currentUser, setCurrentUser] = useState<PortalUser>(user);
   const [campus, setCampusState] = useState<"all" | Campus>("all");
   const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
   const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
+
+  // Sync if user prop updates
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
+
+  // Listen for instant updates broadcast across components
+  useEffect(() => {
+    const handleUserUpdate = (e: Event) => {
+      const custom = e as CustomEvent<Partial<PortalUser>>;
+      if (custom.detail) {
+        setCurrentUser((prev) => ({
+          ...prev,
+          ...custom.detail,
+        }));
+      }
+    };
+
+    window.addEventListener("tph_user_updated", handleUserUpdate as EventListener);
+    return () => {
+      window.removeEventListener("tph_user_updated", handleUserUpdate as EventListener);
+    };
+  }, []);
+
+  const updateCurrentUser = (partial: Partial<PortalUser>) => {
+    setCurrentUser((prev) => ({ ...prev, ...partial }));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("tph_user_updated", { detail: partial }));
+    }
+  };
 
   // Load saved campus from localStorage
   useEffect(() => {
@@ -46,8 +79,8 @@ export function PortalProvider({
   };
 
   const isSuperAdmin =
-    user.role === "super_admin" ||
-    user.email.toLowerCase() === "joshuaagunbiade@gmail.com";
+    currentUser.role === "super_admin" ||
+    currentUser.email.toLowerCase() === "joshuaagunbiade@gmail.com";
 
   const startPreview = (role: UserRole, unitId?: string) => {
     setPreviewRole(role);
@@ -60,9 +93,9 @@ export function PortalProvider({
   };
 
   const effectiveUser: PortalUser = {
-    ...user,
-    role: previewRole || user.role,
-    assignedUnitId: previewUnitId || user.assignedUnitId,
+    ...currentUser,
+    role: previewRole || currentUser.role,
+    assignedUnitId: previewUnitId || currentUser.assignedUnitId,
   };
 
   return (
@@ -74,6 +107,8 @@ export function PortalProvider({
         previewUnitId,
         startPreview,
         exitPreview,
+        currentUser,
+        updateCurrentUser,
         effectiveUser,
         isSuperAdmin,
       }}

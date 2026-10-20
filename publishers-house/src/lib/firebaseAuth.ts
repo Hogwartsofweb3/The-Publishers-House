@@ -5,6 +5,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   indexedDBLocalPersistence,
+  browserPopupRedirectResolver,
   type Auth,
 } from "firebase/auth";
 
@@ -14,13 +15,14 @@ function getFirebaseAuth(): Auth {
   }
   try {
     // Prioritize browserLocalPersistence (localStorage).
-    // This prevents "Database is closing/hidden" errors when mobile browsers switch tabs or enter background.
+    // Attach browserPopupRedirectResolver so signInWithPopup and getRedirectResult function without auth/argument-error.
     return initializeAuth(app, {
       persistence: [
         browserLocalPersistence,
         indexedDBLocalPersistence,
         browserSessionPersistence,
       ],
+      popupRedirectResolver: browserPopupRedirectResolver,
     });
   } catch {
     return getAuth(app);

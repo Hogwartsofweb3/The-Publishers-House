@@ -50,7 +50,7 @@ const DEFAULT_SETTINGS: ChurchSettings = {
 };
 
 export default function PortalSettingsPage() {
-  const { effectiveUser } = usePortal();
+  const { effectiveUser, updateCurrentUser } = usePortal();
   const isChurchAdmin =
     effectiveUser.role === "admin" ||
     effectiveUser.role === "super_admin" ||
@@ -157,7 +157,7 @@ export default function PortalSettingsPage() {
   };
 
   if (!isChurchAdmin) {
-    return <MemberSettings user={effectiveUser} />;
+    return <MemberSettings user={effectiveUser} onUserUpdated={updateCurrentUser} />;
   }
 
   return (

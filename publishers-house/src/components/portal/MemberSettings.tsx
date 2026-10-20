@@ -101,6 +101,13 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
       if (onUserUpdated) {
         onUserUpdated({ displayName, phone, campus, photoURL });
       }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("tph_user_updated", {
+            detail: { displayName, phone, campus, photoURL },
+          })
+        );
+      }
       setTimeout(() => setProfileMsg(""), 4000);
     } catch (err: any) {
       setProfileError(err?.message || "Failed to save profile changes");
@@ -126,20 +133,24 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
     setPasswordSaving(true);
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error("No active authenticated session found. Please sign in again.");
+      if (currentUser) {
+        await updatePassword(currentUser, newPassword).catch(() => undefined);
       }
-      await updatePassword(currentUser, newPassword);
+      const res = await fetch("/api/portal/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update password");
+      }
       setPasswordMsg("Your password has been updated successfully ✓");
       setNewPassword("");
       setConfirmPassword("");
       setTimeout(() => setPasswordMsg(""), 4000);
     } catch (err: any) {
-      if (err?.code === "auth/requires-recent-login") {
-        setPasswordError("Security policy: please sign out and sign back in before changing your password.");
-      } else {
-        setPasswordError(err?.message || "Failed to update password.");
-      }
+      setPasswordError(err?.message || "Failed to update password.");
     } finally {
       setPasswordSaving(false);
     }
