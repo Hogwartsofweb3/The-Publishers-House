@@ -70,6 +70,11 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
     return true;
   }
 
+  // All logged-in users have access to personal settings (rendered as MemberSettings for non-admins)
+  if (pathname === "/portal/settings" || pathname.startsWith("/portal/settings/")) {
+    return true;
+  }
+
   // Portal manager handles management & settings, but not sensitive pastoral / private care
   if (role === "portal_manager") {
     const managerAllowed = [
@@ -79,7 +84,6 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
       "/portal/courses",
       "/portal/facility",
       "/portal/audit",
-      "/portal/settings",
     ];
     return managerAllowed.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`));
   }
@@ -94,7 +98,6 @@ export function canAccessPortal(pathname: string, role: UserRole): boolean {
     "/portal/courses",
     "/portal/facility",
     "/portal/audit",
-    "/portal/settings",
   ];
 
   if (adminPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {

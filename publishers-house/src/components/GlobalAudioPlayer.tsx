@@ -1,17 +1,31 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 import type { Sermon } from "@/lib/firebase";
 import Link from "next/link";
 
+export interface PlayableMedia extends Partial<Sermon> {
+  id: string;
+  title: string;
+  speaker?: string;
+  series?: string;
+  scripture?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+  duration?: string;
+  type?: "sermon" | "resource";
+  resourceSlug?: string;
+}
+
 interface GlobalPlayerContextType {
-  currentSermon: Sermon | null;
+  currentSermon: PlayableMedia | null;
   mode: "video" | "audio" | null;
   isPlaying: boolean;
   isMinimized: boolean;
-  playSermon: (sermon: Sermon) => void;
-  playVideo: (sermon: Sermon) => void;
-  playAudio: (sermon: Sermon) => void;
+  startSeconds: number;
+  playSermon: (sermon: PlayableMedia, startSeconds?: number) => void;
+  playVideo: (sermon: PlayableMedia, startSeconds?: number) => void;
+  playAudio: (sermon: PlayableMedia, startSeconds?: number) => void;
   togglePlay: () => void;
   toggleMinimize: () => void;
   closePlayer: () => void;
@@ -22,6 +36,7 @@ const GlobalPlayerContext = createContext<GlobalPlayerContextType>({
   mode: null,
   isPlaying: false,
   isMinimized: false,
+  startSeconds: 0,
   playSermon: () => {},
   playVideo: () => {},
   playAudio: () => {},
@@ -33,70 +48,123 @@ const GlobalPlayerContext = createContext<GlobalPlayerContextType>({
 export const useAudio = () => useContext(GlobalPlayerContext);
 export const useGlobalPlayer = () => useContext(GlobalPlayerContext);
 
-function getYouTubeVideoId(url?: string): string | null {
+export function getYouTubeVideoId(url?: string): string | null {
   if (!url) return null;
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
   return match ? match[1] : null;
 }
 
-function getSpotifyEmbedUrl(sermon: Sermon): string {
-  if (sermon.spotifyEpisodeId) {
-    return `https://open.spotify.com/embed/episode/${sermon.spotifyEpisodeId}?utm_source=generator&theme=0`;
+function parseDurationToSeconds(durationStr?: string): number {
+  if (!durationStr) return 2400; // default 40 min
+  if (durationStr.includes(":")) {
+    const parts = durationStr.split(":").map(Number);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return parts[0] * 60 + parts[1];
+    }
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
   }
-  if (sermon.audioUrl && sermon.audioUrl.includes("spotify.com/episode/")) {
-    const match = sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/);
-    if (match) return `https://open.spotify.com/embed/episode/${match[1]}?utm_source=generator&theme=0`;
-  }
-  return `https://open.spotify.com/embed/show/0FELkmsjm7yVoytlwCXXDG?utm_source=generator&theme=0`;
+  let total = 0;
+  const hrMatch = durationStr.match(/(\d+)\s*hr/i);
+  const minMatch = durationStr.match(/(\d+)\s*min/i);
+  const secMatch = durationStr.match(/(\d+)\s*sec/i);
+  if (hrMatch) total += parseInt(hrMatch[1], 10) * 3600;
+  if (minMatch) total += parseInt(minMatch[1], 10) * 60;
+  if (secMatch) total += parseInt(secMatch[1], 10);
+  return total > 0 ? total : 2400;
 }
 
-function getTelegramEmbedUrl(sermon: Sermon): string {
-  if (sermon.telegramMessageId) {
-    return `https://t.me/ThePublishersHouse/${sermon.telegramMessageId}?embed=1`;
+function persistPlayback(item: {
+  id: string;
+  title: string;
+  speaker?: string;
+  series?: string;
+  scripture?: string;
+  videoUrl?: string;
+  audioUrl?: string;
+  thumbnailUrl?: string;
+  progressSeconds: number;
+  durationSeconds: number;
+  percent: number;
+  completed: boolean;
+  type?: "sermon" | "resource";
+  resourceSlug?: string;
+}) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem("tph_playback_history");
+    let history: any[] = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(history)) history = [];
+
+    const updated = {
+      ...item,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const index = history.findIndex((h) => h.id === item.id);
+    if (index >= 0) {
+      history[index] = { ...history[index], ...updated };
+    } else {
+      history.unshift(updated);
+    }
+
+    localStorage.setItem("tph_playback_history", JSON.stringify(history.slice(0, 50)));
+    window.dispatchEvent(new CustomEvent("tph_playback_update", { detail: updated }));
+
+    fetch("/api/portal/playback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    }).catch(() => {});
+  } catch (e) {
+    // silently catch storage errors
   }
-  if (sermon.audioUrl && sermon.audioUrl.includes("t.me/")) {
-    const clean = sermon.audioUrl.replace(/^https?:\/\/t\.me\//, "").replace(/\?.*/, "");
-    if (clean) return `https://t.me/${clean}?embed=1`;
-  }
-  return `https://t.me/ThePublishersHouse/1457?embed=1`;
 }
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
-  const [currentSermon, setCurrentSermon] = useState<Sermon | null>(null);
+  const [currentSermon, setCurrentSermon] = useState<PlayableMedia | null>(null);
   const [mode, setMode] = useState<"video" | "audio" | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [startSeconds, setStartSeconds] = useState(0);
 
-  const playVideo = (sermon: Sermon) => {
-    // If audio element is playing, pause it
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentPosRef = useRef<number>(0);
+  const durationPosRef = useRef<number>(2400);
+
+  const playVideo = useCallback((media: PlayableMedia, startSec = 0) => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    setCurrentSermon(sermon);
+    currentPosRef.current = startSec;
+    durationPosRef.current = parseDurationToSeconds(media.duration);
+    setStartSeconds(startSec);
+    setCurrentSermon(media);
     setMode("video");
     setIsPlaying(true);
     setIsMinimized(false);
-  };
+  }, []);
 
-  const playAudio = (sermon: Sermon) => {
-    setCurrentSermon(sermon);
+  const playAudio = useCallback((media: PlayableMedia, startSec = 0) => {
+    currentPosRef.current = startSec;
+    durationPosRef.current = parseDurationToSeconds(media.duration);
+    setStartSeconds(startSec);
+    setCurrentSermon(media);
     setMode("audio");
     setIsPlaying(true);
     setIsMinimized(false);
-  };
+  }, []);
 
-  const playSermon = (sermon: Sermon) => {
-    if (sermon.audioUrl && !sermon.audioUrl.includes("t.me") && !sermon.audioUrl.includes("spotify.com")) {
-      playAudio(sermon);
-    } else if (sermon.videoUrl) {
-      playAudio(sermon);
+  const playSermon = useCallback((media: PlayableMedia, startSec = 0) => {
+    if (media.videoUrl) {
+      playVideo(media, startSec);
     } else {
-      playAudio(sermon);
+      playAudio(media, startSec);
     }
-  };
+  }, [playVideo, playAudio]);
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (audioRef.current && mode === "audio") {
       if (isPlaying) {
         audioRef.current.pause();
@@ -104,27 +172,105 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         audioRef.current.play();
       }
     }
-    setIsPlaying(!isPlaying);
-  };
+    setIsPlaying((prev) => !prev);
+  }, [isPlaying, mode]);
 
-  const toggleMinimize = () => {
-    setIsMinimized(!isMinimized);
-  };
+  const toggleMinimize = useCallback(() => {
+    setIsMinimized((prev) => !prev);
+  }, []);
 
-  const closePlayer = () => {
+  const closePlayer = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+    }
+    // Save final progress on close
+    if (currentSermon && currentPosRef.current > 5) {
+      const vid = getYouTubeVideoId(currentSermon.videoUrl);
+      const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
+      const dur = durationPosRef.current || 2400;
+      const pct = Math.min(100, Math.round((currentPosRef.current / dur) * 100));
+      persistPlayback({
+        id: currentSermon.id,
+        title: currentSermon.title,
+        speaker: currentSermon.speaker,
+        series: currentSermon.series,
+        scripture: currentSermon.scripture,
+        videoUrl: currentSermon.videoUrl,
+        audioUrl: currentSermon.audioUrl,
+        thumbnailUrl: thumb,
+        progressSeconds: currentPosRef.current,
+        durationSeconds: dur,
+        percent: pct,
+        completed: pct >= 90,
+        type: currentSermon.type || "sermon",
+        resourceSlug: currentSermon.resourceSlug,
+      });
     }
     setCurrentSermon(null);
     setMode(null);
     setIsPlaying(false);
-  };
+    setStartSeconds(0);
+  }, [currentSermon]);
 
+  // Audio HTML element autoplay
   useEffect(() => {
     if (audioRef.current && currentSermon && mode === "audio" && currentSermon.audioUrl && !currentSermon.audioUrl.includes("t.me")) {
-      audioRef.current.play().catch(e => console.error("Audio playback error:", e));
+      audioRef.current.play().catch((e) => console.error("Audio playback error:", e));
     }
   }, [currentSermon, mode]);
+
+  // YouTube postMessage listener
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (data && data.event === "infoDelivery" && data.info) {
+          if (typeof data.info.currentTime === "number") {
+            currentPosRef.current = Math.floor(data.info.currentTime);
+          }
+          if (typeof data.info.duration === "number" && data.info.duration > 0) {
+            durationPosRef.current = Math.floor(data.info.duration);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // Periodic heartbeat timer to track and sync progress
+  useEffect(() => {
+    if (!isPlaying || !currentSermon) return;
+
+    const interval = setInterval(() => {
+      currentPosRef.current += 3;
+      const dur = durationPosRef.current || 2400;
+      const pct = Math.min(100, Math.round((currentPosRef.current / dur) * 100));
+      const vid = getYouTubeVideoId(currentSermon.videoUrl);
+      const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
+
+      // Persist to localStorage and backend
+      persistPlayback({
+        id: currentSermon.id,
+        title: currentSermon.title,
+        speaker: currentSermon.speaker,
+        series: currentSermon.series,
+        scripture: currentSermon.scripture,
+        videoUrl: currentSermon.videoUrl,
+        audioUrl: currentSermon.audioUrl,
+        thumbnailUrl: thumb,
+        progressSeconds: currentPosRef.current,
+        durationSeconds: dur,
+        percent: pct,
+        completed: pct >= 90,
+        type: currentSermon.type || "sermon",
+        resourceSlug: currentSermon.resourceSlug,
+      });
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, currentSermon]);
 
   return (
     <GlobalPlayerContext.Provider
@@ -133,6 +279,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         mode,
         isPlaying,
         isMinimized,
+        startSeconds,
         playSermon,
         playVideo,
         playAudio,
@@ -148,6 +295,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
           mode={mode || "video"}
           isPlaying={isPlaying}
           isMinimized={isMinimized}
+          startSeconds={startSeconds}
           audioRef={audioRef}
           onTogglePlay={togglePlay}
           onToggleMinimize={toggleMinimize}
@@ -159,10 +307,11 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 }
 
 interface PlayerProps {
-  sermon: Sermon;
+  sermon: PlayableMedia;
   mode: "video" | "audio";
   isPlaying: boolean;
   isMinimized: boolean;
+  startSeconds: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   onTogglePlay: () => void;
   onToggleMinimize: () => void;
@@ -174,6 +323,7 @@ function FloatingDockedPlayer({
   mode,
   isPlaying,
   isMinimized,
+  startSeconds,
   audioRef,
   onTogglePlay,
   onToggleMinimize,
@@ -196,14 +346,11 @@ function FloatingDockedPlayer({
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : "/images/sermon-hero-bg.jpg";
 
-
-
-
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
     const m = Math.floor(time / 60);
     const s = Math.floor(time % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   const handleTimeUpdate = () => {
@@ -227,10 +374,7 @@ function FloatingDockedPlayer({
     setProgress(Number(e.target.value));
   };
 
-  const skip = (seconds: number) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime += seconds;
-  };
+  const startParam = startSeconds > 0 ? `&start=${Math.floor(startSeconds)}` : "";
 
   return (
     <div
@@ -252,7 +396,7 @@ function FloatingDockedPlayer({
         transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* ── HEADER / TITLE BAR ── */}
+      {/* HEADER / TITLE BAR */}
       <div
         style={{
           display: "flex",
@@ -275,7 +419,7 @@ function FloatingDockedPlayer({
               fontWeight: 700,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
-              backgroundColor: mode === "video" ? "#2090FF" : "#E8740C",
+              backgroundColor: mode === "video" ? "#2090FF" : "#0140C1",
               color: "#FFFFFF",
               flexShrink: 0,
             }}
@@ -335,16 +479,17 @@ function FloatingDockedPlayer({
         </div>
       </div>
 
-      {/* ── PLAYER BODY (hidden when minimized) ── */}
+      {/* PLAYER BODY */}
       {!isMinimized && (
         <div style={{ display: "flex", flexDirection: "column" }}>
           {/* VIDEO MODE */}
           {mode === "video" && videoId && (
             <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#000" }}>
               <iframe
+                key={`${videoId}-${startSeconds}`}
                 width="100%"
                 height="100%"
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1${startParam}`}
                 title={sermon.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -353,18 +498,17 @@ function FloatingDockedPlayer({
             </div>
           )}
 
-          {/* AUDIO MODE — YouTube iframe as audio source, artwork overlay covers video */}
+          {/* AUDIO MODE — YouTube iframe as audio source with artwork overlay */}
           {mode === "audio" && (
             <div style={{ backgroundColor: "#0D1238" }}>
               {videoId ? (
-                /* ── YouTube playing, video hidden behind artwork cover ── */
                 <div style={{ position: "relative", width: "100%" }}>
-                  {/* The real YouTube iframe — plays correct sermon audio */}
                   <div style={{ width: "100%", aspectRatio: "16/9" }}>
                     <iframe
+                      key={`${videoId}-${startSeconds}`}
                       width="100%"
                       height="100%"
-                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${startParam}`}
                       title={sermon.title}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -372,14 +516,13 @@ function FloatingDockedPlayer({
                     />
                   </div>
 
-                  {/* Artwork overlay — covers the video portion, leaves YT control bar visible */}
+                  {/* Artwork overlay */}
                   <div
                     style={{
                       position: "absolute",
                       top: 0,
                       left: 0,
                       right: 0,
-                      /* Leave ~46px at bottom for YouTube native control bar */
                       bottom: "46px",
                       background: "linear-gradient(160deg, #0D1238 0%, #151A54 100%)",
                       display: "flex",
@@ -438,7 +581,6 @@ function FloatingDockedPlayer({
                             borderRadius: "2px",
                             backgroundColor: "#2090FF",
                             opacity: 0.8,
-                            animation: `pulse ${0.8 + i * 0.1}s ease-in-out infinite alternate`,
                           }}
                         />
                       ))}
@@ -446,7 +588,6 @@ function FloatingDockedPlayer({
                   </div>
                 </div>
               ) : (
-                /* ── No YouTube video — fallback info card ── */
                 <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
                   <img
                     src={thumbnailUrl}
@@ -496,9 +637,6 @@ function FloatingDockedPlayer({
                     fontFamily: "var(--font-poppins)",
                   }}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-                  </svg>
                   Spotify
                 </a>
                 <a
@@ -520,16 +658,13 @@ function FloatingDockedPlayer({
                     fontFamily: "var(--font-poppins)",
                   }}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.16l-1.92 9.07c-.14.65-.53.81-1.07.51l-2.95-2.18-1.42 1.37c-.16.16-.29.29-.6.29l.21-3.01 5.48-4.95c.24-.21-.05-.33-.37-.12l-6.77 4.26-2.92-.91c-.64-.2-.65-.64.13-.95l11.41-4.4c.53-.19.99.13.8.92z"/>
-                  </svg>
                   Telegram
                 </a>
               </div>
             </div>
           )}
 
-          {/* ── FOOTER ROW ── */}
+          {/* FOOTER ROW */}
           <div
             style={{
               padding: "8px 14px",
@@ -543,12 +678,16 @@ function FloatingDockedPlayer({
             }}
           >
             <span>The Publishers House</span>
-            <Link
-              href={`/sermons/${sermon.id}`}
-              style={{ color: "#2090FF", textDecoration: "none", fontWeight: 600 }}
-            >
-              View Notes →
-            </Link>
+            {sermon.id && !sermon.id.startsWith("res_") ? (
+              <Link
+                href={`/sermons/${sermon.id}`}
+                style={{ color: "#2090FF", textDecoration: "none", fontWeight: 600 }}
+              >
+                View Sermon Notes →
+              </Link>
+            ) : (
+              <span style={{ color: "#2090FF", fontWeight: 600 }}>Active Study Session</span>
+            )}
           </div>
         </div>
       )}

@@ -30,6 +30,7 @@ const unitNav = [
   { href: "/portal/unit/swaps", label: "Swap Requests", icon: "⟳" },
   { href: "/portal/unit/assets", label: "Assets", icon: "◇" },
   { href: "/portal/unit/attendance", label: "Unit Attendance", icon: "✦" },
+  { href: "/portal/settings", label: "Settings", icon: "⚙️" },
 ];
 
 const memberNav = [
@@ -38,6 +39,7 @@ const memberNav = [
   { href: "/portal/member/prayers", label: "Prayer & Testimony", icon: "♡" },
   { href: "/portal/member/events", label: "Events", icon: "◉" },
   { href: "/portal/member/media", label: "Media", icon: "▶" },
+  { href: "/portal/settings", label: "Settings", icon: "⚙️" },
 ];
 
 interface SidebarProps {

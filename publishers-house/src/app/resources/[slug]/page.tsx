@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { TRACK_DETAILS } from "@/lib/cmsDefaults";
+import ResourcesCurriculumClient from "./ResourcesCurriculumClient";
 
 export const revalidate = 0;
 
@@ -239,169 +240,11 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
               </span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {track.materials.map((m, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    backgroundColor: "#F4F6FB",
-                    border: "1px solid #D3DAEC",
-                    borderRadius: "8px",
-                    padding: "24px 28px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "20px",
-                    transition: "border-color 0.15s ease",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                    <div
-                      style={{
-                        width: "48px",
-                        height: "48px",
-                        borderRadius: "8px",
-                        backgroundColor: "#151A54",
-                        color: "#FFFFFF",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontFamily: "'Poppins', sans-serif",
-                        fontWeight: 800,
-                        fontSize: "14px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        {m.part} · {m.speaker} {m.scripture ? `· ${m.scripture}` : ""}
-                      </div>
-                      <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "17px", fontWeight: 700, color: "#151A54", margin: "4px 0 0" }}>
-                        {m.title}
-                      </h3>
-                      {m.overview && (
-                        <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "14px", color: "#4A62A0", margin: "6px 0 0", lineHeight: "1.55em", maxWidth: "680px" }}>
-                          {m.overview}
-                        </p>
-                      )}
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11.5px", color: "#747CA1", marginTop: "6px" }}>
-                        Duration: {m.duration}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    {m.youtubeUrl ? (
-                      <a
-                        href={m.youtubeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid #D3DAEC",
-                          borderRadius: "4px",
-                          color: "#151A54",
-                          fontFamily: "'Poppins', sans-serif",
-                          fontWeight: 600,
-                          fontSize: "11px",
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <span>▶</span>
-                        <span>Watch Video</span>
-                      </a>
-                    ) : m.audioUrl ? (
-                      <a
-                        href={m.audioUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid #D3DAEC",
-                          borderRadius: "4px",
-                          color: "#151A54",
-                          fontFamily: "'Poppins', sans-serif",
-                          fontWeight: 600,
-                          fontSize: "11px",
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <span>🎧</span>
-                        <span>Listen Audio</span>
-                      </a>
-                    ) : (
-                      <Link
-                        href="/sermons"
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid #D3DAEC",
-                          borderRadius: "4px",
-                          color: "#151A54",
-                          fontFamily: "'Poppins', sans-serif",
-                          fontWeight: 600,
-                          fontSize: "11px",
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <span>▶</span>
-                        <span>Listen & Watch</span>
-                      </Link>
-                    )}
-
-                    {m.pdfUrl && (
-                      <a
-                        href={m.pdfUrl}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "10px 18px",
-                          backgroundColor: "#0140C1",
-                          border: "none",
-                          borderRadius: "4px",
-                          color: "#FFFFFF",
-                          fontFamily: "'Poppins', sans-serif",
-                          fontWeight: 600,
-                          fontSize: "11px",
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          textDecoration: "none",
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <span>📥</span>
-                        <span>Download PDF</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ResourcesCurriculumClient
+              trackSlug={slug}
+              trackTitle={track.title}
+              materials={track.materials}
+            />
 
             {/* Other Resources Carousel link */}
             <div style={{ marginTop: "60px", padding: "32px", backgroundColor: "#E8ECF7", borderRadius: "12px", textAlign: "center" }}>

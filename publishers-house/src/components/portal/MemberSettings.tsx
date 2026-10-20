@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { updatePassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
@@ -16,6 +16,8 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
   const [phone, setPhone] = useState(user.phone || "");
   const [campus, setCampus] = useState<Campus>((user.campus as Campus) || "jos");
   const [photoURL, setPhotoURL] = useState(user.photoURL || "");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
@@ -30,6 +32,53 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const unitName = UNITS.find((u) => u.id === user.assignedUnitId)?.name || (user.assignedUnitId ? user.assignedUnitId : "No unit assigned");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setProfileError("Please select an image file (PNG, JPG, WebP).");
+      return;
+    }
+
+    setUploadingImage(true);
+    setProfileError("");
+    setProfileMsg("");
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          const size = 256;
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            setPhotoURL(dataUrl);
+            setProfileMsg("New photo loaded! Click 'Save Profile Changes' to finalize ✓");
+          }
+        } catch (err: any) {
+          setProfileError("Failed to process image: " + err.message);
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+      img.onerror = () => {
+        setProfileError("Failed to read image file.");
+        setUploadingImage(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,11 +244,11 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
 
       {/* 1. PERSONAL INFORMATION & CONTACT DETAILS */}
       <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "28px", flexWrap: "wrap" }}>
           <div
             style={{
-              width: "64px",
-              height: "64px",
+              width: "72px",
+              height: "72px",
               borderRadius: "50%",
               backgroundColor: "#2090FF",
               backgroundImage: photoURL ? `url(${photoURL})` : undefined,
@@ -210,13 +259,15 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
               justifyContent: "center",
               color: "#FFFFFF",
               fontWeight: 800,
-              fontSize: "24px",
+              fontSize: "26px",
               border: "3px solid #D5DCF2",
+              boxShadow: "0 4px 12px rgba(20, 28, 110, 0.12)",
               flexShrink: 0,
             }}
           >
             {!photoURL && (displayName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "M")}
           </div>
+
           <div>
             <h2
               style={{
@@ -224,13 +275,68 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
                 fontWeight: 700,
                 fontSize: "17px",
                 color: "#141C6E",
-                margin: 0,
+                margin: "0 0 6px",
               }}
             >
               Personal Information
             </h2>
-            <p style={{ fontSize: "12.5px", color: "#747CA1", margin: "4px 0 0" }}>
-              Your name and contact details used across The Publishers House fellowship.
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                style={{
+                  padding: "7px 14px",
+                  backgroundColor: "#EEF4FF",
+                  color: "#0140C1",
+                  border: "1px solid #C4D7FE",
+                  borderRadius: "6px",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>📷</span>
+                <span>{uploadingImage ? "Processing..." : photoURL ? "Change Photo" : "Upload Photo"}</span>
+              </button>
+
+              {photoURL && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoURL("");
+                    setProfileMsg("Photo removed. Click 'Save Profile Changes' to finalize.");
+                  }}
+                  style={{
+                    padding: "7px 12px",
+                    backgroundColor: "#FFF1F2",
+                    color: "#BE123C",
+                    border: "1px solid #FECDD3",
+                    borderRadius: "6px",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <p style={{ fontSize: "11px", color: "#747CA1", margin: "6px 0 0" }}>
+              Upload any JPG or PNG image. It will be automatically formatted for your member profile.
             </p>
           </div>
         </div>
@@ -290,19 +396,18 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
               </select>
             </div>
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Profile Picture URL</label>
-              <input
-                type="url"
-                value={photoURL}
-                onChange={(e) => setPhotoURL(e.target.value)}
-                placeholder="https://example.com/my-photo.jpg"
-                style={inputStyle}
-              />
-              <span style={{ fontSize: "11px", color: "#747CA1", marginTop: "4px", display: "block" }}>
-                Paste a public image link for your avatar.
-              </span>
-            </div>
+            {photoURL && !photoURL.startsWith("data:") && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>External Photo URL</label>
+                <input
+                  type="url"
+                  value={photoURL}
+                  onChange={(e) => setPhotoURL(e.target.value)}
+                  placeholder="https://..."
+                  style={inputStyle}
+                />
+              </div>
+            )}
           </div>
 
           {profileMsg && (
