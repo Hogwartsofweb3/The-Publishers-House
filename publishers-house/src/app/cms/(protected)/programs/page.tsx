@@ -26,6 +26,16 @@ export default function ProgramsEditor() {
   const [msg, setMsg] = useState("");
 
   const fetchData = async () => {
+    try {
+      const res = await fetch("/api/cms/programs");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.programs) {
+          setItems(data.programs);
+          return;
+        }
+      }
+    } catch {}
     const q = query(collection(db, "programs"), orderBy("name", "asc"));
     const snap = await getDocs(q);
     setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -40,13 +50,20 @@ export default function ProgramsEditor() {
     setLoading(true);
     try {
       const data = { ...form, slug: form.slug || slugify(form.name) };
-      if (editingId) {
-        await updateDoc(doc(db, "programs", editingId), data);
-        setMsg("Program updated ✓");
-      } else {
-        await addDoc(collection(db, "programs"), { ...data, createdAt: new Date() });
-        setMsg("Program added ✓");
+      const res = await fetch("/api/cms/programs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          id: editingId,
+          program: data,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok || resData.error) {
+        throw new Error(resData.error || "Failed to save program");
       }
+      setMsg(resData.message || (editingId ? "Program updated ✓" : "Program added ✓"));
       setForm({ ...empty });
       setEditingId(null);
       fetchData();
@@ -62,13 +79,37 @@ export default function ProgramsEditor() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this program?")) return;
-    await deleteDoc(doc(db, "programs", id));
-    fetchData();
+    try {
+      const res = await fetch("/api/cms/programs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete program");
+      }
+      fetchData();
+    } catch (err: any) {
+      alert("Error deleting program: " + err.message);
+    }
   };
 
   const togglePublish = async (item: any) => {
-    await updateDoc(doc(db, "programs", item.id), { published: !item.published });
-    fetchData();
+    try {
+      const res = await fetch("/api/cms/programs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish", id: item.id, published: !item.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update program");
+      }
+      fetchData();
+    } catch (err: any) {
+      alert("Error updating program: " + err.message);
+    }
   };
 
   const F = (field: string, value: string | boolean) => setForm(f => ({ ...f, [field]: value }));

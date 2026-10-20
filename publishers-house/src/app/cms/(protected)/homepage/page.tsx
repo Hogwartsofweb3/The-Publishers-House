@@ -92,10 +92,29 @@ export default function HomepageEditor() {
   const G = (k: string, v: any) => setGForm((f) => ({ ...f, [k]: v }));
 
   const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/cms/homepage");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) setSettings((p: any) => ({ ...DEF, ...p, ...data.settings }));
+        if (data.gatherings) setGatherings(data.gatherings);
+        return;
+      }
+    } catch {}
     const snap = await getDoc(doc(db, "homeSettings", "main"));
     if (snap.exists()) setSettings((p: any) => ({ ...DEF, ...p, ...snap.data() }));
   };
   const fetchGatherings = async () => {
+    try {
+      const res = await fetch("/api/cms/homepage");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.gatherings) {
+          setGatherings(data.gatherings);
+          return;
+        }
+      }
+    } catch {}
     const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order","asc")));
     setGatherings(snap.docs.map(d => ({ id:d.id, ...d.data() })));
   };
@@ -121,14 +140,22 @@ export default function HomepageEditor() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      if (!auth.currentUser) {
-        flash("Error: You are not signed in. Please sign in to save changes.");
-        setSaving(false);
-        return;
+      const res = await fetch("/api/cms/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_settings",
+          settings,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to save settings");
       }
-      await setDoc(doc(db,"homeSettings","main"), settings, { merge:true });
       flash("Saved ✓ — changes will appear on the homepage shortly.");
-    } catch(e: any) { flash("Error: "+e.message); }
+    } catch (e: any) {
+      flash("Error: " + e.message);
+    }
     setSaving(false);
   };
 
@@ -137,25 +164,63 @@ export default function HomepageEditor() {
     if (!gForm.title.trim()) { flash("Title is required"); return; }
     setGLoading(true);
     try {
-      if (!auth.currentUser) {
-        flash("Error: You are not signed in. Please sign in to save changes.");
-        setGLoading(false);
-        return;
+      const res = await fetch("/api/cms/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_gathering",
+          id: editId,
+          gathering: gForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to save gathering");
       }
-      if (editId) {
-        await updateDoc(doc(db,"gatherings",editId), { ...gForm, order:Number(gForm.order) });
-        flash("Gathering updated ✓");
-      } else {
-        await addDoc(collection(db,"gatherings"), { ...gForm, order:Number(gForm.order), createdAt:new Date() });
-        flash("Gathering added ✓");
-      }
-      setGForm({ ...EMPTY_G }); setEditId(null); fetchGatherings();
-    } catch(e: any) { flash("Error: "+e.message); }
+      flash(data.message || (editId ? "Gathering updated ✓" : "Gathering added ✓"));
+      setGForm({ ...EMPTY_G });
+      setEditId(null);
+      fetchGatherings();
+    } catch (e: any) {
+      flash("Error: " + e.message);
+    }
     setGLoading(false);
   };
 
-  const deleteG = async (id: string) => { if (!confirm("Delete this gathering?")) return; await deleteDoc(doc(db,"gatherings",id)); fetchGatherings(); };
-  const togglePublishG = async (g: any) => { await updateDoc(doc(db,"gatherings",g.id), { published:!g.published }); fetchGatherings(); };
+  const deleteG = async (id: string) => {
+    if (!confirm("Delete this gathering?")) return;
+    try {
+      const res = await fetch("/api/cms/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_gathering", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete");
+      }
+      fetchGatherings();
+    } catch (e: any) {
+      flash("Error: " + e.message);
+    }
+  };
+
+  const togglePublishG = async (g: any) => {
+    try {
+      const res = await fetch("/api/cms/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish_gathering", id: g.id, published: !g.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update");
+      }
+      fetchGatherings();
+    } catch (e: any) {
+      flash("Error: " + e.message);
+    }
+  };
   const editG = (g: any) => { setGForm({ ...EMPTY_G, ...g }); setEditId(g.id); window.scrollTo({ top:0, behavior:"smooth" }); };
 
   /* ── Field helpers ── */

@@ -19,7 +19,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return hasProfile() && userData().role == 'admin';
+      return isSignedIn() && (
+        request.auth.token.email == 'joshuaagunbiade@gmail.com' ||
+        request.auth.token.email == 'thepublishershouse007@gmail.com' ||
+        (hasProfile() && (
+          userData().role == 'admin' ||
+          userData().role == 'super_admin' ||
+          userData().role == 'portal_manager'
+        ))
+      );
     }
 
     function isUnitHead() {

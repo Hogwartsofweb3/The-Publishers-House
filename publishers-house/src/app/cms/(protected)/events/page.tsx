@@ -26,6 +26,16 @@ export default function EventsEditor() {
   const [msg, setMsg] = useState("");
 
   const fetchEvents = async () => {
+    try {
+      const res = await fetch("/api/cms/events");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.events) {
+          setEvents(data.events);
+          return;
+        }
+      }
+    } catch {}
     const q = query(collection(db, "events"), orderBy("startAt", "desc"));
     const snap = await getDocs(q);
     setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -37,13 +47,20 @@ export default function EventsEditor() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (editingId) {
-        await updateDoc(doc(db, "events", editingId), form);
-        setMsg("Event updated ✓");
-      } else {
-        await addDoc(collection(db, "events"), { ...form, createdAt: new Date() });
-        setMsg("Event added ✓");
+      const res = await fetch("/api/cms/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          id: editingId,
+          event: form,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to save event");
       }
+      setMsg(data.message || (editingId ? "Event updated ✓" : "Event added ✓"));
       setForm({ ...emptyEvent });
       setEditingId(null);
       fetchEvents();
@@ -60,13 +77,37 @@ export default function EventsEditor() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this event?")) return;
-    await deleteDoc(doc(db, "events", id));
-    fetchEvents();
+    try {
+      const res = await fetch("/api/cms/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete event");
+      }
+      fetchEvents();
+    } catch (err: any) {
+      alert("Error deleting event: " + err.message);
+    }
   };
 
   const togglePublish = async (ev: any) => {
-    await updateDoc(doc(db, "events", ev.id), { published: !ev.published });
-    fetchEvents();
+    try {
+      const res = await fetch("/api/cms/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish", id: ev.id, published: !ev.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update event");
+      }
+      fetchEvents();
+    } catch (err: any) {
+      alert("Error updating event: " + err.message);
+    }
   };
 
   return (

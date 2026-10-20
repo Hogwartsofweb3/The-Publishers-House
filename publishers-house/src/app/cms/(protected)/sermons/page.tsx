@@ -115,6 +115,14 @@ export default function SermonsEditor() {
 
   const fetchSermons = async () => {
     try {
+      const res = await fetch("/api/cms/sermons");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.sermons) {
+          setSermons(data.sermons);
+          return;
+        }
+      }
       const q = query(collection(db, "sermons"), orderBy("date", "desc"));
       const snap = await getDocs(q);
       setSermons(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -196,24 +204,20 @@ export default function SermonsEditor() {
 
     setLoading(true);
     try {
-      const data = {
-        ...form,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        updatedAt: new Date().toISOString(),
-      };
-      if (editingId) {
-        await updateDoc(doc(db, "sermons", editingId), data);
-        setMsg("Sermon updated successfully ✓");
-      } else {
-        await addDoc(collection(db, "sermons"), {
-          ...data,
-          createdAt: new Date().toISOString(),
-        });
-        setMsg("Sermon added successfully ✓");
+      const res = await fetch("/api/cms/sermons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          id: editingId,
+          sermon: form,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to save sermon");
       }
+      setMsg(data.message || (editingId ? "Sermon updated successfully ✓" : "Sermon added successfully ✓"));
       setForm({ ...emptySermon });
       setEditingId(null);
       setIsDrawerOpen(false);
@@ -247,13 +251,37 @@ export default function SermonsEditor() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this sermon?")) return;
-    await deleteDoc(doc(db, "sermons", id));
-    fetchSermons();
+    try {
+      const res = await fetch("/api/cms/sermons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete sermon");
+      }
+      fetchSermons();
+    } catch (err: any) {
+      alert("Error deleting sermon: " + err.message);
+    }
   };
 
   const togglePublish = async (s: any) => {
-    await updateDoc(doc(db, "sermons", s.id), { published: !s.published });
-    fetchSermons();
+    try {
+      const res = await fetch("/api/cms/sermons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish", id: s.id, published: !s.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update status");
+      }
+      fetchSermons();
+    } catch (err: any) {
+      alert("Error updating sermon: " + err.message);
+    }
   };
 
   // Filtered sermons list (checks title, series, speaker, date, scripture, summary)

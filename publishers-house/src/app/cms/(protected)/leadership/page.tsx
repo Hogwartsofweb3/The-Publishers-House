@@ -26,6 +26,16 @@ export default function LeadershipEditor() {
   const [msg, setMsg] = useState("");
 
   const fetchData = async () => {
+    try {
+      const res = await fetch("/api/cms/leadership");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.leadership) {
+          setItems(data.leadership);
+          return;
+        }
+      }
+    } catch {}
     const q = query(collection(db, "leadership"), orderBy("order", "asc"));
     const snap = await getDocs(q);
     setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -37,14 +47,20 @@ export default function LeadershipEditor() {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = { ...form, order: Number(form.order) };
-      if (editingId) {
-        await updateDoc(doc(db, "leadership", editingId), data);
-        setMsg("Leader updated");
-      } else {
-        await addDoc(collection(db, "leadership"), { ...data, createdAt: new Date() });
-        setMsg("Leader added");
+      const res = await fetch("/api/cms/leadership", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          id: editingId,
+          leader: form,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok || resData.error) {
+        throw new Error(resData.error || "Failed to save leader");
       }
+      setMsg(resData.message || (editingId ? "Leader updated ✓" : "Leader added ✓"));
       setForm({ ...empty });
       setEditingId(null);
       fetchData();
@@ -60,13 +76,37 @@ export default function LeadershipEditor() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this leader?")) return;
-    await deleteDoc(doc(db, "leadership", id));
-    fetchData();
+    try {
+      const res = await fetch("/api/cms/leadership", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete leader");
+      }
+      fetchData();
+    } catch (err: any) {
+      alert("Error deleting leader: " + err.message);
+    }
   };
 
   const togglePublish = async (item: any) => {
-    await updateDoc(doc(db, "leadership", item.id), { published: !item.published });
-    fetchData();
+    try {
+      const res = await fetch("/api/cms/leadership", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish", id: item.id, published: !item.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update leader");
+      }
+      fetchData();
+    } catch (err: any) {
+      alert("Error updating leader: " + err.message);
+    }
   };
 
   const F = (field: string, value: any) => setForm((f: any) => ({ ...f, [field]: value }));

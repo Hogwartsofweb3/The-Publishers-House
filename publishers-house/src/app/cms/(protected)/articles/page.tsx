@@ -73,6 +73,16 @@ export default function ArticlesEditor() {
   const [ttsLoading, setTtsLoading] = useState(false);
 
   const fetchArticles = async () => {
+    try {
+      const res = await fetch("/api/cms/articles");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.articles) {
+          setArticles(data.articles);
+          return;
+        }
+      }
+    } catch {}
     const q = query(collection(db, "articles"), orderBy("publishedAt", "desc"));
     const snap = await getDocs(q);
     setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -131,19 +141,20 @@ export default function ArticlesEditor() {
     if (!form.title.trim()) { setMsg("Title is required"); return; }
     setLoading(true);
     try {
-      const data = {
-        ...form,
-        slug: form.slug || autoSlug(form.title),
-        categories: form.categories.split(",").map((c: string) => c.trim()).filter(Boolean),
-        publishedAt: form.publishedAt || new Date().toISOString().split("T")[0],
-      };
-      if (editingId) {
-        await updateDoc(doc(db, "articles", editingId), data);
-        setMsg("Saved ✓");
-      } else {
-        await addDoc(collection(db, "articles"), { ...data, createdAt: new Date() });
-        setMsg("Published ✓");
+      const res = await fetch("/api/cms/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          id: editingId,
+          article: form,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to save article");
       }
+      setMsg(data.message || (editingId ? "Saved ✓" : "Published ✓"));
       setForm({ ...emptyArticle });
       setEditingId(null);
       setView("list");
@@ -167,13 +178,37 @@ export default function ArticlesEditor() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this article permanently?")) return;
-    await deleteDoc(doc(db, "articles", id));
-    fetchArticles();
+    try {
+      const res = await fetch("/api/cms/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete article");
+      }
+      fetchArticles();
+    } catch (err: any) {
+      alert("Error deleting article: " + err.message);
+    }
   };
 
   const togglePublish = async (a: any) => {
-    await updateDoc(doc(db, "articles", a.id), { published: !a.published });
-    fetchArticles();
+    try {
+      const res = await fetch("/api/cms/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_publish", id: a.id, published: !a.published }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update article");
+      }
+      fetchArticles();
+    } catch (err: any) {
+      alert("Error updating article: " + err.message);
+    }
   };
 
   const handleImportWP = async () => {
@@ -184,11 +219,11 @@ export default function ArticlesEditor() {
       const res = await fetch("/api/wp-feed");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      let updatedCount = 0;
-      let newCount = 0;
+      const itemsToSync: any[] = [];
       for (const item of data.items) {
         const existing = articles.find((a) => a.slug === item.slug || a.title?.toLowerCase().trim() === item.title?.toLowerCase().trim());
-        const articleData = {
+        itemsToSync.push({
+          id: existing?.id,
           title: item.title,
           slug: item.slug || autoSlug(item.title),
           excerpt: item.excerpt || "",
@@ -198,21 +233,15 @@ export default function ArticlesEditor() {
           categories: item.categories || ["Christian Living"],
           publishedAt: item.isoDate || new Date().toISOString().split("T")[0],
           published: true,
-          updatedAt: new Date(),
-        };
-
-        if (existing) {
-          await updateDoc(doc(db, "articles", existing.id), articleData);
-          updatedCount++;
-        } else {
-          await addDoc(collection(db, "articles"), {
-            ...articleData,
-            createdAt: new Date(),
-          });
-          newCount++;
-        }
+        });
       }
-      setMsg(`Synced ${updatedCount} existing and added ${newCount} new articles ✓`);
+      const syncRes = await fetch("/api/cms/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "batch_sync", items: itemsToSync }),
+      });
+      const syncData = await syncRes.json();
+      setMsg(`Synced ${syncData.count || itemsToSync.length} articles from WordPress ✓`);
       fetchArticles();
     } catch (err: any) { setMsg("WP Error: " + err.message); }
     setImporting(false);
