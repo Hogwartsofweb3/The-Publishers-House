@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTransactions, type Transaction } from "@/lib/firebase";
 import Link from "next/link";
 
 export default function TransactionsCMS() {
-  const [txs, setTxs] = useState<Transaction[]>([]);
+  const [txs, setTxs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
-      const data = await getTransactions(100);
-      setTxs(data);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/cms/transactions");
+        if (!res.ok) throw new Error("Permission denied or server error");
+        const data = await res.json();
+        setTxs(data.transactions || []);
+      } catch (e: any) {
+        setError(e.message || "Failed to load transactions");
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -29,6 +36,8 @@ export default function TransactionsCMS() {
       <div style={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #D3DAEC", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#4A62A0", fontFamily: "'Poppins', sans-serif" }}>Loading transactions...</div>
+        ) : error ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "#DC2626", fontFamily: "'Poppins', sans-serif" }}>Error: {error}</div>
         ) : txs.length === 0 ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#4A62A0", fontFamily: "'Poppins', sans-serif" }}>No transactions found yet.</div>
         ) : (

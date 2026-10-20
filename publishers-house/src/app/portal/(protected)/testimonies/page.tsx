@@ -120,7 +120,11 @@ export default function TestimoniesPage() {
   const handleUpdateStatus = async (id: string, newStatus: ItemStatus) => {
     try {
       const colName = tab === "testimonies" ? "testimonies" : "prayers";
-      await updateDoc(doc(db, colName, id), { status: newStatus });
+      await fetch("/api/portal/pastoral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_status", collection: colName, id, status: newStatus }),
+      });
     } catch {}
 
     setItems((prev) =>

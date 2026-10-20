@@ -155,7 +155,11 @@ export default function FinancePage() {
     };
 
     try {
-      await setDoc(doc(db, "transactions", id), newTx);
+      await fetch("/api/cms/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "log", id, transaction: newTx }),
+      });
     } catch {}
 
     setTransactions((prev) => [newTx, ...prev]);

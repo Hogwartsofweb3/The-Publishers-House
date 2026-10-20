@@ -131,7 +131,11 @@ export default function EventsAdminPage() {
     };
 
     try {
-      await setDoc(doc(db, "events", id), toSave);
+      await fetch("/api/cms/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", id: editingEvent ? id : undefined, event: toSave }),
+      });
     } catch {
       // Local fallback
     }
@@ -161,7 +165,11 @@ export default function EventsAdminPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this event?")) return;
     try {
-      await deleteDoc(doc(db, "events", id));
+      await fetch("/api/cms/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
     } catch {}
     setEvents((prev) => prev.filter((ev) => ev.id !== id));
     setMsg("Event removed ✓");

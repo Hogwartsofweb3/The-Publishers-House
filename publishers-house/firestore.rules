@@ -171,6 +171,43 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Growth track / courses — members can read, admins write
+    match /courses/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Unit-level operational collections — unit heads & admins can manage
+    match /unit_assets/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isUnitHead();
+      allow update, delete: if isAdmin() || isUnitHead();
+    }
+
+    match /unit_attendance/{docId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin() || isUnitHead();
+      allow update, delete: if isAdmin() || isUnitHead();
+    }
+
+    match /unit_rosters/{docId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin() || isUnitHead();
+      allow update: if isAdmin();
+    }
+
+    match /unit_swaps/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isAdmin() || isUnitHead();
+      allow delete: if isAdmin();
+    }
+
+    // Allow user subcollections (e.g. playback history)
+    match /users/{userId}/{subcollection=**} {
+      allow read, write: if isAdmin() || isSelf(userId);
+    }
+
     // Catch-all: deny everything else by default
     match /{document=**} {
       allow read, write: if false;
