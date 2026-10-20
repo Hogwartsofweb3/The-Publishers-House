@@ -850,7 +850,34 @@ html, body {
   }
 
   .portal-content-pad {
-    padding: 20px 14px !important;
+    padding: 20px 14px 90px !important;
+  }
+
+  .portal-desktop-only {
+    display: none !important;
+  }
+
+  .portal-mobile-bottom-nav {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .portal-mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+.portal-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .portal-action-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
   }
 }
 

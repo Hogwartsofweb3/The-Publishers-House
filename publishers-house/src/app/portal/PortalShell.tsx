@@ -287,8 +287,8 @@ function PortalHeaderAndContent({
               </>
             )}
 
-            {/* Online Indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px", backgroundColor: "#E4F5EA", borderRadius: "99px" }}>
+            {/* Online Indicator (Desktop only) */}
+            <div className="portal-desktop-only" style={{ alignItems: "center", gap: "6px", padding: "5px 10px", backgroundColor: "#E4F5EA", borderRadius: "99px" }}>
               <div style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: "#0F6B38" }} />
               <span
                 style={{
@@ -303,8 +303,9 @@ function PortalHeaderAndContent({
               </span>
             </div>
 
-            {/* User Name Badge */}
+            {/* User Name Badge (Desktop only) */}
             <span
+              className="portal-desktop-only"
               style={{
                 fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "12.5px",
@@ -315,6 +316,40 @@ function PortalHeaderAndContent({
               {effectiveUser.displayName}
             </span>
 
+            {/* Mobile User Avatar Pill */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "30px",
+                height: "30px",
+                borderRadius: "50%",
+                backgroundColor: "#1F46C8",
+                color: "#FFFFFF",
+                fontSize: "11.5px",
+                fontWeight: 700,
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                position: "relative",
+                flexShrink: 0,
+              }}
+              title={effectiveUser.displayName}
+            >
+              <span>{effectiveUser.displayName?.[0]?.toUpperCase() || "M"}</span>
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: "-1px",
+                  right: "-1px",
+                  width: "7px",
+                  height: "7px",
+                  borderRadius: "50%",
+                  backgroundColor: "#10B981",
+                  border: "1.5px solid #FFFFFF",
+                }}
+              />
+            </div>
+
             {/* Settings Link */}
             <Link
               href="/portal/settings"
@@ -323,7 +358,7 @@ function PortalHeaderAndContent({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "7px 12px",
+                padding: "7px 10px",
                 backgroundColor: pathname === "/portal/settings" ? "#EEF2FB" : "#F4F6FB",
                 border: "1px solid #D5DCF2",
                 borderRadius: "8px",
@@ -336,11 +371,11 @@ function PortalHeaderAndContent({
                 transition: "all 0.15s ease",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
-              <span>Settings</span>
+              <span className="portal-desktop-only">Settings</span>
             </Link>
 
             {/* Sign Out Button */}
@@ -351,7 +386,7 @@ function PortalHeaderAndContent({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "7px 14px",
+                padding: "7px 10px",
                 backgroundColor: "#FEE2E2",
                 border: "1px solid #FECACA",
                 borderRadius: "8px",
@@ -363,12 +398,12 @@ function PortalHeaderAndContent({
                 transition: "all 0.15s ease",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
-              <span>Sign Out</span>
+              <span className="portal-desktop-only">Sign Out</span>
             </button>
           </div>
         </div>
@@ -377,6 +412,109 @@ function PortalHeaderAndContent({
         <div className="portal-content-pad" style={{ maxWidth: "1600px", margin: "0 auto" }}>
           {children}
         </div>
+
+        {/* ── MOBILE APP BOTTOM NAVIGATION BAR (Piggyvest Style) ── */}
+        <nav
+          className="portal-mobile-bottom-nav"
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "62px",
+            backgroundColor: "#FFFFFF",
+            borderTop: "1px solid #D5DCF2",
+            boxShadow: "0 -4px 18px rgba(14, 21, 86, 0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-around",
+            zIndex: 100,
+            padding: "0 4px",
+          }}
+        >
+          {[
+            {
+              href: effectiveUser.role === "member" ? "/portal/member" : "/portal",
+              label: "Home",
+              icon: (active: boolean) => (
+                <svg width="19" height="19" viewBox="0 0 24 24" fill={active ? "#1F46C8" : "none"} stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              ),
+            },
+            {
+              href: "/portal/member/courses",
+              label: "Growth",
+              icon: (active: boolean) => (
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              ),
+            },
+            {
+              href: "/portal/member/media",
+              label: "Media",
+              icon: (active: boolean) => (
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polygon points="10 8 16 12 10 16 10 8" />
+                </svg>
+              ),
+            },
+            {
+              href: "/portal/member/prayers",
+              label: "Prayers",
+              icon: (active: boolean) => (
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              ),
+            },
+            {
+              href: "/portal/settings",
+              label: "Settings",
+              icon: (active: boolean) => (
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={active ? "#1F46C8" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              ),
+            },
+          ].map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "3px",
+                  textDecoration: "none",
+                  flex: 1,
+                  padding: "6px 0",
+                  transition: "transform 0.15s ease",
+                }}
+              >
+                {item.icon(isActive)}
+                <span
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "10px",
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? "#1F46C8" : "#64748B",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
       </main>
 
       {/* Force Change Password Modal for First-time Sign In */}
