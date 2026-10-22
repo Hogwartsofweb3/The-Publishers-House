@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
         campus: d.campus || "jos",
         mustChangePassword: Boolean(d.mustChangePassword),
         tempPassword: d.tempPassword || undefined,
-        hasAccount: Boolean(d.hasAccount || d.role === "admin" || d.role === "super_admin"),
+        hasAccount: Boolean(d.hasAccount || d.role === "admin" || d.role === "super_admin" || d.role === "portal_manager"),
         createdAt: d.createdAt || new Date().toISOString(),
         lastLogin: d.lastLogin || "",
         photoURL: d.photoURL || undefined,

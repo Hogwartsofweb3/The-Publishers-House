@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
+import { auth } from "@/lib/firebaseAuth";
 import {
   collection,
   getDocs,
@@ -78,7 +79,10 @@ export default function AttendanceAdminPage() {
   // Fetch Stream Code Settings
   const fetchStreamSettings = async () => {
     try {
-      const res = await fetch("/api/attendance/config");
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const res = await fetch("/api/attendance/config", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json().catch(() => ({}));
       if (data) {
         setStreamCode(data.code || "");
@@ -182,9 +186,13 @@ export default function AttendanceAdminPage() {
     setStreamCodeLoading(true);
     setStreamCodeMsg("");
     try {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
       const res = await fetch("/api/attendance/config", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           code: streamCode.trim().toUpperCase(),
           active: true,
@@ -207,9 +215,13 @@ export default function AttendanceAdminPage() {
     setStreamCodeLoading(true);
     setStreamCodeMsg("");
     try {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
       const res = await fetch("/api/attendance/config", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ code: "", active: false }),
       });
       const data = await res.json().catch(() => ({}));

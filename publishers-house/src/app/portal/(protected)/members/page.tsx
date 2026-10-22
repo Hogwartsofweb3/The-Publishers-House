@@ -430,7 +430,7 @@ export default function MembersPage() {
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Portal Accounts</div>
           <div style={{ fontSize: "26px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>
-            {members.filter((m) => m.hasAccount || m.role === "admin" || m.role === "super_admin").length}
+            {members.filter((m) => m.hasAccount || m.role === "admin" || m.role === "super_admin" || m.role === "portal_manager").length}
           </div>
         </div>
 
@@ -444,7 +444,7 @@ export default function MembersPage() {
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Active Leaders</div>
           <div style={{ fontSize: "26px", fontWeight: 800, color: "#7A5200", marginTop: "4px" }}>
-            {members.filter((m) => m.activityTier === "leader" || m.role === "super_admin" || m.role === "admin" || m.role === "unit_head").length}
+            {members.filter((m) => m.activityTier === "leader" || m.role === "super_admin" || m.role === "admin" || m.role === "portal_manager" || m.role === "unit_head").length}
           </div>
         </div>
       </div>
@@ -592,7 +592,7 @@ export default function MembersPage() {
               )}
               {filtered.map((m) => {
                 const unit = UNITS.find((u) => u.id === m.assignedUnitId);
-                const hasPortalAccess = m.hasAccount || m.role === "admin" || m.role === "super_admin";
+                const hasPortalAccess = m.hasAccount || m.role === "admin" || m.role === "super_admin" || m.role === "portal_manager";
                 const isMenuOpen = activeMenuUid === m.uid;
 
                 return (

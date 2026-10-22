@@ -32,7 +32,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await requirePortalUser();
-    if (!user || user.role !== "admin") {
+    const isAdmin = user && (
+      user.role === "admin" ||
+      user.role === "super_admin" ||
+      user.role === "portal_manager" ||
+      user.email === "joshuaagunbiade@gmail.com" ||
+      user.email === "thepublishershouse007@gmail.com"
+    );
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -67,7 +74,14 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const user = await requirePortalUser();
-    if (!user || user.role !== "admin") {
+    const isAdmin = user && (
+      user.role === "admin" ||
+      user.role === "super_admin" ||
+      user.role === "portal_manager" ||
+      user.email === "joshuaagunbiade@gmail.com" ||
+      user.email === "thepublishershouse007@gmail.com"
+    );
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 

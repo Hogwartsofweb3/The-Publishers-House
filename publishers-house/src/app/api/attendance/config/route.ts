@@ -6,41 +6,80 @@ import { SESSION_COOKIE } from "@/lib/sessionCookie";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const ADMIN_EMAILS = [
+  "joshuaagunbiade@gmail.com",
+  "thepublishershouse007@gmail.com",
+];
+
+const ADMIN_ROLES = ["admin", "super_admin", "portal_manager"];
+
+async function getRequester(req?: Request): Promise<{ uid: string; email: string; role: string; isAdmin: boolean }> {
+  let uid = "";
+  let email = "";
+  let role = "";
+
+  // 1. Try session cookie first
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get(SESSION_COOKIE)?.value;
+    if (session) {
+      const decoded = await getAdminAuth().verifySessionCookie(session, false);
+      uid = decoded.uid || "";
+      email = (decoded.email || "").toLowerCase();
+    }
+  } catch {}
+
+  // 2. Try Authorization: Bearer <idToken> if no session cookie
+  if (!uid && req) {
+    try {
+      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const idToken = authHeader.substring(7).trim();
+        const decoded = await getAdminAuth().verifyIdToken(idToken);
+        uid = decoded.uid || "";
+        email = (decoded.email || "").toLowerCase();
+      }
+    } catch {}
+  }
+
+  // 3. Resolve role from Firestore
+  if (uid) {
+    try {
+      const userSnap = await getAdminDb().collection("users").doc(uid).get();
+      if (userSnap.exists) {
+        const data = userSnap.data();
+        role = String(data?.role || "");
+        if (!email && data?.email) {
+          email = String(data.email).toLowerCase();
+        }
+      }
+    } catch {}
+  }
+
+  const isAdmin =
+    ADMIN_ROLES.includes(role) ||
+    ADMIN_EMAILS.includes(email);
+
+  return { uid, email, role, isAdmin };
+}
+
 /**
  * GET /api/attendance/config
  * Public endpoint: Returns whether online stream code is active.
- * Does NOT expose the secret code to unauthorized clients to prevent cheating.
+ * Only authenticated admins/managers receive the actual secret code.
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const snap = await getAdminDb().collection("homeSettings").doc("attendance").get();
-    if (!snap.exists) {
-      return NextResponse.json({ active: false, code: "" });
-    }
-
-    const data = snap.data() || {};
+    const data = snap.exists ? snap.data() || {} : {};
     const active = Boolean(data.streamCodeActive && data.streamCode);
 
-    // Check if requester is admin
-    let isAdmin = false;
-    try {
-      const cookieStore = await cookies();
-      const session = cookieStore.get(SESSION_COOKIE)?.value;
-      if (session) {
-        const decoded = await getAdminAuth().verifySessionCookie(session, false);
-        const userSnap = await getAdminDb().collection("users").doc(decoded.uid).get();
-        if (userSnap.exists && userSnap.data()?.role === "admin") {
-          isAdmin = true;
-        }
-      }
-    } catch {
-      // not admin
-    }
+    const requester = await getRequester(req);
 
     return NextResponse.json({
       active,
-      // Only admins see the actual code in GET response
-      code: isAdmin ? String(data.streamCode || "") : "",
+      // Only admins/managers see the actual code in GET response
+      code: requester.isAdmin ? String(data.streamCode || "") : "",
       updatedAt: data.updatedAt || null,
     });
   } catch (err: any) {
@@ -52,19 +91,21 @@ export async function GET() {
 /**
  * POST /api/attendance/config
  * Admin-only endpoint: Update stream code and activation status.
+ * Allows admin, super_admin, portal_manager, and canonical admin emails.
  */
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const session = cookieStore.get(SESSION_COOKIE)?.value;
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const requester = await getRequester(req);
+
+    if (!requester.uid) {
+      return NextResponse.json({ error: "Unauthorized: Please sign in to the portal." }, { status: 401 });
     }
 
-    const decoded = await getAdminAuth().verifySessionCookie(session, false);
-    const userSnap = await getAdminDb().collection("users").doc(decoded.uid).get();
-    if (!userSnap.exists || userSnap.data()?.role !== "admin") {
-      return NextResponse.json({ error: "Admin role required" }, { status: 403 });
+    if (!requester.isAdmin) {
+      return NextResponse.json(
+        { error: "Admin role required (current role: " + (requester.role || "member") + ")" },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -75,7 +116,7 @@ export async function POST(req: Request) {
       streamCode: active ? streamCode : "",
       streamCodeActive: active,
       updatedAt: new Date().toISOString(),
-      updatedBy: decoded.email || decoded.uid,
+      updatedBy: requester.email || requester.uid,
     };
 
     await getAdminDb().collection("homeSettings").doc("attendance").set(updatePayload, { merge: true });
