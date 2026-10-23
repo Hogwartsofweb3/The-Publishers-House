@@ -45,7 +45,7 @@ export async function GET() {
         return {
           id: d.id,
           title: data.title || "",
-          speaker: data.speaker || "Dr. Joshua Agunbiade",
+          speaker: data.speaker || "Rev. Joshua Agunbiade",
           series: data.series || "",
           date: data.date || "",
           scripture: data.scripture || "",
@@ -53,6 +53,7 @@ export async function GET() {
           summary: data.summary || "",
           videoUrl: data.videoUrl || "",
           audioUrl: data.audioUrl || "",
+          youtubeVideoId: videoId || data.youtubeVideoId || null,
           thumbnailUrl: data.coverImageUrl || (videoId
             ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
             : "/images/sermon-v2.webp"),

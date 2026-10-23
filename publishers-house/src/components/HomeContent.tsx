@@ -143,17 +143,21 @@ export default function HomeContent() {
   const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");
 
   // ── Latest Teaching: CMS explicit save → auto-fetched sermon → static default ──
-  // IMPORTANT: we read from cmsSettings (not s) so defaults don't shadow latestSermon
+  // Priority: CMS override → latestSermon YouTube URL → internal sermon page → default
+  const latestSermonUrl = latestSermon?.videoUrl || (latestSermon?.youtubeVideoId
+    ? `https://www.youtube.com/watch?v=${latestSermon.youtubeVideoId}`
+    : latestSermon ? `/sermons/${latestSermon.id}` : null);
+
   const teach = {
     eyebrow:      cmsSettings.teachingEyebrow      || D.teachingEyebrow,
     heading:      cmsSettings.teachingHeading      || D.teachingHeading,
     seriesEyebrow:cmsSettings.teachingSeriesEyebrow|| latestSermon?.series || D.teachingSeriesEyebrow,
     title:        cmsSettings.teachingTitle        || latestSermon?.title  || D.teachingTitle,
     desc:         cmsSettings.teachingDesc         || latestSermon?.summary|| D.teachingDesc,
-    btn1Label:    cmsSettings.teachingBtn1Label    || (latestSermon?.duration ? `Listen — ${latestSermon.duration}` : D.teachingBtn1Label),
-    btn1Url:      cmsSettings.teachingBtn1Url      || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn1Url),
+    btn1Label:    cmsSettings.teachingBtn1Label    || (latestSermon?.duration ? `Watch — ${latestSermon.duration}` : D.teachingBtn1Label),
+    btn1Url:      cmsSettings.teachingBtn1Url      || latestSermonUrl || D.teachingBtn1Url,
     btn2Label:    cmsSettings.teachingBtn2Label    || D.teachingBtn2Label,
-    btn2Url:      cmsSettings.teachingBtn2Url      || (latestSermon ? `/sermons/${latestSermon.id}` : D.teachingBtn2Url),
+    btn2Url:      cmsSettings.teachingBtn2Url      || "/sermons",
     imageUrl:     cmsSettings.teachingImageUrl     || latestSermon?.thumbnailUrl || D.teachingImageUrl,
     colophon: cmsSettings.teachingColophon
       ? cmsSettings.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean)
@@ -162,8 +166,8 @@ export default function HomeContent() {
       : D.teachingColophon.split(",").map((x: string) => x.trim()).filter(Boolean),
   };
 
-  // Hero "Watch the Last Teaching" URL — always points to the specific latest sermon
-  const heroWatchUrl = cmsSettings.heroBtn2Url || (latestSermon ? `/sermons/${latestSermon.id}` : "/sermons");
+  // Hero "Watch the Last Teaching" URL — YouTube video URL of the most recent sermon
+  const heroWatchUrl = cmsSettings.heroBtn2Url || latestSermonUrl || "/sermons";
 
   const givingCats = (s.givingCategories || D.givingCategories).split(",").map((x: string) => x.trim()).filter(Boolean);
 
@@ -200,7 +204,7 @@ export default function HomeContent() {
               <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
               <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
-                <Link href={s.heroBtn1Url || D.heroBtn1Url} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
+                <Link href="/contact" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
                 <Link href={heroWatchUrl} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
               </div>
               <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>

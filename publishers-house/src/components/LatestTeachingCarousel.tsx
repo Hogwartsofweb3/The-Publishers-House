@@ -159,15 +159,20 @@ export default function LatestTeachingCarousel({
           ? (s.scripture ? `${s.series} · ${s.scripture}` : s.series)
           : (s.scripture || cmsSettings.teachingSeriesEyebrow || defaultTeaching.teachingSeriesEyebrow || "Foundations");
 
-        const btn1Label = s.duration ? `Listen — ${s.duration}` : "Listen Now";
-        const btn1Url = `/sermons/${s.id}`;
-        const btn2Label = cmsSettings.teachingBtn2Label || defaultTeaching.teachingBtn2Label || "Read The Transcript";
-        const btn2Url = `/sermons/${s.id}`;
+        // Prefer direct YouTube URL → internal sermon page fallback
+        const ytUrl = s.videoUrl || (s.youtubeVideoId
+          ? `https://www.youtube.com/watch?v=${s.youtubeVideoId}`
+          : null);
+
+        const btn1Label = s.duration ? `Watch — ${s.duration}` : "Watch Now";
+        const btn1Url = ytUrl || `/sermons/${s.id}`;
+        const btn2Label = cmsSettings.teachingBtn2Label || defaultTeaching.teachingBtn2Label || "All Sermons";
+        const btn2Url = "/sermons";
 
         const colophon = [
           s.scripture,
           s.series,
-          s.speaker || "Dr. Joshua Agunbiade",
+          s.speaker || "Rev. Joshua Agunbiade",
           s.date,
           s.duration,
         ].filter(Boolean);
@@ -182,7 +187,7 @@ export default function LatestTeachingCarousel({
           btn2Label,
           btn2Url,
           imageUrl: s.thumbnailUrl || "/images/sermon-v2.webp",
-          colophon: colophon.length > 0 ? colophon : ["Dr. Joshua Agunbiade", "Jos"],
+          colophon: colophon.length > 0 ? colophon : ["Rev. Joshua Agunbiade", "Jos"],
           rankLabel: rankLabels[i] || `${i + 1}th Recent`,
           date: s.date,
           duration: s.duration,
