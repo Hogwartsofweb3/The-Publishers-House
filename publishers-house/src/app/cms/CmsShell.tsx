@@ -12,7 +12,7 @@ export default function CmsShell({ children }: { children: React.ReactNode }) {
         top: "50%", left: "50%",
         transform: "translate(-50%, -50%)",
         width: "360px", height: "360px",
-        backgroundImage: "url('/images/main-tph-logo-b.png')",
+        backgroundImage: "url('/images/tph-main-logo.png')",
         backgroundSize: "contain",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
