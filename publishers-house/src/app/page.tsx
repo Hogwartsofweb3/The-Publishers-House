@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HomeContent from "@/components/HomeContent";
@@ -41,8 +42,7 @@ const programs = [
   { slug: "merismos", name: "Merismos", schedule: "Annual Conference", desc: "A power-packed encounter where the Word is rightly taught and the Holy Spirit moves tangibly to transform lives.", scripture: "Hebrews 4:12", freq: "Annual", city: "Jos", logoImage: "/images/Merismos black.png" },
   { slug: "jesus-convention", name: "Jesus Convention", schedule: "Annual · Easter", desc: "Unveiling the person, finished work and lordship of Jesus Christ through sound teaching, prayer and worship.", scripture: "Philippians 2:10", freq: "Easter", city: "Jos", logoImage: "/images/Jesus Convention logo white.png" },
   { slug: "the-forge", name: "The Forge", schedule: "Monthly · End of Month", desc: "An intensive prayer gathering running Wednesday to Friday and culminating in an overnight vigil.", scripture: "Jeremiah 23:20", freq: "Monthly", city: "Jos", logoImage: "/images/THE FORGE 1.png" },
-  { slug: "abuja-apostolic-camp", name: "Abuja Apostolic Camp", schedule: "Monthly · Abuja", desc: "A close spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.", scripture: "Ephesians 4:11", freq: "Monthly", city: "Abuja", logoImage: "/images/TPH ABUJA.png" },
-  { slug: "sunday-midweek", name: "Sunday & Midweek", schedule: "Every Week", desc: "Sunday worship at 9:00 AM is the core weekly gathering. Thursday at 5:00 PM is doctrine and corporate prayer.", scripture: "Acts 2:42", freq: "Weekly", city: "Jos", logoImage: "/images/MAIN TPH LOGO (W).png" },
+  { slug: "apostolic-camps", name: "Apostolic Camps", schedule: "Monthly", desc: "A close spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.", scripture: "Ephesians 4:11", freq: "Monthly", city: "Jos & Nationwide", logoImage: "/images/TPH ABUJA.png" },
 ];
 
 const Navy    = "#151A54";
@@ -77,18 +77,18 @@ export default function HomePage() {
           <div className="tph-inner">
             <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "10px" }}>Flagship Programs</div>
             <h2 style={{ ...T.displayL, color: Navy, marginBottom: "48px" }}>Where the Word Is Published</h2>
-            <div className="tph-grid-3">
+            <div className="tph-grid-auto">
               {programs.map((prog) => (
-                <a key={prog.slug} href="/programs" style={{ textDecoration: "none" }}>
-                  <div style={{ border: `1px solid ${Paper300}`, borderRadius: "4px", overflow: "hidden", backgroundColor: White, cursor: "pointer" }}>
+                <Link key={prog.slug} href={`/programs/${prog.slug}`} style={{ textDecoration: "none" }}>
+                  <div style={{ border: `1px solid ${Paper300}`, borderRadius: "4px", overflow: "hidden", backgroundColor: White, cursor: "pointer", height: "100%", display: "flex", flexDirection: "column" }}>
                     <div style={{ height: "160px", overflow: "hidden", borderBottom: `1px solid ${Paper300}`, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: Paper100 }}>
-                      <img src={prog.logoImage} alt={prog.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", padding: "32px", filter: (prog.slug === "abuja-apostolic-camp" || prog.slug === "sunday-midweek") ? "brightness(0)" : "none" }} />
+                      <img src={prog.logoImage} alt={prog.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", padding: "32px", filter: prog.slug === "apostolic-camps" ? "brightness(0)" : "none" }} />
                     </div>
-                    <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
                       <div style={{ ...T.eyebrow, color: Blue500 }}>{prog.schedule}</div>
                       <h3 style={{ ...T.displayS, color: Navy, margin: 0 }}>{prog.name}</h3>
                       <p style={{ ...T.readSmall, color: Slate600, margin: 0 }}>{prog.desc}</p>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", paddingTop: "12px", borderTop: `1px solid ${Paper200}`, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", paddingTop: "12px", borderTop: `1px solid ${Paper200}`, flexWrap: "wrap", marginTop: "auto" }}>
                         <span style={{ ...T.colophon, color: Blue700 }}>{prog.scripture}</span>
                         <span style={{ ...T.colophon, color: Paper400 }}>·</span>
                         <span style={{ ...T.colophon, color: Slate500 }}>{prog.freq}</span>
@@ -97,7 +97,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           </div>

@@ -44,11 +44,11 @@ const D = {
   heroEyebrow: "Psalm 68:11",
   heroHeadline: "Company of the Great",
   heroSubtitle: "An apostolic and scriptural ministry in Jos, raising believers whose lives become living publications of Christ.",
-  heroBtn1Label: "Plan Your Visit",    heroBtn1Url: "/about",
-  heroBtn2Label: "Watch the Last Teaching", heroBtn2Url: "/resources",
-  heroSundayLabel: "Sunday Worship",   heroSundayTime: "9:00 AM",
-  heroMidweekLabel: "Midweek Service", heroMidweekTime: "5:00 PM",
-  heroAddress: "The House of Bread, Korinjoh House, British, Jos · West Africa Time",
+  heroBtn1Label: "Plan Your Visit",    heroBtn1Url: "/contact",
+  heroBtn2Label: "Watch the Last Teaching", heroBtn2Url: "/sermons",
+  heroSundayLabel: "Sunday Worship",   heroSundayTime: "9:00 AM WAT",
+  heroMidweekLabel: "Midweek Service", heroMidweekTime: "4:30 PM WAT",
+  heroAddress: "The House of Bread, Korinjoh House, British, Jos",
   heroBgImage: "/images/hero-v2.webp",
 
   // Setman
@@ -84,8 +84,8 @@ const D = {
   annHeading: "Special Announcement",
   annSubheading: "We Are Building",
   annBody: "After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home. Our next step is to build \"The Publishers House,\" a multi-purpose facility that will include an auditorium, lecture halls, offices, and a media studio. We prayerfully invite you to partner with us in this exciting building phase.",
-  annBtn1Label: "Give Now",           annBtn1Url: "https://forms.gle/4Gimdh1WcUerMQvVA",
-  annBtn2Label: "See More on Our Building Project", annBtn2Url: "https://forms.gle/4Gimdh1WcUerMQvVA",
+  annBtn1Label: "Give Now",           annBtn1Url: "/giving",
+  annBtn2Label: "",                   annBtn2Url: "",
   annImageUrl: "/images/9528ca88db079ef5fecf726b4f42a332798a6fcc.jpg",
 
   // Giving
@@ -98,9 +98,9 @@ const D = {
 };
 
 const FALLBACK_GATHERINGS = [
-  { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM", city:"Jos", theme:"The Time of the Word — Part 6", published:true, order:0 },
-  { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM", city:"Jos", theme:"The Arm of the Lord", published:true, order:1 },
-  { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"5:00 PM", city:"Jos", published:true, order:2 },
+  { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM WAT", city:"Jos", theme:"The Time of the Word — Part 6", published:true, order:0 },
+  { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM WAT", city:"Jos", theme:"The Arm of the Lord", published:true, order:1 },
+  { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"4:30 PM WAT", city:"Jos", published:true, order:2 },
 ];
 
 export default function HomeContent() {
@@ -446,8 +446,9 @@ export default function HomeContent() {
               <h3 style={{ ...T.displayM, color:Navy, marginBottom:"16px" }}>{s.annSubheading||D.annSubheading}</h3>
               <p style={{ ...T.readBody, color:Slate600, marginBottom:"28px" }}>{s.annBody||D.annBody}</p>
               <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-                <a href={s.annBtn1Url||D.annBtn1Url} target="_blank" rel="noopener noreferrer" style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{s.annBtn1Label||D.annBtn1Label}</a>
-                <a href={s.annBtn2Url||D.annBtn2Url} target="_blank" rel="noopener noreferrer" style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid ${Paper300}`, color:Navy, textDecoration:"none" }}>{s.annBtn2Label||D.annBtn2Label}</a>
+                <Link href={s.annBtn1Url || "/giving"} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>
+                  {s.annBtn1Label || "Give Now"}
+                </Link>
               </div>
             </div>
           </div>

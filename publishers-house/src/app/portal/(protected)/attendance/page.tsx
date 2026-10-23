@@ -53,11 +53,15 @@ export default function AttendanceAdminPage() {
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState("all");
 
-  // Stream Code Management
+  // Service Code & Automatic Timer Management
   const [streamCode, setStreamCode] = useState("");
   const [streamCodeActive, setStreamCodeActive] = useState(false);
   const [streamCodeLoading, setStreamCodeLoading] = useState(false);
   const [streamCodeMsg, setStreamCodeMsg] = useState("");
+  const [timerDuration, setTimerDuration] = useState<string>("15"); // "1".."30" or "custom"
+  const [customMinutes, setCustomMinutes] = useState<number>(45);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
   // Usher Headcount Form
   const [headcount, setHeadcount] = useState<HeadcountRecord>({
@@ -87,11 +91,42 @@ export default function AttendanceAdminPage() {
       if (data) {
         setStreamCode(data.code || "");
         setStreamCodeActive(Boolean(data.active));
+        setExpiresAt(data.expiresAt || null);
+        if (typeof data.remainingSeconds === "number") {
+          setRemainingSeconds(data.remainingSeconds);
+        } else {
+          setRemainingSeconds(null);
+        }
+        if (data.durationMinutes) {
+          if ([1, 2, 5, 10, 15, 20, 25, 30].includes(data.durationMinutes)) {
+            setTimerDuration(String(data.durationMinutes));
+          } else {
+            setTimerDuration("custom");
+            setCustomMinutes(data.durationMinutes);
+          }
+        }
       }
     } catch (err) {
       console.error("Error fetching stream settings:", err);
     }
   };
+
+  // Live countdown ticker effect
+  useEffect(() => {
+    if (!streamCodeActive || remainingSeconds === null || remainingSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setStreamCodeActive(false);
+          setStreamCodeMsg("Service code timer has expired. Code is now inactive.");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [streamCodeActive, remainingSeconds]);
 
   // Fetch Attendance Records & Headcount for Selected Date
   const fetchAttendance = async () => {
@@ -186,6 +221,11 @@ export default function AttendanceAdminPage() {
     setStreamCodeLoading(true);
     setStreamCodeMsg("");
     try {
+      const selectedMinutes =
+        timerDuration === "custom"
+          ? Math.max(1, Number(customMinutes) || 1)
+          : Math.max(1, Number(timerDuration) || 15);
+
       const token = await auth.currentUser?.getIdToken().catch(() => null);
       const res = await fetch("/api/attendance/config", {
         method: "POST",
@@ -196,13 +236,16 @@ export default function AttendanceAdminPage() {
         body: JSON.stringify({
           code: streamCode.trim().toUpperCase(),
           active: true,
+          durationMinutes: selectedMinutes,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to update stream code.");
       setStreamCode(data.code || streamCode.trim().toUpperCase());
       setStreamCodeActive(true);
-      setStreamCodeMsg("Stream code activated successfully ✓");
+      setExpiresAt(data.expiresAt || null);
+      setRemainingSeconds(selectedMinutes * 60);
+      setStreamCodeMsg(`Service code active for ${selectedMinutes} minute${selectedMinutes > 1 ? "s" : ""} ✓`);
       setTimeout(() => setStreamCodeMsg(""), 4000);
     } catch (err: any) {
       setStreamCodeMsg("Failed to save stream code: " + err.message);
@@ -228,7 +271,9 @@ export default function AttendanceAdminPage() {
       if (!res.ok) throw new Error(data.error || "Failed to deactivate stream code.");
       setStreamCode("");
       setStreamCodeActive(false);
-      setStreamCodeMsg("Stream code requirement deactivated ✓");
+      setExpiresAt(null);
+      setRemainingSeconds(null);
+      setStreamCodeMsg("Service code requirement deactivated ✓");
       setTimeout(() => setStreamCodeMsg(""), 4000);
     } catch (err: any) {
       setStreamCodeMsg("Failed to deactivate: " + err.message);
@@ -507,7 +552,7 @@ export default function AttendanceAdminPage() {
           alignItems: "start",
         }}
       >
-        {/* Stream Code Card */}
+        {/* Service Code & Timer Card */}
         <div
           style={{
             backgroundColor: "#FFFFFF",
@@ -526,20 +571,42 @@ export default function AttendanceAdminPage() {
                 margin: 0,
               }}
             >
-              Virtual Stream Validation Code
+              Service Validation Code
             </h2>
-            <span
-              style={{
-                padding: "3px 8px",
-                borderRadius: "6px",
-                fontSize: "11px",
-                fontWeight: 700,
-                backgroundColor: streamCodeActive ? "#E4F5EA" : "#FFF2D6",
-                color: streamCodeActive ? "#0F6B38" : "#7A5200",
-              }}
-            >
-              {streamCodeActive ? "Active" : "Inactive"}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {streamCodeActive && remainingSeconds !== null && (
+                <span
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    backgroundColor: remainingSeconds > 60 ? "#E4F5EA" : "#FDE8E8",
+                    color: remainingSeconds > 60 ? "#0F6B38" : "#9B1C1C",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <span>⏱️</span>
+                  <span>
+                    {Math.floor(remainingSeconds / 60)}m {String(remainingSeconds % 60).padStart(2, "0")}s
+                  </span>
+                </span>
+              )}
+              <span
+                style={{
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  backgroundColor: streamCodeActive ? "#E4F5EA" : "#FFF2D6",
+                  color: streamCodeActive ? "#0F6B38" : "#7A5200",
+                }}
+              >
+                {streamCodeActive ? "Active" : "Inactive"}
+              </span>
+            </div>
           </div>
 
           <p
@@ -550,7 +617,7 @@ export default function AttendanceAdminPage() {
               margin: "0 0 16px",
             }}
           >
-            Display this code on the YouTube/Mixlr livestream banner for online attendees to validate their check-in.
+            Required for in-person attendees and online stream worshippers. The code automatically shuts off when the timer expires.
           </p>
 
           <form onSubmit={handleSaveStreamCode} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -574,8 +641,80 @@ export default function AttendanceAdminPage() {
                   color: "#1F46C8",
                   letterSpacing: "0.1em",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               />
+            </div>
+
+            {/* Timer Duration Selection: 1m to 30m + Custom */}
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
+                Active Timer Duration (Auto-Off)
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
+                {[1, 2, 5, 10, 15, 20, 25, 30].map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => setTimerDuration(String(mins))}
+                    style={{
+                      padding: "5px 9px",
+                      borderRadius: "6px",
+                      border: timerDuration === String(mins) ? "1.5px solid #1F46C8" : "1px solid #D5DCF2",
+                      backgroundColor: timerDuration === String(mins) ? "#EBF1FF" : "#FFFFFF",
+                      color: timerDuration === String(mins) ? "#1F46C8" : "#4A5490",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    }}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setTimerDuration("custom")}
+                  style={{
+                    padding: "5px 9px",
+                    borderRadius: "6px",
+                    border: timerDuration === "custom" ? "1.5px solid #1F46C8" : "1px solid #D5DCF2",
+                    backgroundColor: timerDuration === "custom" ? "#EBF1FF" : "#FFFFFF",
+                    color: timerDuration === "custom" ? "#1F46C8" : "#4A5490",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  }}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {timerDuration === "custom" && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={360}
+                    value={customMinutes}
+                    onChange={(e) => setCustomMinutes(Math.max(1, Number(e.target.value)))}
+                    style={{
+                      width: "80px",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid #D5DCF2",
+                      fontSize: "13px",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontWeight: 600,
+                      outline: "none",
+                    }}
+                  />
+                  <span style={{ fontSize: "12px", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                    Minutes (Custom Duration)
+                  </span>
+                </div>
+              )}
             </div>
 
             {streamCodeMsg && (
@@ -608,7 +747,7 @@ export default function AttendanceAdminPage() {
                   cursor: "pointer",
                 }}
               >
-                {streamCodeLoading ? "Saving..." : "Set / Update Code"}
+                {streamCodeLoading ? "Saving..." : streamCodeActive ? "Update Active Code & Timer" : "Set & Activate Code"}
               </button>
 
               {streamCodeActive && (

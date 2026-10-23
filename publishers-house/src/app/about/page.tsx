@@ -64,35 +64,30 @@ const hardcodedLeadership = [
   {
     name: "Rev. Joshua Agunbiade",
     role: "Lead Pastor",
-    location: "TPH JOS AND ABUJA",
     photoUrl: "/images/Rev. Joshua Agunbiade.webp",
     photoUrlMobile: "/images/Rev. Joshua Agunbiade-mobile.webp",
   },
   {
     name: "Pastor Damilare Ayodele",
     role: "Associate Pastor",
-    location: "TPH JOS",
     photoUrl: "/images/Pastor Damilare Ayodele.webp",
     photoUrlMobile: "/images/Pastor Damilare Ayodele-mobile.webp",
   },
   {
     name: "Pastor Boniface Onah",
     role: "Associate Pastor",
-    location: "TPH ABUJA",
     photoUrl: "/images/Pastor Boniface Onah.webp",
     photoUrlMobile: "/images/Pastor Boniface Onah-mobile.webp",
   },
   {
     name: "Pastor Ngbede Odeh",
     role: "Associate Pastor",
-    location: "TPH JOS",
     photoUrl: "/images/Pastor Ngbede Odeh.webp",
     photoUrlMobile: "/images/Pastor Ngbede Odeh-mobile.webp",
   },
   {
     name: "Pastor Makinde Theophilus",
     role: "Associate Pastor",
-    location: "TPH JOS",
     photoUrl: "/images/Pastor Theophilus Makinde.webp",
     photoUrlMobile: "/images/Pastor Theophilus Makinde-mobile.webp",
   },
@@ -123,8 +118,7 @@ export default async function AboutPage() {
   const leadership = cmsLeaders.length > 0 
     ? cmsLeaders.map((l) => ({
         name: l.name,
-        role: l.role,
-        location: l.role.toLowerCase().includes("lead") ? "TPH JOS AND ABUJA" : "TPH JOS",
+        role: l.role.toLowerCase().includes("lead") ? "Lead Pastor" : "Associate Pastor",
         photoUrl: l.photoUrl || "/images/event-1.jpg",
         photoUrlMobile: l.photoUrl || "/images/event-1.jpg",
       }))
@@ -148,10 +142,10 @@ export default async function AboutPage() {
         >
           {/* High-priority responsive LCP image: 51KB on mobile, 224KB on desktop (vs 1.8MB original) */}
           <picture style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
-            <source media="(max-width: 768px)" srcSet="/images/about-hero-mobile.webp" type="image/webp" />
-            <source srcSet="/images/about-hero.webp" type="image/webp" />
+            <source media="(max-width: 768px)" srcSet={aboutData.heroPhotoUrl || "/images/about-hero-mobile.webp"} type="image/webp" />
+            <source srcSet={aboutData.heroPhotoUrl || "/images/about-hero.webp"} type="image/webp" />
             <img
-              src="/images/about-hero.jpg"
+              src={aboutData.heroPhotoUrl || "/images/about-hero.jpg"}
               alt="About The Publishers House"
               fetchPriority="high"
               decoding="sync"
@@ -162,12 +156,12 @@ export default async function AboutPage() {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21, 26, 84, 0.78) 0%, rgba(1, 64, 193, 0.58) 100%)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, maxWidth: "1440px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "18px" }}>
-            <span style={{ ...S.eyebrow, color: "#2090FF" }}>PSALM 68:11</span>
+            <span style={{ ...S.eyebrow, color: "#2090FF" }}>{aboutData.heroEyebrow || "PSALM 68:11"}</span>
             <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
-              ABOUT THE PUBLISHERS HOUSE
+              {aboutData.heroHeadline || "ABOUT THE PUBLISHERS HOUSE"}
             </h1>
             <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
-              An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God&apos;s Word to every sphere of society.
+              {aboutData.heroLede || "An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God's Word to every sphere of society."}
             </p>
           </div>
         </section>
@@ -186,28 +180,24 @@ export default async function AboutPage() {
             <div className="tph-two-col">
               {/* Left margin column */}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <span style={{ ...S.eyebrow, color: "#0140C1" }}>Who we are</span>
+                <span style={{ ...S.eyebrow, color: "#0140C1" }}>{aboutData.whoWeAreEyebrow || "Who we are"}</span>
                 <p style={{ ...S.readSmall, color: "#4A62A0" }}>
-                  Established 2020 · Jos, Plateau State · Other branches all over Nigeria
+                  {aboutData.whoWeAreMeta || "Established 2020 · Jos, Plateau State"}
                 </p>
               </div>
               {/* Body text: 5 exact paragraphs */}
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
-                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
-                  The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.
-                </p>
-                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
-                  The ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.
-                </p>
-                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
-                  Inspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God&apos;s message, declaring His truth with conviction, excellence and global impact.
-                </p>
-                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
-                  From Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.
-                </p>
-                <p style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
-                  We are given to much prayer, immersed in the word of God and passionate searchers of God’s presence.
-                </p>
+                {(aboutData.whoWeAreParagraphs || [
+                  "The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.",
+                  "The ministry exists to equip believers, strengthen the Church, and advance the Kingdom of God through biblical teaching, discipleship, prayer and Christian apologetics.",
+                  "Inspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God's message, declaring His truth with conviction, excellence and global impact.",
+                  "From Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.",
+                  "We are given to much prayer, immersed in the word of God and passionate searchers of God's presence.",
+                ]).map((p: string, idx: number) => (
+                  <p key={idx} style={{ ...S.readBody, color: "#151A54", margin: 0 }}>
+                    {p}
+                  </p>
+                ))}
               </div>
             </div>
           </div>
@@ -228,26 +218,25 @@ export default async function AboutPage() {
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Planning your visit</span>
-              <h2 style={{ ...S.displayL, color: "#151A54" }}>What to expect</h2>
+              <span style={{ ...S.eyebrow, color: "#0140C1" }}>{aboutData.planVisitKicker || "Planning your visit"}</span>
+              <h2 style={{ ...S.displayL, color: "#151A54" }}>{aboutData.planVisitHeading || "What to expect"}</h2>
             </div>
 
             {/* Row 1 */}
             <div style={{ display: "flex", flexDirection: "row", gap: "20px", flexWrap: "wrap" as const }}>
-              {[
-                {
-                  title: "When we meet",
-                  body: "Sunday worship at 9:00 AM. Midweek teaching service Thursday at 5:00 PM. Both run to roughly two hours.",
-                },
-                {
-                  title: "Where to find us",
-                  body: "The House of Bread, Korinjoh House, British, Jos. There is parking on the compound.",
-                },
-                {
-                  title: "What to wear",
-                  body: "Come as you are, and comfortably dressed as well. You will see everything from traditional dress to jeans, and nobody is counting. All we encourage is modesty.",
-                },
-              ].map((item) => (
+              {(aboutData.planVisitCards && aboutData.planVisitCards.length > 0
+                ? aboutData.planVisitCards
+                : [
+                    {
+                      title: "Where to find us",
+                      body: "The House of Bread, Korinjoh House, British, Jos. There is parking on the compound.",
+                    },
+                    {
+                      title: "What to wear",
+                      body: "Come as you are, and comfortably dressed as well. You will see everything from traditional dress to jeans, and nobody is counting. All we encourage is modesty.",
+                    },
+                  ]
+              ).map((item: any) => (
                 <div
                   key={item.title}
                   style={{
@@ -308,7 +297,7 @@ export default async function AboutPage() {
             {/* Action buttons */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" as const }}>
               <Link
-                href="/contact"
+                href={aboutData.planVisitBtnUrl || "/contact"}
                 style={{
                   fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "12px",
                   lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase",
@@ -317,22 +306,8 @@ export default async function AboutPage() {
                   color: "#FFFFFF", textDecoration: "none",
                 }}
               >
-                Plan your visit
+                {aboutData.planVisitBtnText || "Plan your visit"}
               </Link>
-              <a
-                href="https://api.whatsapp.com/send?phone=2347061959833"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "12px",
-                  lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase",
-                  display: "inline-flex", alignItems: "center", padding: "0 26px", height: "48px",
-                  background: "transparent", border: "1px solid #151A54", borderRadius: "2px",
-                  color: "#151A54", textDecoration: "none",
-                }}
-              >
-                Message us on WhatsApp
-              </a>
             </div>
           </div>
         </section>
@@ -371,7 +346,6 @@ export default async function AboutPage() {
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
-                    <span style={{ ...S.readSmall, fontSize: "12px", color: "#4A62A0", textTransform: "uppercase" }}>{leader.location}</span>
                   </div>
                 ))}
               </div>
@@ -393,7 +367,6 @@ export default async function AboutPage() {
                     </div>
                     <span style={{ ...S.displayS, color: "#151A54", fontSize: "16px", marginBottom: "4px" }}>{leader.name}</span>
                     <span style={{ ...S.eyebrow, color: "#0140C1", marginBottom: "12px" }}>{leader.role}</span>
-                    <span style={{ ...S.readSmall, fontSize: "12px", color: "#4A62A0", textTransform: "uppercase" }}>{leader.location}</span>
                   </div>
                 ))}
               </div>

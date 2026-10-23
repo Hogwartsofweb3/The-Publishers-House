@@ -31,9 +31,9 @@ const T = {
 
 /* ── Static fallback (shown until Firestore loads) ── */
 const FALLBACK_GATHERINGS = [
-  { day: "SUN", date: "04", month: "OCT", title: "The Time of the Word", desc: "A continuation of our ongoing series — come ready for an encounter with the Word.", scripture: "2 Timothy 2:15", time: "9:00 AM", city: "Jos", speaker: "Rev. Joshua Agunbiade", theme: "The Time of the Word — Part 6", published: true },
-  { day: "SUN", date: "04", month: "OCT", title: "FYB Prayer — The Arm of the Lord", desc: "Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture: "Isaiah 59:1", time: "3:00 PM", city: "Jos", speaker: "Rev. Joshua Agunbiade", theme: "The Arm of the Lord", published: true },
-  { day: "THU", date: "08", month: "OCT", title: "Midweek Service", desc: "Doctrine, spiritual re-alignment and corporate prayer.", scripture: "Acts 2:42", time: "5:00 PM", city: "Jos", speaker: "", theme: "", published: true },
+  { day: "SUN", date: "04", month: "OCT", title: "The Time of the Word", desc: "A continuation of our ongoing series — come ready for an encounter with the Word.", scripture: "2 Timothy 2:15", time: "9:00 AM WAT", city: "Jos", speaker: "Rev. Joshua Agunbiade", theme: "The Time of the Word — Part 6", published: true },
+  { day: "SUN", date: "04", month: "OCT", title: "FYB Prayer — The Arm of the Lord", desc: "Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture: "Isaiah 59:1", time: "3:00 PM WAT", city: "Jos", speaker: "Rev. Joshua Agunbiade", theme: "The Arm of the Lord", published: true },
+  { day: "THU", date: "08", month: "OCT", title: "Midweek Service", desc: "Doctrine, spiritual re-alignment and corporate prayer.", scripture: "Acts 2:42", time: "4:30 PM WAT", city: "Jos", speaker: "", theme: "", published: true },
 ];
 
 const DEFAULT_SETTINGS = {

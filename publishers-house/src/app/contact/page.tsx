@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import ContactCalendar from "@/components/ContactCalendar";
 
 // Shared style constants (Figma Design Tokens)
 const S = {
@@ -47,15 +48,22 @@ const DEFAULT_CONTACT = {
   josWhatsapp: "https://wa.link/xr46nk",
   josEmail: "thepublishershouse1@gmail.com",
   servicesSunday: "Sunday 9:00 AM WAT",
-  servicesThursday: "Thursday 5:00 PM WAT",
-  abujaInfo: "Abuja Apostolic Camp, monthly. Venue to be supplied.",
+  servicesThursday: "Thursday 4:30 PM WAT",
 };
 
 async function getContactData() {
   try {
     const doc = await getAdminDb().collection("settings").doc("church_contact").get();
     if (!doc.exists) return DEFAULT_CONTACT;
-    return { ...DEFAULT_CONTACT, ...doc.data() };
+    const data = { ...DEFAULT_CONTACT, ...doc.data() };
+    if (data.servicesThursday) {
+      data.servicesThursday = data.servicesThursday.replace(/5:00\s*PM/gi, "4:30 PM");
+      if (!data.servicesThursday.includes("WAT")) data.servicesThursday += " WAT";
+    }
+    if (data.servicesSunday && !data.servicesSunday.includes("WAT")) {
+      data.servicesSunday += " WAT";
+    }
+    return data;
   } catch {
     return DEFAULT_CONTACT;
   }
@@ -107,6 +115,17 @@ export default async function ContactPage() {
           </div>
         </section>
 
+        {/* Gatherings Calendar Section */}
+        <section
+          id="calendar"
+          className="tph-section"
+          style={{ background: S.Paper100, borderBottom: `1px solid ${S.Paper200}` }}
+        >
+          <div className="tph-inner" style={{ maxWidth: "1100px" }}>
+            <ContactCalendar />
+          </div>
+        </section>
+
         {/* Contact Content */}
         <section
           className="tph-section"
@@ -150,12 +169,6 @@ export default async function ContactPage() {
                   {contact.servicesThursday}
                 </div>
               </div>
-
-              {/* Abuja */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
-                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Abuja</div>
-                <div style={{ ...S.ReadBody, color: S.Navy }}>{contact.abujaInfo}</div>
-              </div>
             </div>
 
             <a
@@ -194,6 +207,7 @@ export default async function ContactPage() {
 
           {/* Right Column: Message form */}
           <div
+            id="contact-form"
             style={{
               padding: "48px",
               backgroundColor: S.White,

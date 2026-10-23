@@ -15,11 +15,14 @@ export async function POST(req: Request) {
     const attendeesList: Array<{
       fullName: string;
       phone?: string;
+      email?: string;
       mode?: string;
       location?: string;
       streamChannel?: string;
       serviceCode?: string;
       checkedInBy?: string;
+      isFirstTimer?: boolean;
+      hearAboutUs?: string;
     }> = Array.isArray(body?.attendees) && body.attendees.length > 0
       ? body.attendees
       : [body];
@@ -28,11 +31,14 @@ export async function POST(req: Request) {
       .map((a) => ({
         fullName: typeof a?.fullName === "string" ? a.fullName.trim() : "",
         phone: typeof a?.phone === "string" ? a.phone.trim() : "",
+        email: typeof a?.email === "string" ? a.email.trim() : "",
         mode: a?.mode === "online" ? "online" : (body?.mode === "online" ? "online" : "in_person"),
         location: typeof a?.location === "string" ? a.location.trim() : (typeof body?.location === "string" ? body.location.trim() : "Jos (House of Bread)"),
         streamChannel: typeof a?.streamChannel === "string" ? a.streamChannel.trim() : (typeof body?.streamChannel === "string" ? body.streamChannel.trim() : "none"),
         serviceCode: typeof a?.serviceCode === "string" ? a.serviceCode.trim().toUpperCase() : (typeof body?.serviceCode === "string" ? body.serviceCode.trim().toUpperCase() : ""),
         checkedInBy: typeof a?.checkedInBy === "string" ? a.checkedInBy.trim() : (typeof body?.checkedInBy === "string" ? body.checkedInBy.trim() : ""),
+        isFirstTimer: Boolean(a?.isFirstTimer ?? body?.isFirstTimer),
+        hearAboutUs: typeof a?.hearAboutUs === "string" ? a.hearAboutUs.trim() : (typeof body?.hearAboutUs === "string" ? body.hearAboutUs.trim() : ""),
       }))
       .filter((a) => Boolean(a.fullName));
 
@@ -42,34 +48,39 @@ export async function POST(req: Request) {
 
     const db = getAdminDb();
 
-    // Verify stream code if worshipping online
-    const hasOnline = validAttendees.some((a) => a.mode === "online");
-    if (hasOnline) {
-      try {
-        const streamSettingSnap = await db.collection("homeSettings").doc("attendance").get();
-        if (streamSettingSnap.exists) {
-          const config = streamSettingSnap.data();
-          if (config?.streamCodeActive && config?.streamCode) {
-            const expectedCode = String(config.streamCode).trim().toUpperCase();
-            const onlineAttendee = validAttendees.find((a) => a.mode === "online");
-            const codeToTest = onlineAttendee?.serviceCode || "";
+    // Verify service code for all attendees (both in-person and online) when active & not expired
+    try {
+      const streamSettingSnap = await db.collection("homeSettings").doc("attendance").get();
+      if (streamSettingSnap.exists) {
+        const config = streamSettingSnap.data();
+        let isActive = Boolean(config?.streamCodeActive && config?.streamCode);
+        if (isActive && config?.expiresAt) {
+          if (Date.now() >= new Date(config.expiresAt).getTime()) {
+            isActive = false;
+          }
+        }
+
+        if (isActive) {
+          const expectedCode = String(config?.streamCode ?? "").trim().toUpperCase();
+          for (const att of validAttendees) {
+            const codeToTest = att.serviceCode || "";
             if (!codeToTest) {
               return NextResponse.json(
-                { error: "Please enter the Stream Check-In Code announced during the service." },
+                { error: "Please enter the active Service Check-In Code announced during the service." },
                 { status: 400 }
               );
             }
             if (codeToTest !== expectedCode) {
               return NextResponse.json(
-                { error: "Invalid stream check-in code. Please check the code shown on the stream." },
+                { error: "Invalid check-in code. Please verify the code announced during the service." },
                 { status: 400 }
               );
             }
           }
         }
-      } catch (err) {
-        console.warn("Could not check streamCode settings:", err);
       }
+    } catch (err) {
+      console.warn("Could not check streamCode settings:", err);
     }
 
     // Check if requester has a logged-in session cookie
@@ -98,8 +109,27 @@ export async function POST(req: Request) {
         type: "weekend_service",
         date: todayDate,
         timestamp: new Date(),
-        isGuest: !userId || Boolean(att.checkedInBy),
+        isGuest: !userId || Boolean(att.checkedInBy) || Boolean(att.isFirstTimer),
       };
+
+      if (att.isFirstTimer) {
+        record.isFirstTimer = true;
+        if (att.email) record.email = att.email;
+        if (att.hearAboutUs) record.hearAboutUs = att.hearAboutUs;
+
+        // Persist into first_timers collection for pastoral directory
+        await db.collection("first_timers").add({
+          fullName: att.fullName,
+          phone: att.phone || "Not Provided",
+          email: att.email || "",
+          mode: att.mode,
+          location: record.location,
+          hearAboutUs: att.hearAboutUs || "Not specified",
+          date: todayDate,
+          timestamp: new Date(),
+          status: "new",
+        }).catch(() => {});
+      }
 
       if (att.serviceCode) {
         record.serviceCode = att.serviceCode;

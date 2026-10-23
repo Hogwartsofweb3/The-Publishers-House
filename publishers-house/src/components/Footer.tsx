@@ -38,7 +38,7 @@ export default function Footer() {
                 maxWidth: "320px",
               }}
             >
-              Established 2020 · Dr. Joshua Agunbiade
+              Established 2020
             </p>
             <p
               style={{
@@ -62,52 +62,8 @@ export default function Footer() {
                 maxWidth: "320px",
               }}
             >
-              Sundays 9:00 AM · Thursdays 5:00 PM WAT
+              Sundays 9:00 AM WAT · Thursdays 4:30 PM WAT
             </p>
-            <p
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontWeight: 400,
-                fontSize: "14.5px",
-                lineHeight: "1.5em",
-                color: "#99AFC6",
-                maxWidth: "320px",
-              }}
-            >
-              Outreach: Abuja
-            </p>
-          </div>
-
-          {/* Church Column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <span
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 600,
-                fontSize: "10px",
-                lineHeight: "1.6em",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "#E8ECF7",
-                marginBottom: "4px",
-              }}
-            >
-              Church
-            </span>
-            <Link
-              href="/abuja"
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                fontWeight: 400,
-                fontSize: "14.5px",
-                lineHeight: "1.5em",
-                color: "#E8ECF7",
-                textDecoration: "none",
-                transition: "color 150ms ease",
-              }}
-            >
-              Abuja
-            </Link>
           </div>
 
           {/* Explore Column */}

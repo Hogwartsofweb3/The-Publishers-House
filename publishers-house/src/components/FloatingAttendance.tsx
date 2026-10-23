@@ -55,6 +55,9 @@ export default function FloatingAttendance() {
   // Input states for self
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [hearAboutUs, setHearAboutUs] = useState("");
+  const [isFirstTimer, setIsFirstTimer] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isCodeRequired, setIsCodeRequired] = useState(false);
 
@@ -188,12 +191,16 @@ export default function FloatingAttendance() {
       checkedInBy?: string;
     }> = [];
 
-    const locString = location === "jos" ? "Jos (House of Bread)" : "Abuja Outreach";
+    const locString = "Jos (House of Bread)";
 
     // 1. Add self if enabled
     if (checkInSelf && !isCheckingInOther) {
       if (!targetName) {
         setError("Please enter your full name.");
+        return;
+      }
+      if (isFirstTimer && !targetPhone) {
+        setError("Please enter your phone number so our pastoral team can welcome you.");
         return;
       }
       attendeesToSubmit.push({
@@ -203,7 +210,8 @@ export default function FloatingAttendance() {
         location: locString,
         streamChannel,
         serviceCode: enteredCode.trim(),
-      });
+        ...(isFirstTimer ? { isFirstTimer: true, email: email.trim(), hearAboutUs: hearAboutUs.trim() } : {}),
+      } as any);
     }
 
     // 2. Add guests
@@ -232,8 +240,9 @@ export default function FloatingAttendance() {
       return;
     }
 
-    if (mode === "online" && isCodeRequired && !enteredCode.trim()) {
-      setError("Please enter the Stream Check-In Code announced during the service.");
+    // Require service code for all worshippers (both in-person and online) when active
+    if (isCodeRequired && !enteredCode.trim()) {
+      setError("Please enter the Service Check-In Code announced during the service.");
       return;
     }
 
@@ -271,7 +280,9 @@ export default function FloatingAttendance() {
       setShowModal(false);
 
       const guestCount = attendeesToSubmit.length - (checkInSelf && !isCheckingInOther ? 1 : 0);
-      if (checkInSelf && !isCheckingInOther) {
+      if (isFirstTimer) {
+        setSuccessMessage("Welcome to The Publishers House! We are thrilled to worship with you for the first time today.");
+      } else if (checkInSelf && !isCheckingInOther) {
         setSuccessMessage(
           guestCount > 0
             ? `Attendance confirmed for you + ${guestCount} guest${guestCount > 1 ? "s" : ""} ✓`
@@ -450,8 +461,66 @@ export default function FloatingAttendance() {
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {/* Member Identity Card */}
-              {isRecognized && !isCheckingInOther ? (
+              {/* Attendee Type: Regular Member vs First-Timer */}
+              {!isCheckingInOther && (
+                <div>
+                  <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
+                    Attendee Status
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsFirstTimer(false)}
+                      style={{
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: !isFirstTimer ? `1.5px solid ${Blue500}` : "1px solid rgba(255,255,255,0.1)",
+                        background: !isFirstTimer ? "rgba(32, 144, 255, 0.18)" : "rgba(255,255,255,0.03)",
+                        color: !isFirstTimer ? White : Slate400,
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        fontFamily: "'Poppins', sans-serif",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span>👥</span> Regular Member
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsFirstTimer(true);
+                        setIsEditing(true);
+                      }}
+                      style={{
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: isFirstTimer ? `1.5px solid #D97706` : "1px solid rgba(255,255,255,0.1)",
+                        background: isFirstTimer ? "rgba(217, 119, 6, 0.18)" : "rgba(255,255,255,0.03)",
+                        color: isFirstTimer ? "#FBBF24" : Slate400,
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        fontFamily: "'Poppins', sans-serif",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span>🌟</span> First-Timer
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Member Identity Card (only for recognized non-first-timer) */}
+              {!isFirstTimer && isRecognized && !isCheckingInOther ? (
                 <div
                   style={{
                     background: "rgba(255,255,255,0.04)",
@@ -491,7 +560,7 @@ export default function FloatingAttendance() {
                   </div>
                 </div>
               ) : !isCheckingInOther ? (
-                /* Inputs for new / editing primary attendee */
+                /* Inputs for new / editing / first-timer primary attendee */
                 <>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
@@ -518,11 +587,12 @@ export default function FloatingAttendance() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
-                      Phone Number (optional)
+                    <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: isFirstTimer ? "#FBBF24" : Slate400, marginBottom: "6px" }}>
+                      Phone Number {isFirstTimer ? "*" : "(optional)"}
                     </label>
                     <input
                       type="tel"
+                      required={isFirstTimer}
                       placeholder="e.g. 0706 194 5751"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -530,7 +600,7 @@ export default function FloatingAttendance() {
                         width: "100%",
                         padding: "10px 12px",
                         borderRadius: "6px",
-                        border: "1px solid rgba(255,255,255,0.15)",
+                        border: isFirstTimer && !phone ? "1px solid #D97706" : "1px solid rgba(255,255,255,0.15)",
                         background: "rgba(255,255,255,0.05)",
                         color: White,
                         fontSize: "13px",
@@ -540,6 +610,64 @@ export default function FloatingAttendance() {
                       }}
                     />
                   </div>
+
+                  {/* Extra First-Timer Details */}
+                  {isFirstTimer && (
+                    <>
+                      <div>
+                        <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
+                          Email Address (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="e.g. yourname@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "rgba(255,255,255,0.05)",
+                            color: White,
+                            fontSize: "13px",
+                            fontFamily: "'Poppins', sans-serif",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
+                          How Did You Hear About Us?
+                        </label>
+                        <select
+                          value={hearAboutUs}
+                          onChange={(e) => setHearAboutUs(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "#151A54",
+                            color: White,
+                            fontSize: "13px",
+                            fontFamily: "'Poppins', sans-serif",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          <option value="">Select an option...</option>
+                          <option value="Friend or Family Member">Invited by Friend / Family</option>
+                          <option value="Social Media">Social Media (Instagram / X / Facebook)</option>
+                          <option value="YouTube / Livestream">YouTube / Livestream</option>
+                          <option value="Walked In / Passerby">Walked In / Nearby Resident</option>
+                          <option value="Apostolic Camp / Event">Apostolic Camp / Conference</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : null}
 
@@ -596,51 +724,29 @@ export default function FloatingAttendance() {
                 </div>
               </div>
 
-              {/* In-Person Sanctuary vs Online Options */}
+              {/* In-Person Sanctuary Center */}
               {mode === "in_person" ? (
                 <div>
                   <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
-                    Select Sanctuary Center
+                    Sanctuary Center
                   </label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setLocation("jos")}
-                      style={{
-                        flex: 1,
-                        padding: "9px 8px",
-                        borderRadius: "6px",
-                        border: location === "jos" ? `1.5px solid ${AmberGold}` : "1px solid rgba(255,255,255,0.1)",
-                        background: location === "jos" ? "rgba(217,119,6,0.18)" : "rgba(255,255,255,0.02)",
-                        color: location === "jos" ? AmberWarm : Slate400,
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: "'Poppins', sans-serif",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      Jos (House of Bread)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLocation("abuja")}
-                      style={{
-                        flex: 1,
-                        padding: "9px 8px",
-                        borderRadius: "6px",
-                        border: location === "abuja" ? `1.5px solid ${AmberGold}` : "1px solid rgba(255,255,255,0.1)",
-                        background: location === "abuja" ? "rgba(217,119,6,0.18)" : "rgba(255,255,255,0.02)",
-                        color: location === "abuja" ? AmberWarm : Slate400,
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: "'Poppins', sans-serif",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      Abuja Outreach
-                    </button>
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "6px",
+                      border: `1.5px solid ${Blue500}`,
+                      background: "rgba(32, 144, 255, 0.12)",
+                      color: White,
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      fontFamily: "'Poppins', sans-serif",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span>📍</span>
+                    <span>The House of Bread, Korinjoh House, British, Jos</span>
                   </div>
                 </div>
               ) : (
@@ -675,46 +781,45 @@ export default function FloatingAttendance() {
                     </div>
                   </div>
 
-                  {isCodeRequired ? (
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                        <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: AmberWarm }}>
-                          Stream Check-In Code *
-                        </label>
-                        <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(32,144,255,0.15)", border: "1px solid rgba(32,144,255,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                          CODE REQUIRED
-                        </span>
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Enter code displayed on stream"
-                        value={enteredCode}
-                        onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          borderRadius: "6px",
-                          border: `1px solid ${AmberWarm}`,
-                          background: "rgba(32,144,255,0.08)",
-                          color: White,
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          outline: "none",
-                          boxSizing: "border-box",
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ padding: "8px 12px", borderRadius: "6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      <p style={{ fontSize: "11px", color: Slate400, margin: 0 }}>
-                        ✓ Open stream check-in — no stream code is required for today's service.
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
+
+              {/* Service Validation Code (Required for both In-Person & Online worshippers when active) */}
+              {isCodeRequired ? (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: AmberWarm }}>
+                      Service Check-In Code *
+                    </label>
+                    <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(32,144,255,0.15)", border: "1px solid rgba(32,144,255,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                      CODE REQUIRED
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter code announced during service"
+                    value={enteredCode}
+                    onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "6px",
+                      border: `1px solid ${AmberWarm}`,
+                      background: "rgba(32,144,255,0.08)",
+                      color: White,
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <p style={{ fontSize: "10.5px", color: Slate400, margin: "4px 0 0" }}>
+                    Required for all attendees (both in-person and online). Enter the code announced in service.
+                  </p>
+                </div>
+              ) : null}
 
               {/* ── MULTI-GUEST / FAMILY SECTION ── */}
               <div style={{ marginTop: "4px" }}>

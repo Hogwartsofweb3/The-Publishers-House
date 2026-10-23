@@ -185,7 +185,7 @@ export default function Navbar() {
                 return (
                   <li
                     key={link.href}
-                    style={{ position: "relative" }}
+                    style={{ position: "relative", display: "flex", alignItems: "center" }}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -211,6 +211,8 @@ export default function Navbar() {
                           paddingBottom: "2px",
                           borderBottom: active ? "1px solid #6496EF" : "1px solid transparent",
                           transition: "color 150ms ease",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
                         {link.label}
@@ -223,9 +225,12 @@ export default function Navbar() {
                         style={{
                           color: active ? "#6496EF" : "#FFFFFF",
                           fontSize: "10px",
-                          lineHeight: 1,
+                          lineHeight: "1.6em",
+                          paddingBottom: "2px",
                           transform: resourcesOpen ? "rotate(180deg)" : "none",
                           transition: "transform 150ms ease",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
                         ▾

@@ -61,24 +61,14 @@ const programs = [
     logoImage: "/images/THE FORGE 1.png",
   },
   {
-    slug: "abuja-apostolic-camp",
-    frequency: "Monthly · Abuja",
-    name: "Abuja Apostolic Camp",
-    desc: "An intense spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.",
+    slug: "apostolic-camps",
+    frequency: "Monthly",
+    name: "Apostolic Camps",
+    desc: "A close spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.",
     scripture: "Ephesians 4:11",
     cadence: "Monthly",
-    location: "Abuja",
+    location: "Jos & Nationwide",
     logoImage: "/images/TPH ABUJA.png",
-  },
-  {
-    slug: "sunday-midweek",
-    frequency: "Every week",
-    name: "Sunday and midweek",
-    desc: "Sunday worship at 9:00 AM is the core weekly gathering. Thursday at 5:00 PM is doctrine and corporate prayer.",
-    scripture: "Acts 2:42",
-    cadence: "Weekly",
-    location: "Jos",
-    logoImage: "/images/MAIN TPH LOGO (W).png",
   },
 ];
 
@@ -224,7 +214,7 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
             objectFit: "contain",
             objectPosition: "center",
             padding: "32px",
-            filter: (prog.name === "Abuja Apostolic Camp" || prog.name === "Sunday and midweek") ? "brightness(0)" : "none",
+            filter: prog.name === "Apostolic Camps" ? "brightness(0)" : "none",
           }}
         />
       </div>

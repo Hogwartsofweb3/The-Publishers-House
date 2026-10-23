@@ -9,7 +9,31 @@ export const DEFAULT_ABOUT_DATA = {
   heroEyebrow: "Psalm 68:11 · Company of the Great",
   heroHeadline: "An Apostolic House Commissioned to Publish Christ",
   heroLede:
-    "Established in 2020 under the leadership of Dr. Joshua Agunbiade, The Publishers House is committed to equipping believers, strengthening the Church, and advancing the Kingdom through scriptural teaching, spiritual revival, and apologetics.",
+    "An apostolic and scriptural ministry committed to proclaiming the unchanging truth of God's Word to every sphere of society.",
+  heroPhotoUrl: "/images/hero-v2.webp",
+  whoWeAreEyebrow: "Who We Are",
+  whoWeAreMeta: "Established 2020 · Jos, Plateau State",
+  whoWeAreParagraphs: [
+    "The Publishers House was established in 2020 under the leadership of Dr. Joshua Agunbiade.",
+    "The ministry exists to equip believers, strengthen the Church, and advance the Kingdom through biblical teaching, discipleship, prayer and Christian apologetics.",
+    "Inspired by Psalm 68:11, we believe that every believer is commissioned to become a publisher of God's message, declaring His truth with conviction, excellence and global impact.",
+    "From Jos, Nigeria, the ministry is raising a company of believers whose lives become living publications of Christ.",
+    "We are given to much prayer, immersed in the word of God and passionate searchers of God's presence.",
+  ],
+  planVisitKicker: "Planning Your Visit",
+  planVisitHeading: "What to Expect",
+  planVisitCards: [
+    {
+      title: "Where to Find Us",
+      body: "The House of Bread, Korinjoh House, British, Jos. There is parking on the compound.",
+    },
+    {
+      title: "What to Wear",
+      body: "Come as you are, and comfortably dressed as well. You will see everything from traditional dress to jeans, and nobody is counting. All we encourage is modesty.",
+    },
+  ],
+  planVisitBtnText: "Plan Your Visit",
+  planVisitBtnUrl: "/contact",
   vision:
     "To raise a company of believers whose lives, character, and doctrine become living publications of Jesus Christ across every sphere of society and every nation.",
   mission:

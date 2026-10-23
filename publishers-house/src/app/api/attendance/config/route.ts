@@ -65,21 +65,44 @@ async function getRequester(req?: Request): Promise<{ uid: string; email: string
 
 /**
  * GET /api/attendance/config
- * Public endpoint: Returns whether online stream code is active.
+ * Public endpoint: Returns whether service validation code is active.
+ * Automatically checks timer expiration.
  * Only authenticated admins/managers receive the actual secret code.
  */
 export async function GET(req: Request) {
   try {
     const snap = await getAdminDb().collection("homeSettings").doc("attendance").get();
     const data = snap.exists ? snap.data() || {} : {};
-    const active = Boolean(data.streamCodeActive && data.streamCode);
+
+    let active = Boolean(data.streamCodeActive && data.streamCode);
+    let remainingSeconds: number | null = null;
+
+    if (active && data.expiresAt) {
+      const expiresTime = new Date(data.expiresAt).getTime();
+      const nowTime = Date.now();
+      if (nowTime >= expiresTime) {
+        // Expired!
+        active = false;
+        // Asynchronously clear active status in background
+        getAdminDb()
+          .collection("homeSettings")
+          .doc("attendance")
+          .set({ streamCodeActive: false }, { merge: true })
+          .catch(() => {});
+      } else {
+        remainingSeconds = Math.max(0, Math.floor((expiresTime - nowTime) / 1000));
+      }
+    }
 
     const requester = await getRequester(req);
 
     return NextResponse.json({
       active,
       // Only admins/managers see the actual code in GET response
-      code: requester.isAdmin ? String(data.streamCode || "") : "",
+      code: requester.isAdmin && active ? String(data.streamCode || "") : "",
+      expiresAt: active ? data.expiresAt || null : null,
+      remainingSeconds,
+      durationMinutes: data.durationMinutes || null,
       updatedAt: data.updatedAt || null,
     });
   } catch (err: any) {
@@ -90,7 +113,7 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/attendance/config
- * Admin-only endpoint: Update stream code and activation status.
+ * Admin-only endpoint: Update service code, duration timer and activation status.
  * Allows admin, super_admin, portal_manager, and canonical admin emails.
  */
 export async function POST(req: Request) {
@@ -112,10 +135,18 @@ export async function POST(req: Request) {
     const streamCode = typeof body?.code === "string" ? body.code.trim().toUpperCase() : "";
     const active = Boolean(body?.active && streamCode);
 
-    const updatePayload = {
+    // Duration timer handling (in minutes)
+    const durationMinutes = Number(body?.durationMinutes) > 0 ? Number(body.durationMinutes) : 15;
+    const now = Date.now();
+    const expiresAt = active ? new Date(now + durationMinutes * 60 * 1000).toISOString() : null;
+
+    const updatePayload: Record<string, any> = {
       streamCode: active ? streamCode : "",
       streamCodeActive: active,
-      updatedAt: new Date().toISOString(),
+      durationMinutes: active ? durationMinutes : null,
+      expiresAt,
+      activatedAt: active ? new Date(now).toISOString() : null,
+      updatedAt: new Date(now).toISOString(),
       updatedBy: requester.email || requester.uid,
     };
 
@@ -125,9 +156,11 @@ export async function POST(req: Request) {
       ok: true,
       active,
       code: updatePayload.streamCode,
+      durationMinutes,
+      expiresAt,
       message: active
-        ? `Stream Code "${streamCode}" is now active and required for online check-in.`
-        : "Stream Code requirement has been deactivated.",
+        ? `Service Code "${streamCode}" is active for ${durationMinutes} minute${durationMinutes > 1 ? "s" : ""}.`
+        : "Service Code requirement has been deactivated.",
     });
   } catch (err: any) {
     console.error("Failed to update attendance config:", err);
