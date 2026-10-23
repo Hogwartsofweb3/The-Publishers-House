@@ -68,7 +68,7 @@ const programs = [
     scripture: "Ephesians 4:11",
     cadence: "Monthly",
     location: "Jos & Nationwide",
-    logoImage: "/images/TPH ABUJA.png",
+    logoImage: "/images/tph-main-logo.png",
   },
 ];
 
@@ -89,7 +89,7 @@ export default async function ProgramsPage() {
         scripture: "Eph 4:12", // Placeholder
         cadence: "Gathering", // Placeholder
         location: "Jos", // Placeholder
-        logoImage: p.imageUrl || "/images/MAIN TPH LOGO (W).png"
+        logoImage: p.imageUrl || "/images/tph-main-logo.png"
       }))
     : programs;
 
@@ -214,7 +214,7 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
             objectFit: "contain",
             objectPosition: "center",
             padding: "32px",
-            filter: prog.name === "Apostolic Camps" ? "brightness(0)" : "none",
+            filter: "none",
           }}
         />
       </div>

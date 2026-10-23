@@ -29,8 +29,7 @@ function getLogoUrl(title: string) {
   if (t.includes("merismos")) return "/images/Merismos black.png";
   if (t.includes("jesus convention")) return "/images/Jesus Convention logo white.png";
   if (t.includes("forge")) return "/images/THE FORGE 1.png";
-  if (t.includes("abuja")) return "/images/TPH ABUJA.png";
-  return "/images/MAIN TPH LOGO (W).png";
+  return "/images/tph-main-logo.png";
 }
 
 function formatDateRange(startAt: string, endAt?: string) {
