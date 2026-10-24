@@ -279,14 +279,25 @@ export default function HomeContent() {
               <h1 style={{ ...T.displayXL, color: White, margin: 0, letterSpacing: "-0.02em" }}>
                 We Are Building
               </h1>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "760px", margin: 0 }}>
-                <p style={{ ...T.readLede, color: "rgba(255,255,255,0.92)", margin: 0, lineHeight: "1.6em" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                  maxWidth: "680px",
+                  width: "100%",
+                  margin: "0 auto",
+                  padding: "0 12px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
                   After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
                 </p>
-                <p style={{ ...T.readBody, color: "rgba(255,255,255,0.88)", margin: 0, lineHeight: "1.65em" }}>
-                  We are at <strong style={{ color: "#2090FF", fontWeight: 700 }}>Phase 3</strong> — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000)
+                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+                  We are at Phase 3 — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000).
                 </p>
-                <p style={{ ...T.readBody, color: "rgba(255,255,255,0.80)", margin: 0, fontStyle: "italic", lineHeight: "1.6em" }}>
+                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
                   We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
                 </p>
               </div>
@@ -500,7 +511,7 @@ export default function HomeContent() {
                   </div>
                 </div>
 
-                <p style={{ ...T.readBody, color: Slate600, margin: 0, fontStyle: "italic", lineHeight: "1.7em" }}>
+                <p style={{ ...T.readBody, color: Slate600, margin: 0, lineHeight: "1.7em" }}>
                   We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
                 </p>
               </div>

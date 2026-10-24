@@ -159,9 +159,9 @@ export default function Footer() {
               Follow
             </span>
             {[
-              { label: "YouTube", href: "https://www.youtube.com/@ThePublishersHouse", icon: <YouTubeIcon size={18} color="#FF0000" /> },
-              { label: "Instagram", href: "https://www.instagram.com/thepublishershouse/", icon: <InstagramIcon size={18} color="#E4405F" /> },
-              { label: "Facebook", href: "https://www.facebook.com/thepublishershouse", icon: <FacebookIcon size={18} color="#1877F2" /> },
+              { label: "YouTube", href: "https://www.youtube.com/@ThePublishersHouse", icon: <YouTubeIcon size={18} color="#FFFFFF" /> },
+              { label: "Instagram", href: "https://www.instagram.com/thepublishershouse/", icon: <InstagramIcon size={18} color="#FFFFFF" /> },
+              { label: "Facebook", href: "https://www.facebook.com/thepublishershouse", icon: <FacebookIcon size={18} color="#FFFFFF" /> },
               { label: "X (Twitter)", href: "https://x.com/tph_jos", icon: <XIcon size={16} color="#FFFFFF" /> },
             ].map((item) => (
               <a

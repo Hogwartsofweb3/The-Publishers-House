@@ -113,3 +113,20 @@ export function SpotifyIcon({ size = 20, color = "currentColor", className, styl
     </svg>
   );
 }
+
+export function TelegramIcon({ size = 20, color = "currentColor", className, style }: SocialIconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill={color}
+      className={className}
+      style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0, ...style }}
+      aria-hidden="true"
+    >
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-2.018 9.509c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L6.088 14.6l-2.95-.924c-.641-.2-.654-.641.136-.95l11.525-4.443c.535-.194 1.003.13.763.964z" />
+    </svg>
+  );
+}

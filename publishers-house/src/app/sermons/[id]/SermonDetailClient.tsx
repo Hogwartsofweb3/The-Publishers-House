@@ -5,6 +5,7 @@ import type { Sermon } from "@/lib/firebase";
 import Link from "next/link";
 import SermonCard from "@/components/SermonCard";
 import { useAudio } from "@/components/GlobalAudioPlayer";
+import { WhatsAppIcon, SpotifyIcon, XIcon, TelegramIcon } from "@/components/SocialIcons";
 
 const Navy    = "#151A54";
 const Blue700 = "#0140C1";
@@ -345,15 +346,15 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   style={{
                     fontFamily: "var(--font-poppins)",
                     fontSize: "12px",
-                    color: "#15803D",
+                    color: "#1DB954",
                     textDecoration: "none",
                     fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "7px",
                   }}
                 >
-                  🟢 Spotify Podcast ↗
+                  <SpotifyIcon size={16} color="#1DB954" /> Spotify Podcast ↗
                 </a>
                 <a
                   href="https://t.me/ThePublishersHouse"
@@ -362,15 +363,15 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   style={{
                     fontFamily: "var(--font-poppins)",
                     fontSize: "12px",
-                    color: "#0284C7",
+                    color: "#0088CC",
                     textDecoration: "none",
                     fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "7px",
                   }}
                 >
-                  🔵 Telegram MP3s ↗
+                  <TelegramIcon size={16} color="#0088CC" /> Telegram MP3s ↗
                 </a>
               </div>
             </div>
@@ -391,10 +392,10 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                     fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "7px",
                   }}
                 >
-                  💬 Share on WhatsApp
+                  <WhatsAppIcon size={16} color="#16A34A" /> Share on WhatsApp
                 </a>
                 <a
                   href={`https://twitter.com/intent/tweet?text=${shareText}&url=${encodedUrl}`}
@@ -408,10 +409,10 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                     fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "7px",
                   }}
                 >
-                  𝕏 Share on X
+                  <XIcon size={14} color={Navy} /> Share on X
                 </a>
                 <button
                   onClick={copyUrl}
@@ -425,9 +426,16 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                     cursor: "pointer",
                     textAlign: "left",
                     fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
                   }}
                 >
-                  {copied ? "✓ Link Copied!" : "📋 Copy Link"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  {copied ? "✓ Link Copied!" : "Copy Link"}
                 </button>
               </div>
             </div>
