@@ -52,9 +52,9 @@ const D = {
   heroBgImage: "/images/hero-v2.webp",
 
   // Setman
-  setmanHeading: "Welcome Message\nfrom the Setman",
-  setmanSubtext: "What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.",
-  setmanBtnLabel: "Read More About Us", setmanBtnUrl: "/about",
+  setmanHeading: "WELCOME MESSAGE\nFROM THE SETMAN",
+  setmanSubtext: "The Publishers House is an Apostolic community devoted to sound biblical teaching, prayer, and equipping believers to reflect Christ in their generation. Inspired by Psalm 68:11, we welcome you to the Company of the Great.",
+  setmanBtnLabel: "READ MORE ABOUT US", setmanBtnUrl: "/about",
   setmanPhotoUrl: "/images/rja-setman.webp",
 
   // Gatherings heading
@@ -140,7 +140,14 @@ export default function HomeContent() {
       .catch(() => {});
   }, []);
 
-  const headingLines = (s.setmanHeading || D.setmanHeading).split("\n");
+  const setmanHeadingText = (!s.setmanHeading || s.setmanHeading.includes("Welcome Message\nfrom the Setman"))
+    ? D.setmanHeading
+    : s.setmanHeading;
+  const headingLines = setmanHeadingText.split("\n");
+
+  const setmanBodyText = (!s.setmanSubtext || s.setmanSubtext.includes("What Paul asks"))
+    ? D.setmanSubtext
+    : s.setmanSubtext;
 
   // ── Latest Teaching: CMS explicit save → auto-fetched sermon → static default ──
   // Priority: CMS override → latestSermon YouTube URL → internal sermon page → default
@@ -204,7 +211,7 @@ export default function HomeContent() {
               <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
               <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
-                <Link href="/contact" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
+                <Link href="/contact" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: Navy, textDecoration: "none", background: White }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
                 <Link href={heroWatchUrl} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
               </div>
               <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
@@ -272,9 +279,17 @@ export default function HomeContent() {
               <h1 style={{ ...T.displayXL, color: White, margin: 0, letterSpacing: "-0.02em" }}>
                 We Are Building
               </h1>
-              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.9)", maxWidth: "680px", margin: 0, lineHeight: "1.65em" }}>
-                After five years of meeting in rented spaces, we have successfully acquired land for a permanent ministry home. Our next step is to build &quot;The Publishers House,&quot; a multi-purpose facility that will include an auditorium, lecture halls, offices, and a media studio. We prayerfully invite you to partner with us in this exciting building phase.
-              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "760px", margin: 0 }}>
+                <p style={{ ...T.readLede, color: "rgba(255,255,255,0.92)", margin: 0, lineHeight: "1.6em" }}>
+                  After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
+                </p>
+                <p style={{ ...T.readBody, color: "rgba(255,255,255,0.88)", margin: 0, lineHeight: "1.65em" }}>
+                  We are at <strong style={{ color: "#2090FF", fontWeight: 700 }}>Phase 3</strong> — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000)
+                </p>
+                <p style={{ ...T.readBody, color: "rgba(255,255,255,0.80)", margin: 0, fontStyle: "italic", lineHeight: "1.6em" }}>
+                  We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
+                </p>
+              </div>
               <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "12px" }}>
                 <Link
                   href="/giving"
@@ -359,11 +374,15 @@ export default function HomeContent() {
           <div className="tph-two-col" style={{ alignItems:"center", gap:"80px" }}>
             <div className="tph-setman-photo" style={{ width:"100%", maxWidth:"480px", height:"360px", backgroundImage:`url('${s.setmanPhotoUrl||D.setmanPhotoUrl}')`, backgroundSize:"cover", backgroundPosition:"center top", borderRadius:"2px" }} />
             <div style={{ display:"flex", flexDirection:"column", gap:"20px", flex:1 }}>
-              <h2 style={{ ...T.displayL, color:Navy, margin:0 }}>
+              <h2 style={{ ...T.displayL, color:Navy, margin:0, textTransform:"uppercase" }}>
                 {headingLines.map((line: string, i: number) => <span key={i}>{line}{i < headingLines.length-1 && <br />}</span>)}
               </h2>
-              <p style={{ ...T.readBody, color:Slate600, margin:0 }}>{s.setmanSubtext||D.setmanSubtext}</p>
-              <div><Link href={s.setmanBtnUrl||D.setmanBtnUrl} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"44px", padding:"0 24px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{s.setmanBtnLabel||D.setmanBtnLabel}</Link></div>
+              <p style={{ ...T.readBody, color:Slate600, margin:0, lineHeight:"1.75em" }}>{setmanBodyText}</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:"2px", marginTop:"4px" }}>
+                <span style={{ fontFamily:"var(--font-poppins)", fontWeight:700, fontSize:"16px", color:Navy }}>Rev. Joshua Agunbiade</span>
+                <span style={{ fontFamily:"var(--font-poppins)", fontWeight:400, fontSize:"14px", color:Slate600 }}>Lead Pastor, The Publishers House</span>
+              </div>
+              <div style={{ marginTop:"8px" }}><Link href={s.setmanBtnUrl||D.setmanBtnUrl} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"44px", padding:"0 24px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>{s.setmanBtnLabel||"READ MORE ABOUT US"}</Link></div>
             </div>
           </div>
         </div>
@@ -436,22 +455,73 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ══════════════ SPECIAL ANNOUNCEMENT ══════════════ */}
+      {/* ══════════════ WE ARE BUILDING (ANNOUNCEMENT) ══════════════ */}
       {s.annShow !== false && (
-        <section className="tph-section" style={{ backgroundColor:White }}>
+        <section className="tph-section" style={{ backgroundColor: White, paddingTop: "40px" }}>
           <div className="tph-inner">
-            <h2 style={{ ...T.displayM, color:Navy, marginBottom:"32px" }}>{s.annHeading||D.annHeading}</h2>
-            {(s.annImageUrl||D.annImageUrl) && (
-              <div style={{ width:"100%", borderRadius:"4px", marginBottom:"40px", overflow:"hidden", border:`1px solid ${Paper300}` }}>
-                <img loading="lazy" src={s.annImageUrl||D.annImageUrl} alt="Announcement" style={{ width:"100%", height:"auto", display:"block" }} />
+            {(s.annImageUrl || D.annImageUrl) && (
+              <div style={{ width: "100%", borderRadius: "4px", marginBottom: "36px", overflow: "hidden", border: `1px solid ${Paper300}` }}>
+                <img loading="lazy" src={s.annImageUrl || D.annImageUrl} alt="We Are Building" style={{ width: "100%", height: "auto", display: "block" }} />
               </div>
             )}
-            <div style={{ maxWidth:"640px" }}>
-              <h3 style={{ ...T.displayM, color:Navy, marginBottom:"16px" }}>{s.annSubheading||D.annSubheading}</h3>
-              <p style={{ ...T.readBody, color:Slate600, marginBottom:"28px" }}>{s.annBody||D.annBody}</p>
-              <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-                <Link href={s.annBtn1Url || "/giving"} style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", backgroundColor:Blue700, color:White, textDecoration:"none" }}>
-                  {s.annBtn1Label || "Give Now"}
+            <div style={{ maxWidth: "860px" }}>
+              <h2 style={{ ...T.displayL, color: Navy, textTransform: "uppercase", marginBottom: "20px" }}>
+                {s.annSubheading || "WE ARE BUILDING"}
+              </h2>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "32px" }}>
+                <p style={{ ...T.readBody, color: Slate600, margin: 0, lineHeight: "1.75em" }}>
+                  After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
+                </p>
+
+                <div style={{ marginTop: "8px" }}>
+                  <h3 style={{ ...T.eyebrow, color: Blue700, fontSize: "12px", letterSpacing: "0.14em", marginBottom: "16px" }}>
+                    Our Progress &amp; Current Phase
+                  </h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div style={{ padding: "14px 18px", backgroundColor: Paper100, borderLeft: `3px solid ${Slate500}`, borderRadius: "2px" }}>
+                      <p style={{ ...T.readSmall, color: Slate600, margin: 0, lineHeight: "1.65em" }}>
+                        <strong style={{ color: Navy, fontFamily: "var(--font-poppins)" }}>Phase 1: Land Purchase and Govt documentation and approvals (Completed)</strong> — 10 plots of land fully acquired, approvals and documentation with the government done at ₦40 million (approx. $27,000)
+                      </p>
+                    </div>
+
+                    <div style={{ padding: "14px 18px", backgroundColor: Paper100, borderLeft: `3px solid ${Slate500}`, borderRadius: "2px" }}>
+                      <p style={{ ...T.readSmall, color: Slate600, margin: 0, lineHeight: "1.65em" }}>
+                        <strong style={{ color: Navy, fontFamily: "var(--font-poppins)" }}>Phase 2: Preliminary Works (Completed)</strong> — Land fenced, foundation laid, and German floor cast at about ₦65 Million (approx. $44,000).
+                      </p>
+                    </div>
+
+                    <div style={{ padding: "14px 18px", backgroundColor: "#EFF6FF", borderLeft: `3px solid ${Blue700}`, borderRadius: "2px" }}>
+                      <p style={{ ...T.readSmall, color: Navy, margin: 0, lineHeight: "1.65em" }}>
+                        <strong style={{ color: Blue700, fontFamily: "var(--font-poppins)" }}>Phase 3: Roof Level (Current Focus)</strong> — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ ...T.readBody, color: Slate600, margin: 0, fontStyle: "italic", lineHeight: "1.7em" }}>
+                  We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <Link
+                  href={s.annBtn1Url || "/giving"}
+                  style={{
+                    ...T.button,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "48px",
+                    padding: "0 28px",
+                    borderRadius: "2px",
+                    backgroundColor: Blue700,
+                    color: White,
+                    textDecoration: "none"
+                  }}
+                >
+                  {s.annBtn1Label || "GIVE NOW"}
                 </Link>
               </div>
             </div>

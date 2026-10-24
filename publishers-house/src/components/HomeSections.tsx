@@ -37,9 +37,9 @@ const FALLBACK_GATHERINGS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  setmanHeading: "Welcome Message\nfrom the Setman",
-  setmanSubtext: "What Paul asks of anyone who handles Scripture in public, and why accuracy is a matter of love before it is a matter of scholarship.",
-  setmanButtonLabel: "Read More About Us",
+  setmanHeading: "WELCOME MESSAGE\nFROM THE SETMAN",
+  setmanSubtext: "The Publishers House is an Apostolic community devoted to sound biblical teaching, prayer, and equipping believers to reflect Christ in their generation. Inspired by Psalm 68:11, we welcome you to the Company of the Great.",
+  setmanButtonLabel: "READ MORE ABOUT US",
   setmanButtonUrl: "/about",
   setmanPhotoUrl: "/images/rja-setman.jpg",
   gatheringsHeading: "This Week at the House",
@@ -93,15 +93,19 @@ export default function HomeSections({ photoStrip = ["event-1.jpg", "event-2.jpg
             />
             {/* Text */}
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1 }}>
-              <h2 style={{ ...T.displayL, color: Navy, margin: 0 }}>
+              <h2 style={{ ...T.displayL, color: Navy, margin: 0, textTransform: "uppercase" }}>
                 {headingLines.map((line, i) => (
                   <span key={i}>{line}{i < headingLines.length - 1 && <br />}</span>
                 ))}
               </h2>
-              <p style={{ ...T.readBody, color: Slate600, margin: 0 }}>
+              <p style={{ ...T.readBody, color: Slate600, margin: 0, lineHeight: "1.75em" }}>
                 {settings.setmanSubtext}
               </p>
-              <div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px" }}>
+                <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "16px", color: Navy }}>Rev. Joshua Agunbiade</span>
+                <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 400, fontSize: "14px", color: Slate600 }}>Lead Pastor, The Publishers House</span>
+              </div>
+              <div style={{ marginTop: "8px" }}>
                 <Link
                   href={settings.setmanButtonUrl}
                   style={{
@@ -111,7 +115,7 @@ export default function HomeSections({ photoStrip = ["event-1.jpg", "event-2.jpg
                     backgroundColor: Blue700, color: White, textDecoration: "none",
                   }}
                 >
-                  {settings.setmanButtonLabel}
+                  {settings.setmanButtonLabel || "READ MORE ABOUT US"}
                 </Link>
               </div>
             </div>
