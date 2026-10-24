@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { YouTubeIcon, InstagramIcon, FacebookIcon, XIcon } from "@/components/SocialIcons";
 
 // Figma: EL-7b2ab70f — Footer: column, padding 72px 100px 40px, gap 40px, bg #151A54
 // EL-4597e800 — top row: row, gap 48px
@@ -142,7 +143,7 @@ export default function Footer() {
           </div>
 
           {/* Follow Column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <span
               style={{
                 fontFamily: "'Poppins', sans-serif",
@@ -158,10 +159,10 @@ export default function Footer() {
               Follow
             </span>
             {[
-              { label: "YouTube", href: "https://www.youtube.com/@ThePublishersHouse" },
-              { label: "Instagram", href: "https://www.instagram.com/thepublishershouse/" },
-              { label: "Facebook", href: "https://www.facebook.com/thepublishershouse" },
-              { label: "X", href: "https://x.com/tph_jos" },
+              { label: "YouTube", href: "https://www.youtube.com/@ThePublishersHouse", icon: <YouTubeIcon size={18} color="#FF0000" /> },
+              { label: "Instagram", href: "https://www.instagram.com/thepublishershouse/", icon: <InstagramIcon size={18} color="#E4405F" /> },
+              { label: "Facebook", href: "https://www.facebook.com/thepublishershouse", icon: <FacebookIcon size={18} color="#1877F2" /> },
+              { label: "X (Twitter)", href: "https://x.com/tph_jos", icon: <XIcon size={16} color="#FFFFFF" /> },
             ].map((item) => (
               <a
                 key={item.label}
@@ -175,10 +176,14 @@ export default function Footer() {
                   lineHeight: "1.5em",
                   color: "#E8ECF7",
                   textDecoration: "none",
-                  transition: "color 150ms ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  transition: "all 150ms ease",
                 }}
               >
-                {item.label}
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "20px" }}>{item.icon}</span>
+                <span>{item.label}</span>
               </a>
             ))}
           </div>

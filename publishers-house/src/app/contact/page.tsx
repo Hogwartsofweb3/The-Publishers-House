@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import ContactCalendar from "@/components/ContactCalendar";
+import { WhatsAppIcon, YouTubeIcon, InstagramIcon, FacebookIcon, XIcon } from "@/components/SocialIcons";
 
 // Shared style constants (Figma Design Tokens)
 const S = {
@@ -138,9 +139,31 @@ export default async function ContactPage() {
             
             <div style={{ display: "flex", flexDirection: "column" }}>
               {/* WhatsApp */}
-              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "flex-start", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "center", gap: "12px" }}>
                 <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>WhatsApp</div>
-                <a href={contact.josWhatsapp} target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-word" }}>wa.link/xr46nk</a>
+                <a href={contact.josWhatsapp} target="_blank" rel="noopener noreferrer" style={{ ...S.ReadBody, color: S.Navy, textDecoration: "underline", wordBreak: "break-word", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <WhatsAppIcon size={18} color="#25D366" />
+                  <span>wa.link/xr46nk</span>
+                </a>
+              </div>
+
+              {/* Social Channels */}
+              <div style={{ display: "flex", flexDirection: "row", padding: "16px 0", borderBottom: `1px solid ${S.Paper200}`, alignItems: "center", gap: "12px" }}>
+                <div style={{ ...S.UIEyebrow, color: S.Slate500, width: "100px", minWidth: "100px", flexShrink: 0 }}>Connect</div>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center", flexWrap: "wrap" }}>
+                  <a href="https://www.youtube.com/@ThePublishersHouse" target="_blank" rel="noopener noreferrer" title="YouTube" style={{ display: "inline-flex", alignItems: "center", color: "#FF0000" }}>
+                    <YouTubeIcon size={20} color="#FF0000" />
+                  </a>
+                  <a href="https://www.instagram.com/thepublishershouse/" target="_blank" rel="noopener noreferrer" title="Instagram" style={{ display: "inline-flex", alignItems: "center", color: "#E4405F" }}>
+                    <InstagramIcon size={19} color="#E4405F" />
+                  </a>
+                  <a href="https://www.facebook.com/thepublishershouse" target="_blank" rel="noopener noreferrer" title="Facebook" style={{ display: "inline-flex", alignItems: "center", color: "#1877F2" }}>
+                    <FacebookIcon size={19} color="#1877F2" />
+                  </a>
+                  <a href="https://x.com/tph_jos" target="_blank" rel="noopener noreferrer" title="X (Twitter)" style={{ display: "inline-flex", alignItems: "center", color: S.Navy }}>
+                    <XIcon size={17} color={S.Navy} />
+                  </a>
+                </div>
               </div>
               
               {/* Phone */}
