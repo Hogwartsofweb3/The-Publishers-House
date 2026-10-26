@@ -33,29 +33,29 @@ const S = {
 // Beliefs from Figma: EL-31:4406 Beliefs section
 const beliefs = [
   {
-    title: "The Scriptures",
+    title: "THE SCRIPTURES",
     body: "We hold the sixty-six books of the Old and New Testaments to be the inspired Word of God, entirely trustworthy, and the final authority for what the church believes and how it lives.",
-    scripture: "2 Timothy 3:16",
+    scripture: "2 TIMOTHY 3:16–17",
   },
   {
-    title: "The Trinity",
+    title: "ONE GOD REVEALED AS A TRINITY",
     body: "We firmly believe in one God who has revealed Himself as a Trinity of persons.",
-    scripture: "Matthew 28:19",
+    scripture: "MATTHEW 28:19",
   },
   {
-    title: "The Holy Spirit",
+    title: "THE HOLY SPIRIT",
     body: "We believe the Spirit is at work now, illuminating Scripture, sanctifying the believer and empowering the church for witness, and that His gifts have not been withdrawn.",
-    scripture: "1 Corinthians 12:7",
+    scripture: "ACTS 1:8",
   },
   {
-    title: "The Church and the Apostolic Mandate",
-    body: "We confess one holy, catholic and apostolic church, gathered by the gospel and sent to publish it, and we hold that the ascension gifts are given for the equipping of the saints.",
-    scripture: "Ephesians 4:11-12",
+    title: "THE CHURCH AND THE APOSTOLIC MANDATE",
+    body: "We confess one holy, catholic and apostolic church, gathered by the gospel and sent to publish it.",
+    scripture: "EPHESIANS 4:11–13",
   },
   {
-    title: "The Believer as Publisher",
-    body: "Every believer carries a commission to publish the Word, in speech and in life, across nations, cultures, industries and generations.",
-    scripture: "Psalm 68:11",
+    title: "THE BELIEVER AS PUBLISHER",
+    body: "Every believer carries a commission to publish the Word, in speech and in life, across nations and generations.",
+    scripture: "PSALM 68:11",
   },
 ];
 
@@ -312,6 +312,81 @@ export default async function AboutPage() {
           </div>
         </section>
 
+
+        {/* OUR BELIEFS / WHAT WE HOLD */}
+        <section className="tph-section" style={{ background: "#F4F6FB" }}>
+          <div
+            className="tph-inner"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "28px",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Our Beliefs</span>
+              <h2 style={{ ...S.displayL, color: "#151A54" }}>What we hold</h2>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {beliefs.map((b, idx) => (
+                <div
+                  key={b.title}
+                  style={{
+                    paddingTop: idx === 0 ? "16px" : "36px",
+                    paddingBottom: "36px",
+                    borderBottom: "1px solid #D8DFEE",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: "var(--font-poppins)",
+                      fontWeight: 700,
+                      fontSize: "clamp(16px, 2vw, 19px)",
+                      lineHeight: "1.25em",
+                      letterSpacing: "0.03em",
+                      textTransform: "uppercase",
+                      color: "#151A54",
+                      margin: 0,
+                    }}
+                  >
+                    {b.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: "var(--font-playfair)",
+                      fontWeight: 400,
+                      fontSize: "clamp(15px, 1.8vw, 18px)",
+                      lineHeight: "1.65em",
+                      color: "#3A4668",
+                      margin: 0,
+                      maxWidth: "1100px",
+                    }}
+                  >
+                    {b.body}
+                  </p>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-poppins)",
+                      fontWeight: 700,
+                      fontSize: "11px",
+                      lineHeight: "1.6em",
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "#0140C1",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {b.scripture}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* LEADERSHIP */}
         <section className="tph-section" style={{ background: "#E8ECF7" }}>

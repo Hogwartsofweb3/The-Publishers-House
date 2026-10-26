@@ -26,7 +26,7 @@ async function sendInvitationEmail(data: {
   }
 
   const resend = new Resend(apiKey);
-  const from = process.env.RESEND_FROM || "The Publishers House <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM || "The Publishers House <noreply@thepublishershouse.org>";
   const memberHtml = buildInvitationEmailHtml(data);
 
   // ── Attempt 1: Send directly to the new member ──────────────────────────────
