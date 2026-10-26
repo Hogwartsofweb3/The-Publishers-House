@@ -2,9 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
 import type { PortalUser, UserRole } from "@/lib/portalAuth";
+import { Resend } from "resend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// ─── Resend email dispatcher ──────────────────────────────────────────────────
+async function sendInvitationEmail(data: {
+  displayName: string;
+  email: string;
+  tempPassword: string;
+  role: string;
+  siteUrl: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { ok: false, error: "RESEND_API_KEY not set in environment" };
+  }
+
+  const resend = new Resend(apiKey);
+  const from = process.env.RESEND_FROM || "The Publishers House <onboarding@resend.dev>";
+  const html = buildInvitationEmailHtml(data);
+
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to: data.email,
+      subject: "You're invited — The Publishers House Portal",
+      html,
+    });
+    if (error) {
+      console.error("Resend delivery error:", error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    console.error("Resend exception:", err);
+    return { ok: false, error: err?.message || "Unknown email error" };
+  }
+}
 
 // Standard TPH Super Admin & Portal Manager definitions
 const SUPER_ADMIN_EMAIL = "joshuaagunbiade@gmail.com";
@@ -27,79 +63,158 @@ function buildInvitationEmailHtml(data: {
   siteUrl: string;
 }): string {
   const loginUrl = `${data.siteUrl}/portal/login`;
-  return `
-<!DOCTYPE html>
-<html>
+  const year = new Date().getFullYear();
+
+  return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Your TPH Portal Invitation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to The Publishers House Portal</title>
 </head>
-<body style="margin:0;padding:0;background-color:#F4F6FB;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#151A54;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6FB;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EEF1FA;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" maxWidth="560" style="max-width:560px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 4px 20px rgba(21,26,84,0.06);">
-          
-          <!-- Header -->
+
+        <!-- Card -->
+        <table role="presentation" width="100%" style="max-width:580px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.10);">
+
+          <!-- ── HEADER BANNER ── -->
           <tr>
-            <td style="background-color:#151A54;padding:32px 36px;text-align:center;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.25em;color:#D97706;text-transform:uppercase;margin-bottom:8px;">The Publishers House</div>
-              <h1 style="color:#FFFFFF;font-size:24px;font-weight:800;margin:0;letter-spacing:-0.02em;">Welcome to the Portal</h1>
+            <td style="background-color:#151A54;padding:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <!-- Gold top accent line -->
+                  <td style="background:linear-gradient(90deg,#D97706 0%,#F59E0B 50%,#D97706 100%);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td style="padding:36px 40px 28px;text-align:center;">
+                    <!-- Wordmark -->
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.35em;color:#F59E0B;text-transform:uppercase;margin-bottom:12px;">
+                      — PSALM 68:11 —
+                    </div>
+                    <div style="font-size:26px;font-weight:800;color:#FFFFFF;letter-spacing:-0.02em;line-height:1.15em;margin-bottom:6px;">
+                      The Publishers House
+                    </div>
+                    <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);letter-spacing:0.06em;text-transform:uppercase;">
+                      Portal Access — Member Invitation
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- Content -->
+          <!-- ── GREETING ── -->
           <tr>
-            <td style="padding:36px;">
-              <p style="font-size:16px;line-height:1.6;margin:0 0 20px;color:#151A54;">
-                Dear <strong>${data.displayName}</strong>,
+            <td style="padding:40px 40px 0;">
+              <p style="font-size:17px;font-weight:700;color:#151A54;margin:0 0 10px;">
+                Grace and peace, <span style="color:#0140C1;">${data.displayName}</span>.
               </p>
-              <p style="font-size:14.5px;line-height:1.65;color:#4A62A0;margin:0 0 24px;">
-                You have been invited to The Publishers House Administration Portal as a <strong>${data.role}</strong>. Your personal account has been created and is ready for use.
+              <p style="font-size:14.5px;line-height:1.7;color:#4A62A0;margin:0 0 28px;">
+                Your <strong style="color:#151A54;">${data.role}</strong> account on The Publishers House Ministry Portal has been created. We are glad to have you on board.
               </p>
-
-              <!-- Credentials Card -->
-              <div style="background-color:#F4F6FB;border:1px solid #D3DAEC;border-radius:8px;padding:20px;margin-bottom:24px;">
-                <div style="font-size:11px;font-weight:700;color:#747CA1;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;">Your Sign-In Credentials</div>
-                <div style="margin-bottom:10px;">
-                  <span style="font-size:12px;color:#747CA1;">Email:</span>
-                  <div style="font-size:14px;font-weight:600;color:#151A54;">${data.email}</div>
-                </div>
-                <div>
-                  <span style="font-size:12px;color:#747CA1;">Temporary Password:</span>
-                  <div style="font-size:18px;font-weight:800;letter-spacing:0.05em;color:#0140C1;font-family:monospace;background:#FFFFFF;padding:8px 12px;border-radius:4px;display:inline-block;border:1px dashed #2090FF;margin-top:4px;">
-                    ${data.tempPassword}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Warning Alert -->
-              <div style="background-color:#FEF3C7;border-left:4px solid #D97706;padding:14px 16px;border-radius:4px;margin-bottom:28px;">
-                <p style="font-size:13px;line-height:1.5;color:#92400E;margin:0;font-weight:600;">
-                  ⚠️ Required Step: For security, you will be prompted to change your temporary password immediately upon your first sign in.
-                </p>
-              </div>
-
-              <!-- CTA Button -->
-              <div style="text-align:center;margin-bottom:24px;">
-                <a href="${loginUrl}" target="_blank" style="display:inline-block;background-color:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.06em;padding:14px 32px;border-radius:6px;text-transform:uppercase;">
-                  Sign In to Your Account →
-                </a>
-              </div>
-
-              <p style="font-size:12px;color:#747CA1;text-align:center;margin:0;">
-                Or sign in via Google using your registered email address: <strong>${data.email}</strong>
+              <p style="font-size:14px;line-height:1.65;color:#4A62A0;margin:0 0 28px;">
+                Use the credentials below to sign in for the first time. You will be asked to set your own private password immediately after.
               </p>
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- ── CREDENTIALS CARD ── -->
           <tr>
-            <td style="background-color:#F4F6FB;padding:24px 36px;border-top:1px solid #D3DAEC;text-align:center;">
-              <div style="font-size:12px;font-weight:700;color:#151A54;margin-bottom:4px;">The Publishers House</div>
-              <div style="font-size:11px;color:#747CA1;line-height:1.5;">
-                The House of Bread, Korinjoh House, British, Jos · West Africa<br/>
-                Psalm 68:11 · Company of the Great
+            <td style="padding:0 40px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6FB;border:1px solid #D3DAEC;border-radius:10px;overflow:hidden;">
+                <tr>
+                  <td style="background-color:#151A54;padding:10px 20px;">
+                    <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.2em;">Your Sign-In Credentials</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Email Address</div>
+                          <div style="font-size:15px;font-weight:700;color:#151A54;">${data.email}</div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top:14px;">
+                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Temporary Password</div>
+                          <div style="display:inline-block;">
+                            <span style="font-size:22px;font-weight:800;letter-spacing:0.12em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:10px 18px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
+                          </div>
+                          <div style="font-size:11.5px;color:#747CA1;margin-top:8px;">This is case-sensitive. Copy it exactly as shown.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── SECURITY ALERT ── -->
+          <tr>
+            <td style="padding:0 40px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBEB;border-left:4px solid #D97706;border-radius:0 6px 6px 0;">
+                <tr>
+                  <td style="padding:14px 18px;">
+                    <p style="font-size:13px;font-weight:700;color:#92400E;margin:0 0 4px;">
+                      🔐 Required: Change your password on first login
+                    </p>
+                    <p style="font-size:12.5px;color:#92400E;margin:0;line-height:1.5;font-weight:500;">
+                      The portal will immediately prompt you to set a private password when you sign in. Your account cannot be accessed with the temporary password after this step.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── CTA BUTTON ── -->
+          <tr>
+            <td style="padding:0 40px 36px;text-align:center;">
+              <a href="${loginUrl}" target="_blank" style="display:inline-block;background-color:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.08em;padding:16px 44px;border-radius:8px;text-transform:uppercase;box-shadow:0 4px 14px rgba(1,64,193,0.35);">
+                Sign In to the Portal →
+              </a>
+              <div style="margin-top:14px;font-size:12px;color:#747CA1;">
+                Or visit directly: <a href="${loginUrl}" style="color:#0140C1;text-decoration:none;font-weight:600;">${loginUrl}</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ── DIVIDER & ENCOURAGEMENT ── -->
+          <tr>
+            <td style="padding:0 40px 36px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E4ECF9;">
+                <tr>
+                  <td style="padding-top:28px;">
+                    <p style="font-size:14px;line-height:1.7;color:#4A62A0;margin:0 0 6px;">
+                      <em>"The Lord gave the word: great was the company of those that published it."</em>
+                    </p>
+                    <p style="font-size:12px;color:#9CA6CC;margin:0;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Psalm 68:11</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── FOOTER ── -->
+          <tr>
+            <td style="background-color:#F4F6FB;padding:24px 40px;border-top:1px solid #D3DAEC;text-align:center;">
+              <div style="font-size:13px;font-weight:800;color:#151A54;margin-bottom:4px;letter-spacing:0.02em;">The Publishers House</div>
+              <div style="font-size:11.5px;color:#747CA1;line-height:1.6;">
+                The House of Bread, Korinjoh House, British, Jos, Plateau State<br>
+                West Africa · <a href="https://www.thepublishershouse.org" style="color:#0140C1;text-decoration:none;">thepublishershouse.org</a>
+              </div>
+              <div style="margin-top:10px;font-size:10.5px;color:#B0BAD8;">
+                You received this email because an administrator created a portal account for you.<br>
+                If you did not request this, please contact us at <a href="mailto:thepublishershouse007@gmail.com" style="color:#747CA1;">thepublishershouse007@gmail.com</a><br>
+                &copy; ${year} The Publishers House. All rights reserved.
               </div>
             </td>
           </tr>
@@ -108,9 +223,9 @@ function buildInvitationEmailHtml(data: {
       </td>
     </tr>
   </table>
+
 </body>
-</html>
-  `.trim();
+</html>`.trim();
 }
 
 export async function GET(req: NextRequest) {
@@ -254,12 +369,28 @@ export async function POST(req: NextRequest) {
 
       await adminDb.collection("users").doc(authUid).set(userDocData, { merge: true });
 
-      // Generate HTML email invitation
+      // Build the role label for the email
+      const roleLabel =
+        targetRole === "unit_head" ? "Unit Head" :
+        targetRole === "admin" ? "Administrator" :
+        targetRole === "portal_manager" ? "Portal Manager" :
+        targetRole === "super_admin" ? "Senior Pastor" :
+        "Member";
+
+      // Dispatch branded invitation email automatically via Resend
+      const emailResult = await sendInvitationEmail({
+        displayName: userDocData.displayName,
+        email,
+        tempPassword,
+        role: roleLabel,
+        siteUrl,
+      });
+
       const emailHtml = buildInvitationEmailHtml({
         displayName: userDocData.displayName,
         email,
         tempPassword,
-        role: targetRole === "unit_head" ? "Unit Head" : targetRole === "admin" ? "Administrator" : "Member",
+        role: roleLabel,
         siteUrl,
       });
 
@@ -268,7 +399,11 @@ export async function POST(req: NextRequest) {
         user: userDocData,
         tempPassword,
         emailHtml,
-        message: `Account created for ${email}. Temporary password: ${tempPassword}`,
+        emailSent: emailResult.ok,
+        emailError: emailResult.error || null,
+        message: emailResult.ok
+          ? `Account created and invitation email sent to ${email}. Temporary password: ${tempPassword}`
+          : `Account created for ${email}. Temporary password: ${tempPassword}. Email could not be sent: ${emailResult.error}`,
       });
     }
 
@@ -299,13 +434,29 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        const roleLabel =
+          role === "unit_head" ? "Unit Head" :
+          role === "admin" ? "Administrator" :
+          role === "portal_manager" ? "Portal Manager" :
+          "Member";
+
+        // Dispatch the branded email immediately
+        const emailResult = await sendInvitationEmail({
+          displayName,
+          email,
+          tempPassword,
+          role: roleLabel,
+          siteUrl,
+        });
+
         emailHtml = buildInvitationEmailHtml({
           displayName,
           email,
           tempPassword,
-          role: role === "unit_head" ? "Unit Head" : role === "admin" ? "Administrator" : "Member",
+          role: roleLabel,
           siteUrl,
         });
+
       }
 
       const newMember: PortalUser = {

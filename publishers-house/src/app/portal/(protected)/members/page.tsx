@@ -38,6 +38,8 @@ export default function MembersPage() {
     user: PortalUser;
     tempPassword?: string;
     emailHtml?: string;
+    emailSent?: boolean;
+    emailError?: string | null;
   } | null>(null);
 
   const [msg, setMsg] = useState("");
@@ -174,6 +176,8 @@ export default function MembersPage() {
           user: json.member,
           tempPassword: json.tempPassword,
           emailHtml: json.emailHtml,
+          emailSent: json.emailSent ?? false,
+          emailError: json.emailError ?? null,
         });
       } else {
         setMsg("Member enrolled successfully ✓");
@@ -219,6 +223,8 @@ export default function MembersPage() {
         user: json.user,
         tempPassword: json.tempPassword,
         emailHtml: json.emailHtml,
+        emailSent: json.emailSent ?? false,
+        emailError: json.emailError ?? null,
       });
       fetchMembers();
     } catch (err: any) {
@@ -1352,6 +1358,49 @@ export default function MembersPage() {
               </p>
             </div>
 
+            {/* Email Delivery Status Banner */}
+            {invitationModal.emailSent === true ? (
+              <div
+                style={{
+                  backgroundColor: "#ECFDF5",
+                  border: "1px solid #6EE7B7",
+                  borderLeft: "4px solid #10B981",
+                  borderRadius: "6px",
+                  padding: "12px 16px",
+                  marginBottom: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span style={{ fontSize: "18px" }}>✅</span>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#065F46" }}>Invitation email sent!</div>
+                  <div style={{ fontSize: "12px", color: "#047857" }}>
+                    A branded welcome email with sign-in credentials has been delivered to <strong>{invitationModal.user.email}</strong>.
+                  </div>
+                </div>
+              </div>
+            ) : invitationModal.emailSent === false && invitationModal.emailError ? (
+              <div
+                style={{
+                  backgroundColor: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  borderLeft: "4px solid #EF4444",
+                  borderRadius: "6px",
+                  padding: "12px 16px",
+                  marginBottom: "18px",
+                }}
+              >
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#991B1B", marginBottom: "4px" }}>
+                  ⚠️ Email could not be delivered automatically
+                </div>
+                <div style={{ fontSize: "12px", color: "#B91C1C", lineHeight: "1.5" }}>
+                  {invitationModal.emailError} — Please copy the credentials below and share them with the member directly.
+                </div>
+              </div>
+            ) : null}
+
             {/* Credentials Card */}
             <div
               style={{
@@ -1415,8 +1464,57 @@ export default function MembersPage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                📋 Copy Credentials & Login Link
+                📋 Copy Credentials &amp; Login Link
               </button>
+
+              {/* Retry email — shown only when auto-dispatch failed */}
+              {invitationModal.emailSent === false && invitationModal.user.email && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/portal/members", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "create_account",
+                          uid: invitationModal.user.uid,
+                          email: invitationModal.user.email,
+                          displayName: invitationModal.user.displayName,
+                          role: invitationModal.user.role,
+                          phone: invitationModal.user.phone,
+                          assignedUnitId: invitationModal.user.assignedUnitId,
+                          campus: invitationModal.user.campus,
+                          activityTier: invitationModal.user.activityTier,
+                          tempPassword: invitationModal.tempPassword,
+                        }),
+                      });
+                      const json = await res.json();
+                      if (json.emailSent) {
+                        setInvitationModal((prev) =>
+                          prev ? { ...prev, emailSent: true, emailError: null } : prev
+                        );
+                      } else {
+                        alert("Email retry failed: " + (json.emailError || "Unknown error"));
+                      }
+                    } catch (err: any) {
+                      alert("Retry error: " + err.message);
+                    }
+                  }}
+                  style={{
+                    padding: "12px 16px",
+                    backgroundColor: "#F59E0B",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "12.5px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  📧 Retry Email
+                </button>
+              )}
 
               <button
                 onClick={() => setInvitationModal(null)}
