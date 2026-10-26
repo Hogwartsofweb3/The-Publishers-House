@@ -13,11 +13,25 @@ export { TRACK_DETAILS };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const track = TRACK_DETAILS[slug];
+  let track = TRACK_DETAILS[slug];
+  if (!track) {
+    try {
+      const settingsDoc = await getAdminDb().collection("settings").doc("resources_tracks").get();
+      if (settingsDoc.exists) {
+        track = settingsDoc.data()?.tracks?.[slug];
+      }
+      if (!track) {
+        const directDoc = await getAdminDb().collection("resource_tracks").doc(slug).get();
+        if (directDoc.exists) {
+          track = directDoc.data() as any;
+        }
+      }
+    } catch {}
+  }
   if (!track) return { title: "Resource Track Not Found | The Publishers House" };
   return {
     title: `${track.title} | Resources | The Publishers House`,
-    description: track.lede,
+    description: track.lede || track.description || "Biblical curriculum and study materials",
   };
 }
 
@@ -58,10 +72,12 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
         }));
 
       track = {
-        ...track,
-        title: custom.title || track?.title,
-        description: custom.description || track?.description,
-        materials: normalizedMaterials.length > 0 ? normalizedMaterials : track?.materials,
+        title: custom.title || track?.title || "Curriculum Track",
+        eyebrow: custom.eyebrow || track?.eyebrow || "Apostolic Curriculum",
+        scripture: custom.scripture || track?.scripture || "Psalm 68:11",
+        lede: custom.lede || track?.lede || "",
+        description: custom.description || track?.description || "",
+        materials: normalizedMaterials.length > 0 ? normalizedMaterials : (track?.materials || []),
       };
     }
   } catch (err) {

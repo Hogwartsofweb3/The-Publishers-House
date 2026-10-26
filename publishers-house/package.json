@@ -24,6 +24,7 @@
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
+    "@vercel/analytics": "^2.0.1",
     "firebase": "^12.17.1",
     "firebase-admin": "^12.7.0",
     "msedge-tts": "^2.0.9",

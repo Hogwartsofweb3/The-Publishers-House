@@ -51,10 +51,24 @@ export default async function ResourcesHubPage() {
           tracks[slug] = {
             ...tracks[slug],
             title: custom.title || tracks[slug].title,
+            eyebrow: custom.eyebrow || tracks[slug].eyebrow,
+            scripture: custom.scripture || tracks[slug].scripture,
+            lede: custom.lede || tracks[slug].lede,
             description: custom.description || tracks[slug].description,
             materials: (custom.materials && custom.materials.length > 0)
               ? custom.materials.filter((m: any) => m && m.published !== false)
               : tracks[slug].materials,
+          };
+        } else if (custom) {
+          tracks[slug] = {
+            title: custom.title || "Curriculum Track",
+            eyebrow: custom.eyebrow || "Apostolic Curriculum",
+            scripture: custom.scripture || "Psalm 68:11",
+            lede: custom.lede || "",
+            description: custom.description || "",
+            materials: (custom.materials && custom.materials.length > 0)
+              ? custom.materials.filter((m: any) => m && m.published !== false)
+              : [],
           };
         }
       }
