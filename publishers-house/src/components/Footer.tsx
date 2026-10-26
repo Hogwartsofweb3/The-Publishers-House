@@ -119,7 +119,7 @@ export default function Footer() {
               Take part
             </span>
             {[
-              { label: "Schedule", href: "/events" },
+              { label: "Schedule", href: "/schedule" },
               { label: "Giving", href: "/giving" },
               { label: "Watch live", href: "https://www.youtube.com/@ThePublishersHouse" },
               { label: "Contact", href: "/contact" },

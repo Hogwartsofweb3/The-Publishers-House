@@ -80,7 +80,7 @@ export default function EventCard({ event }: { event: EventItem }) {
   };
 
   return (
-    <Link href={"/events/" + event.id} style={{ textDecoration: "none", display: "block" }}>
+    <Link href={"/schedule/" + event.id} style={{ textDecoration: "none", display: "block" }}>
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}

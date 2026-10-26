@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -103,7 +103,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.45) 0%, rgba(21,26,84,0.92) 100%)", zIndex: 1 }} />
 
           <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "1440px", margin: "0 auto", padding: "clamp(40px,6vw,96px) clamp(20px,6vw,100px)", display: "flex", flexDirection: "column", gap: "16px" }}>
-            <Link href="/events" style={{ ...T.eyebrow, color: "rgba(255,255,255,0.6)", textDecoration: "none" }}>
+            <Link href="/schedule" style={{ ...T.eyebrow, color: "rgba(255,255,255,0.6)", textDecoration: "none" }}>
               ← All Events
             </Link>
 

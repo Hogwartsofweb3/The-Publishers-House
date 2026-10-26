@@ -407,7 +407,7 @@ export default function HomeContent() {
               <div style={{ ...T.eyebrow, color:Blue500, marginBottom:"10px" }}>{s.gatheringsLabel||D.gatheringsLabel}</div>
               <h2 style={{ ...T.displayL, color:Navy, margin:0 }}>{s.gatheringsHeading||D.gatheringsHeading}</h2>
             </div>
-            <Link href="/events" style={{ ...T.label, color:Blue700, textDecoration:"none" }}>All Events →</Link>
+            <Link href="/schedule" style={{ ...T.label, color:Blue700, textDecoration:"none" }}>All Events →</Link>
           </div>
           <div className="tph-grid-auto" style={{ marginBottom:"40px" }}>
             {gatherings.map((ev: any, i: number) => (

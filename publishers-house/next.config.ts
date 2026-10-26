@@ -28,6 +28,17 @@ const nextConfig: NextConfig = {
         destination: "https://www.thepublishershouse.org/:path*",
         permanent: true,
       },
+      // Redirect /events to /schedule for backward compatibility & SEO
+      {
+        source: "/events",
+        destination: "/schedule",
+        permanent: true,
+      },
+      {
+        source: "/events/:id",
+        destination: "/schedule/:id",
+        permanent: true,
+      },
     ];
   },
   experimental: {

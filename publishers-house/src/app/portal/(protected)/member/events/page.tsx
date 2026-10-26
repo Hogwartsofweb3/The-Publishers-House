@@ -91,7 +91,7 @@ export default function MemberEventsPage() {
           <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "18px", fontWeight: 700, color: "#141C6E", margin: 0 }}>
             Special Programs &amp; Conferences
           </h2>
-          <Link href="/events" style={{ fontSize: "12px", color: "#2090FF", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/schedule" style={{ fontSize: "12px", color: "#2090FF", fontWeight: 600, textDecoration: "none" }}>
             Public Events Page →
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default function MemberEventsPage() {
 
                 <div style={{ display: "flex", gap: "10px", borderTop: "1px solid #E8EDFB", paddingTop: "12px" }}>
                   <Link
-                    href={`/events/${event.id}`}
+                    href={`/schedule/${event.id}`}
                     style={{
                       flex: 1,
                       textAlign: "center",

@@ -8,15 +8,15 @@ import { getEvents, type EventItem } from "@/lib/firebase";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Events & Programmes | TPH",
+  title: "Schedule & Gatherings | TPH",
   description:
-    "Upcoming services, conferences, and special events at The Publishers House in Jos and Abuja. Find dates, register, and stay connected.",
+    "Upcoming services, conferences, and special events at The Publishers House. Find dates, register, and stay connected.",
   openGraph: {
     siteName: "The Publishers House",
-    title: "Events & Programmes | The Publishers House",
+    title: "Schedule & Gatherings | The Publishers House",
     description: "Upcoming services, conferences, and special events at The Publishers House. Find dates and register.",
-    url: "https://www.thepublishershouse.org/events",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Events – The Publishers House" }],
+    url: "https://www.thepublishershouse.org/schedule",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Schedule – The Publishers House" }],
   },
 };
 
@@ -93,9 +93,9 @@ export default async function EventsPage() {
           
           <div className="tph-inner" style={{ position: "relative", zIndex: 2 }}>
             <div style={{ ...T.eyebrow, color: Blue300, marginBottom: "16px" }}>Acts 2:42</div>
-            <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>Events and Gatherings</h1>
+            <h1 style={{ ...T.displayXL, color: White, margin: "0 0 16px" }}>Schedule &amp; Gatherings</h1>
             <p style={{ ...T.readLede, color: "rgba(255,255,255,0.85)", maxWidth: "720px", margin: 0 }}>
-              Every gathering in Jos and Abuja, with the weekly services and the flagship programmes in one list.
+              Every gathering, weekly service, and flagship programme in one list.
             </p>
           </div>
         </section>
