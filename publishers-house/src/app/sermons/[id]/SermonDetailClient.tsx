@@ -337,10 +337,26 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
 
             {/* Audio Platforms */}
             <div style={{ marginTop: "12px", paddingTop: "16px", borderTop: `1px solid ${Paper300}` }}>
-              <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>Audio Channels:</div>
+              <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>Audio Channels & Podcasts:</div>
+              {/* Spotify Embed Player */}
+              <div style={{ marginBottom: "14px" }}>
+                <iframe
+                  style={{ borderRadius: "10px", border: "none" }}
+                  src={
+                    sermon.spotifyEpisodeId
+                      ? `https://open.spotify.com/embed/episode/${sermon.spotifyEpisodeId}?utm_source=generator&theme=0`
+                      : "https://open.spotify.com/embed/show/0FELkmsjm7yVoytlwCXXDG?utm_source=generator&theme=0"
+                  }
+                  width="100%"
+                  height="152"
+                  frameBorder="0"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                />
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <a
-                  href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
+                  href={sermon.spotifyEpisodeId ? `https://open.spotify.com/episode/${sermon.spotifyEpisodeId}` : "https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -357,7 +373,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   <SpotifyIcon size={16} color="#1DB954" /> Spotify Podcast ↗
                 </a>
                 <a
-                  href="https://t.me/ThePublishersHouse"
+                  href={sermon.telegramMessageId ? `https://t.me/ThePublishersHouse/${sermon.telegramMessageId}` : (sermon.audioUrl && sermon.audioUrl.includes("t.me") ? sermon.audioUrl : "https://t.me/ThePublishersHouse")}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

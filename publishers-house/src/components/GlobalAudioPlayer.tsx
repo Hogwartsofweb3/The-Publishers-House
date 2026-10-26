@@ -588,21 +588,88 @@ function FloatingDockedPlayer({
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "center" }}>
-                  <img
-                    src={thumbnailUrl}
-                    alt={sermon.title}
-                    style={{ width: "56px", height: "56px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                  />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "13px", color: "#FFF", marginBottom: "3px" }}>
-                      {sermon.title}
+                <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                    <img
+                      src={thumbnailUrl}
+                      alt={sermon.title}
+                      style={{ width: "56px", height: "56px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
+                    />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "13px", color: "#FFF", marginBottom: "3px" }}>
+                        {sermon.title}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>
+                        {sermon.speaker || "Dr. Joshua Agunbiade"}
+                      </div>
+                      {sermon.series && (
+                        <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px", fontWeight: 600 }}>
+                          {sermon.series}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>
-                      {sermon.speaker || "Dr. Joshua Agunbiade"}
-                    </div>
+                    {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+                      <button
+                        onClick={onTogglePlay}
+                        style={{
+                          width: "38px",
+                          height: "38px",
+                          borderRadius: "50%",
+                          backgroundColor: "#2090FF",
+                          border: "none",
+                          color: "#FFFFFF",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          flexShrink: 0,
+                          fontSize: "14px",
+                        }}
+                        title={isPlaying ? "Pause" : "Play"}
+                      >
+                        {isPlaying ? "⏸" : "▶"}
+                      </button>
+                    )}
                   </div>
+
+                  {/* Scrub slider & time */}
+                  {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+                    <div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={progress}
+                        onChange={handleSeek}
+                        style={{
+                          width: "100%",
+                          accentColor: "#2090FF",
+                          cursor: "pointer",
+                          height: "4px",
+                          marginBottom: "4px",
+                          display: "block",
+                        }}
+                      />
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "rgba(255,255,255,0.55)" }}>
+                        <span>{currentTime}</span>
+                        <span>{duration}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Native audio element hook */}
+              {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+                <audio
+                  ref={audioRef}
+                  src={sermon.audioUrl}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onEnded={onClose}
+                  preload="metadata"
+                  style={{ display: "none" }}
+                />
               )}
 
               {/* Listen externally row */}
