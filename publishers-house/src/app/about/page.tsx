@@ -169,9 +169,8 @@ export default async function AboutPage() {
         {/* WHO WE ARE */}
         <section className="tph-section" style={{ background: "#D3DAEC" }}>
           <div
+            className="tph-inner"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
               display: "flex",
               flexDirection: "column",
               gap: "40px",
@@ -206,12 +205,10 @@ export default async function AboutPage() {
         {/* ══════════════════════════════════════════════════════════
             WHAT TO EXPECT — Exactly as in Screenshot 2
         ══════════════════════════════════════════════════════════ */}
-        <section style={{ background: "#E8ECF7" }}>
+        <section className="tph-section" style={{ background: "#E8ECF7" }}>
           <div
+            className="tph-inner"
             style={{
-              maxWidth: "1440px",
-              margin: "0 auto",
-              padding: "96px 100px",
               display: "flex",
               flexDirection: "column",
               gap: "32px",
@@ -314,7 +311,7 @@ export default async function AboutPage() {
 
 
         {/* OUR BELIEFS / WHAT WE HOLD */}
-        <section className="tph-section" style={{ background: "#F4F6FB" }}>
+        <section id="beliefs" className="tph-section" style={{ background: "#F4F6FB", scrollMarginTop: "80px" }}>
           <div
             className="tph-inner"
             style={{
@@ -324,8 +321,8 @@ export default async function AboutPage() {
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <span style={{ ...S.eyebrow, color: "#0140C1" }}>Our Beliefs</span>
-              <h2 style={{ ...S.displayL, color: "#151A54" }}>What we hold</h2>
+              <span style={{ ...S.eyebrow, color: "#0140C1" }}>OUR BELIEFS</span>
+              <h2 style={{ ...S.displayL, color: "#151A54" }}>WHAT WE HOLD</h2>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column" }}>
