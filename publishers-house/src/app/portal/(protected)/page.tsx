@@ -39,62 +39,18 @@ interface ActivityItem {
 export default function AdminDashboard() {
   const { effectiveUser } = usePortal();
   const [kpi, setKpi] = useState<KPIData>({
-    totalMembers: 342,
-    newThisMonth: 12,
-    weeklyGiving: 385000,
-    monthlyGiving: 1155000,
-    attendanceLastWeek: 418,
-    upcomingEventsCount: 5,
-    activeVolunteers: 48,
-    pendingTestimonies: 3,
-    pendingPrayers: 7,
+    totalMembers: 0,
+    newThisMonth: 0,
+    weeklyGiving: 0,
+    monthlyGiving: 0,
+    attendanceLastWeek: 0,
+    upcomingEventsCount: 0,
+    activeVolunteers: 0,
+    pendingTestimonies: 0,
+    pendingPrayers: 0,
   });
-  const [events, setEvents] = useState<EventItem[]>([
-    {
-      id: "ev-1",
-      title: "Sunday Celebration Service",
-      date: "Sunday, 18 Oct 2026",
-      time: "8:00 AM & 10:00 AM",
-      venue: "Main Sanctuary (Jos)",
-      status: "published",
-      attendeesCount: 420,
-    },
-    {
-      id: "ev-2",
-      title: "Midweek Faith Clinic",
-      date: "Thursday, 22 Oct 2026",
-      time: "5:30 PM",
-      venue: "Main Sanctuary & Online",
-      status: "published",
-      attendeesCount: 180,
-    },
-    {
-      id: "ev-3",
-      title: "Festival of Light 2026 Planning",
-      date: "Saturday, 24 Oct 2026",
-      time: "10:00 AM",
-      venue: "Conference Room & Abuja Studio",
-      status: "upcoming",
-      attendeesCount: 35,
-    },
-    {
-      id: "ev-4",
-      title: "Pastoral Leadership Retreat",
-      date: "Fri, 30 Oct - Sat, 31 Oct",
-      time: "9:00 AM",
-      venue: "Abuja Campus",
-      status: "draft",
-      attendeesCount: 22,
-    },
-  ]);
-
-  const [activities, setActivities] = useState<ActivityItem[]>([
-    { id: "act-1", action: "Recorded Sunday 1st Service Headcount (245 Jos / 65 Online)", actor: "Ushering Unit", timestamp: "Today, 11:20 AM", category: "Attendance" },
-    { id: "act-2", action: "Approved Testimony: 'Miraculous Healing from Migraine'", actor: "Admin", timestamp: "Today, 09:45 AM", category: "Testimony" },
-    { id: "act-3", action: "Logged Tithe Contribution ₦50,000 via Paystack", actor: "Finance Team", timestamp: "Yesterday, 04:12 PM", category: "Finances" },
-    { id: "act-4", action: "Assigned First-Time Visitor to Follow-up Roster", actor: "Pastoral Care", timestamp: "Yesterday, 02:30 PM", category: "Pastoral" },
-  ]);
-
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,9 +64,12 @@ export default function AdminDashboard() {
         monthStart.setHours(0, 0, 0, 0);
 
         let newCount = 0;
+        let volunteersCount = 0;
         usersSnap.docs.forEach((d) => {
-          const created = d.data().createdAt;
+          const uData = d.data();
+          const created = uData.createdAt;
           if (created && new Date(created) >= monthStart) newCount++;
+          if (uData.assignedUnitId) volunteersCount++;
         });
 
         // Testimonies & Prayers
@@ -142,37 +101,77 @@ export default function AdminDashboard() {
                 };
               })
             );
+          } else {
+            setActivities([]);
+          }
+        } catch {
+          setActivities([]);
+        }
+
+        // Transactions (Weekly & Monthly Giving)
+        let weeklyG = 0;
+        let monthlyG = 0;
+        try {
+          const txSnap = await getDocs(collection(db, "transactions"));
+          const now = new Date();
+          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          txSnap.forEach((d) => {
+            const data = d.data();
+            const amt = Number(data.amountNGN) || 0;
+            const txDate = data.timestamp ? new Date(data.timestamp) : null;
+            if (txDate && txDate >= monthStart) monthlyG += amt;
+            if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
+          });
+        } catch {}
+
+        // Attendance Last Week
+        let attLastWeek = 0;
+        try {
+          const hcSnap = await getDocs(query(collection(db, "attendance_headcounts"), orderBy("date", "desc"), limit(1)));
+          if (!hcSnap.empty) {
+            attLastWeek = hcSnap.docs[0].data().total || 0;
           }
         } catch {}
 
         // Events
+        let upEventsCount = 0;
         try {
-          const evSnap = await getDocs(query(collection(db, "events"), orderBy("date", "asc"), limit(4)));
+          const evSnap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc"), limit(4)));
           if (!evSnap.empty) {
-            setEvents(
-              evSnap.docs.map((d) => {
-                const data = d.data();
-                return {
-                  id: d.id,
-                  title: data.title || "Church Service",
-                  date: data.date || "Upcoming",
-                  time: data.time || "Morning",
-                  venue: data.venue || "Sanctuary",
-                  status: data.status || "published",
-                  attendeesCount: data.attendeesCount || 0,
-                };
-              })
-            );
+            const list = evSnap.docs.map((d) => {
+              const data = d.data();
+              const startAt = data.startAt || "";
+              const [dPart, tPart] = startAt.includes("T") ? startAt.split("T") : [startAt, ""];
+              return {
+                id: d.id,
+                title: data.title || "Special Service",
+                date: dPart || data.date || "Upcoming",
+                time: tPart || data.time || "8:00 AM",
+                venue: data.location || data.venue || "Sanctuary",
+                status: (data.published === false || data.status === "draft") ? "draft" : "published",
+                attendeesCount: data.attendeesCount || 0,
+              } as EventItem;
+            });
+            setEvents(list);
+            upEventsCount = list.filter((e) => e.status === "published").length;
+          } else {
+            setEvents([]);
           }
-        } catch {}
+        } catch {
+          setEvents([]);
+        }
 
-        setKpi((prev) => ({
-          ...prev,
-          totalMembers: realMembers > 0 ? realMembers : prev.totalMembers,
-          newThisMonth: newCount > 0 ? newCount : prev.newThisMonth,
+        setKpi({
+          totalMembers: realMembers,
+          newThisMonth: newCount,
+          weeklyGiving: weeklyG,
+          monthlyGiving: monthlyG,
+          attendanceLastWeek: attLastWeek,
+          upcomingEventsCount: upEventsCount,
+          activeVolunteers: volunteersCount,
           pendingTestimonies: pendingT,
           pendingPrayers: pendingP,
-        }));
+        });
       } catch (err) {
         console.warn("Could not load all Firestore data:", err);
       } finally {
@@ -527,102 +526,119 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {events.map((ev) => (
-                    <tr
-                      key={ev.id}
-                      style={{
-                        borderBottom: "1px solid #E8EDFB",
-                        transition: "background-color 0.15s",
-                      }}
-                    >
-                      <td style={{ padding: "16px 24px" }}>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "13.5px",
-                            fontWeight: 700,
-                            color: "#141C6E",
-                          }}
-                        >
-                          {ev.title}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "11px",
-                            color: "#4A5490",
-                            marginTop: "3px",
-                          }}
-                        >
-                          {ev.attendeesCount} registered attendees
-                        </div>
-                      </td>
-
-                      <td style={{ padding: "16px 20px" }}>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "12.5px",
-                            fontWeight: 600,
-                            color: "#141C6E",
-                          }}
-                        >
-                          {ev.date}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "11px",
-                            color: "#4A5490",
-                          }}
-                        >
-                          {ev.time}
-                        </div>
-                      </td>
-
+                  {events.length === 0 ? (
+                    <tr>
                       <td
+                        colSpan={4}
                         style={{
-                          padding: "16px 20px",
+                          padding: "36px 24px",
+                          textAlign: "center",
+                          color: "#747CA1",
                           fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "12.5px",
-                          color: "#4A5490",
+                          fontSize: "13px",
                         }}
                       >
-                        {ev.venue}
-                      </td>
-
-                      <td style={{ padding: "16px 24px" }}>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "4px 10px",
-                            borderRadius: "99px",
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            backgroundColor:
-                              ev.status === "published"
-                                ? "#E4F5EA"
-                                : ev.status === "upcoming"
-                                ? "#E8EDFB"
-                                : "#FFF2D6",
-                            color:
-                              ev.status === "published"
-                                ? "#0F6B38"
-                                : ev.status === "upcoming"
-                                ? "#1F46C8"
-                                : "#7A5200",
-                          }}
-                        >
-                          {ev.status === "published"
-                            ? "Published"
-                            : ev.status === "upcoming"
-                            ? "Confirmed"
-                            : "Draft"}
-                        </span>
+                        No upcoming events scheduled yet. Create events in the Events tab.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    events.map((ev) => (
+                      <tr
+                        key={ev.id}
+                        style={{
+                          borderBottom: "1px solid #E8EDFB",
+                          transition: "background-color 0.15s",
+                        }}
+                      >
+                        <td style={{ padding: "16px 24px" }}>
+                          <div
+                            style={{
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "13.5px",
+                              fontWeight: 700,
+                              color: "#141C6E",
+                            }}
+                          >
+                            {ev.title}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "11px",
+                              color: "#4A5490",
+                              marginTop: "3px",
+                            }}
+                          >
+                            {ev.attendeesCount} registered attendees
+                          </div>
+                        </td>
+
+                        <td style={{ padding: "16px 20px" }}>
+                          <div
+                            style={{
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "12.5px",
+                              fontWeight: 600,
+                              color: "#141C6E",
+                            }}
+                          >
+                            {ev.date}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "11px",
+                              color: "#4A5490",
+                            }}
+                          >
+                            {ev.time}
+                          </div>
+                        </td>
+
+                        <td
+                          style={{
+                            padding: "16px 20px",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "12.5px",
+                            color: "#4A5490",
+                          }}
+                        >
+                          {ev.venue}
+                        </td>
+
+                        <td style={{ padding: "16px 24px" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 10px",
+                              borderRadius: "99px",
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              backgroundColor:
+                                ev.status === "published"
+                                  ? "#E4F5EA"
+                                  : ev.status === "upcoming"
+                                  ? "#E8EDFB"
+                                  : "#FFF2D6",
+                              color:
+                                ev.status === "published"
+                                  ? "#0F6B38"
+                                  : ev.status === "upcoming"
+                                  ? "#1F46C8"
+                                  : "#7A5200",
+                            }}
+                          >
+                            {ev.status === "published"
+                              ? "Published"
+                              : ev.status === "upcoming"
+                              ? "Confirmed"
+                              : "Draft"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -671,59 +687,76 @@ export default function AdminDashboard() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {activities.map((act) => (
+              {activities.length === 0 ? (
                 <div
-                  key={act.id}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "12px 14px",
+                    padding: "24px",
+                    textAlign: "center",
+                    color: "#747CA1",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12.5px",
                     backgroundColor: "#F8FAFD",
                     borderRadius: "8px",
-                    border: "1px solid #E8EDFB",
-                    gap: "12px",
+                    border: "1px dashed #D5DCF2",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        backgroundColor: "#E8EDFB",
-                        color: "#1F46C8",
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {act.category}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "12.5px",
-                        fontWeight: 500,
-                        color: "#141C6E",
-                      }}
-                    >
-                      {act.action}
-                    </span>
-                  </div>
-
-                  <span
+                  No recent administrative activity logged yet.
+                </div>
+              ) : (
+                activities.map((act) => (
+                  <div
+                    key={act.id}
                     style={{
-                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                      fontSize: "11px",
-                      color: "#4A5490",
-                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 14px",
+                      backgroundColor: "#F8FAFD",
+                      borderRadius: "8px",
+                      border: "1px solid #E8EDFB",
+                      gap: "12px",
                     }}
                   >
-                    {act.timestamp}
-                  </span>
-                </div>
-              ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: "#E8EDFB",
+                          color: "#1F46C8",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {act.category}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "12.5px",
+                          fontWeight: 500,
+                          color: "#141C6E",
+                        }}
+                      >
+                        {act.action}
+                      </span>
+                    </div>
+
+                    <span
+                      style={{
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "11px",
+                        color: "#4A5490",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {act.timestamp}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

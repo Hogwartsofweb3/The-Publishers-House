@@ -24,93 +24,6 @@ interface TechnicalAsset {
   assignedUnit: string;
 }
 
-const SEED_SPACES: FacilitySpace[] = [
-  {
-    id: "spc-1",
-    name: "Main Sanctuary (Jos)",
-    location: "Main Campus, Jos",
-    capacity: 650,
-    status: "available",
-    nextEvent: "Sunday Celebration Service (Sun 8:00 AM)",
-    amenities: ["Line Array Sound", "LED Wall Display", "Central AC", "Broadcast Cameras"],
-  },
-  {
-    id: "spc-2",
-    name: "Abuja Sanctuary Hall",
-    location: "Abuja Campus, FCT",
-    capacity: 250,
-    status: "available",
-    nextEvent: "Midweek Word Feast (Thu 6:00 PM)",
-    amenities: ["PA System", "Dual Projection", "Conference Seating", "High-Speed Uplink"],
-  },
-  {
-    id: "spc-3",
-    name: "Youth & Overflow Chapel",
-    location: "Ground Floor East, Jos",
-    capacity: 180,
-    status: "in_use",
-    nextEvent: "Choir Vocal Rehearsal (Today 5:00 PM)",
-    amenities: ["Audio Monitors", "Acoustic Treatment", "Drum Booth", "Keyboards"],
-  },
-  {
-    id: "spc-4",
-    name: "Media & Livestream Studio",
-    location: "Level 1 Production Wing",
-    capacity: 20,
-    status: "available",
-    nextEvent: "Podcast & Sermon Audio Post-Production",
-    amenities: ["Atem Mini Extreme", "Shure SM7B Mics", "Soundproofing", "4K PTZ Cams"],
-  },
-];
-
-const SEED_ASSETS: TechnicalAsset[] = [
-  {
-    id: "ast-1",
-    name: "Behringer X32 Digital Console",
-    category: "Audio",
-    model: "X32 40-Input 25-Bus",
-    location: "Jos FOH Mixing Booth",
-    condition: "operational",
-    assignedUnit: "Media & Technical",
-  },
-  {
-    id: "ast-2",
-    name: "P3.91 Indoor LED Video Wall",
-    category: "Visual & Lighting",
-    model: "Unilumin 6m x 3m",
-    location: "Main Sanctuary Stage",
-    condition: "operational",
-    assignedUnit: "Media & Technical",
-  },
-  {
-    id: "ast-3",
-    name: "Nord Stage 3 88-Key",
-    category: "Instruments",
-    model: "Nord Stage 3 HP76",
-    location: "Sanctuary Stage",
-    condition: "operational",
-    assignedUnit: "Worship Team",
-  },
-  {
-    id: "ast-4",
-    name: "Perkins 100kVA Diesel Generator",
-    category: "Power & Utility",
-    model: "Perkins 1104A-44TG2",
-    location: "Power Station Compound",
-    condition: "service_due",
-    assignedUnit: "Sanctuary & Logistics",
-  },
-  {
-    id: "ast-5",
-    name: "Sennheiser EW-D Wireless Vocal Mics (Set of 4)",
-    category: "Audio",
-    model: "EW-D SKM-S Base",
-    location: "Audio Mic Locker",
-    condition: "operational",
-    assignedUnit: "Worship Team",
-  },
-];
-
 export default function FacilityPage() {
   const [spaces, setSpaces] = useState<FacilitySpace[]>([]);
   const [assets, setAssets] = useState<TechnicalAsset[]>([]);
@@ -129,23 +42,24 @@ export default function FacilityPage() {
   });
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const spSnap = await getDocs(collection(db, "facilities_spaces"));
       if (!spSnap.empty) {
         setSpaces(spSnap.docs.map((d) => ({ id: d.id, ...d.data() } as FacilitySpace)));
       } else {
-        setSpaces(SEED_SPACES);
+        setSpaces([]);
       }
 
       const astSnap = await getDocs(collection(db, "facilities_assets"));
       if (!astSnap.empty) {
         setAssets(astSnap.docs.map((d) => ({ id: d.id, ...d.data() } as TechnicalAsset)));
       } else {
-        setAssets(SEED_ASSETS);
+        setAssets([]);
       }
     } catch {
-      setSpaces(SEED_SPACES);
-      setAssets(SEED_ASSETS);
+      setSpaces([]);
+      setAssets([]);
     } finally {
       setLoading(false);
     }
@@ -315,109 +229,115 @@ export default function FacilityPage() {
 
       {/* Tab: Spaces */}
       {activeTab === "spaces" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px" }}>
-          {spaces.map((sp) => (
-            <div
-              key={sp.id}
-              style={{
-                backgroundColor: "#FFFFFF",
-                border: "1px solid #D5DCF2",
-                borderRadius: "14px",
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "16px",
-                boxShadow: "0 1px 3px rgba(14, 21, 86, 0.05)",
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                  <div>
-                    <h3 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "17px", fontWeight: 700, color: "#141C6E", margin: 0 }}>
-                      {sp.name}
-                    </h3>
-                    <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11.5px", color: "#4A5490", marginTop: "2px" }}>
-                      📍 {sp.location} · Capacity {sp.capacity} seats
+        spaces.length === 0 ? (
+          <div style={{ backgroundColor: "#FFFFFF", border: "1px dashed #D5DCF2", borderRadius: "14px", padding: "48px 24px", textAlign: "center", color: "#747CA1", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px" }}>
+            No campus spaces or auditoriums registered yet. Use &ldquo;+ Book Space or Resource&rdquo; to reserve a room.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px" }}>
+            {spaces.map((sp) => (
+              <div
+                key={sp.id}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D5DCF2",
+                  borderRadius: "14px",
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  boxShadow: "0 1px 3px rgba(14, 21, 86, 0.05)",
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                    <div>
+                      <h3 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "17px", fontWeight: 700, color: "#141C6E", margin: 0 }}>
+                        {sp.name}
+                      </h3>
+                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11.5px", color: "#4A5490", marginTop: "2px" }}>
+                        📍 {sp.location} · Capacity {sp.capacity} seats
+                      </div>
                     </div>
-                  </div>
 
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: "99px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      backgroundColor: sp.status === "available" ? "#E4F5EA" : sp.status === "in_use" ? "#FFF2D6" : "#FDE7E7",
-                      color: sp.status === "available" ? "#0F6B38" : sp.status === "in_use" ? "#7A5200" : "#9B1C1C",
-                    }}
-                  >
-                    {sp.status === "available" ? "Available" : sp.status === "in_use" ? "In Use" : "Maintenance"}
-                  </span>
-                </div>
-
-                {/* Next Booking */}
-                {sp.nextEvent && (
-                  <div
-                    style={{
-                      backgroundColor: "#F8FAFD",
-                      border: "1px solid #E8EDFB",
-                      borderRadius: "8px",
-                      padding: "10px 12px",
-                      marginTop: "12px",
-                    }}
-                  >
-                    <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "10.5px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>Next Scheduled Use</div>
-                    <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12.5px", fontWeight: 600, color: "#141C6E", marginTop: "2px" }}>{sp.nextEvent}</div>
-                  </div>
-                )}
-
-                {/* Amenities */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "14px" }}>
-                  {sp.amenities.map((amenity) => (
                     <span
-                      key={amenity}
                       style={{
-                        padding: "3px 8px",
-                        borderRadius: "4px",
-                        backgroundColor: "#E8EDFB",
-                        color: "#1F46C8",
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "10.5px",
+                        padding: "3px 10px",
+                        borderRadius: "99px",
+                        fontSize: "11px",
                         fontWeight: 600,
+                        backgroundColor: sp.status === "available" ? "#E4F5EA" : sp.status === "in_use" ? "#FFF2D6" : "#FDE7E7",
+                        color: sp.status === "available" ? "#0F6B38" : sp.status === "in_use" ? "#7A5200" : "#9B1C1C",
                       }}
                     >
-                      {amenity}
+                      {sp.status === "available" ? "Available" : sp.status === "in_use" ? "In Use" : "Maintenance"}
                     </span>
-                  ))}
+                  </div>
+
+                  {/* Next Booking */}
+                  {sp.nextEvent && (
+                    <div
+                      style={{
+                        backgroundColor: "#F8FAFD",
+                        border: "1px solid #E8EDFB",
+                        borderRadius: "8px",
+                        padding: "10px 12px",
+                        marginTop: "12px",
+                      }}
+                    >
+                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "10.5px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>Next Scheduled Use</div>
+                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12.5px", fontWeight: 600, color: "#141C6E", marginTop: "2px" }}>{sp.nextEvent}</div>
+                    </div>
+                  )}
+
+                  {/* Amenities */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "14px" }}>
+                    {sp.amenities.map((amenity) => (
+                      <span
+                        key={amenity}
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                          backgroundColor: "#E8EDFB",
+                          color: "#1F46C8",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "10.5px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {amenity}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: "1px solid #E8EDFB", paddingTop: "14px" }}>
+                  <button
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, spaceOrAsset: sp.name }));
+                      setShowModal(true);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 14px",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #D5DCF2",
+                      borderRadius: "8px",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#141C6E",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Reserve This Space →
+                  </button>
                 </div>
               </div>
-
-              <div style={{ borderTop: "1px solid #E8EDFB", paddingTop: "14px" }}>
-                <button
-                  onClick={() => {
-                    setForm((prev) => ({ ...prev, spaceOrAsset: sp.name }));
-                    setShowModal(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "9px 14px",
-                    backgroundColor: "#FFFFFF",
-                    border: "1px solid #D5DCF2",
-                    borderRadius: "8px",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: "#141C6E",
-                    cursor: "pointer",
-                  }}
-                >
-                  Reserve This Space →
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {/* Tab: Assets */}
@@ -442,65 +362,73 @@ export default function FacilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {assets.map((ast) => (
-                  <tr
-                    key={ast.id}
-                    style={{
-                      borderBottom: "1px solid #E8EDFB",
-                      transition: "background-color 0.15s",
-                    }}
-                  >
-                    <td style={{ padding: "16px 24px" }}>
-                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E" }}>
-                        {ast.name}
-                      </div>
-                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>
-                        Model: {ast.model}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: "16px 20px" }}>
-                      <span
-                        style={{
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          backgroundColor: "#E8EDFB",
-                          color: "#1F46C8",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {ast.category}
-                      </span>
-                    </td>
-
-                    <td style={{ padding: "16px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490" }}>
-                      {ast.location}
-                    </td>
-
-                    <td style={{ padding: "16px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#141C6E" }}>
-                      {ast.assignedUnit}
-                    </td>
-
-                    <td style={{ padding: "16px 24px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: "99px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          backgroundColor: ast.condition === "operational" ? "#E4F5EA" : "#FFF2D6",
-                          color: ast.condition === "operational" ? "#0F6B38" : "#7A5200",
-                        }}
-                      >
-                        {ast.condition === "operational" ? "Operational" : "Service Due"}
-                      </span>
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#747CA1", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px" }}>
+                      No technical inventory records registered yet.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  assets.map((ast) => (
+                    <tr
+                      key={ast.id}
+                      style={{
+                        borderBottom: "1px solid #E8EDFB",
+                        transition: "background-color 0.15s",
+                      }}
+                    >
+                      <td style={{ padding: "16px 24px" }}>
+                        <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E" }}>
+                          {ast.name}
+                        </div>
+                        <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>
+                          Model: {ast.model}
+                        </div>
+                      </td>
+
+                      <td style={{ padding: "16px 20px" }}>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: "#E8EDFB",
+                            color: "#1F46C8",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {ast.category}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: "16px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490" }}>
+                        {ast.location}
+                      </td>
+
+                      <td style={{ padding: "16px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#141C6E" }}>
+                        {ast.assignedUnit}
+                      </td>
+
+                      <td style={{ padding: "16px 24px" }}>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: "99px",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            backgroundColor: ast.condition === "operational" ? "#E4F5EA" : "#FFF2D6",
+                            color: ast.condition === "operational" ? "#0F6B38" : "#7A5200",
+                          }}
+                        >
+                          {ast.condition === "operational" ? "Operational" : "Service Due"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

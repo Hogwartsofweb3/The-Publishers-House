@@ -15,79 +15,6 @@ interface AuditLog {
   timestamp: string;
 }
 
-const SEED_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: "aud-1",
-    action: "Saved Sunday 1st Service Headcount (418 Total)",
-    actor: "Ayomide Johnson",
-    actorRole: "Ushering Unit",
-    category: "Attendance",
-    details: "Men: 140, Women: 195, Children: 83. Verified by chief usher.",
-    ipAddress: "102.89.44.12 (Jos)",
-    timestamp: "2026-10-15T11:20:00.000Z",
-  },
-  {
-    id: "aud-2",
-    action: "Approved Congregation Testimony #test-1",
-    actor: "Joshua Agunbiade",
-    actorRole: "Master Admin",
-    category: "Members",
-    details: "Testimony of Deborah Pam approved for Sunday bulletin & web portal.",
-    ipAddress: "197.210.65.88 (Abuja)",
-    timestamp: "2026-10-15T09:45:00.000Z",
-  },
-  {
-    id: "aud-3",
-    action: "Reconciled Tithe Transaction ₦150,000 via Bank Transfer",
-    actor: "Finance Team",
-    actorRole: "Administrator",
-    category: "Finances",
-    details: "Reference TPH-BT-8942 matched to Oluwaseun Adeleke GTBank receipt.",
-    ipAddress: "102.89.44.18 (Jos)",
-    timestamp: "2026-10-14T16:12:00.000Z",
-  },
-  {
-    id: "aud-4",
-    action: "Assigned First-Time Visitor to Follow-up Pipeline",
-    actor: "Pastor Damilare",
-    actorRole: "Master Admin",
-    category: "Pastoral",
-    details: "Tobiloba Alabi assigned to Sister Ibidun for pastoral hospitality.",
-    ipAddress: "102.89.44.15 (Jos)",
-    timestamp: "2026-10-14T14:30:00.000Z",
-  },
-  {
-    id: "aud-5",
-    action: "Generated Virtual Stream Validation Code: LIGHT-2026",
-    actor: "Ibidun Suraju",
-    actorRole: "Unit Head (Media)",
-    category: "Attendance",
-    details: "Stream validation token activated for YouTube & Mixlr digital check-ins.",
-    ipAddress: "102.89.44.10 (Jos)",
-    timestamp: "2026-10-11T07:45:00.000Z",
-  },
-  {
-    id: "aud-6",
-    action: "Published New Event: Festival of Light 2026",
-    actor: "Joshua Agunbiade",
-    actorRole: "Master Admin",
-    category: "Events",
-    details: "Created schedule for annual 3-day spiritual gathering at Jos convention grounds.",
-    ipAddress: "197.210.65.88 (Abuja)",
-    timestamp: "2026-10-10T12:00:00.000Z",
-  },
-  {
-    id: "aud-7",
-    action: "Admin Portal Secure Sign-In",
-    actor: "Joshua Agunbiade",
-    actorRole: "Master Admin",
-    category: "Security",
-    details: "Successful authentication via Firebase multi-factor session validation.",
-    ipAddress: "197.210.65.88 (Abuja)",
-    timestamp: "2026-10-15T08:00:00.000Z",
-  },
-];
-
 export default function AuditLogPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +22,7 @@ export default function AuditLogPage() {
   const [search, setSearch] = useState("");
 
   const fetchLogs = async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(100)));
       if (!snap.empty) {
@@ -114,10 +42,10 @@ export default function AuditLogPage() {
           })
         );
       } else {
-        setLogs(SEED_AUDIT_LOGS);
+        setLogs([]);
       }
     } catch {
-      setLogs(SEED_AUDIT_LOGS);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

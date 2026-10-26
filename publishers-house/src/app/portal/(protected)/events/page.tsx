@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -24,64 +25,6 @@ interface ChurchEvent {
   attendeesCount: number;
 }
 
-const SEED_EVENTS: ChurchEvent[] = [
-  {
-    id: "ev-1",
-    title: "Sunday Celebration Service",
-    category: "Weekly Service",
-    date: "2026-10-18",
-    time: "8:00 AM & 10:00 AM",
-    venue: "Main Sanctuary (Jos)",
-    description: "Two powerful services of Word, Worship, and the demonstration of the Spirit.",
-    status: "published",
-    attendeesCount: 420,
-  },
-  {
-    id: "ev-2",
-    title: "Midweek Faith Clinic",
-    category: "Weekly Service",
-    date: "2026-10-22",
-    time: "5:30 PM",
-    venue: "Main Sanctuary & Online",
-    description: "In-depth Bible exposition and healing prayer meeting.",
-    status: "published",
-    attendeesCount: 180,
-  },
-  {
-    id: "ev-3",
-    title: "Festival of Light 2026",
-    category: "Conference",
-    date: "2026-11-20",
-    time: "5:00 PM Daily",
-    venue: "TPH Jos Convention Grounds",
-    description: "Our flagship annual spiritual gathering: light, revelation, and kingdom harvest.",
-    status: "published",
-    attendeesCount: 1500,
-  },
-  {
-    id: "ev-4",
-    title: "Pastoral Leadership Retreat",
-    category: "Leadership",
-    date: "2026-10-30",
-    time: "9:00 AM",
-    venue: "Abuja Campus Hall",
-    description: "Quarterly spiritual and strategic alignment for ministers and unit heads.",
-    status: "draft",
-    attendeesCount: 35,
-  },
-  {
-    id: "ev-5",
-    title: "All-Night Praise & Prophetic Vigils",
-    category: "Prayer Meeting",
-    date: "2026-11-06",
-    time: "10:00 PM – 4:00 AM",
-    venue: "Main Sanctuary (Jos)",
-    description: "A continuous night of worship, prophetic declaration, and intercession.",
-    status: "published",
-    attendeesCount: 310,
-  },
-];
-
 export default function EventsAdminPage() {
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [filter, setFilter] = useState("all");
@@ -101,15 +44,34 @@ export default function EventsAdminPage() {
   });
 
   const fetchEvents = async () => {
+    setLoading(true);
     try {
-      const snap = await getDocs(query(collection(db, "events"), orderBy("date", "asc")));
+      const snap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc")));
       if (!snap.empty) {
-        setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ChurchEvent)));
+        setEvents(
+          snap.docs.map((d) => {
+            const data = d.data();
+            const startAt = data.startAt || "";
+            const [dPart, tPart] = startAt.includes("T") ? startAt.split("T") : [startAt, ""];
+            return {
+              id: d.id,
+              title: data.title || "",
+              category: data.category || "Weekly Service",
+              date: dPart || data.date || "Upcoming",
+              time: tPart || data.time || "8:00 AM",
+              venue: data.location || data.venue || "Main Sanctuary (Jos)",
+              description: data.description || data.summary || "",
+              status: (data.published === false || data.status === "draft") ? "draft" : "published",
+              attendeesCount: data.attendeesCount || 0,
+            };
+          })
+        );
       } else {
-        setEvents(SEED_EVENTS);
+        setEvents([]);
       }
-    } catch {
-      setEvents(SEED_EVENTS);
+    } catch (err) {
+      console.warn("Could not load events from Firestore:", err);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -124,6 +86,7 @@ export default function EventsAdminPage() {
     if (!form.title || !form.date) return;
 
     const id = editingEvent ? editingEvent.id : `event-${Date.now()}`;
+    const startAt = form.date ? (form.time ? `${form.date}T${form.time}` : `${form.date}T08:00`) : "";
     const toSave: ChurchEvent = {
       ...form,
       id,
@@ -134,7 +97,19 @@ export default function EventsAdminPage() {
       await fetch("/api/cms/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", id: editingEvent ? id : undefined, event: toSave }),
+        body: JSON.stringify({
+          action: "save",
+          id: editingEvent ? id : undefined,
+          event: {
+            title: form.title,
+            summary: form.description || form.title,
+            description: form.description,
+            startAt,
+            location: form.venue,
+            category: form.category,
+            published: form.status === "published",
+          },
+        }),
       });
     } catch {
       // Local fallback
@@ -455,7 +430,24 @@ export default function EventsAdminPage() {
                   </td>
 
                   <td style={{ padding: "16px 24px", textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "8px" }}>
+                    <div style={{ display: "inline-flex", gap: "8px", alignItems: "center" }}>
+                      <Link
+                        href={`/schedule/${ev.id}`}
+                        target="_blank"
+                        style={{
+                          backgroundColor: "#F4F6FB",
+                          border: "1px solid #D3DAEC",
+                          borderRadius: "6px",
+                          padding: "6px 10px",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "11.5px",
+                          fontWeight: 600,
+                          color: "#0140C1",
+                          textDecoration: "none",
+                        }}
+                      >
+                        View ↗
+                      </Link>
                       <button
                         onClick={() => openEdit(ev)}
                         style={{

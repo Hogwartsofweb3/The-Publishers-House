@@ -25,49 +25,6 @@ interface Visitor {
   createdAt: string;
 }
 
-const SEED_VISITORS: Visitor[] = [
-  {
-    id: "vis-1",
-    name: "Tobiloba Alabi",
-    phone: "+234 803 555 1212",
-    firstVisitDate: "2026-10-11",
-    assignedTo: "Pastor Damilare",
-    notes: "Attended Sunday 1st service. Just moved to Jos from Abuja. Interested in joining the Media Unit.",
-    status: "new",
-    createdAt: "2026-10-11T10:00:00.000Z",
-  },
-  {
-    id: "vis-2",
-    name: "Keturah Danjuma",
-    phone: "+234 812 777 8901",
-    firstVisitDate: "2026-10-11",
-    assignedTo: "Sister Ibidun",
-    notes: "Invited by friend from UniJos. Needs prayer for final year exams.",
-    status: "new",
-    createdAt: "2026-10-11T12:30:00.000Z",
-  },
-  {
-    id: "vis-3",
-    name: "Kelechi Okafor",
-    phone: "+234 809 333 4455",
-    firstVisitDate: "2026-10-04",
-    assignedTo: "Brother Ayomide",
-    notes: "Called on Tuesday. Came to Midweek Faith clinic. Preparing to enroll in Foundation Discipleship Class.",
-    status: "followup",
-    createdAt: "2026-10-04T11:00:00.000Z",
-  },
-  {
-    id: "vis-4",
-    name: "Faith Adebayo",
-    phone: "+234 705 111 2233",
-    firstVisitDate: "2026-09-20",
-    assignedTo: "Pastor Joshua",
-    notes: "Completed Foundation Class. Now an active member of the Worship team.",
-    status: "established",
-    createdAt: "2026-09-20T09:00:00.000Z",
-  },
-];
-
 const COLUMNS: {
   key: VisitorStatus;
   label: string;
@@ -115,18 +72,20 @@ export default function PastoralCarePage() {
   });
 
   const fetchVisitors = async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/portal/visitors");
       if (res.ok) {
         const data = await res.json();
-        if (data.visitors && data.visitors.length > 0) {
+        if (data.visitors && Array.isArray(data.visitors)) {
           setVisitors(data.visitors);
           return;
         }
       }
-      setVisitors(SEED_VISITORS);
-    } catch {
-      setVisitors(SEED_VISITORS);
+      setVisitors([]);
+    } catch (err) {
+      console.warn("Could not load visitors:", err);
+      setVisitors([]);
     } finally {
       setLoading(false);
     }

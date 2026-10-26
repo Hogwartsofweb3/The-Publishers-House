@@ -17,88 +17,6 @@ interface Transaction {
   notes?: string;
 }
 
-const SEED_TRANSACTIONS: Transaction[] = [
-  {
-    id: "tx-1",
-    name: "Oluwaseun Adeleke",
-    email: "seun.adeleke@gmail.com",
-    amountNGN: 150000,
-    category: "Tithe",
-    method: "Bank Transfer",
-    status: "success",
-    timestamp: "2026-10-15T09:30:00.000Z",
-    reference: "TPH-BT-8942",
-  },
-  {
-    id: "tx-2",
-    name: "Dr. Chinyere Nwosu",
-    email: "chinyere.nwosu@unijos.edu.ng",
-    amountNGN: 85000,
-    category: "Special Projects",
-    method: "Paystack",
-    status: "success",
-    timestamp: "2026-10-14T15:20:00.000Z",
-    reference: "TPH-PAY-3019",
-  },
-  {
-    id: "tx-3",
-    name: "Anonymous Partner",
-    email: "partner@tph.org",
-    amountNGN: 250000,
-    category: "Tithe",
-    method: "Crypto",
-    status: "success",
-    timestamp: "2026-10-14T11:45:00.000Z",
-    reference: "0x89f...2d14",
-  },
-  {
-    id: "tx-4",
-    name: "Sunday 1st Service Offering",
-    email: "treasury@tph.org",
-    amountNGN: 342000,
-    category: "Offering",
-    method: "Cash",
-    status: "success",
-    timestamp: "2026-10-11T12:00:00.000Z",
-    reference: "TPH-CASH-771",
-  },
-  {
-    id: "tx-5",
-    name: "Bolanle Williams",
-    email: "bolanle.w@yahoo.com",
-    amountNGN: 60000,
-    category: "Thanksgiving",
-    method: "Paystack",
-    status: "success",
-    timestamp: "2026-10-09T18:10:00.000Z",
-    reference: "TPH-PAY-2890",
-  },
-  {
-    id: "tx-6",
-    name: "Sunday 2nd Service Offering",
-    email: "treasury@tph.org",
-    amountNGN: 268000,
-    category: "Offering",
-    method: "Cash",
-    status: "success",
-    timestamp: "2026-10-11T14:30:00.000Z",
-    reference: "TPH-CASH-772",
-  },
-];
-
-const MONTHLY_TREND = [
-  { month: "Jan", amount: 780000, barPct: 62 },
-  { month: "Feb", amount: 890000, barPct: 71 },
-  { month: "Mar", amount: 950000, barPct: 76 },
-  { month: "Apr", amount: 920000, barPct: 74 },
-  { month: "May", amount: 1040000, barPct: 83 },
-  { month: "Jun", amount: 980000, barPct: 78 },
-  { month: "Jul", amount: 1100000, barPct: 88 },
-  { month: "Aug", amount: 1050000, barPct: 84 },
-  { month: "Sep", amount: 1030000, barPct: 82 },
-  { month: "Oct", amount: 1155000, barPct: 92 },
-];
-
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,15 +36,17 @@ export default function FinancePage() {
   });
 
   const fetchTransactions = async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(query(collection(db, "transactions"), orderBy("timestamp", "desc")));
       if (!snap.empty) {
         setTransactions(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction)));
       } else {
-        setTransactions(SEED_TRANSACTIONS);
+        setTransactions([]);
       }
-    } catch {
-      setTransactions(SEED_TRANSACTIONS);
+    } catch (err) {
+      console.warn("Could not load transactions from Firestore:", err);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -170,12 +90,60 @@ export default function FinancePage() {
   };
 
   const totalSum = useMemo(() => {
-    return transactions.reduce((acc, t) => acc + (t.status === "success" ? t.amountNGN : 0), 0) + 9100000;
+    return transactions.reduce((acc, t) => acc + (t.status !== "failed" ? Number(t.amountNGN) || 0 : 0), 0);
   }, [transactions]);
 
   const thisMonthSum = useMemo(() => {
-    return 1155000;
-  }, []);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    return transactions.reduce((acc, t) => {
+      if (t.status === "failed") return acc;
+      const d = t.timestamp ? new Date(t.timestamp) : null;
+      if (d && d >= monthStart) return acc + (Number(t.amountNGN) || 0);
+      return acc;
+    }, 0);
+  }, [transactions]);
+
+  const monthlyTrend = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentYear = new Date().getFullYear();
+    const totals = months.map((m) => ({ month: m, amount: 0, barPct: 4 }));
+    transactions.forEach((tx) => {
+      if (tx.status === "failed") return;
+      const d = new Date(tx.timestamp);
+      if (d && !isNaN(d.getTime()) && d.getFullYear() === currentYear) {
+        totals[d.getMonth()].amount += Number(tx.amountNGN) || 0;
+      }
+    });
+    const max = Math.max(...totals.map((t) => t.amount), 1);
+    return totals.map((t) => ({
+      ...t,
+      barPct: t.amount > 0 ? Math.round((t.amount / max) * 90) + 10 : 4,
+    }));
+  }, [transactions]);
+
+  const categoryBreakdown = useMemo(() => {
+    const total = transactions.reduce((acc, t) => acc + (t.status !== "failed" ? Number(t.amountNGN) || 0 : 0), 0);
+    const cats = [
+      { label: "Tithes", key: "Tithe", color: "#1F46C8" },
+      { label: "Offerings", key: "Offering", color: "#0F6B38" },
+      { label: "Special Projects", key: "Special Projects", color: "#D97706" },
+      { label: "Thanksgiving", key: "Thanksgiving", color: "#7A5200" },
+    ];
+    return cats.map((c) => {
+      const sum = transactions
+        .filter((t) => t.category === c.key && t.status !== "failed")
+        .reduce((acc, t) => acc + (Number(t.amountNGN) || 0), 0);
+      const pct = total > 0 ? Math.round((sum / total) * 100) : 0;
+      return {
+        label: c.label,
+        pct,
+        color: c.color,
+        amount: `₦${sum.toLocaleString()}`,
+      };
+    });
+  }, [transactions]);
 
   const filtered = transactions.filter((t) => {
     if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
@@ -317,7 +285,7 @@ export default function FinancePage() {
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "32px", fontWeight: 800, color: "#141C6E", lineHeight: 1 }}>
             ₦{totalSum.toLocaleString()}
           </div>
-          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>Jan – Oct 2026 Cumulative</span>
+          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>Cumulative Reconciled Giving</span>
         </div>
 
         <div
@@ -336,7 +304,7 @@ export default function FinancePage() {
             ₦{thisMonthSum.toLocaleString()}
           </div>
           <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#0F6B38", fontWeight: 600 }}>
-            +12% vs last month
+            Verified monthly receipts
           </span>
         </div>
 
@@ -445,7 +413,7 @@ export default function FinancePage() {
 
               {/* Bar visualization */}
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "200px", padding: "0 10px", borderBottom: "1px solid #E8EDFB", gap: "10px" }}>
-                {MONTHLY_TREND.map((item) => (
+                {monthlyTrend.map((item) => (
                   <div key={item.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", gap: "8px" }}>
                     <div
                       title={`${item.month}: ₦${item.amount.toLocaleString()}`}
@@ -453,13 +421,13 @@ export default function FinancePage() {
                         width: "100%",
                         maxWidth: "36px",
                         height: `${item.barPct}%`,
-                        backgroundColor: item.month === "Oct" ? "#1F46C8" : "#8FA6EB",
+                        backgroundColor: item.amount > 0 ? "#1F46C8" : "#D5DCF2",
                         borderRadius: "6px 6px 0 0",
                         transition: "all 0.2s ease",
                         cursor: "pointer",
                       }}
                       onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#141C6E")}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = item.month === "Oct" ? "#1F46C8" : "#8FA6EB")}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = item.amount > 0 ? "#1F46C8" : "#D5DCF2")}
                     />
                     <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490", fontWeight: 600 }}>
                       {item.month}
@@ -483,12 +451,7 @@ export default function FinancePage() {
               </h3>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                {[
-                  { label: "Tithes", pct: 52, color: "#1F46C8", amount: "₦5.33M" },
-                  { label: "Offerings", pct: 28, color: "#0F6B38", amount: "₦2.87M" },
-                  { label: "Special Projects", pct: 12, color: "#D97706", amount: "₦1.23M" },
-                  { label: "Thanksgiving", pct: 8, color: "#7A5200", amount: "₦820K" },
-                ].map((cat) => (
+                {categoryBreakdown.map((cat) => (
                   <div key={cat.label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", fontWeight: 600, color: "#141C6E" }}>

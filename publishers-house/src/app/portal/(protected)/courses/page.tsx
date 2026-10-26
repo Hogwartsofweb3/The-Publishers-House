@@ -17,81 +17,6 @@ interface Course {
   status: "active" | "enrolling" | "draft";
 }
 
-const SEED_COURSES: Course[] = [
-  {
-    id: "crs-1",
-    title: "Foundations of Biblical Hermeneutics",
-    track: "Biblical",
-    code: "BIB-101",
-    duration: "8 Weeks",
-    modulesCount: 8,
-    enrolledStudents: 64,
-    instructor: "Rev. Joshua Agunbiade",
-    description: "Principles of literal, historical, and contextual Bible interpretation; understanding covenantal promises and types and shadows.",
-    status: "active",
-  },
-  {
-    id: "crs-2",
-    title: "Ecclesiology & Church Doctrine",
-    track: "Church",
-    code: "ECC-201",
-    duration: "6 Weeks",
-    modulesCount: 6,
-    enrolledStudents: 48,
-    instructor: "Pastor Damilare Agunbiade",
-    description: "The mysteries of the Body of Christ, ordinances (Baptism, Communion), spiritual authority, and kingdom stewardship.",
-    status: "active",
-  },
-  {
-    id: "crs-3",
-    title: "Systematic & Covenant Theology",
-    track: "Theological",
-    code: "THEO-301",
-    duration: "10 Weeks",
-    modulesCount: 10,
-    enrolledStudents: 32,
-    instructor: "Rev. Joshua Agunbiade",
-    description: "In-depth study of the Divine nature, Christology, Pneumatology (the Person & Work of the Holy Spirit), and Eschatology.",
-    status: "enrolling",
-  },
-  {
-    id: "crs-4",
-    title: "Spiritual Formation & Christian Living",
-    track: "Christian Ministry",
-    code: "MIN-102",
-    duration: "6 Weeks",
-    modulesCount: 6,
-    enrolledStudents: 85,
-    instructor: "Pastoral Teaching Team",
-    description: "Daily discipleship, prayer life, walking in purity, hearing God's voice, and personal evangelism in contemporary society.",
-    status: "active",
-  },
-  {
-    id: "crs-5",
-    title: "New Testament Epistles Survey",
-    track: "Biblical",
-    code: "BIB-202",
-    duration: "8 Weeks",
-    modulesCount: 8,
-    enrolledStudents: 40,
-    instructor: "Teaching Faculty",
-    description: "Exegetical walk through the Pauline, Petrine, and Johannine epistles, tracing grace, faith, and apostolic authority.",
-    status: "enrolling",
-  },
-  {
-    id: "crs-6",
-    title: "Pastoral Care & Ministerial Ethics",
-    track: "Christian Ministry",
-    code: "MIN-301",
-    duration: "6 Weeks",
-    modulesCount: 6,
-    enrolledStudents: 22,
-    instructor: "Pastor Joshua & Elders",
-    description: "Shepherding God's flock with integrity, counseling ethics, hospital and home visitation, and conflict resolution in ministry.",
-    status: "draft",
-  },
-];
-
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,15 +37,16 @@ export default function CoursesPage() {
   });
 
   const fetchCourses = async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(query(collection(db, "courses"), orderBy("code", "asc")));
       if (!snap.empty) {
         setCourses(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Course)));
       } else {
-        setCourses(SEED_COURSES);
+        setCourses([]);
       }
     } catch {
-      setCourses(SEED_COURSES);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -355,7 +281,24 @@ export default function CoursesPage() {
           gap: "20px",
         }}
       >
-        {filteredCourses.map((crs) => (
+        {filteredCourses.length === 0 ? (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              backgroundColor: "#FFFFFF",
+              border: "1px dashed #D5DCF2",
+              borderRadius: "14px",
+              padding: "48px 24px",
+              textAlign: "center",
+              color: "#747CA1",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontSize: "13px",
+            }}
+          >
+            No courses found matching this track. Click &ldquo;+ Create Course&rdquo; to add a new study syllabus.
+          </div>
+        ) : (
+          filteredCourses.map((crs) => (
           <div
             key={crs.id}
             style={{
@@ -502,7 +445,7 @@ export default function CoursesPage() {
               </button>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Add / Edit Course Modal */}

@@ -24,62 +24,6 @@ interface TestimonyItem {
   submittedAt: string;
 }
 
-const SEED_TESTIMONIES: TestimonyItem[] = [
-  {
-    id: "test-1",
-    type: "testimony",
-    name: "Sister Deborah Pam",
-    email: "deborah.pam@gmail.com",
-    category: "Healing & Health",
-    content: "During the Midweek Faith Clinic two weeks ago, Pastor Joshua made a prophetic call for anyone suffering chronic spine and lumbar pain. I felt warm oil coursing down my back. I went for an MRI checkup yesterday and the slipped disc is completely restored!",
-    status: "approved",
-    submittedAt: "2026-10-14T09:15:00.000Z",
-  },
-  {
-    id: "test-2",
-    type: "testimony",
-    name: "Brother Victor Danladi",
-    email: "victor.d@outlook.com",
-    category: "Career & Financial",
-    content: "After seed faith giving during Sunday service, my overseas mining consultancy contract that was held up for 9 months was signed without any reduction in fees. God of The Publishers House has shown up!",
-    status: "pending",
-    submittedAt: "2026-10-15T08:30:00.000Z",
-  },
-  {
-    id: "test-3",
-    type: "testimony",
-    name: "Mrs. Esther Oladipo",
-    email: "esther.o@yahoo.com",
-    category: "Family & Childbirth",
-    content: "Safe delivery of twins after 6 years of waiting. We were surrounded by the welfare team and prayers of the saints throughout.",
-    status: "approved",
-    submittedAt: "2026-10-10T14:00:00.000Z",
-  },
-];
-
-const SEED_PRAYERS: TestimonyItem[] = [
-  {
-    id: "pray-1",
-    type: "prayer",
-    name: "Gabriel Nwachukwu",
-    email: "gabriel.n@gmail.com",
-    category: "Academic & Visa",
-    content: "Please pray for my PhD visa interview next week Tuesday. Believing God for supernatural favour before the consular officer.",
-    status: "pending",
-    submittedAt: "2026-10-15T07:20:00.000Z",
-  },
-  {
-    id: "pray-2",
-    type: "prayer",
-    name: "Sister Mary Gyang",
-    email: "mary.gyang@yahoo.com",
-    category: "Family Peace",
-    content: "Praying for reconciliation in my family and salvation for my elder brother who has strayed away from the faith.",
-    status: "prayed",
-    submittedAt: "2026-10-12T16:45:00.000Z",
-  },
-];
-
 type FilterValue = "all" | "pending" | "approved" | "rejected";
 type Tab = "testimonies" | "prayers";
 
@@ -104,10 +48,10 @@ export default function TestimoniesPage() {
         }));
         setItems(data);
       } else {
-        setItems(tab === "testimonies" ? SEED_TESTIMONIES : SEED_PRAYERS);
+        setItems([]);
       }
     } catch {
-      setItems(tab === "testimonies" ? SEED_TESTIMONIES : SEED_PRAYERS);
+      setItems([]);
     } finally {
       setLoading(false);
     }
