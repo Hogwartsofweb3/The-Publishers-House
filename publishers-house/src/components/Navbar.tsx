@@ -19,7 +19,7 @@ const navLinks = [
   { label: "Sermons and Talks", href: "/sermons" },
   { label: "Resources", href: "/resources", hasDropdown: true },
   { label: "Programs", href: "/programs" },
-  { label: "Events", href: "/events" },
+  { label: "Schedule", href: "/events" },
   { label: "Articles", href: "/articles" },
 ];
 
