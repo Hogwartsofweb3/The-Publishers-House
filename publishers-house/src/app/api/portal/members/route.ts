@@ -8,38 +8,159 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // ─── Resend email dispatcher ──────────────────────────────────────────────────
+// The ADMIN_NOTIFY_EMAIL is the verified Resend account owner — always reachable.
+// When the domain is not yet verified, we fall back to notifying this address
+// with the new member's credentials so the admin can forward/share them.
+const ADMIN_NOTIFY_EMAIL = "thepublishershouse007@gmail.com";
+
 async function sendInvitationEmail(data: {
   displayName: string;
   email: string;
   tempPassword: string;
   role: string;
   siteUrl: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; sentTo: "member" | "admin" | "none"; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return { ok: false, error: "RESEND_API_KEY not set in environment" };
+    return { ok: false, sentTo: "none", error: "RESEND_API_KEY not set in environment" };
   }
 
   const resend = new Resend(apiKey);
   const from = process.env.RESEND_FROM || "The Publishers House <onboarding@resend.dev>";
-  const html = buildInvitationEmailHtml(data);
+  const memberHtml = buildInvitationEmailHtml(data);
 
+  // ── Attempt 1: Send directly to the new member ──────────────────────────────
   try {
     const { error } = await resend.emails.send({
       from,
       to: data.email,
       subject: "You're invited — The Publishers House Portal",
-      html,
+      html: memberHtml,
     });
-    if (error) {
-      console.error("Resend delivery error:", error);
-      return { ok: false, error: error.message };
+
+    if (!error) {
+      return { ok: true, sentTo: "member" };
     }
-    return { ok: true };
+
+    console.warn("Direct member send failed:", error.message, "— falling back to admin notify.");
   } catch (err: any) {
-    console.error("Resend exception:", err);
-    return { ok: false, error: err?.message || "Unknown email error" };
+    console.warn("Direct member send exception:", err?.message, "— falling back to admin notify.");
   }
+
+  // ── Attempt 2: Notify the admin so they can forward credentials manually ────
+  // This always works because ADMIN_NOTIFY_EMAIL is the verified Resend account.
+  const adminHtml = buildAdminNotifyHtml(data);
+  try {
+    const { error: adminError } = await resend.emails.send({
+      from,
+      to: ADMIN_NOTIFY_EMAIL,
+      subject: `[Action Required] New portal account for ${data.displayName} — forward credentials`,
+      html: adminHtml,
+    });
+
+    if (!adminError) {
+      return {
+        ok: true,
+        sentTo: "admin",
+        error: `Domain not yet verified — credentials sent to admin (${ADMIN_NOTIFY_EMAIL}) to forward.`,
+      };
+    }
+
+    console.error("Admin fallback send also failed:", adminError.message);
+    return { ok: false, sentTo: "none", error: adminError.message };
+  } catch (err: any) {
+    console.error("Admin fallback exception:", err?.message);
+    return { ok: false, sentTo: "none", error: err?.message || "Both send attempts failed" };
+  }
+}
+
+// ─── Admin fallback email (sent when domain not yet verified) ─────────────────
+function buildAdminNotifyHtml(data: {
+  displayName: string;
+  email: string;
+  tempPassword: string;
+  role: string;
+  siteUrl: string;
+}): string {
+  const loginUrl = `${data.siteUrl}/portal/login`;
+  const year = new Date().getFullYear();
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>New Portal Account — Forward Credentials</title></head>
+<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EEF1FA;padding:40px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width:580px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.10);">
+        <tr><td style="background-color:#92400E;padding:4px 0;font-size:0;">&nbsp;</td></tr>
+        <tr><td style="background-color:#151A54;padding:28px 40px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.3em;color:#F59E0B;text-transform:uppercase;margin-bottom:8px;">The Publishers House · Admin Action Required</div>
+          <div style="font-size:22px;font-weight:800;color:#FFFFFF;">New Portal Account Created</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px;">Please forward credentials to the new member</div>
+        </td></tr>
+        <tr><td style="padding:32px 40px;">
+          <div style="background:#FEF3C7;border-left:4px solid #D97706;border-radius:4px;padding:12px 16px;margin-bottom:24px;">
+            <strong style="font-size:13px;color:#92400E;">⚠️ Why are you receiving this?</strong>
+            <p style="font-size:12.5px;color:#92400E;margin:6px 0 0;line-height:1.5;">
+              The Publishers House domain is not yet verified with Resend, so invitation emails cannot be sent directly to new members yet.
+              Please copy the credentials below and share them with <strong>${data.displayName}</strong> via WhatsApp, SMS, or personal email.
+            </p>
+          </div>
+
+          <div style="background:#F4F6FB;border:1px solid #D3DAEC;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+            <div style="background:#151A54;padding:10px 20px;">
+              <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.2em;">New Member Credentials to Forward</span>
+            </div>
+            <div style="padding:20px;">
+              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Member Name</div>
+                <div style="font-size:16px;font-weight:700;color:#151A54;">${data.displayName}</div>
+              </div>
+              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Role</div>
+                <div style="font-size:14px;font-weight:600;color:#0140C1;">${data.role}</div>
+              </div>
+              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Login Email</div>
+                <div style="font-size:15px;font-weight:700;color:#151A54;">${data.email}</div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Temporary Password (case-sensitive)</div>
+                <span style="font-size:24px;font-weight:800;letter-spacing:0.12em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:10px 20px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:14px 18px;margin-bottom:24px;">
+            <div style="font-size:12.5px;font-weight:700;color:#1E40AF;margin-bottom:6px;">📋 Message to copy and send to ${data.displayName}:</div>
+            <div style="font-size:12px;color:#1E40AF;line-height:1.7;font-family:'Courier New',Courier,monospace;background:#DBEAFE;padding:12px;border-radius:4px;">
+              Welcome to The Publishers House Portal!<br>
+              You have been added as a <strong>${data.role}</strong>.<br><br>
+              Sign-in Email: ${data.email}<br>
+              Temporary Password: ${data.tempPassword}<br><br>
+              Sign in at: ${loginUrl}<br>
+              (You will be asked to change your password on first login.)
+            </div>
+          </div>
+
+          <div style="text-align:center;">
+            <a href="${loginUrl}" style="display:inline-block;background:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:13px;padding:14px 36px;border-radius:8px;letter-spacing:0.06em;">
+              View Portal Login Page →
+            </a>
+          </div>
+        </td></tr>
+        <tr><td style="background:#F4F6FB;padding:20px 40px;border-top:1px solid #D3DAEC;text-align:center;">
+          <div style="font-size:12px;font-weight:700;color:#151A54;margin-bottom:4px;">The Publishers House</div>
+          <div style="font-size:11px;color:#747CA1;">thepublishershouse.org · Psalm 68:11</div>
+          <div style="font-size:10px;color:#B0BAD8;margin-top:8px;">
+            To send emails directly to members, verify your domain at
+            <a href="https://resend.com/domains" style="color:#0140C1;">resend.com/domains</a> · &copy; ${year}
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
 }
 
 // Standard TPH Super Admin & Portal Manager definitions
@@ -400,8 +521,11 @@ export async function POST(req: NextRequest) {
         tempPassword,
         emailHtml,
         emailSent: emailResult.ok,
+        emailSentTo: emailResult.sentTo,
         emailError: emailResult.error || null,
-        message: emailResult.ok
+        message: emailResult.sentTo === "admin"
+          ? `Credentials forwarded to admin (${ADMIN_NOTIFY_EMAIL}) because domain is not yet verified on Resend. Please forward to ${email}.`
+          : emailResult.ok
           ? `Account created and invitation email sent to ${email}. Temporary password: ${tempPassword}`
           : `Account created for ${email}. Temporary password: ${tempPassword}. Email could not be sent: ${emailResult.error}`,
       });
@@ -417,6 +541,9 @@ export async function POST(req: NextRequest) {
       let uid = `member-${Date.now()}`;
       let tempPassword: string | undefined = undefined;
       let emailHtml: string | undefined = undefined;
+      let emailSent = false;
+      let emailSentTo: "member" | "admin" | "none" = "none";
+      let emailError: string | null = null;
 
       if (createAuthImmediately && email) {
         tempPassword = generateTempPassword();
@@ -448,6 +575,10 @@ export async function POST(req: NextRequest) {
           role: roleLabel,
           siteUrl,
         });
+
+        emailSent = emailResult.ok;
+        emailSentTo = emailResult.sentTo;
+        emailError = emailResult.error || null;
 
         emailHtml = buildInvitationEmailHtml({
           displayName,
@@ -482,7 +613,12 @@ export async function POST(req: NextRequest) {
         member: newMember,
         tempPassword,
         emailHtml,
-        message: "Member added successfully",
+        emailSent,
+        emailSentTo,
+        emailError,
+        message: emailSentTo === "admin"
+          ? `Member added and credentials forwarded to admin (${ADMIN_NOTIFY_EMAIL}).`
+          : "Member added successfully",
       });
     }
 

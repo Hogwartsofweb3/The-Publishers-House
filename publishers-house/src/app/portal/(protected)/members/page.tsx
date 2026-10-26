@@ -39,6 +39,7 @@ export default function MembersPage() {
     tempPassword?: string;
     emailHtml?: string;
     emailSent?: boolean;
+    emailSentTo?: "member" | "admin" | "none";
     emailError?: string | null;
   } | null>(null);
 
@@ -177,6 +178,7 @@ export default function MembersPage() {
           tempPassword: json.tempPassword,
           emailHtml: json.emailHtml,
           emailSent: json.emailSent ?? false,
+          emailSentTo: json.emailSentTo ?? (json.emailSent ? "member" : "none"),
           emailError: json.emailError ?? null,
         });
       } else {
@@ -224,6 +226,7 @@ export default function MembersPage() {
         tempPassword: json.tempPassword,
         emailHtml: json.emailHtml,
         emailSent: json.emailSent ?? false,
+        emailSentTo: json.emailSentTo ?? (json.emailSent ? "member" : "none"),
         emailError: json.emailError ?? null,
       });
       fetchMembers();
@@ -1359,7 +1362,7 @@ export default function MembersPage() {
             </div>
 
             {/* Email Delivery Status Banner */}
-            {invitationModal.emailSent === true ? (
+            {invitationModal.emailSentTo === "member" || (invitationModal.emailSent === true && !invitationModal.emailSentTo) ? (
               <div
                 style={{
                   backgroundColor: "#ECFDF5",
@@ -1375,9 +1378,31 @@ export default function MembersPage() {
               >
                 <span style={{ fontSize: "18px" }}>✅</span>
                 <div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#065F46" }}>Invitation email sent!</div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#065F46" }}>Invitation email sent directly!</div>
                   <div style={{ fontSize: "12px", color: "#047857" }}>
                     A branded welcome email with sign-in credentials has been delivered to <strong>{invitationModal.user.email}</strong>.
+                  </div>
+                </div>
+              </div>
+            ) : invitationModal.emailSentTo === "admin" ? (
+              <div
+                style={{
+                  backgroundColor: "#FFFBEB",
+                  border: "1px solid #FDE68A",
+                  borderLeft: "4px solid #F59E0B",
+                  borderRadius: "6px",
+                  padding: "12px 16px",
+                  marginBottom: "18px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                }}
+              >
+                <span style={{ fontSize: "18px" }}>📨</span>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#92400E" }}>Credentials forwarded to Admin Email</div>
+                  <div style={{ fontSize: "12px", color: "#B45309", lineHeight: "1.5" }}>
+                    Domain verification is in progress on Resend, so the full sign-in credentials have been emailed to <strong>thepublishershouse007@gmail.com</strong>. You can forward it or copy credentials below.
                   </div>
                 </div>
               </div>
@@ -1491,7 +1516,7 @@ export default function MembersPage() {
                       const json = await res.json();
                       if (json.emailSent) {
                         setInvitationModal((prev) =>
-                          prev ? { ...prev, emailSent: true, emailError: null } : prev
+                          prev ? { ...prev, emailSent: true, emailSentTo: json.emailSentTo ?? "member", emailError: null } : prev
                         );
                       } else {
                         alert("Email retry failed: " + (json.emailError || "Unknown error"));
