@@ -96,6 +96,7 @@ const hardcodedLeadership = [
 import { getLeadership } from "@/lib/firebase";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { DEFAULT_ABOUT_DATA } from "@/lib/cmsDefaults";
+import AboutScrollHandler from "@/components/AboutScrollHandler";
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function AboutPage() {
@@ -126,6 +127,7 @@ export default async function AboutPage() {
 
   return (
     <>
+      <AboutScrollHandler />
       <Navbar />
       <main style={{ paddingTop: "70px" }}>
 

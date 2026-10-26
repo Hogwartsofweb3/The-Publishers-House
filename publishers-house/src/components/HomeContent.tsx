@@ -76,7 +76,7 @@ const D = {
   whoEyebrow: "Who We Are",
   whoQuote: "Every believer is commissioned to become a publisher of God's message.",
   whoBody: "Established in 2020 under the leadership of Dr. Joshua Agunbiade, the ministry exists to equip believers, strengthen the Church and advance the Kingdom through biblical teaching, revival and apologetics.",
-  whoBtnLabel: "Read What We Believe", whoBtnUrl: "/about#:~:text=OUR%20BELIEFS,PSALM%2068%3A11",
+  whoBtnLabel: "Read What We Believe", whoBtnUrl: "/about#beliefs",
   whoBgImage: "/images/who-we-are-v2.webp",
 
   // Announcement
@@ -463,11 +463,7 @@ export default function HomeContent() {
           <p style={{ ...T.epigraph, color:White, margin:0 }}>{s.whoQuote||D.whoQuote}</p>
           <p style={{ ...T.readBody, color:"rgba(255,255,255,0.75)", margin:0 }}>{s.whoBody||D.whoBody}</p>
           <Link
-            href={
-              (!s.whoBtnUrl || s.whoBtnUrl === "/about" || s.whoBtnUrl === "/about/")
-                ? "/about#:~:text=OUR%20BELIEFS,PSALM%2068%3A11"
-                : s.whoBtnUrl
-            }
+            href="/about#beliefs"
             style={{ ...T.button, display:"inline-flex", alignItems:"center", justifyContent:"center", height:"48px", padding:"0 26px", borderRadius:"2px", border:`1px solid rgba(255,255,255,0.4)`, color:White, textDecoration:"none", marginTop:"8px" }}
           >
             {s.whoBtnLabel||D.whoBtnLabel}
