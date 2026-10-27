@@ -113,6 +113,45 @@ export type Transaction = {
 
 // ---- Data Fetching Functions ---- //
 
+export function normalizeSermon(s: Sermon): Sermon {
+  const rawSpeaker = (s.speaker || "").trim();
+  const title = (s.title || "").toLowerCase();
+  const summary = (s.summary || "").toLowerCase();
+
+  if (
+    title.includes("rasine") ||
+    title.includes("irem") ||
+    title.includes("iren") ||
+    rawSpeaker.toLowerCase().includes("rasine") ||
+    rawSpeaker.toLowerCase().includes("irem") ||
+    summary.includes("rasine")
+  ) {
+    return { ...s, speaker: "Rev. Rasine Irem" };
+  }
+
+  if (title.includes("jerry wazhi") || rawSpeaker.toLowerCase().includes("wazhi")) {
+    return { ...s, speaker: "Rev. Jerry Wazhi" };
+  }
+
+  if (title.includes("damilare ayodele") || rawSpeaker.toLowerCase().includes("damilare")) {
+    return { ...s, speaker: "Pastor Damilare Ayodele" };
+  }
+
+  if (title.includes("ngbede odeh") || rawSpeaker.toLowerCase().includes("ngbede")) {
+    return { ...s, speaker: "Pastor Ngbede Odeh" };
+  }
+
+  if (title.includes("theophilus makinde") || rawSpeaker.toLowerCase().includes("theophilus")) {
+    return { ...s, speaker: "Pastor Theophilus Makinde" };
+  }
+
+  if (rawSpeaker.startsWith("Pst. ")) {
+    return { ...s, speaker: "Pastor " + rawSpeaker.slice(5) };
+  }
+
+  return s;
+}
+
 export async function getSermons(limitCount = 1000): Promise<Sermon[]> {
   const q = query(
     collection(db, "sermons"),
@@ -120,7 +159,7 @@ export async function getSermons(limitCount = 1000): Promise<Sermon[]> {
     firestoreLimit(limitCount)
   );
   const snap = await getDocs(q);
-  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
+  const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
   // Sort from oldest to newest by default
   return results.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
@@ -135,7 +174,7 @@ export async function getSermonsBySeries(seriesName: string, excludeId?: string,
     );
     const snap = await getDocs(q);
     const results = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() } as Sermon))
+      .map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon))
       .filter((s) => s.id !== excludeId)
       .sort((a, b) => (a.date < b.date ? -1 : 1)) // Chronological Part 1, Part 2...
       .slice(0, limitCount);
@@ -154,7 +193,7 @@ export async function getLatestSermon(): Promise<Sermon | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const results = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sermon));
+  const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
   results.sort((a, b) => (a.date > b.date ? -1 : 1));
   return results[0];
 }
@@ -313,11 +352,11 @@ export async function getSermonById(id: string): Promise<Sermon | null> {
   try {
     const docSnap = await getDoc(doc(db, "sermons", id));
     if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as Sermon;
+      return normalizeSermon({ id: docSnap.id, ...docSnap.data() } as Sermon);
     }
     const snap = await getDocs(query(collection(db, "sermons")));
     const found = snap.docs.find((d) => d.id === id || (d.data() as any).slug === id);
-    if (found) return { id: found.id, ...found.data() } as Sermon;
+    if (found) return normalizeSermon({ id: found.id, ...found.data() } as Sermon);
     return null;
   } catch (e) {
     console.error("Error in getSermonById:", e);

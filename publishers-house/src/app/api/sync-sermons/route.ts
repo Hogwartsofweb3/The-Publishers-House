@@ -41,6 +41,27 @@ function parseDuration(isoDuration: string): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// Extract speaker from title or description
+function extractSpeakerFromTitle(title: string, description: string = ""): string {
+  const combined = `${title} ${description}`.toLowerCase();
+  if (combined.includes("rasine") || combined.includes("irem") || combined.includes("iren")) {
+    return "Rev. Rasine Irem";
+  }
+  if (combined.includes("jerry wazhi") || combined.includes("wazhi")) {
+    return "Rev. Jerry Wazhi";
+  }
+  if (combined.includes("damilare ayodele") || combined.includes("damilare")) {
+    return "Pastor Damilare Ayodele";
+  }
+  if (combined.includes("ngbede odeh") || combined.includes("ngbede")) {
+    return "Pastor Ngbede Odeh";
+  }
+  if (combined.includes("theophilus makinde") || combined.includes("theophilus")) {
+    return "Pastor Theophilus Makinde";
+  }
+  return "Rev. Joshua Agunbiade";
+}
+
 // Extract series from title pattern like "Title || Speaker || Series || Date"
 function extractSeriesFromTitle(rawTitle: string, defaultSeries: string): string {
   if (defaultSeries && !defaultSeries.toLowerCase().startsWith("uploads from")) {
@@ -128,7 +149,7 @@ async function fetchYouTubePlaylists(apiKey: string, playlistIds: string[]) {
 
           sermons.push({
             title: snippet.title || "Untitled Sermon",
-            speaker: "Rev. Joshua Agunbiade",
+            speaker: extractSpeakerFromTitle(snippet.title || "", snippet.description || ""),
             date: publishedAt,
             series,
             videoUrl: `https://www.youtube.com/watch?v=${videoId}`,

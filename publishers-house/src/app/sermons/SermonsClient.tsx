@@ -1,10 +1,59 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import type { Sermon } from "@/lib/firebase";
 import SermonCard from "@/components/SermonCard";
 import { useAudio } from "@/components/GlobalAudioPlayer";
+
+/**
+ * Normalizes speaker variations and extracts the true speaker from titles
+ * e.g., "Pst. Rasine Irem", "Rev. Rasine Iren", or YouTube titles containing "REV. RASINE IREM"
+ * will all map to the canonical "Rev. Rasine Irem".
+ */
+export function normalizeSermonSpeaker(s: Sermon): Sermon {
+  const rawSpeaker = (s.speaker || "").trim();
+  const title = (s.title || "").toLowerCase();
+  const summary = (s.summary || "").toLowerCase();
+
+  // If Rasine Irem (or typo Iren) is mentioned in title, speaker, or summary:
+  if (
+    title.includes("rasine") ||
+    title.includes("irem") ||
+    title.includes("iren") ||
+    rawSpeaker.toLowerCase().includes("rasine") ||
+    rawSpeaker.toLowerCase().includes("irem") ||
+    summary.includes("rasine")
+  ) {
+    return { ...s, speaker: "Rev. Rasine Irem" };
+  }
+
+  // Jerry Wazhi
+  if (title.includes("jerry wazhi") || rawSpeaker.toLowerCase().includes("wazhi")) {
+    return { ...s, speaker: "Rev. Jerry Wazhi" };
+  }
+
+  // Damilare Ayodele
+  if (title.includes("damilare ayodele") || rawSpeaker.toLowerCase().includes("damilare")) {
+    return { ...s, speaker: "Pastor Damilare Ayodele" };
+  }
+
+  // Ngbede Odeh
+  if (title.includes("ngbede odeh") || rawSpeaker.toLowerCase().includes("ngbede")) {
+    return { ...s, speaker: "Pastor Ngbede Odeh" };
+  }
+
+  // Theophilus Makinde
+  if (title.includes("theophilus makinde") || rawSpeaker.toLowerCase().includes("theophilus")) {
+    return { ...s, speaker: "Pastor Theophilus Makinde" };
+  }
+
+  if (rawSpeaker.startsWith("Pst. ")) {
+    return { ...s, speaker: "Pastor " + rawSpeaker.slice(5) };
+  }
+
+  return s;
+}
 
 /** Extract a YouTube thumbnail from any YouTube URL format, or return "" */
 function getYouTubeThumbnail(videoUrl?: string): string {
@@ -201,7 +250,8 @@ function DesktopFilterPanel({
 
   // Speaker counts and filtering
   const speakerCounts = initialSermons.reduce((acc, s) => {
-    if (s.speaker) acc[s.speaker] = (acc[s.speaker] || 0) + 1;
+    const sp = normalizeSermonSpeaker(s).speaker;
+    if (sp) acc[sp] = (acc[sp] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   const uniqueSpeakers = Object.keys(speakerCounts).sort((a,b) => a.localeCompare(b));
@@ -287,12 +337,27 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
   const gridTopRef = useRef<HTMLDivElement>(null);
   const mobileTopRef = useRef<HTMLDivElement>(null);
 
-  const uniqueSpeakers = Array.from(new Set(initialSermons.map(s => s.speaker))).filter(Boolean) as string[];
-  const uniqueSeries   = Array.from(new Set(initialSermons.map(s => s.series))).filter(Boolean) as string[];
+  const normalizedSermons = useMemo(() => {
+    return initialSermons.map(normalizeSermonSpeaker);
+  }, [initialSermons]);
 
-  const filtered = initialSermons.filter(s => {
+  const uniqueSpeakers = Array.from(new Set(normalizedSermons.map(s => s.speaker))).filter(Boolean).sort() as string[];
+  const uniqueSeries   = Array.from(new Set(normalizedSermons.map(s => s.series))).filter(Boolean).sort() as string[];
+
+  const filtered = normalizedSermons.filter(s => {
     if (search && !s.title.toLowerCase().includes(search.toLowerCase()) && !s.speaker.toLowerCase().includes(search.toLowerCase())) return false;
-    if (speakerFilter !== "All" && s.speaker !== speakerFilter) return false;
+    if (speakerFilter !== "All") {
+      if (speakerFilter === "Rev. Rasine Irem") {
+        const isRasine =
+          s.speaker === "Rev. Rasine Irem" ||
+          s.title.toLowerCase().includes("rasine") ||
+          s.title.toLowerCase().includes("irem") ||
+          s.title.toLowerCase().includes("iren");
+        if (!isRasine) return false;
+      } else {
+        if (s.speaker !== speakerFilter) return false;
+      }
+    }
     if (seriesFilter  !== "All" && s.series  !== seriesFilter)  return false;
     if (yearFilter !== "All") {
       const yr = s.date ? new Date(s.date).getFullYear().toString() : null;
@@ -334,7 +399,7 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
     yearFilter, setYearFilter: handleYearFilter,
     speakerFilter, setSpeakerFilter: handleSpeakerFilter,
     seriesFilter, setSeriesFilter: handleSeriesFilter,
-    initialSermons
+    initialSermons: normalizedSermons
   };
 
   const totalItems = filtered.length;
