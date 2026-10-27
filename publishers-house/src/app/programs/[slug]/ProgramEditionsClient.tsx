@@ -48,26 +48,14 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       location: "The House of Bread, Jos",
       flierSrc: "/images/programs/fol-2026.jpg",
       listenButtonText: "Listen to Festival of Light 2026 Messages",
-      speakers: ["Rev. Joshua Agunbiade", "Guest Apostolic Ministers"],
-      searchTerms: ["festival of light", "fol 2026", "fol", "shout of a king"],
-      curatedMessages: [
-        {
-          id: "fol26-1",
-          title: "The Shout of a King in Zion",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Numbers 23:21",
-          duration: "1h 45m",
-          summary: "Opening charge on the sovereign victory and majestic dominion of Christ among His people.",
-        },
-        {
-          id: "fol26-2",
-          title: "The Unconquerable Light",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Isaiah 60:1-3",
-          duration: "2h 00m",
-          summary: "Sound apostolic exposition on prevailing light in gross darkness.",
-        },
+      speakers: [
+        "Rev. Joshua Agunbiade",
+        "Rev. Rasine Irem",
+        "Rev. Adetokunbo Emmanuel",
+        "Pastor Theophilus Makinde",
       ],
+      searchTerms: ["festival of light", "fol 2026", "fol", "shout of a king"],
+      curatedMessages: [],
     },
     {
       key: "fol-2024",
@@ -78,26 +66,14 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       location: "The House of Bread, Jos",
       flierSrc: "/images/programs/fol-2024.jpg",
       listenButtonText: "Listen to Festival of Light 2024 Messages",
-      speakers: ["Rev. Joshua Agunbiade", "Pastor Damilare Ayodele"],
-      searchTerms: ["festival of light", "fol 2024", "immanuel", "fol"],
-      curatedMessages: [
-        {
-          id: "fol24-1",
-          title: "Immanuel: God With Us in Truth & Power",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Matthew 1:23",
-          duration: "1h 52m",
-          summary: "The incarnation of Christ and the reality of His abiding presence in the believer.",
-        },
-        {
-          id: "fol24-2",
-          title: "Walking in the Light of His Countenance",
-          speaker: "Pastor Damilare Ayodele",
-          scripture: "Psalm 89:15",
-          duration: "1h 38m",
-          summary: "A practical charge on personal devotion and living illuminated by divine truth.",
-        },
+      speakers: [
+        "Dr. Joshua Agunbiade",
+        "Apostle Gideon Odoma",
+        "Rev. Rasine Irem",
+        "Min. Sharon Agunbiade",
       ],
+      searchTerms: ["festival of light", "fol 2024", "immanuel", "fol"],
+      curatedMessages: [],
     },
   ],
 
@@ -116,16 +92,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to Merismos 2025 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["merismos 2025", "merismos", "miracles"],
-      curatedMessages: [
-        {
-          id: "mer25-1",
-          title: "The Operations of Miracles by the Spirit",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "1 Corinthians 12:10",
-          duration: "2h 10m",
-          summary: "Understanding the spiritual mechanics and faith-posture behind tangible divine miracles.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "merismos-2024",
@@ -138,24 +105,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to Merismos 2024 Messages",
       speakers: ["Rev. Joshua Agunbiade", "Pastor Boniface Onah"],
       searchTerms: ["merismos 2024", "merismos", "in the spirit and power", "spirit and power"],
-      curatedMessages: [
-        {
-          id: "mer24-1",
-          title: "In Demonstration of the Spirit and of Power",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "1 Corinthians 2:4-5",
-          duration: "2h 05m",
-          summary: "Moving beyond enticing words of man's wisdom into the raw demonstration of God's power.",
-        },
-        {
-          id: "mer24-2",
-          title: "The Dividing Asunder: Discerning Soul and Spirit",
-          speaker: "Pastor Boniface Onah",
-          scripture: "Hebrews 4:12",
-          duration: "1h 42m",
-          summary: "The sharp scalpel of the Word separating natural emotion from divine spiritual impulse.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "merismos-2023",
@@ -168,16 +118,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to Merismos 2023 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["merismos 2023", "merismos", "now the lord is that spirit", "that spirit"],
-      curatedMessages: [
-        {
-          id: "mer23-1",
-          title: "Now The Lord Is That Spirit: The Ministry of Liberty",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "2 Corinthians 3:17-18",
-          duration: "2h 02m",
-          summary: "Beholding as in a glass the glory of the Lord and being changed into the same image.",
-        },
-      ],
+      curatedMessages: [],
     },
   ],
 
@@ -196,16 +137,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to The Forge September 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["the forge", "forge", "tarry", "forge september"],
-      curatedMessages: [
-        {
-          id: "fg26-1",
-          title: "Tarry Until Ye Be Endued",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Luke 24:49",
-          duration: "2h 25m",
-          summary: "The discipline of waiting, corporate intercession, and tarrying before God until power falls.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "forge-july-2024",
@@ -218,16 +150,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to The Forge July 2024 Messages",
       speakers: ["Rev. Joshua Agunbiade", "Pastor Theophilus Makinde"],
       searchTerms: ["the forge", "forge", "all may prophesy", "forge july"],
-      curatedMessages: [
-        {
-          id: "fg24-1",
-          title: "For Ye May All Prophesy One by One",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "1 Corinthians 14:31",
-          duration: "2h 15m",
-          summary: "Demystifying prophetic ministry and activating believers to hear and speak divine utterances.",
-        },
-      ],
+      curatedMessages: [],
     },
   ],
 
@@ -246,16 +169,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to AAC September 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["aac", "apostolic camp", "secret place", "abuja apostolic"],
-      curatedMessages: [
-        {
-          id: "aac26-9-1",
-          title: "Dwelling in the Secret Place of the Most High",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Psalm 91:1-2",
-          duration: "1h 55m",
-          summary: "Cultivating intimacy and unwavering spiritual authority from the hidden altar.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "aac-aug-2026",
@@ -268,16 +182,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to AAC August 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["aac", "apostolic camp", "spirit of life", "abuja apostolic"],
-      curatedMessages: [
-        {
-          id: "aac26-8-1",
-          title: "The Law of the Spirit of Life in Christ Jesus",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Romans 8:2",
-          duration: "1h 45m",
-          summary: "Total deliverance from the law of sin and death into effortless victory.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "aac-july-2026",
@@ -290,16 +195,7 @@ const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to AAC July 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
       searchTerms: ["aac", "apostolic camp", "children of the covenant", "covenant"],
-      curatedMessages: [
-        {
-          id: "aac26-7-1",
-          title: "Heirs of the Promise and Sons of the Covenant",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Acts 3:25",
-          duration: "1h 50m",
-          summary: "Standing upon the inviolable covenant oaths of God.",
-        },
-      ],
+      curatedMessages: [],
     },
     {
       key: "aac-may-2026",
@@ -419,10 +315,44 @@ export default function ProgramEditionsClient({
 
   // Priority: CMS editions from Firestore → static registry
   const editions = useMemo(() => {
-    if (cmsEditions && Array.isArray(cmsEditions) && cmsEditions.length > 0) {
-      return cmsEditions;
-    }
-    return STATIC_PROGRAM_EDITIONS[programSlug] ?? [];
+    const rawList =
+      cmsEditions && Array.isArray(cmsEditions) && cmsEditions.length > 0
+        ? cmsEditions
+        : STATIC_PROGRAM_EDITIONS[programSlug] ?? [];
+
+    return rawList.map((ed) => {
+      let sps = ed.speakers || [];
+      if (ed.key === "fol-2024" && sps.includes("Pastor Damilare Ayodele")) {
+        sps = [
+          "Dr. Joshua Agunbiade",
+          "Apostle Gideon Odoma",
+          "Rev. Rasine Irem",
+          "Min. Sharon Agunbiade",
+        ];
+      }
+      if (ed.key === "fol-2026" && sps.includes("Guest Apostolic Ministers")) {
+        sps = [
+          "Rev. Joshua Agunbiade",
+          "Rev. Rasine Irem",
+          "Rev. Adetokunbo Emmanuel",
+          "Pastor Theophilus Makinde",
+        ];
+      }
+      // Strip any legacy demo messages
+      const cleanMessages = (ed.curatedMessages || []).filter(
+        (m: any) =>
+          !m.id?.startsWith("fol24-") &&
+          !m.id?.startsWith("fol26-") &&
+          !m.id?.startsWith("mer2") &&
+          !m.id?.startsWith("fg") &&
+          !m.id?.startsWith("aac2")
+      );
+      return {
+        ...ed,
+        speakers: sps,
+        curatedMessages: cleanMessages,
+      };
+    });
   }, [programSlug, cmsEditions]);
 
   const toggleEditionMessages = (key: string) => {
@@ -840,33 +770,36 @@ function EditionRow({
             Theme: <strong>&ldquo;{edition.theme}&rdquo;</strong>
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-              marginBottom: "20px",
-            }}
-          >
-            {edition.speakers.map((sp) => (
-              <span
-                key={sp}
-                style={{
-                  background: "#F4F6FB",
-                  border: "1px solid #D3DAEC",
-                  borderRadius: "2px",
-                  padding: "4px 12px",
-                  fontFamily: "var(--font-poppins)",
-                  fontSize: "11.5px",
-                  fontWeight: 600,
-                  color: "#0140C1",
-                }}
-              >
-                🎙 {sp}
-              </span>
-            ))}
-          </div>
+          {/* Preachers / Speakers shown on flier */}
+          {edition.speakers && edition.speakers.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "8px",
+                flexWrap: "wrap",
+                marginBottom: "20px",
+              }}
+            >
+              {edition.speakers.map((sp) => (
+                <span
+                  key={sp}
+                  style={{
+                    background: "#F4F6FB",
+                    border: "1px solid #D3DAEC",
+                    borderRadius: "2px",
+                    padding: "4px 12px",
+                    fontFamily: "var(--font-poppins)",
+                    fontSize: "11.5px",
+                    fontWeight: 600,
+                    color: "#0140C1",
+                  }}
+                >
+                  🎙 {sp}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* ── THE DYNAMIC BUTTON: "Listen to [Program] [Year] Messages" ── */}
           {/* Primary Button: White on Blue 700 (#0140C1) */}
@@ -942,62 +875,18 @@ function EditionRow({
 function ScrollableMessagesCard({
   edition,
   programName,
-  allSermons,
+  allSermons = [],
 }: {
   edition: ProgramEdition;
   programName: string;
-  allSermons: Sermon[];
+  allSermons?: Sermon[];
 }) {
   const { playAudio, playSermon, currentSermon, isPlaying } = useAudio();
 
-  // Cross-reference all matching sermons from Firestore catalog
-  const catalogMatches = useMemo(() => {
-    if (!allSermons || allSermons.length === 0) return [];
-
-    const lowerTerms = edition.searchTerms.map((t) => t.toLowerCase());
-
-    return allSermons.filter((s) => {
-      const sTitle = (s.title || "").toLowerCase();
-      const sSeries = (s.series || "").toLowerCase();
-      const sTags = (s.tags || []).map((t) => t.toLowerCase());
-      const sSummary = (s.summary || "").toLowerCase();
-
-      return lowerTerms.some((term) => {
-        return (
-          sTitle.includes(term) ||
-          sSeries.includes(term) ||
-          sTags.some((tag) => tag.includes(term)) ||
-          sSummary.includes(term)
-        );
-      });
-    });
-  }, [allSermons, edition.searchTerms]);
-
-  // Combined messages: prioritize curated messages and merge any catalog matches
+  // Strictly use messages explicitly curated/added to this edition (no auto-matching)
   const displayMessages = useMemo(() => {
-    const list: EditionMessage[] = [...(edition.curatedMessages || [])];
-
-    catalogMatches.forEach((cat) => {
-      const exists = list.some(
-        (m) => m.title.toLowerCase() === cat.title.toLowerCase()
-      );
-      if (!exists) {
-        list.push({
-          id: cat.id,
-          title: cat.title,
-          speaker: cat.speaker,
-          duration: cat.duration || "Sermon",
-          scripture: cat.scripture,
-          date: cat.date,
-          audioUrl: cat.audioUrl,
-          videoUrl: cat.videoUrl,
-          summary: cat.summary,
-        });
-      }
-    });
-
-    return list;
-  }, [edition.curatedMessages, catalogMatches]);
+    return edition.curatedMessages || [];
+  }, [edition.curatedMessages]);
 
   const handlePlayMessage = (msg: EditionMessage) => {
     const media: PlayableMedia = {
@@ -1075,7 +964,7 @@ function ScrollableMessagesCard({
             borderRadius: "2px",
           }}
         >
-          {displayMessages.length} Messages Available
+          {displayMessages.length} {displayMessages.length === 1 ? "Message" : "Messages"} Available
         </span>
       </div>
 
@@ -1091,9 +980,38 @@ function ScrollableMessagesCard({
         }}
       >
         {displayMessages.length === 0 ? (
-          <div style={{ padding: "32px 16px", textAlign: "center", background: "#F4F6FB", borderRadius: "4px" }}>
-            <p style={{ fontFamily: "var(--font-playfair)", color: "#4A62A0", margin: 0, fontSize: "15px" }}>
-              Messages for this edition are currently being digitized from the archive. Stream other teachings via the player below.
+          <div
+            style={{
+              padding: "36px 20px",
+              textAlign: "center",
+              background: "#F4F6FB",
+              borderRadius: "4px",
+              border: "1px dashed #D3DAEC",
+            }}
+          >
+            <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>🎙</span>
+            <h5
+              style={{
+                fontFamily: "var(--font-poppins)",
+                fontWeight: 700,
+                fontSize: "14px",
+                color: "#151A54",
+                margin: "0 0 6px",
+                textTransform: "uppercase",
+              }}
+            >
+              No Messages Added Yet
+            </h5>
+            <p
+              style={{
+                fontFamily: "var(--font-playfair)",
+                color: "#4A62A0",
+                margin: 0,
+                fontSize: "15px",
+                lineHeight: "1.6em",
+              }}
+            >
+              No messages added for this edition yet. Check back soon.
             </p>
           </div>
         ) : (
