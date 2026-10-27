@@ -1,336 +1,630 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
-interface Edition {
-  year: number;
-  theme: string;
-  speakers: string[];
-  location: string;
-  photos: string[];
-  sermons: {
-    id: string;
-    title: string;
-    speaker: string;
-    duration: string;
-  }[];
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Sermon {
+  id: string;
+  title: string;
+  speaker: string;
+  duration?: string;
+  audioUrl?: string;
 }
 
-// Historical data for each flagship program
-const MOCK_EDITIONS: Record<string, Edition[]> = {
+interface ProgramEdition {
+  key: string;
+  label: string;
+  theme: string;
+  dates: string;
+  location: string;
+  flierSrc: string;
+  listenLabel: string;
+  sermons: Sermon[];
+}
+
+// ─── Edition data (sourced from real program fliers) ──────────────────────────
+
+const EDITIONS: Record<string, ProgramEdition[]> = {
   "festival-of-light": [
     {
-      year: 2024,
-      theme: "A City Set on a Hill",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
+      key: "fol-2026",
+      label: "2026",
+      theme: "The Shout of a King",
+      dates: "28 October – 1 November 2026",
       location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-1.png", "/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "fol24-1", title: "The Shining Light of Zion", speaker: "Dr. Joshua Agunbiade", duration: "1h 50m" },
-        { id: "fol24-2", title: "Arise, Shine for Thy Light Is Come", speaker: "Pastor Damilare Ayodele", duration: "1h 35m" },
-      ],
+      flierSrc: "/images/programs/fol-2026.jpg",
+      listenLabel: "Listen to Festival of Light 2026 Messages",
+      sermons: [],
     },
     {
-      year: 2023,
-      theme: "The Sent Ones",
-      speakers: ["Dr. Joshua Agunbiade", "Apostle Arome Osayi"],
+      key: "fol-2024",
+      label: "2024",
+      theme: "Immanuel",
+      dates: "24–27 October 2024",
       location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-2.png", "/images/fol-gallery-3.png"],
-      sermons: [
-        { id: "fol23-1", title: "Let There Be Light", speaker: "Dr. Joshua Agunbiade", duration: "1h 45m" },
-        { id: "fol23-2", title: "The Apostolic Order", speaker: "Apostle Arome Osayi", duration: "2h 15m" },
-      ],
-    },
-    {
-      year: 2022,
-      theme: "Illuminated",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
-      location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-3.png"],
-      sermons: [
-        { id: "fol22-1", title: "The Lamp and the Light", speaker: "Dr. Joshua Agunbiade", duration: "1h 30m" },
-      ],
-    },
-    {
-      year: 2021,
-      theme: "The Light Has Come",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-1.png"],
-      sermons: [
-        { id: "fol21-1", title: "In Him Was Life, and the Life Was the Light of Men", speaker: "Dr. Joshua Agunbiade", duration: "1h 40m" },
-      ],
+      flierSrc: "/images/programs/fol-2024.jpg",
+      listenLabel: "Listen to Festival of Light 2024 Messages",
+      sermons: [],
     },
   ],
+
   "merismos": [
     {
-      year: 2024,
-      theme: "Rightly Dividing the Word of Truth",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Boniface Onah"],
+      key: "merismos-2025",
+      label: "2025",
+      theme: "Miracles",
+      dates: "17–20 April 2025",
       location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-1.png"],
-      sermons: [
-        { id: "mer24-1", title: "Piercing Even to the Dividing Asunder", speaker: "Dr. Joshua Agunbiade", duration: "2h 05m" },
-        { id: "mer24-2", title: "Discerning Spirit and Soul", speaker: "Pastor Boniface Onah", duration: "1h 40m" },
-      ],
+      flierSrc: "/images/programs/merismos-2025.jpg",
+      listenLabel: "Listen to Merismos 2025 Messages",
+      sermons: [],
     },
     {
-      year: 2023,
-      theme: "The Quick and Powerful Word",
-      speakers: ["Dr. Joshua Agunbiade"],
+      key: "merismos-2024",
+      label: "2024",
+      theme: "In the Spirit & Power",
+      dates: "8–9 December 2024",
       location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "mer23-1", title: "The Sword of the Spirit", speaker: "Dr. Joshua Agunbiade", duration: "1h 55m" },
-      ],
+      flierSrc: "/images/programs/merismos-2024.jpg",
+      listenLabel: "Listen to Merismos 2024 Messages",
+      sermons: [],
     },
     {
-      year: 2022,
-      theme: "Discerning the Intentions of the Heart",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Damilare Ayodele"],
+      key: "merismos-2023",
+      label: "2023",
+      theme: "Now The Lord Is That Spirit",
+      dates: "26–29 October 2023",
       location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-3.png"],
-      sermons: [
-        { id: "mer22-1", title: "The Incorruptible Seed of the Word", speaker: "Dr. Joshua Agunbiade", duration: "1h 35m" },
-      ],
+      flierSrc: "/images/programs/merismos-2023.jpg",
+      listenLabel: "Listen to Merismos 2023 Messages",
+      sermons: [],
     },
   ],
-  "jesus-convention": [
-    {
-      year: 2024,
-      theme: "The Risen Christ and His Eternal Dominion",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Ngbede Odeh"],
-      location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-1.png"],
-      sermons: [
-        { id: "jc24-1", title: "That I May Know Him", speaker: "Dr. Joshua Agunbiade", duration: "2h 10m" },
-        { id: "jc24-2", title: "The Power of His Resurrection", speaker: "Pastor Ngbede Odeh", duration: "1h 45m" },
-      ],
-    },
-    {
-      year: 2023,
-      theme: "Beholding the Lamb of God",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "jc23-1", title: "The Finished Work on Calvary", speaker: "Dr. Joshua Agunbiade", duration: "1h 50m" },
-      ],
-    },
-    {
-      year: 2022,
-      theme: "The Mystery of Godliness",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Theophilus Makinde"],
-      location: "Jos, Plateau State",
-      photos: ["/images/fol-gallery-3.png"],
-      sermons: [
-        { id: "jc22-1", title: "God Was Manifest in the Flesh", speaker: "Dr. Joshua Agunbiade", duration: "1h 30m" },
-      ],
-    },
-  ],
+
   "the-forge": [
     {
-      year: 2024,
-      theme: "The Altar of Prayer and Corporate Travail",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Theophilus Makinde"],
-      location: "The House of Bread, Jos",
-      photos: ["/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "fg24-1", title: "Is Not My Word Like As A Fire?", speaker: "Dr. Joshua Agunbiade", duration: "2h 30m" },
-        { id: "fg24-2", title: "Travail and the Birth of Movements", speaker: "Pastor Theophilus Makinde", duration: "2h 00m" },
-      ],
+      key: "forge-sept-2026",
+      label: "September 2026",
+      theme: "Tarry",
+      dates: "24–25 September 2026",
+      location: "Jos, Plateau State",
+      flierSrc: "/images/programs/forge-sept-2026.jpg",
+      listenLabel: "Listen to The Forge September 2026 Messages",
+      sermons: [],
     },
     {
-      year: 2023,
-      theme: "Men of Fire and Devotion",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "The House of Bread, Jos",
-      photos: ["/images/fol-gallery-3.png"],
-      sermons: [
-        { id: "fg23-1", title: "Building Altars of Prevailing Prayer", speaker: "Dr. Joshua Agunbiade", duration: "2h 15m" },
-      ],
-    },
-  ],
-  "abuja-apostolic-camp": [
-    {
-      year: 2024,
-      theme: "Awakening the Capital",
-      speakers: ["Dr. Joshua Agunbiade", "Pastor Boniface Onah"],
-      location: "Abuja, FCT",
-      photos: ["/images/fol-gallery-1.png"],
-      sermons: [
-        { id: "aac24-1", title: "The Apostolic Mandate for the Marketplace", speaker: "Dr. Joshua Agunbiade", duration: "1h 55m" },
-        { id: "aac24-2", title: "Spiritual Alignment and Kingdom Impact", speaker: "Pastor Boniface Onah", duration: "1h 40m" },
-      ],
-    },
-    {
-      year: 2023,
-      theme: "A Foundation for the Sent",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "Abuja, FCT",
-      photos: ["/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "aac23-1", title: "Publishers in the Nations", speaker: "Dr. Joshua Agunbiade", duration: "1h 45m" },
-      ],
+      key: "forge-july-2024",
+      label: "July 2024",
+      theme: "All May Prophesy",
+      dates: "30 July – 1 August 2024",
+      location: "Jos, Plateau State",
+      flierSrc: "/images/programs/forge-july-2024.jpg",
+      listenLabel: "Listen to The Forge July 2024 Messages",
+      sermons: [],
     },
   ],
-  "sunday-midweek": [
+
+  "apostolic-camps": [
     {
-      year: 2024,
-      theme: "Corporate Worship, Expository Doctrine & Fellowship",
-      speakers: ["Dr. Joshua Agunbiade", "Associate Pastors"],
-      location: "The House of Bread, Jos",
-      photos: ["/images/fol-gallery-1.png"],
-      sermons: [
-        { id: "sm24-1", title: "The Apostolic Doctrine & The Apostles' Fellowship", speaker: "Dr. Joshua Agunbiade", duration: "1h 40m" },
-        { id: "sm24-2", title: "Midweek Corporate Prayer and Supplication", speaker: "Pastor Damilare Ayodele", duration: "1h 25m" },
-      ],
+      key: "aac-sept-2026",
+      label: "September 2026",
+      theme: "The Secret Place",
+      dates: "11–12 September 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-sept-2026.jpg",
+      listenLabel: "Listen to AAC September 2026 Messages",
+      sermons: [],
     },
     {
-      year: 2023,
-      theme: "Steadfast in the Word",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "The House of Bread, Jos",
-      photos: ["/images/fol-gallery-2.png"],
-      sermons: [
-        { id: "sm23-1", title: "Growing in the Accurate Knowledge of Christ", speaker: "Dr. Joshua Agunbiade", duration: "1h 35m" },
-      ],
+      key: "aac-aug-2026",
+      label: "August 2026",
+      theme: "The Spirit of Life",
+      dates: "7–8 August 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-august-2026.jpg",
+      listenLabel: "Listen to AAC August 2026 Messages",
+      sermons: [],
+    },
+    {
+      key: "aac-july-2026",
+      label: "July 2026",
+      theme: "Children of the Covenant",
+      dates: "10–11 July 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-july-2026.jpg",
+      listenLabel: "Listen to AAC July 2026 Messages",
+      sermons: [],
+    },
+    {
+      key: "aac-may-2026",
+      label: "May 2026",
+      theme: "Abuja Apostolic Camp",
+      dates: "8–9 May 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-may-2026.jpg",
+      listenLabel: "Listen to AAC May 2026 Messages",
+      sermons: [],
+    },
+    {
+      key: "aac-april-2026",
+      label: "April 2026",
+      theme: "The Face of Jesus Christ",
+      dates: "10–11 April 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-april-2026.jpg",
+      listenLabel: "Listen to AAC April 2026 Messages",
+      sermons: [],
+    },
+    {
+      key: "aac-march-2026",
+      label: "March 2026",
+      theme: "The Holy of Holies",
+      dates: "13–14 March 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-march-2026.jpg",
+      listenLabel: "Listen to AAC March 2026 Messages",
+      sermons: [],
+    },
+    {
+      key: "aac-feb-2026",
+      label: "February 2026",
+      theme: "The Believers\u2019 Authority",
+      dates: "14 February 2026",
+      location: "Abuja, FCT",
+      flierSrc: "/images/programs/aac-feb-2026.jpg",
+      listenLabel: "Listen to AAC February 2026 Messages",
+      sermons: [],
     },
   ],
 };
 
-export default function ProgramEditionsClient({ programSlug, programName }: { programSlug: string, programName: string }) {
-  const [activeYear, setActiveYear] = useState<number | null>(null);
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-  // Fallback to empty array if no mock data
-  const editions = MOCK_EDITIONS[programSlug] || [
-    {
-      year: new Date().getFullYear(),
-      theme: "The Apostolic Mandate",
-      speakers: ["Dr. Joshua Agunbiade"],
-      location: "Jos, Nigeria",
-      photos: [],
-      sermons: [
-        { id: "demo-1", title: "Foundations of Truth", speaker: "Dr. Joshua Agunbiade", duration: "1h 10m" },
-        { id: "demo-2", title: "The Sent Ones", speaker: "Dr. Joshua Agunbiade", duration: "1h 25m" }
-      ]
-    }
-  ];
+const S = {
+  eyebrow: {
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: 600,
+    fontSize: "10px",
+    letterSpacing: "0.22em",
+    textTransform: "uppercase" as const,
+  },
+  label: {
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: 700,
+    fontSize: "11px",
+    letterSpacing: "0.14em",
+    textTransform: "uppercase" as const,
+  },
+  theme: {
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 700,
+    fontStyle: "italic" as const,
+    lineHeight: "1.2em",
+  },
+  meta: {
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: "12px",
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+  },
+  sermonTitle: {
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: 600,
+    fontSize: "15px",
+    lineHeight: "1.4em",
+    color: "#F8FAFC",
+    margin: "0 0 6px",
+  },
+  sermonMeta: {
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: "11px",
+    letterSpacing: "0.04em",
+    color: "#64748B",
+  },
+};
 
-  if (activeYear === null && editions.length > 0) {
-    setActiveYear(editions[0].year);
-  }
+// ─── Root component ───────────────────────────────────────────────────────────
 
-  const activeEdition = editions.find(e => e.year === activeYear) || editions[0];
+export default function ProgramEditionsClient({
+  programSlug,
+  programName,
+}: {
+  programSlug: string;
+  programName: string;
+}) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const editions = EDITIONS[programSlug] ?? [];
+
+  const toggle = (key: string) =>
+    setOpenKey((prev) => (prev === key ? null : key));
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", maxWidth: "1200px", margin: "0 auto", minHeight: "600px", padding: "40px 24px" }}>
-      
-      {/* Sidebar: Year Navigation */}
-      <div style={{ width: "220px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.1)", paddingRight: "24px", minWidth: "160px" }}>
-        <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "14px", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "24px" }}>
-          Timeline
-        </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {editions.map(ed => (
-            <button
-              key={ed.year}
-              onClick={() => setActiveYear(ed.year)}
+    <section style={{ background: "#0B0E14" }}>
+
+      {/* Section header */}
+      <div
+        className="tph-inner"
+        style={{
+          paddingTop: "72px",
+          paddingBottom: "40px",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ width: "32px", height: "2px", background: "#D97706" }} />
+          <span style={{ ...S.eyebrow, color: "#D97706" }}>Past Editions</span>
+        </div>
+        <h2
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 800,
+            fontSize: "clamp(28px, 4vw, 48px)",
+            color: "#F8FAFC",
+            textTransform: "uppercase",
+            letterSpacing: "-0.02em",
+            margin: 0,
+            lineHeight: "0.95em",
+          }}
+        >
+          The Archive
+        </h2>
+        <p
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "16px",
+            color: "#64748B",
+            margin: 0,
+            maxWidth: "560px",
+          }}
+        >
+          Every edition is preserved here — flier, theme, and the messages that were preached.
+        </p>
+      </div>
+
+      {/* Edition list */}
+      {editions.length === 0 ? (
+        <div
+          className="tph-inner"
+          style={{ padding: "80px 0", textAlign: "center" }}
+        >
+          <span style={{ fontSize: "40px", display: "block", marginBottom: "20px" }}>📂</span>
+          <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "20px", color: "#64748B" }}>
+            Edition archives for {programName} are being compiled. Check back soon.
+          </p>
+        </div>
+      ) : (
+        <div className="tph-inner" style={{ paddingBottom: "96px" }}>
+          {editions.map((edition) => (
+            <EditionBlock
+              key={edition.key}
+              edition={edition}
+              isOpen={openKey === edition.key}
+              onToggle={() => toggle(edition.key)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ─── Edition block ─────────────────────────────────────────────────────────────
+
+function EditionBlock({
+  edition,
+  isOpen,
+  onToggle,
+}: {
+  edition: ProgramEdition;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <article
+      style={{
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        paddingTop: "64px",
+        paddingBottom: isOpen ? "0" : "64px",
+      }}
+    >
+      {/* Two-column row: flier left, info right */}
+      <div
+        style={{
+          display: "flex",
+          gap: "clamp(28px, 5vw, 72px)",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+        }}
+      >
+        {/* ── Flier image ── */}
+        <div
+          style={{
+            flexShrink: 0,
+            width: "clamp(180px, 26vw, 280px)",
+          }}
+        >
+          <img
+            src={edition.flierSrc}
+            alt={`${edition.label} edition flier`}
+            style={{
+              width: "100%",
+              display: "block",
+              borderRadius: "3px",
+              boxShadow: "0 12px 56px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)",
+            }}
+          />
+        </div>
+
+        {/* ── Edition info ── */}
+        <div style={{ flex: 1, minWidth: "240px", paddingTop: "6px" }}>
+
+          {/* Year / edition badge */}
+          <div style={{ marginBottom: "18px" }}>
+            <span
               style={{
-                textAlign: "left",
-                padding: "12px 16px",
-                background: activeYear === ed.year ? "rgba(32, 144, 255, 0.15)" : "transparent",
-                border: activeYear === ed.year ? "1px solid rgba(32, 144, 255, 0.3)" : "1px solid transparent",
-                borderRadius: "8px",
-                color: activeYear === ed.year ? "#2090FF" : "#F8FAFC",
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "18px",
-                fontWeight: activeYear === ed.year ? 700 : 500,
-                cursor: "pointer",
-                transition: "all 0.2s"
+                display: "inline-block",
+                padding: "5px 16px",
+                background: "rgba(217, 119, 6, 0.12)",
+                border: "1px solid rgba(217, 119, 6, 0.35)",
+                borderRadius: "2px",
+                ...S.label,
+                color: "#D97706",
               }}
             >
-              {ed.year} Edition
-            </button>
-          ))}
+              {edition.label} Edition
+            </span>
+          </div>
+
+          {/* Theme */}
+          <h3
+            style={{
+              ...S.theme,
+              fontSize: "clamp(22px, 3.2vw, 40px)",
+              color: "#F8FAFC",
+              margin: "0 0 22px",
+            }}
+          >
+            &ldquo;{edition.theme}&rdquo;
+          </h3>
+
+          {/* Dates & location */}
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              flexWrap: "wrap",
+              alignItems: "center",
+              marginBottom: "36px",
+            }}
+          >
+            <span style={{ ...S.meta, color: "#94A3B8" }}>
+              {edition.dates}
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "14px" }}>·</span>
+            <span style={{ ...S.meta, color: "#94A3B8" }}>
+              {edition.location}
+            </span>
+          </div>
+
+          {/* CTA button */}
+          <button
+            onClick={onToggle}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "14px 30px",
+              background: isOpen ? "transparent" : "#D97706",
+              color: isOpen ? "#D97706" : "#151A54",
+              border: "1.5px solid #D97706",
+              borderRadius: "2px",
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 700,
+              fontSize: "11px",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "background 0.18s, color 0.18s",
+            }}
+          >
+            {isOpen ? (
+              <>
+                <span style={{ fontSize: "14px" }}>✕</span>
+                <span>Close Messages</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: "13px" }}>▶</span>
+                <span>{edition.listenLabel}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, minWidth: "280px" }}>
-        {activeEdition && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
-            
-            {/* Edition Header */}
-            <div>
-              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-                <span style={{ padding: "4px 12px", background: "#2090FF", color: "#fff", borderRadius: "100px", fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 700 }}>
-                  {activeEdition.year}
-                </span>
-                <span style={{ color: "#94A3B8", fontFamily: "'Poppins', sans-serif", fontSize: "14px" }}>
-                  📍 {activeEdition.location}
-                </span>
-              </div>
-              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "42px", color: "#F8FAFC", margin: "0 0 16px" }}>
-                Theme: "{activeEdition.theme}"
-              </h2>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {activeEdition.speakers.map(speaker => (
-                  <span key={speaker} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "6px 14px", borderRadius: "20px", color: "#E2E8F0", fontFamily: "'Poppins', sans-serif", fontSize: "13px" }}>
-                    🎙 {speaker}
-                  </span>
-                ))}
-              </div>
-            </div>
+      {/* ── Expandable sermon panel ── */}
+      {isOpen && (
+        <div
+          style={{
+            marginTop: "40px",
+            marginBottom: "64px",
+            background: "rgba(21, 26, 84, 0.25)",
+            border: "1px solid rgba(32, 144, 255, 0.12)",
+            borderLeft: "3px solid #D97706",
+            borderRadius: "4px",
+            padding: "clamp(20px, 3vw, 36px)",
+            maxHeight: "540px",
+            overflowY: "auto",
+          }}
+        >
+          <SermonPanel edition={edition} />
+        </div>
+      )}
+    </article>
+  );
+}
 
-            {/* Sermons List */}
-            <div>
-              <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "18px", color: "#F8FAFC", marginBottom: "20px", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "12px" }}>
-                Sermons from {activeEdition.year}
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {activeEdition.sermons.map(sermon => (
-                  <div key={sermon.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", borderRadius: "12px" }}>
-                    <div>
-                      <h4 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "16px", fontWeight: 600, color: "#F8FAFC", margin: "0 0 6px" }}>
-                        {sermon.title}
-                      </h4>
-                      <div style={{ display: "flex", gap: "12px", color: "#94A3B8", fontFamily: "'Poppins', sans-serif", fontSize: "12px" }}>
-                        <span>👤 {sermon.speaker}</span>
-                        <span>⏱ {sermon.duration}</span>
-                      </div>
-                    </div>
-                    <Link href={`/resources?search=${encodeURIComponent(sermon.title)}`}>
-                      <button style={{ background: "#2090FF", color: "#fff", border: "none", padding: "8px 20px", borderRadius: "8px", fontFamily: "'Poppins', sans-serif", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
-                        Listen Now
-                      </button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
+// ─── Sermon panel ──────────────────────────────────────────────────────────────
 
-            {/* Photos (if any) */}
-            {activeEdition.photos.length > 0 && (
-              <div>
-                <h3 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "18px", color: "#F8FAFC", marginBottom: "20px", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "12px" }}>
-                  Gallery
-                </h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
-                  {activeEdition.photos.map((photo, i) => (
-                    <div key={i} style={{ height: "180px", borderRadius: "12px", overflow: "hidden", background: "rgba(255,255,255,0.05)" }}>
-                      <img src={photo} alt="Gallery" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+function SermonPanel({ edition }: { edition: ProgramEdition }) {
+  if (edition.sermons.length === 0) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "48px 24px",
+          textAlign: "center",
+          gap: "14px",
+        }}
+      >
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "56px",
+            height: "56px",
+            background: "rgba(217,119,6,0.12)",
+            border: "1px solid rgba(217,119,6,0.25)",
+            borderRadius: "50%",
+            fontSize: "24px",
+          }}
+        >
+          🎙
+        </span>
+        <p
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 700,
+            fontSize: "13px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#D97706",
+            margin: 0,
+          }}
+        >
+          Messages Coming Soon
+        </p>
+        <p
+          style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "16px",
+            color: "#64748B",
+            maxWidth: "420px",
+            margin: 0,
+            lineHeight: "1.6em",
+          }}
+        >
+          Audio messages for the {edition.label} edition &#x2014;&nbsp;&ldquo;{edition.theme}&rdquo;&nbsp;&#x2014; will be available here shortly.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Panel heading */}
+      <div style={{ marginBottom: "28px", paddingBottom: "18px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <span style={{ ...S.eyebrow, color: "#D97706" }}>
+          {edition.label} · &ldquo;{edition.theme}&rdquo;
+        </span>
+        <p
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 700,
+            fontSize: "18px",
+            color: "#F8FAFC",
+            margin: "8px 0 0",
+          }}
+        >
+          Messages from this edition
+        </p>
+      </div>
+
+      {/* Sermon cards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        {edition.sermons.map((sermon) => (
+          <SermonCard key={sermon.id} sermon={sermon} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sermon card ──────────────────────────────────────────────────────────────
+
+function SermonCard({ sermon }: { sermon: Sermon }) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: "4px",
+        padding: "20px 24px",
+      }}
+    >
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: "16px",
+          flexWrap: "wrap",
+          marginBottom: sermon.audioUrl ? "16px" : "0",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: "200px" }}>
+          <h5 style={{ ...S.sermonTitle }}>{sermon.title}</h5>
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <span style={{ ...S.sermonMeta }}>👤 {sermon.speaker}</span>
+            {sermon.duration && (
+              <span style={{ ...S.sermonMeta }}>⏱ {sermon.duration}</span>
             )}
-
           </div>
+        </div>
+
+        {!sermon.audioUrl && (
+          <span
+            style={{
+              flexShrink: 0,
+              padding: "4px 14px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "100px",
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "10px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#475569",
+            }}
+          >
+            Coming Soon
+          </span>
         )}
       </div>
 
+      {/* In-page audio player */}
+      {sermon.audioUrl && (
+        <audio
+          controls
+          src={sermon.audioUrl}
+          style={{
+            width: "100%",
+            height: "40px",
+            display: "block",
+            accentColor: "#D97706",
+          }}
+        >
+          Your browser does not support audio playback.
+        </audio>
+      )}
     </div>
   );
 }
