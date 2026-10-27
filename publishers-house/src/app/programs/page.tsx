@@ -10,15 +10,15 @@ export const metadata: Metadata = {
 };
 
 const S = {
-  eyebrow: { fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
-  colophon: { fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
-  displayXL: { fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
-  displayS: { fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(16px, 2.5vw, 21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
-  readLede: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
-  readSmall: { fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
+  eyebrow: { fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
+  colophon: { fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
+  displayXL: { fontFamily: "var(--font-poppins)", fontWeight: 800, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "0.98em", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
+  displayS: { fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "clamp(16px, 2.5vw, 21px)", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
+  readLede: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "20px", lineHeight: "1.55em" },
+  readSmall: { fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em" },
 };
 
-// Programs from Figma: #27:1821 Grid — all 6 program cards
+// Programs from Figma: #27:1821 Grid — all 5 program cards
 const programs = [
   {
     slug: "festival-of-light",
@@ -86,9 +86,9 @@ export default async function ProgramsPage() {
         frequency: p.frequency,
         name: p.name,
         desc: p.summary,
-        scripture: "Eph 4:12", // Placeholder
-        cadence: "Gathering", // Placeholder
-        location: "Jos", // Placeholder
+        scripture: "Eph 4:12",
+        cadence: "Gathering",
+        location: "Jos",
         logoImage: p.imageUrl || "/images/tph-main-logo.png"
       }))
     : programs;
@@ -102,7 +102,6 @@ export default async function ProgramsPage() {
             HERO — Figma: #27:1817 — layout_56aa83c5
             "Flagship programs"
         ══════════════════════════════════════════════════════════ */}
-        {/* HERO */}
         <section
           className="tph-hero"
           style={{
@@ -113,6 +112,7 @@ export default async function ProgramsPage() {
             gap: "18px",
             overflow: "hidden",
             borderBottom: "4px solid #2090FF",
+            padding: "80px clamp(16px, 4vw, 24px) 100px",
           }}
         >
           {/* Hero background image with blue overlay */}
@@ -142,21 +142,60 @@ export default async function ProgramsPage() {
             />
           </div>
 
-          <div className="tph-inner" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: "18px" }}>
-            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#2090FF" }}>
+          <div
+            className="tph-inner"
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: "18px",
+              maxWidth: "1000px",
+            }}
+          >
+            <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "11px", lineHeight: "1.6em", letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#2090FF" }}>
               Ephesians 4:12
             </span>
-            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px" }}>
+            <h1 style={{ ...S.displayXL, color: "#FFFFFF", maxWidth: "1000px", margin: 0 }}>
               Flagship programs
             </h1>
-            <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px" }}>
+            <p style={{ ...S.readLede, color: "#E8ECF7", maxWidth: "760px", margin: 0 }}>
               Two weekly gatherings, three annual conferences and two monthly intensives. Every one exists to put the Word into the hands of believers.
             </p>
+
+            {/* "See upcoming programs" button directing to /schedule */}
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "12px" }}>
+              <Link
+                href="/schedule"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  backgroundColor: "#0140C1",
+                  color: "#FFFFFF",
+                  fontFamily: "var(--font-poppins)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  lineHeight: "1em",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  padding: "14px 28px",
+                  borderRadius: "2px",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 14px rgba(1, 64, 193, 0.35)",
+                  transition: "background-color 0.2s ease",
+                }}
+              >
+                <span>📅</span>
+                <span>See Upcoming Programs</span>
+              </Link>
+            </div>
           </div>
         </section>
 
         {/* PROGRAMS GRID */}
-        <section className="tph-section" style={{ background: "#D3DAEC" }}>
+        <section className="tph-section" style={{ background: "#D3DAEC", padding: "clamp(32px, 5vw, 64px) clamp(16px, 4vw, 24px)" }}>
           <div
             className="tph-grid-3 tph-inner"
             style={{
@@ -164,7 +203,7 @@ export default async function ProgramsPage() {
             }}
           >
             {displayPrograms.map((prog) => (
-              <Link href={`/programs/${prog.slug}`} key={prog.slug} style={{ textDecoration: 'none' }}>
+              <Link href={`/programs/${prog.slug}`} key={prog.slug} style={{ textDecoration: 'none', display: 'flex' }}>
                 <ProgramCard prog={prog} />
               </Link>
             ))}
@@ -189,7 +228,8 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
         borderRadius: "4px",
         overflow: "hidden",
         flex: 1,
-        minWidth: "280px",
+        width: "100%",
+        minWidth: 0,
       }}
     >
       {/* Plate — real logo image, top half only */}
@@ -222,7 +262,7 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
       <div style={{ padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: "8px" }}>
         <span
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "var(--font-poppins)",
             fontWeight: 600,
             fontSize: "10px",
             lineHeight: "1.6em",
@@ -233,10 +273,10 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
         >
           {prog.frequency}
         </span>
-        <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "21px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const, color: "#151A54" }}>
+        <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "21px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const, color: "#151A54" }}>
           {prog.name}
         </span>
-        <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em", color: "#4A62A0" }}>
+        <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontSize: "14.5px", lineHeight: "1.5em", color: "#4A62A0" }}>
           {prog.desc}
         </p>
         <div
@@ -248,15 +288,15 @@ function ProgramCard({ prog }: { prog: typeof programs[0] }) {
             borderTop: "1px solid #151A54",
           }}
         >
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#0140C1" }}>
+          <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#0140C1" }}>
             {prog.scripture}
           </span>
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
+          <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
+          <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
             {prog.cadence}
           </span>
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
+          <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", color: "#C0C9E0" }}>·</span>
+          <span style={{ fontFamily: "var(--font-poppins)", fontWeight: 500, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4A62A0" }}>
             {prog.location}
           </span>
         </div>

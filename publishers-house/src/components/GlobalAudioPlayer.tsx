@@ -333,6 +333,7 @@ function FloatingDockedPlayer({
   const [currentTime, setCurrentTime] = useState("00:00");
   const [duration, setDuration] = useState(sermon.duration || "00:00");
   const [isMobile, setIsMobile] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -382,18 +383,25 @@ function FloatingDockedPlayer({
         position: "fixed",
         bottom: isMobile ? "12px" : "24px",
         right: isMobile ? "12px" : "24px",
-        width: isMobile ? "calc(100% - 24px)" : "390px",
+        width: isMobile
+          ? "calc(100% - 24px)"
+          : isExpanded
+          ? "min(720px, calc(100vw - 48px))"
+          : "390px",
+        maxWidth: "calc(100vw - 24px)",
         backgroundColor: "#151A54",
         color: "#FFFFFF",
         borderRadius: "12px",
         border: "1px solid rgba(255, 255, 255, 0.18)",
-        boxShadow: "0 16px 48px rgba(0, 0, 0, 0.5)",
+        boxShadow: isExpanded
+          ? "0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(32, 144, 255, 0.35)"
+          : "0 16px 48px rgba(0, 0, 0, 0.5)",
         zIndex: 99999,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         fontFamily: "var(--font-poppins), sans-serif",
-        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       {/* HEADER / TITLE BAR */}
@@ -444,6 +452,31 @@ function FloatingDockedPlayer({
           style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, marginLeft: "8px" }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Custom Expand / Theater Mode button */}
+          {!isMinimized && (
+            <button
+              onClick={() => setIsExpanded((prev) => !prev)}
+              style={{
+                background: isExpanded ? "rgba(32, 144, 255, 0.25)" : "none",
+                border: isExpanded ? "1px solid #2090FF" : "1px solid transparent",
+                color: isExpanded ? "#2090FF" : "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+                padding: "3px 7px",
+                fontSize: "12px",
+                lineHeight: 1,
+                borderRadius: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+                fontFamily: "var(--font-poppins)",
+                fontWeight: 600,
+              }}
+              title={isExpanded ? "Collapse to standard size (390px)" : "Expand player size (720px theater)"}
+            >
+              <span>{isExpanded ? "⊡ Compact" : "⛶ Expand"}</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleMinimize}
             style={{

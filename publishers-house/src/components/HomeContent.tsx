@@ -98,6 +98,7 @@ const D = {
 };
 
 const FALLBACK_GATHERINGS = [
+  { day:"WED", date:"28", month:"OCT", title:"The Shout of a King", desc:"Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos.", scripture:"Numbers 23:21", time:"4:00 PM WAT", city:"Jos", theme:"Festival of Light 2026", published:true, order:-10 },
   { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM WAT", city:"Jos", theme:"The Time of the Word — Part 6", published:true, order:0 },
   { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM WAT", city:"Jos", theme:"The Arm of the Lord", published:true, order:1 },
   { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"4:30 PM WAT", city:"Jos", published:true, order:2 },
@@ -399,8 +400,9 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ══════════════ THIS WEEK AT THE HOUSE ══════════════ */}
-      <section className="tph-section" style={{ backgroundColor:White }}>
+      {/* ══════════════ THIS WEEK AT THE HOUSE / NEXT GATHERINGS ══════════════ */}
+      <section id="next-gatherings" className="tph-section" style={{ backgroundColor:White, scrollMarginTop: "80px" }}>
+        <div id="gatherings" style={{ position: "relative", top: "-80px" }} />
         <div className="tph-inner">
           <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:"40px" }}>
             <div>

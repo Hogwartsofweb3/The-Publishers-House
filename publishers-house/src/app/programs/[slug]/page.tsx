@@ -3,11 +3,11 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProgramEditionsClient from "./ProgramEditionsClient";
-import { getSermons, type Sermon } from "@/lib/firebase";
+import { getSermons, getPrograms, type Sermon } from "@/lib/firebase";
 
 export const revalidate = 60;
 
-// ─── Per-program metadata & brand information ─────────────────────────────────
+// ─── Per-program metadata & brand information (Strict Style Guide Compliance) ──
 
 export interface ProgramInfo {
   slug: string;
@@ -94,7 +94,6 @@ const PROGRAM_REGISTRY: Record<string, ProgramInfo> = {
     logoImage: "/images/TPH ABUJA.png",
     bannerImage: "/images/programs-hero.jpg",
   },
-  // Alias for backward compatibility:
   "abuja-apostolic-camp": {
     slug: "apostolic-camps",
     name: "Apostolic Camps",
@@ -115,30 +114,30 @@ const S = {
   eyebrow: {
     fontFamily: "var(--font-poppins)",
     fontWeight: 600,
-    fontSize: "10.5px",
+    fontSize: "11px",
     lineHeight: "1.6em",
-    letterSpacing: "0.2em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase" as const,
   },
   displayXL: {
     fontFamily: "var(--font-poppins)",
     fontWeight: 800,
-    fontSize: "clamp(38px, 5.5vw, 68px)",
-    lineHeight: "1.0em",
+    fontSize: "clamp(36px, 5.5vw, 68px)",
+    lineHeight: "0.98em",
     letterSpacing: "-0.02em",
     textTransform: "uppercase" as const,
   },
   readLede: {
     fontFamily: "var(--font-playfair)",
     fontWeight: 400,
-    fontSize: "clamp(17px, 2.2vw, 21px)",
-    lineHeight: "1.6em",
+    fontSize: "clamp(17px, 2.2vw, 20px)",
+    lineHeight: "1.55em",
   },
   scriptureBox: {
     fontFamily: "var(--font-playfair)",
     fontStyle: "italic" as const,
-    fontSize: "14.5px",
-    lineHeight: "1.6em",
+    fontSize: "15px",
+    lineHeight: "1.65em",
   },
 };
 
@@ -161,26 +160,36 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProgramSlugPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // Resolve metadata
-  const program: ProgramInfo = PROGRAM_REGISTRY[slug] ?? {
-    slug,
-    name: slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-    scripture: "Ephesians 4:12",
-    scriptureVerse: "For the perfecting of the saints, for the work of the ministry, for the edifying of the body of Christ.",
-    frequency: "Flagship Gathering",
-    cadence: "Gathering",
-    location: "Jos, Plateau State",
-    description: "Explore past editions, sound teachings, and full sermon archives from this program.",
-    liveUrl: "https://www.youtube.com/@thepublishershouse",
+  // Check CMS Firestore programs for dynamic overrides
+  const cmsPrograms = await getPrograms().catch(() => []);
+  const cmsProg: any = cmsPrograms.find((p: any) => p.slug === slug || p.id === slug);
+
+  // Fallback to static registry
+  const regProg = PROGRAM_REGISTRY[slug];
+  const program: ProgramInfo = {
+    slug: slug,
+    name: cmsProg?.name || regProg?.name || slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+    scripture: cmsProg?.scripture || regProg?.scripture || "Ephesians 4:12",
+    scriptureVerse: cmsProg?.scriptureVerse || regProg?.scriptureVerse || "For the perfecting of the saints, for the work of the ministry, for the edifying of the body of Christ.",
+    frequency: cmsProg?.frequency || regProg?.frequency || "Flagship Gathering",
+    cadence: cmsProg?.cadence || regProg?.cadence || "Gathering",
+    location: cmsProg?.location || regProg?.location || "Jos, Plateau State",
+    description: cmsProg?.description || cmsProg?.summary || regProg?.description || "Explore past editions, sound teachings, and full sermon archives from this program.",
+    liveUrl: regProg?.liveUrl || "https://www.youtube.com/@thepublishershouse",
+    bannerImage: cmsProg?.bannerImage || regProg?.bannerImage || "/images/programs-hero.jpg",
+    logoImage: cmsProg?.logoImage || cmsProg?.imageUrl || regProg?.logoImage,
   };
 
-  // Fetch live sermons from Firestore catalog to enable in-page message cross-referencing
+  // Fetch live sermons from Firestore catalog for in-page message cross-referencing
   let allSermons: Sermon[] = [];
   try {
     allSermons = await getSermons(1000);
   } catch (err) {
     console.error("Failed to fetch sermons catalog:", err);
   }
+
+  // Pass any CMS editions if saved in Firestore
+  const cmsEditions = cmsProg?.editions && Array.isArray(cmsProg.editions) ? cmsProg.editions : undefined;
 
   return (
     <>
@@ -189,7 +198,7 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
 
         {/* ══════════════════════════════════════════════════════════
             HERO HEADER & OVERVIEW — Standardized Template
-            Deep TPH Navy background (#151A54) with photography overlay
+            Strict Style Guide: Navy 900 (#151A54), Blue 500 (#2090FF), Blue 300 (#6496EF)
             Scripture Anchor, Full Overview, Cadence, & Quick Links
         ══════════════════════════════════════════════════════════ */}
         <section
@@ -197,11 +206,11 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
           style={{
             position: "relative",
             background: "#151A54",
-            padding: "80px 24px 90px",
+            padding: "80px clamp(16px, 4vw, 24px) 90px",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            borderBottom: "4px solid #D97706",
+            borderBottom: "4px solid #2090FF",
           }}
         >
           {/* Hero background image + layered gradient overlay */}
@@ -221,7 +230,7 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(135deg, rgba(21, 26, 84, 0.94) 0%, rgba(1, 64, 193, 0.78) 55%, rgba(15, 23, 42, 0.90) 100%)",
+                  "linear-gradient(135deg, rgba(21, 26, 84, 0.94) 0%, rgba(1, 64, 193, 0.78) 55%, rgba(15, 23, 42, 0.92) 100%)",
               }}
             />
           </div>
@@ -233,8 +242,9 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
               zIndex: 1,
               display: "flex",
               flexDirection: "column",
-              gap: "24px",
+              gap: "22px",
               maxWidth: "1000px",
+              width: "100%",
             }}
           >
             {/* Top Navigation breadcrumb */}
@@ -243,7 +253,7 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                 href="/programs"
                 style={{
                   ...S.eyebrow,
-                  color: "#2090FF",
+                  color: "#6496EF",
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
@@ -254,7 +264,7 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                 <span>←</span> ALL PROGRAMS
               </Link>
               <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
-              <span style={{ ...S.eyebrow, color: "#D97706" }}>
+              <span style={{ ...S.eyebrow, color: "#2090FF" }}>
                 {program.frequency}
               </span>
             </div>
@@ -266,14 +276,14 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
-                  background: "rgba(217, 119, 6, 0.15)",
-                  border: "1px solid rgba(217, 119, 6, 0.4)",
+                  background: "rgba(32, 144, 255, 0.12)",
+                  border: "1px solid rgba(32, 144, 255, 0.35)",
                   padding: "4px 14px",
                   borderRadius: "2px",
                   marginBottom: "16px",
                 }}
               >
-                <span style={{ ...S.eyebrow, color: "#F59E0B", letterSpacing: "0.15em" }}>
+                <span style={{ ...S.eyebrow, color: "#2090FF" }}>
                   ANCHOR SCRIPTURE: {program.scripture}
                 </span>
               </div>
@@ -289,14 +299,14 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
             {program.scriptureVerse && (
               <div
                 style={{
-                  borderLeft: "3px solid #D97706",
+                  borderLeft: "3px solid #2090FF",
                   background: "rgba(255, 255, 255, 0.05)",
-                  padding: "14px 20px",
+                  padding: "16px 20px",
                   borderRadius: "0 4px 4px 0",
                   maxWidth: "760px",
                 }}
               >
-                <p style={{ ...S.scriptureBox, color: "#D3DAEC", margin: 0 }}>
+                <p style={{ ...S.scriptureBox, color: "#E8ECF7", margin: 0 }}>
                   &ldquo;{program.scriptureVerse}&rdquo;
                 </p>
                 <span
@@ -305,10 +315,10 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                     fontFamily: "var(--font-poppins)",
                     fontSize: "11px",
                     fontWeight: 600,
-                    letterSpacing: "0.12em",
+                    letterSpacing: "0.14em",
                     textTransform: "uppercase",
-                    color: "#D97706",
-                    marginTop: "6px",
+                    color: "#2090FF",
+                    marginTop: "8px",
                   }}
                 >
                   — {program.scripture}
@@ -322,7 +332,7 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "12px 28px",
-                paddingTop: "8px",
+                paddingTop: "6px",
                 alignItems: "center",
               }}
             >
@@ -340,13 +350,13 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
               </div>
             </div>
 
-            {/* Quick Links Buttons: Live Stream, Audio Feeds, Resources */}
+            {/* Quick Links Buttons: Live Stream, Audio Feeds, See Upcoming Programs */}
             <div
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "14px",
-                paddingTop: "12px",
+                gap: "12px",
+                paddingTop: "10px",
               }}
             >
               <a
@@ -356,25 +366,48 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "10px",
+                  gap: "8px",
                   padding: "12px 24px",
-                  background: "#D97706",
-                  color: "#151A54",
-                  border: "1.5px solid #D97706",
-                  borderRadius: "3px",
+                  backgroundColor: "#0140C1", // Blue 700
+                  color: "#FFFFFF",
+                  borderRadius: "2px",
                   fontFamily: "var(--font-poppins)",
-                  fontWeight: 700,
-                  fontSize: "11.5px",
-                  letterSpacing: "0.12em",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   textDecoration: "none",
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
+                  boxShadow: "0 4px 14px rgba(1, 64, 193, 0.35)",
                 }}
               >
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DC2626" }} />
                 <span>Watch Live / Stream</span>
               </a>
+
+              <Link
+                href="/schedule"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "12px 24px",
+                  backgroundColor: "rgba(32, 144, 255, 0.15)",
+                  border: "1.5px solid #2090FF",
+                  color: "#FFFFFF",
+                  borderRadius: "2px",
+                  fontFamily: "var(--font-poppins)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <span>📅</span>
+                <span>See Upcoming Programs</span>
+              </Link>
 
               <a
                 href="#editions-archive"
@@ -383,46 +416,22 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
                   alignItems: "center",
                   gap: "8px",
                   padding: "12px 24px",
-                  background: "rgba(255, 255, 255, 0.08)",
+                  background: "transparent",
                   color: "#FFFFFF",
-                  border: "1.5px solid rgba(255, 255, 255, 0.25)",
-                  borderRadius: "3px",
+                  border: "1.5px solid rgba(255, 255, 255, 0.3)",
+                  borderRadius: "2px",
                   fontFamily: "var(--font-poppins)",
-                  fontWeight: 700,
-                  fontSize: "11.5px",
-                  letterSpacing: "0.12em",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   textDecoration: "none",
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
                 }}
               >
                 <span>🎧</span>
                 <span>Past Editions Archive</span>
               </a>
-
-              <Link
-                href="/sermons"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "12px 24px",
-                  background: "transparent",
-                  color: "#BFD0F7",
-                  border: "1.5px solid rgba(191, 208, 247, 0.25)",
-                  borderRadius: "3px",
-                  fontFamily: "var(--font-poppins)",
-                  fontWeight: 600,
-                  fontSize: "11.5px",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <span>Sermons Catalog →</span>
-              </Link>
             </div>
           </div>
         </section>
@@ -434,13 +443,14 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
             - High-res Lightbox popup when flier is clicked
             - Dynamic button: "Listen to [Program] [Year] Messages"
             - In-page scrollable messages card with direct playable audio
-            - Style guide matched: #F4F6FB, #151A54, #0140C1, #D97706
+            - 100% Style Guide Compliant: #F4F6FB, #151A54, #0140C1, #2090FF
         ══════════════════════════════════════════════════════════ */}
-        <section id="editions-archive">
+        <section id="editions-archive" style={{ scrollMarginTop: "80px" }}>
           <ProgramEditionsClient
             programSlug={program.slug}
             programName={program.name}
             allSermons={allSermons}
+            cmsEditions={cmsEditions}
           />
         </section>
 

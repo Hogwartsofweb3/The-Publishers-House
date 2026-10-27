@@ -28,13 +28,13 @@ export interface ProgramEdition {
   flierSrc: string;
   listenButtonText: string; // e.g. "Listen to Merismos 2024 Messages"
   speakers: string[];
-  searchTerms: string[]; // keywords to cross-reference with the Firestore sermons catalog
+  searchTerms: string[];
   curatedMessages: EditionMessage[];
 }
 
-// ─── Edition Data (Chronological Archive — Newest First) ──────────────────────
+// ─── Default Editions Data (Chronological Archive — Newest First) ─────────────
 
-const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
+const STATIC_PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
   // ───────────────────────────────────────────────────────────────────────────
   // FESTIVAL OF LIGHT
   // ───────────────────────────────────────────────────────────────────────────
@@ -97,14 +97,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           duration: "1h 38m",
           summary: "A practical charge on personal devotion and living illuminated by divine truth.",
         },
-        {
-          id: "fol24-3",
-          title: "The Apostolic Commission & The Light of Nations",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Acts 13:47",
-          duration: "2h 15m",
-          summary: "The sending mandate of the church to publish Christ to the uttermost parts.",
-        },
       ],
     },
   ],
@@ -132,14 +124,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           scripture: "1 Corinthians 12:10",
           duration: "2h 10m",
           summary: "Understanding the spiritual mechanics and faith-posture behind tangible divine miracles.",
-        },
-        {
-          id: "mer25-2",
-          title: "Signs Following the Preached Word",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Mark 16:20",
-          duration: "1h 50m",
-          summary: "How sound doctrine and bold proclamation activate heaven's supernatural confirmation.",
         },
       ],
     },
@@ -171,14 +155,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           duration: "1h 42m",
           summary: "The sharp scalpel of the Word separating natural emotion from divine spiritual impulse.",
         },
-        {
-          id: "mer24-3",
-          title: "Fullness of the Holy Ghost for the Last Days",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Acts 2:17-18",
-          duration: "2h 18m",
-          summary: "An urgent apostolic call to continuous consecration and spiritual baptism.",
-        },
       ],
     },
     {
@@ -200,14 +176,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           scripture: "2 Corinthians 3:17-18",
           duration: "2h 02m",
           summary: "Beholding as in a glass the glory of the Lord and being changed into the same image.",
-        },
-        {
-          id: "mer23-2",
-          title: "The Dispensation of the Spirit in the Believer",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "John 7:37-39",
-          duration: "1h 48m",
-          summary: "Rivers of living water flowing from the inward parts to flood society.",
         },
       ],
     },
@@ -237,14 +205,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           duration: "2h 25m",
           summary: "The discipline of waiting, corporate intercession, and tarrying before God until power falls.",
         },
-        {
-          id: "fg26-2",
-          title: "The Fire on the Altar Shall Not Go Out",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Leviticus 6:13",
-          duration: "2h 10m",
-          summary: "Sustaining spiritual momentum through prevailing secret and corporate prayer.",
-        },
       ],
     },
     {
@@ -266,14 +226,6 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           scripture: "1 Corinthians 14:31",
           duration: "2h 15m",
           summary: "Demystifying prophetic ministry and activating believers to hear and speak divine utterances.",
-        },
-        {
-          id: "fg24-2",
-          title: "Corporate Travail & Spiritual Utterance",
-          speaker: "Pastor Theophilus Makinde",
-          scripture: "Romans 8:26-27",
-          duration: "1h 55m",
-          summary: "Groanings that cannot be uttered and birthing the purposes of God in intercession.",
         },
       ],
     },
@@ -345,7 +297,7 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
           speaker: "Rev. Joshua Agunbiade",
           scripture: "Acts 3:25",
           duration: "1h 50m",
-          summary: "Standing upon the inviolable covenant oaths of God for personal and territorial dominion.",
+          summary: "Standing upon the inviolable covenant oaths of God.",
         },
       ],
     },
@@ -359,17 +311,8 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       flierSrc: "/images/programs/aac-may-2026.jpg",
       listenButtonText: "Listen to AAC May 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
-      searchTerms: ["aac", "apostolic camp", "abuja apostolic", "aac may"],
-      curatedMessages: [
-        {
-          id: "aac26-5-1",
-          title: "The Apostolic Order for Territorial Impact",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Acts 19:10-12",
-          duration: "2h 00m",
-          summary: "Equipping believers in the seat of power to represent the kingdom of God effectively.",
-        },
-      ],
+      searchTerms: ["aac", "apostolic camp", "abuja apostolic"],
+      curatedMessages: [],
     },
     {
       key: "aac-april-2026",
@@ -381,17 +324,8 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       flierSrc: "/images/programs/aac-april-2026.jpg",
       listenButtonText: "Listen to AAC April 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
-      searchTerms: ["aac", "apostolic camp", "the face of jesus christ", "face of jesus"],
-      curatedMessages: [
-        {
-          id: "aac26-4-1",
-          title: "The Light of the Knowledge of the Glory in the Face of Jesus",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "2 Corinthians 4:6",
-          duration: "1h 55m",
-          summary: "Beholding the person and unveiled glory of the Son of God until transformed.",
-        },
-      ],
+      searchTerms: ["aac", "apostolic camp", "face of jesus"],
+      curatedMessages: [],
     },
     {
       key: "aac-march-2026",
@@ -403,17 +337,8 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       flierSrc: "/images/programs/aac-march-2026.jpg",
       listenButtonText: "Listen to AAC March 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
-      searchTerms: ["aac", "apostolic camp", "the holy of holies", "holy of holies"],
-      curatedMessages: [
-        {
-          id: "aac26-3-1",
-          title: "Boldness to Enter the Holiest by the Blood",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Hebrews 10:19-22",
-          duration: "2h 10m",
-          summary: "Transcending the veil into the very throne room of divine majesty.",
-        },
-      ],
+      searchTerms: ["aac", "apostolic camp", "holy of holies"],
+      curatedMessages: [],
     },
     {
       key: "aac-feb-2026",
@@ -425,17 +350,8 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       flierSrc: "/images/programs/aac-feb-2026.jpg",
       listenButtonText: "Listen to AAC February 2026 Messages",
       speakers: ["Rev. Joshua Agunbiade"],
-      searchTerms: ["aac", "apostolic camp", "believers authority", "believer's authority"],
-      curatedMessages: [
-        {
-          id: "aac26-2-1",
-          title: "The Authority of the Sent Believer",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Luke 10:19",
-          duration: "2h 05m",
-          summary: "Wielding the name of Jesus and spiritual dominion over all the power of the enemy.",
-        },
-      ],
+      searchTerms: ["aac", "apostolic camp", "believers authority"],
+      curatedMessages: [],
     },
   ],
 
@@ -454,52 +370,12 @@ const PROGRAM_EDITIONS: Record<string, ProgramEdition[]> = {
       listenButtonText: "Listen to Jesus Convention 2024 Messages",
       speakers: ["Rev. Joshua Agunbiade", "Pastor Ngbede Odeh"],
       searchTerms: ["jesus convention", "risen christ", "eternal dominion"],
-      curatedMessages: [
-        {
-          id: "jc24-1",
-          title: "That I May Know Him and The Power of His Resurrection",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "Philippians 3:10",
-          duration: "2h 15m",
-          summary: "The central apostolic reality: knowing Christ, His cross, and His living reign.",
-        },
-        {
-          id: "jc24-2",
-          title: "The Triumph of the Cross Over Principalities",
-          speaker: "Pastor Ngbede Odeh",
-          scripture: "Colossians 2:14-15",
-          duration: "1h 45m",
-          summary: "Exposition on how Christ spoiled principalities and made a show of them openly.",
-        },
-      ],
-    },
-    {
-      key: "jc-2023",
-      year: 2023,
-      label: "2023",
-      theme: "Beholding the Lamb of God",
-      dates: "7–9 April 2023",
-      location: "The House of Bread, Jos",
-      flierSrc: "/images/Jesus Convention logo white.png",
-      listenButtonText: "Listen to Jesus Convention 2023 Messages",
-      speakers: ["Rev. Joshua Agunbiade"],
-      searchTerms: ["jesus convention", "lamb of god", "beholding"],
-      curatedMessages: [
-        {
-          id: "jc23-1",
-          title: "Behold the Lamb: The Finished Work on Calvary",
-          speaker: "Rev. Joshua Agunbiade",
-          scripture: "John 1:29",
-          duration: "1h 55m",
-          summary: "Resting completely in the eternal atonement and righteousness of Christ.",
-        },
-      ],
+      curatedMessages: [],
     },
   ],
 };
 
-// Also support alias slug:
-PROGRAM_EDITIONS["abuja-apostolic-camp"] = PROGRAM_EDITIONS["apostolic-camps"];
+STATIC_PROGRAM_EDITIONS["abuja-apostolic-camp"] = STATIC_PROGRAM_EDITIONS["apostolic-camps"];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -507,12 +383,13 @@ export default function ProgramEditionsClient({
   programSlug,
   programName,
   allSermons = [],
+  cmsEditions,
 }: {
   programSlug: string;
   programName: string;
   allSermons?: Sermon[];
+  cmsEditions?: ProgramEdition[];
 }) {
-  // Key of the currently expanded edition's messages card
   const [openEditionKey, setOpenEditionKey] = useState<string | null>(null);
 
   // Lightbox modal state for full-screen flier view
@@ -540,9 +417,13 @@ export default function ProgramEditionsClient({
     }
   }, [lightbox]);
 
+  // Priority: CMS editions from Firestore → static registry
   const editions = useMemo(() => {
-    return PROGRAM_EDITIONS[programSlug] ?? [];
-  }, [programSlug]);
+    if (cmsEditions && Array.isArray(cmsEditions) && cmsEditions.length > 0) {
+      return cmsEditions;
+    }
+    return STATIC_PROGRAM_EDITIONS[programSlug] ?? [];
+  }, [programSlug, cmsEditions]);
 
   const toggleEditionMessages = (key: string) => {
     setOpenEditionKey((prev) => (prev === key ? null : key));
@@ -557,18 +438,20 @@ export default function ProgramEditionsClient({
         style={{
           paddingTop: "64px",
           paddingBottom: "36px",
+          paddingLeft: "clamp(16px, 4vw, 24px)",
+          paddingRight: "clamp(16px, 4vw, 24px)",
           borderBottom: "1px solid #D3DAEC",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-          <div style={{ width: "36px", height: "3px", background: "#D97706", borderRadius: "2px" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+          <div style={{ width: "32px", height: "3px", background: "#0140C1", borderRadius: "2px" }} />
           <span
             style={{
               fontFamily: "var(--font-poppins)",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: "11px",
               lineHeight: "1.6em",
-              letterSpacing: "0.2em",
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
               color: "#0140C1",
             }}
@@ -580,7 +463,7 @@ export default function ProgramEditionsClient({
           style={{
             fontFamily: "var(--font-poppins)",
             fontWeight: 800,
-            fontSize: "clamp(28px, 4vw, 44px)",
+            fontSize: "clamp(26px, 4vw, 42px)",
             lineHeight: "1.05em",
             letterSpacing: "-0.015em",
             textTransform: "uppercase",
@@ -588,7 +471,7 @@ export default function ProgramEditionsClient({
             margin: "0 0 10px",
           }}
         >
-          {programName} Editions & Fliers
+          {programName} Editions &amp; Fliers
         </h2>
         <p
           style={{
@@ -606,19 +489,19 @@ export default function ProgramEditionsClient({
       </div>
 
       {/* ── Edition Showcase: Line by Line ────────────────────────────── */}
-      <div className="tph-inner" style={{ paddingTop: "48px" }}>
+      <div className="tph-inner" style={{ paddingTop: "48px", paddingLeft: "clamp(16px, 4vw, 24px)", paddingRight: "clamp(16px, 4vw, 24px)" }}>
         {editions.length === 0 ? (
           <div
             style={{
               background: "#FFFFFF",
               border: "1px solid #D3DAEC",
-              borderRadius: "6px",
-              padding: "60px 24px",
+              borderRadius: "4px",
+              padding: "60px clamp(16px, 4vw, 32px)",
               textAlign: "center",
               boxShadow: "0 4px 20px rgba(21, 26, 84, 0.04)",
             }}
           >
-            <span style={{ fontSize: "44px", display: "block", marginBottom: "16px" }}>📂</span>
+            <span style={{ fontSize: "40px", display: "block", marginBottom: "16px" }}>📂</span>
             <h3
               style={{
                 fontFamily: "var(--font-poppins)",
@@ -626,6 +509,7 @@ export default function ProgramEditionsClient({
                 fontWeight: 700,
                 color: "#151A54",
                 marginBottom: "8px",
+                textTransform: "uppercase",
               }}
             >
               Archive Compiling
@@ -634,16 +518,17 @@ export default function ProgramEditionsClient({
               style={{
                 fontFamily: "var(--font-playfair)",
                 fontSize: "16px",
-                color: "#64748B",
+                color: "#4A62A0",
                 maxWidth: "520px",
                 margin: "0 auto",
+                lineHeight: "1.6em",
               }}
             >
               Archival fliers and tapes for {programName} are currently being organized. Check back shortly.
             </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "56px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
             {editions.map((edition, idx) => (
               <EditionRow
                 key={edition.key}
@@ -676,8 +561,7 @@ export default function ProgramEditionsClient({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "20px",
-            animation: "fadeIn 0.2s ease-out",
+            padding: "clamp(16px, 3vw, 24px)",
           }}
         >
           {/* Top Bar with Title & Close button */}
@@ -698,13 +582,13 @@ export default function ProgramEditionsClient({
                 style={{
                   fontFamily: "var(--font-poppins)",
                   fontSize: "11px",
-                  fontWeight: 700,
-                  letterSpacing: "0.15em",
+                  fontWeight: 600,
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  color: "#D97706",
+                  color: "#2090FF",
                 }}
               >
-                High-Resolution Flier
+                High-Resolution Event Poster
               </span>
               <h4
                 style={{
@@ -724,18 +608,17 @@ export default function ProgramEditionsClient({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                background: "rgba(255, 255, 255, 0.12)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                borderRadius: "3px",
+                background: "#0140C1",
+                border: "none",
+                borderRadius: "2px",
                 padding: "8px 16px",
                 color: "#FFFFFF",
                 fontFamily: "var(--font-poppins)",
                 fontSize: "12px",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
+                fontWeight: 600,
+                letterSpacing: "0.14em",
                 textTransform: "uppercase",
                 cursor: "pointer",
-                transition: "background 0.2s",
               }}
             >
               <span>✕</span> Close
@@ -761,8 +644,8 @@ export default function ProgramEditionsClient({
                 maxHeight: "80vh",
                 maxWidth: "90vw",
                 objectFit: "contain",
-                borderRadius: "6px",
-                boxShadow: "0 25px 70px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.15)",
+                borderRadius: "4px",
+                boxShadow: "0 25px 70px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.12)",
               }}
             />
           </div>
@@ -770,11 +653,11 @@ export default function ProgramEditionsClient({
           <p
             onClick={(e) => e.stopPropagation()}
             style={{
-              color: "#94A3B8",
+              color: "#99AFC6",
               fontFamily: "var(--font-poppins)",
               fontSize: "12px",
               marginTop: "12px",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.04em",
             }}
           >
             {lightbox.subtitle} · Tap anywhere outside or press ESC to dismiss
@@ -810,34 +693,35 @@ function EditionRow({
       style={{
         background: "#FFFFFF",
         border: "1px solid #D3DAEC",
-        borderRadius: "6px",
+        borderRadius: "4px",
         overflow: "hidden",
         boxShadow: isFirst
-          ? "0 10px 30px rgba(21, 26, 84, 0.08)"
-          : "0 4px 18px rgba(21, 26, 84, 0.04)",
-        transition: "box-shadow 0.2s ease",
+          ? "0 8px 24px rgba(21, 26, 84, 0.06)"
+          : "0 2px 12px rgba(21, 26, 84, 0.03)",
+        width: "100%",
+        maxWidth: "100%",
       }}
     >
       {/* ── Top Header Plate with Year Badge & Theme ── */}
       <div
         style={{
           background: "linear-gradient(to right, #151A54 0%, #0140C1 100%)",
-          padding: "20px 28px",
+          padding: "18px clamp(16px, 3vw, 28px)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "12px",
-          borderBottom: "3px solid #D97706",
+          borderBottom: "3px solid #2090FF",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <span
             style={{
-              background: "#D97706",
-              color: "#151A54",
+              background: "#2090FF",
+              color: "#FFFFFF",
               fontFamily: "var(--font-poppins)",
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: "11px",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -852,7 +736,7 @@ function EditionRow({
               fontFamily: "var(--font-playfair)",
               fontStyle: "italic",
               fontWeight: 700,
-              fontSize: "clamp(20px, 3vw, 28px)",
+              fontSize: "clamp(18px, 2.8vw, 26px)",
               color: "#FFFFFF",
               margin: 0,
             }}
@@ -861,11 +745,11 @@ function EditionRow({
           </h3>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "#BFD0F7" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", color: "#E8ECF7", flexWrap: "wrap" }}>
           <span style={{ fontFamily: "var(--font-poppins)", fontSize: "12px", fontWeight: 500 }}>
             📍 {edition.location}
           </span>
-          <span>·</span>
+          <span style={{ color: "rgba(255,255,255,0.4)" }}>·</span>
           <span style={{ fontFamily: "var(--font-poppins)", fontSize: "12px", fontWeight: 500 }}>
             🗓 {edition.dates}
           </span>
@@ -875,24 +759,26 @@ function EditionRow({
       {/* ── Main Showcase Body: Flier Line-by-Line ── */}
       <div
         style={{
-          padding: "clamp(24px, 4vw, 44px)",
+          padding: "clamp(20px, 4vw, 40px) clamp(16px, 3vw, 32px)",
           display: "flex",
           flexDirection: "column",
-          gap: "28px",
+          gap: "24px",
           alignItems: "center",
           background: "#FFFFFF",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         {/* Flier Container with Click-to-Expand Badge */}
         <div
           style={{
             position: "relative",
-            maxWidth: "380px",
+            maxWidth: "360px",
             width: "100%",
             borderRadius: "4px",
             overflow: "hidden",
             border: "1px solid #D3DAEC",
-            boxShadow: "0 14px 40px rgba(21, 26, 84, 0.12)",
+            boxShadow: "0 10px 30px rgba(21, 26, 84, 0.08)",
             cursor: "pointer",
             background: "#F4F6FB",
           }}
@@ -911,7 +797,6 @@ function EditionRow({
               width: "100%",
               height: "auto",
               display: "block",
-              transition: "transform 0.3s ease",
             }}
           />
 
@@ -921,29 +806,28 @@ function EditionRow({
               position: "absolute",
               bottom: "12px",
               right: "12px",
-              background: "rgba(21, 26, 84, 0.88)",
+              background: "rgba(21, 26, 84, 0.90)",
               backdropFilter: "blur(4px)",
               color: "#FFFFFF",
-              padding: "6px 14px",
-              borderRadius: "100px",
+              padding: "6px 12px",
+              borderRadius: "2px",
               fontFamily: "var(--font-poppins)",
               fontSize: "11px",
-              fontWeight: 700,
+              fontWeight: 600,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
               border: "1px solid rgba(255,255,255,0.2)",
             }}
           >
-            <span>🔍</span> Click to Expand
+            <span>🔍</span> Expand Poster
           </div>
         </div>
 
         {/* Core Edition Meta Information */}
-        <div style={{ textAlign: "center", maxWidth: "600px" }}>
+        <div style={{ textAlign: "center", maxWidth: "600px", width: "100%", padding: "0 8px" }}>
           <p
             style={{
               fontFamily: "var(--font-playfair)",
@@ -962,7 +846,7 @@ function EditionRow({
               justifyContent: "center",
               gap: "8px",
               flexWrap: "wrap",
-              marginBottom: "18px",
+              marginBottom: "20px",
             }}
           >
             {edition.speakers.map((sp) => (
@@ -971,10 +855,10 @@ function EditionRow({
                 style={{
                   background: "#F4F6FB",
                   border: "1px solid #D3DAEC",
-                  borderRadius: "20px",
-                  padding: "4px 14px",
+                  borderRadius: "2px",
+                  padding: "4px 12px",
                   fontFamily: "var(--font-poppins)",
-                  fontSize: "12px",
+                  fontSize: "11.5px",
                   fontWeight: 600,
                   color: "#0140C1",
                 }}
@@ -985,6 +869,7 @@ function EditionRow({
           </div>
 
           {/* ── THE DYNAMIC BUTTON: "Listen to [Program] [Year] Messages" ── */}
+          {/* Primary Button: White on Blue 700 (#0140C1) */}
           <button
             onClick={onToggle}
             style={{
@@ -992,19 +877,22 @@ function EditionRow({
               alignItems: "center",
               justifyContent: "center",
               gap: "10px",
-              padding: "16px 36px",
-              background: isOpen ? "#151A54" : "#D97706",
-              color: isOpen ? "#FFFFFF" : "#151A54",
-              border: isOpen ? "2px solid #151A54" : "2px solid #D97706",
-              borderRadius: "4px",
+              padding: "14px 28px",
+              backgroundColor: isOpen ? "#151A54" : "#0140C1",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "2px",
               fontFamily: "var(--font-poppins)",
-              fontWeight: 800,
-              fontSize: "13px",
-              letterSpacing: "0.12em",
+              fontWeight: 600,
+              fontSize: "12px",
+              lineHeight: "1em",
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               cursor: "pointer",
-              boxShadow: "0 6px 20px rgba(217, 119, 6, 0.28)",
-              transition: "all 0.2s ease",
+              boxShadow: "0 4px 14px rgba(1, 64, 193, 0.3)",
+              transition: "background-color 0.2s ease",
+              width: "auto",
+              maxWidth: "100%",
             }}
           >
             {isOpen ? (
@@ -1028,13 +916,13 @@ function EditionRow({
               width: "100%",
               maxWidth: "880px",
               marginTop: "8px",
-              background: "#F8FAFC",
+              background: "#FFFFFF",
               border: "1.5px solid #0140C1",
-              borderLeft: "5px solid #D97706",
-              borderRadius: "6px",
-              padding: "clamp(20px, 3.5vw, 36px)",
-              boxShadow: "0 10px 35px rgba(21, 26, 84, 0.08)",
-              animation: "slideDown 0.25s ease-out",
+              borderLeft: "4px solid #0140C1",
+              borderRadius: "4px",
+              padding: "clamp(16px, 3vw, 32px)",
+              boxShadow: "0 8px 24px rgba(21, 26, 84, 0.08)",
+              boxSizing: "border-box",
             }}
           >
             <ScrollableMessagesCard
@@ -1074,7 +962,6 @@ function ScrollableMessagesCard({
       const sTags = (s.tags || []).map((t) => t.toLowerCase());
       const sSummary = (s.summary || "").toLowerCase();
 
-      // Check if matches any search term for this edition
       return lowerTerms.some((term) => {
         return (
           sTitle.includes(term) ||
@@ -1088,9 +975,8 @@ function ScrollableMessagesCard({
 
   // Combined messages: prioritize curated messages and merge any catalog matches
   const displayMessages = useMemo(() => {
-    const list: EditionMessage[] = [...edition.curatedMessages];
+    const list: EditionMessage[] = [...(edition.curatedMessages || [])];
 
-    // Append any extra catalog matches not already present by title
     catalogMatches.forEach((cat) => {
       const exists = list.some(
         (m) => m.title.toLowerCase() === cat.title.toLowerCase()
@@ -1114,7 +1000,6 @@ function ScrollableMessagesCard({
   }, [edition.curatedMessages, catalogMatches]);
 
   const handlePlayMessage = (msg: EditionMessage) => {
-    // Construct playable media object for the persistent global player
     const media: PlayableMedia = {
       id: msg.id,
       title: msg.title,
@@ -1143,30 +1028,30 @@ function ScrollableMessagesCard({
           justifyContent: "space-between",
           alignItems: "flex-start",
           borderBottom: "1px solid #D3DAEC",
-          paddingBottom: "18px",
-          marginBottom: "20px",
+          paddingBottom: "16px",
+          marginBottom: "18px",
           flexWrap: "wrap",
-          gap: "12px",
+          gap: "10px",
         }}
       >
         <div>
           <span
             style={{
               fontFamily: "var(--font-poppins)",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: "11px",
-              letterSpacing: "0.15em",
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               color: "#0140C1",
             }}
           >
-            Audio Catalog & Messages Archive
+            Audio Catalog &amp; Messages Archive
           </span>
           <h4
             style={{
               fontFamily: "var(--font-poppins)",
-              fontWeight: 800,
-              fontSize: "20px",
+              fontWeight: 700,
+              fontSize: "18px",
               color: "#151A54",
               margin: "4px 0 0",
               textTransform: "uppercase",
@@ -1177,206 +1062,210 @@ function ScrollableMessagesCard({
           </h4>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <span
-            style={{
-              background: "rgba(1, 64, 193, 0.08)",
-              color: "#0140C1",
-              fontFamily: "var(--font-poppins)",
-              fontWeight: 600,
-              fontSize: "12px",
-              padding: "4px 12px",
-              borderRadius: "100px",
-            }}
-          >
-            {displayMessages.length} Messages Available
-          </span>
-        </div>
+        <span
+          style={{
+            background: "rgba(1, 64, 193, 0.08)",
+            color: "#0140C1",
+            fontFamily: "var(--font-poppins)",
+            fontWeight: 600,
+            fontSize: "11px",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "4px 10px",
+            borderRadius: "2px",
+          }}
+        >
+          {displayMessages.length} Messages Available
+        </span>
       </div>
 
       {/* ── Scrollable List Container (Mobile & Desktop) ── */}
       <div
         style={{
-          maxHeight: "460px",
+          maxHeight: "440px",
           overflowY: "auto",
-          paddingRight: "6px",
+          paddingRight: "4px",
           display: "flex",
           flexDirection: "column",
-          gap: "14px",
+          gap: "12px",
         }}
       >
-        {displayMessages.map((msg, index) => {
-          const isThisPlaying =
-            currentSermon?.id === msg.id && isPlaying;
+        {displayMessages.length === 0 ? (
+          <div style={{ padding: "32px 16px", textAlign: "center", background: "#F4F6FB", borderRadius: "4px" }}>
+            <p style={{ fontFamily: "var(--font-playfair)", color: "#4A62A0", margin: 0, fontSize: "15px" }}>
+              Messages for this edition are currently being digitized from the archive. Stream other teachings via the player below.
+            </p>
+          </div>
+        ) : (
+          displayMessages.map((msg, index) => {
+            const isThisPlaying = currentSermon?.id === msg.id && isPlaying;
 
-          return (
-            <div
-              key={msg.id}
-              style={{
-                background: "#FFFFFF",
-                border: isThisPlaying
-                  ? "1.5px solid #D97706"
-                  : "1px solid #E2E8F0",
-                borderRadius: "4px",
-                padding: "16px 20px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                boxShadow: isThisPlaying
-                  ? "0 4px 16px rgba(217, 119, 6, 0.15)"
-                  : "0 2px 6px rgba(0,0,0,0.02)",
-                transition: "border 0.2s ease",
-              }}
-            >
-              {/* Row: Title, Speaker, and Primary Action */}
+            return (
               <div
+                key={msg.id}
                 style={{
+                  background: isThisPlaying ? "#F4F6FB" : "#FFFFFF",
+                  border: isThisPlaying
+                    ? "1.5px solid #0140C1"
+                    : "1px solid #D3DAEC",
+                  borderRadius: "4px",
+                  padding: "16px clamp(14px, 2.5vw, 20px)",
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "16px",
-                  flexWrap: "wrap",
+                  flexDirection: "column",
+                  gap: "10px",
+                  transition: "border 0.2s ease",
                 }}
               >
-                <div style={{ flex: 1, minWidth: "240px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-poppins)",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "#94A3B8",
-                      }}
-                    >
-                      #{index + 1}
-                    </span>
-                    <h5
-                      style={{
-                        fontFamily: "var(--font-poppins)",
-                        fontWeight: 700,
-                        fontSize: "15.5px",
-                        color: "#151A54",
-                        margin: 0,
-                        lineHeight: "1.35em",
-                      }}
-                    >
-                      {msg.title}
-                    </h5>
-                  </div>
-
-                  {/* Metadata: Speaker, Scripture, Duration */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "14px",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      fontFamily: "var(--font-poppins)",
-                      fontSize: "12px",
-                      color: "#64748B",
-                      marginTop: "4px",
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, color: "#0140C1" }}>
-                      🎙 {msg.speaker}
-                    </span>
-                    {msg.scripture && (
-                      <span>📖 {msg.scripture}</span>
-                    )}
-                    {msg.duration && (
-                      <span>⏱ {msg.duration}</span>
-                    )}
-                  </div>
-
-                  {msg.summary && (
-                    <p
-                      style={{
-                        fontFamily: "var(--font-playfair)",
-                        fontSize: "13.5px",
-                        color: "#4A62A0",
-                        margin: "8px 0 0",
-                        lineHeight: "1.5em",
-                      }}
-                    >
-                      {msg.summary}
-                    </p>
-                  )}
-                </div>
-
-                {/* Listen Action Button */}
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button
-                    onClick={() => handlePlayMessage(msg)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      background: isThisPlaying ? "#151A54" : "#D97706",
-                      color: isThisPlaying ? "#FFFFFF" : "#151A54",
-                      border: "none",
-                      borderRadius: "3px",
-                      padding: "10px 20px",
-                      fontFamily: "var(--font-poppins)",
-                      fontWeight: 700,
-                      fontSize: "11px",
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      cursor: "pointer",
-                      transition: "all 0.18s ease",
-                    }}
-                  >
-                    <span>{isThisPlaying ? "⏸ Pause" : "▶ Listen Now"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* In-Page Native Audio Player for Direct Inline Listening without redirection */}
-              {msg.audioUrl ? (
-                <div style={{ marginTop: "4px", paddingTop: "8px", borderTop: "1px dashed #E2E8F0" }}>
-                  <audio
-                    controls
-                    preload="none"
-                    src={msg.audioUrl}
-                    style={{
-                      width: "100%",
-                      height: "36px",
-                      borderRadius: "4px",
-                      accentColor: "#D97706",
-                    }}
-                  >
-                    Your browser does not support audio playback.
-                  </audio>
-                </div>
-              ) : (
+                {/* Row: Title, Speaker, and Primary Action */}
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    background: "rgba(1, 64, 193, 0.04)",
-                    borderRadius: "4px",
-                    fontFamily: "var(--font-poppins)",
-                    fontSize: "11px",
-                    color: "#4A62A0",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: "14px",
+                    flexWrap: "wrap",
                   }}
                 >
-                  <span style={{ color: "#D97706" }}>●</span>
-                  <span>
-                    Audio feed synchronized via the TPH Media Catalog. Click <strong>Listen Now</strong> to stream through the main player.
-                  </span>
+                  <div style={{ flex: 1, minWidth: "220px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-poppins)",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#747CA1",
+                        }}
+                      >
+                        #{index + 1}
+                      </span>
+                      <h5
+                        style={{
+                          fontFamily: "var(--font-poppins)",
+                          fontWeight: 700,
+                          fontSize: "15px",
+                          color: "#151A54",
+                          margin: 0,
+                          lineHeight: "1.35em",
+                        }}
+                      >
+                        {msg.title}
+                      </h5>
+                    </div>
+
+                    {/* Metadata: Speaker, Scripture, Duration */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        fontFamily: "var(--font-poppins)",
+                        fontSize: "11.5px",
+                        color: "#4A62A0",
+                        marginTop: "4px",
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, color: "#0140C1" }}>
+                        🎙 {msg.speaker}
+                      </span>
+                      {msg.scripture && (
+                        <span>📖 {msg.scripture}</span>
+                      )}
+                      {msg.duration && (
+                        <span>⏱ {msg.duration}</span>
+                      )}
+                    </div>
+
+                    {msg.summary && (
+                      <p
+                        style={{
+                          fontFamily: "var(--font-playfair)",
+                          fontSize: "14px",
+                          color: "#4A62A0",
+                          margin: "6px 0 0",
+                          lineHeight: "1.5em",
+                        }}
+                      >
+                        {msg.summary}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Listen Action Button */}
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button
+                      onClick={() => handlePlayMessage(msg)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        backgroundColor: isThisPlaying ? "#151A54" : "#0140C1",
+                        color: "#FFFFFF",
+                        border: "none",
+                        borderRadius: "2px",
+                        padding: "8px 16px",
+                        fontFamily: "var(--font-poppins)",
+                        fontWeight: 600,
+                        fontSize: "11px",
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        transition: "all 0.18s ease",
+                      }}
+                    >
+                      <span>{isThisPlaying ? "⏸ Pause" : "▶ Listen Now"}</span>
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* In-Page Native Audio Player for Direct Inline Listening without redirection */}
+                {msg.audioUrl ? (
+                  <div style={{ marginTop: "4px", paddingTop: "8px", borderTop: "1px dashed #D3DAEC" }}>
+                    <audio
+                      controls
+                      preload="none"
+                      src={msg.audioUrl}
+                      style={{
+                        width: "100%",
+                        height: "36px",
+                        borderRadius: "2px",
+                        accentColor: "#0140C1",
+                      }}
+                    >
+                      Your browser does not support audio playback.
+                    </audio>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 12px",
+                      background: "#F4F6FB",
+                      borderRadius: "2px",
+                      fontFamily: "var(--font-poppins)",
+                      fontSize: "11px",
+                      color: "#4A62A0",
+                    }}
+                  >
+                    <span style={{ color: "#0140C1" }}>●</span>
+                    <span>
+                      Audio stream connected via the TPH Media Catalog. Click <strong>Listen Now</strong> to stream in the bottom player.
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Footer note inside the card */}
       <div
         style={{
-          marginTop: "16px",
-          paddingTop: "12px",
+          marginTop: "14px",
+          paddingTop: "10px",
           borderTop: "1px solid #D3DAEC",
           display: "flex",
           justifyContent: "space-between",
@@ -1384,12 +1273,12 @@ function ScrollableMessagesCard({
           flexWrap: "wrap",
           gap: "8px",
           fontFamily: "var(--font-poppins)",
-          fontSize: "11.5px",
-          color: "#64748B",
+          fontSize: "11px",
+          color: "#4A62A0",
         }}
       >
         <span>
-          💡 All messages play in the player without leaving this page.
+          💡 Messages stream in the persistent player without leaving this page.
         </span>
         <span style={{ color: "#0140C1", fontWeight: 600 }}>
           The Publishers House Archive
