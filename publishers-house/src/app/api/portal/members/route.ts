@@ -84,78 +84,133 @@ function buildAdminNotifyHtml(data: {
 }): string {
   const loginUrl = `${data.siteUrl}/portal/login`;
   const year = new Date().getFullYear();
+  const logoUrl = "https://www.thepublishershouse.org/images/nav-logo.png";
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><title>New Portal Account — Forward Credentials</title></head>
-<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Portal Account — Forward Credentials</title>
+</head>
+<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EEF1FA;padding:40px 16px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" style="max-width:580px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.10);">
-        <tr><td style="background-color:#92400E;padding:4px 0;font-size:0;">&nbsp;</td></tr>
-        <tr><td style="background-color:#151A54;padding:28px 40px;text-align:center;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.3em;color:#F59E0B;text-transform:uppercase;margin-bottom:8px;">The Publishers House · Admin Action Required</div>
-          <div style="font-size:22px;font-weight:800;color:#FFFFFF;">New Portal Account Created</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px;">Please forward credentials to the new member</div>
-        </td></tr>
-        <tr><td style="padding:32px 40px;">
-          <div style="background:#FEF3C7;border-left:4px solid #D97706;border-radius:4px;padding:12px 16px;margin-bottom:24px;">
-            <strong style="font-size:13px;color:#92400E;">⚠️ Why are you receiving this?</strong>
-            <p style="font-size:12.5px;color:#92400E;margin:6px 0 0;line-height:1.5;">
-              The Publishers House domain is not yet verified with Resend, so invitation emails cannot be sent directly to new members yet.
-              Please copy the credentials below and share them with <strong>${data.displayName}</strong> via WhatsApp, SMS, or personal email.
-            </p>
-          </div>
+      <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.12);">
 
-          <div style="background:#F4F6FB;border:1px solid #D3DAEC;border-radius:10px;overflow:hidden;margin-bottom:24px;">
-            <div style="background:#151A54;padding:10px 20px;">
-              <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.2em;">New Member Credentials to Forward</span>
-            </div>
-            <div style="padding:20px;">
-              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
-                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Member Name</div>
-                <div style="font-size:16px;font-weight:700;color:#151A54;">${data.displayName}</div>
-              </div>
-              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
-                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Role</div>
-                <div style="font-size:14px;font-weight:600;color:#0140C1;">${data.role}</div>
-              </div>
-              <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
-                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Login Email</div>
-                <div style="font-size:15px;font-weight:700;color:#151A54;">${data.email}</div>
-              </div>
-              <div>
-                <div style="font-size:11px;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Temporary Password (case-sensitive)</div>
-                <span style="font-size:24px;font-weight:800;letter-spacing:0.12em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:10px 20px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
-              </div>
-            </div>
-          </div>
+        <!-- ── GOLD TOP BAR ── -->
+        <tr><td style="background:linear-gradient(90deg,#D97706 0%,#F59E0B 50%,#D97706 100%);height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
 
-          <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:14px 18px;margin-bottom:24px;">
-            <div style="font-size:12.5px;font-weight:700;color:#1E40AF;margin-bottom:6px;">📋 Message to copy and send to ${data.displayName}:</div>
-            <div style="font-size:12px;color:#1E40AF;line-height:1.7;font-family:'Courier New',Courier,monospace;background:#DBEAFE;padding:12px;border-radius:4px;">
-              Welcome to The Publishers House Portal!<br>
-              You have been added as a <strong>${data.role}</strong>.<br><br>
-              Sign-in Email: ${data.email}<br>
-              Temporary Password: ${data.tempPassword}<br><br>
-              Sign in at: ${loginUrl}<br>
-              (You will be asked to change your password on first login.)
-            </div>
-          </div>
+        <!-- ── HEADER ── -->
+        <tr>
+          <td style="background-color:#151A54;padding:32px 40px 28px;text-align:center;">
+            <img src="${logoUrl}" alt="The Publishers House" width="120" height="auto" style="display:block;margin:0 auto 16px;width:120px;max-width:100%;border:0;outline:none;" />
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.3em;color:#F59E0B;text-transform:uppercase;margin-bottom:8px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Admin Action Required</div>
+            <div style="font-size:22px;font-weight:800;color:#FFFFFF;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-0.02em;">New Portal Account Created</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:6px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Please forward credentials to the new member</div>
+          </td>
+        </tr>
 
-          <div style="text-align:center;">
-            <a href="${loginUrl}" style="display:inline-block;background:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:13px;padding:14px 36px;border-radius:8px;letter-spacing:0.06em;">
-              View Portal Login Page →
-            </a>
-          </div>
-        </td></tr>
-        <tr><td style="background:#F4F6FB;padding:20px 40px;border-top:1px solid #D3DAEC;text-align:center;">
-          <div style="font-size:12px;font-weight:700;color:#151A54;margin-bottom:4px;">The Publishers House</div>
-          <div style="font-size:11px;color:#747CA1;">thepublishershouse.org · Psalm 68:11</div>
-          <div style="font-size:10px;color:#B0BAD8;margin-top:8px;">
-            To send emails directly to members, verify your domain at
-            <a href="https://resend.com/domains" style="color:#0140C1;">resend.com/domains</a> · &copy; ${year}
-          </div>
-        </td></tr>
+        <!-- ── BODY ── -->
+        <tr>
+          <td style="padding:32px 40px;">
+
+            <!-- Warning banner -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FEF3C7;border-left:4px solid #D97706;border-radius:4px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px;">⚠️ Why are you receiving this?</div>
+                  <div style="font-size:12.5px;color:#92400E;line-height:1.6;">
+                    The Publishers House domain is not yet verified with Resend, so invitation emails cannot be sent directly to new members.
+                    Please copy the credentials below and share them with <strong>${data.displayName}</strong> via WhatsApp, SMS, or personal email.
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Credentials card -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6FB;border:1px solid #D3DAEC;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+              <tr>
+                <td style="background-color:#151A54;padding:10px 20px;">
+                  <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.2em;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">New Member Credentials to Forward</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                        <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Member Name</div>
+                        <div style="font-size:16px;font-weight:700;color:#151A54;">${data.displayName}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                        <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Role</div>
+                        <div style="font-size:14px;font-weight:600;color:#0140C1;">${data.role}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:14px;padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
+                        <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Login Email</div>
+                        <div style="font-size:15px;font-weight:700;color:#151A54;">${data.email}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:14px;">
+                        <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Temporary Password (case-sensitive)</div>
+                        <div>
+                          <span style="font-size:24px;font-weight:800;letter-spacing:0.12em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:10px 20px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Copy-paste message block -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <div style="font-size:12.5px;font-weight:700;color:#1E40AF;margin-bottom:8px;">📋 Message to copy and send to ${data.displayName}:</div>
+                  <div style="font-size:12px;color:#1E40AF;line-height:1.7;font-family:'Courier New',Courier,monospace;background:#DBEAFE;padding:12px;border-radius:4px;">
+                    Welcome to The Publishers House Portal!<br>
+                    You have been added as a <strong>${data.role}</strong>.<br><br>
+                    Sign-in Email: ${data.email}<br>
+                    Temporary Password: ${data.tempPassword}<br><br>
+                    Sign in at: ${loginUrl}<br>
+                    (You will be asked to change your password on first login.)
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            <div style="text-align:center;">
+              <a href="${loginUrl}" target="_blank" style="display:inline-block;background-color:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:13px;padding:15px 36px;border-radius:8px;letter-spacing:0.06em;box-shadow:0 4px 14px rgba(1,64,193,0.35);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                View Portal Login Page →
+              </a>
+            </div>
+
+          </td>
+        </tr>
+
+        <!-- ── FOOTER ── -->
+        <tr>
+          <td style="background-color:#F4F6FB;padding:24px 40px;border-top:1px solid #D3DAEC;text-align:center;">
+            <img src="${logoUrl}" alt="The Publishers House" width="60" height="auto" style="display:block;margin:0 auto 10px;opacity:0.55;border:0;outline:none;" />
+            <div style="font-size:12.5px;font-weight:800;color:#151A54;margin-bottom:4px;letter-spacing:0.02em;">The Publishers House</div>
+            <div style="font-size:11px;color:#747CA1;line-height:1.6;">
+              The House of Bread, Korinjoh House, British, Jos, Plateau State<br>
+              West Africa · <a href="https://www.thepublishershouse.org" style="color:#0140C1;text-decoration:none;">thepublishershouse.org</a>
+            </div>
+            <div style="font-size:10px;color:#B0BAD8;margin-top:8px;">
+              To send emails directly to members, verify your domain at
+              <a href="https://resend.com/domains" style="color:#0140C1;">resend.com/domains</a> · &copy; ${year} The Publishers House
+            </div>
+          </td>
+        </tr>
+
       </table>
     </td></tr>
   </table>
@@ -185,6 +240,7 @@ function buildInvitationEmailHtml(data: {
 }): string {
   const loginUrl = `${data.siteUrl}/portal/login`;
   const year = new Date().getFullYear();
+  const logoUrl = "https://www.thepublishershouse.org/images/nav-logo.png";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -193,52 +249,48 @@ function buildInvitationEmailHtml(data: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Welcome to The Publishers House Portal</title>
 </head>
-<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#EEF1FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
   <!-- Outer wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#EEF1FA;padding:40px 16px;">
     <tr>
       <td align="center">
 
-        <!-- Card -->
-        <table role="presentation" width="100%" style="max-width:580px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.10);">
+        <!-- Email Card -->
+        <table role="presentation" width="100%" style="max-width:600px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #D3DAEC;box-shadow:0 8px 32px rgba(21,26,84,0.12);">
 
-          <!-- ── HEADER BANNER ── -->
+          <!-- ── GOLD TOP ACCENT ── -->
           <tr>
-            <td style="background-color:#151A54;padding:0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <!-- Gold top accent line -->
-                  <td style="background:linear-gradient(90deg,#D97706 0%,#F59E0B 50%,#D97706 100%);height:4px;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
-                <tr>
-                  <td style="padding:36px 40px 28px;text-align:center;">
-                    <!-- Wordmark -->
-                    <div style="font-size:10px;font-weight:700;letter-spacing:0.35em;color:#F59E0B;text-transform:uppercase;margin-bottom:12px;">
-                      — PSALM 68:11 —
-                    </div>
-                    <div style="font-size:26px;font-weight:800;color:#FFFFFF;letter-spacing:-0.02em;line-height:1.15em;margin-bottom:6px;">
-                      The Publishers House
-                    </div>
-                    <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);letter-spacing:0.06em;text-transform:uppercase;">
-                      Portal Access — Member Invitation
-                    </div>
-                  </td>
-                </tr>
-              </table>
+            <td style="background:linear-gradient(90deg,#D97706 0%,#F59E0B 50%,#D97706 100%);height:4px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- ── HEADER: Navy background with Logo ── -->
+          <tr>
+            <td style="background-color:#151A54;padding:36px 40px 32px;text-align:center;">
+              <img src="${logoUrl}" alt="The Publishers House" width="130" height="auto"
+                style="display:block;margin:0 auto 18px;width:130px;max-width:100%;border:0;outline:none;text-decoration:none;" />
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.35em;color:#F59E0B;text-transform:uppercase;margin-bottom:10px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                — PSALM 68:11 —
+              </div>
+              <div style="font-size:24px;font-weight:800;color:#FFFFFF;letter-spacing:-0.02em;line-height:1.2em;margin-bottom:8px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                The Publishers House
+              </div>
+              <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.08em;text-transform:uppercase;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                Portal Access — Member Invitation
+              </div>
             </td>
           </tr>
 
           <!-- ── GREETING ── -->
           <tr>
             <td style="padding:40px 40px 0;">
-              <p style="font-size:17px;font-weight:700;color:#151A54;margin:0 0 10px;">
+              <p style="font-size:17px;font-weight:700;color:#151A54;margin:0 0 12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 Grace and peace, <span style="color:#0140C1;">${data.displayName}</span>.
               </p>
-              <p style="font-size:14.5px;line-height:1.7;color:#4A62A0;margin:0 0 28px;">
+              <p style="font-size:14.5px;line-height:1.75;color:#4A62A0;margin:0 0 16px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 Your <strong style="color:#151A54;">${data.role}</strong> account on The Publishers House Ministry Portal has been created. We are glad to have you on board.
               </p>
-              <p style="font-size:14px;line-height:1.65;color:#4A62A0;margin:0 0 28px;">
+              <p style="font-size:14px;line-height:1.7;color:#4A62A0;margin:0 0 32px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 Use the credentials below to sign in for the first time. You will be asked to set your own private password immediately after.
               </p>
             </td>
@@ -249,26 +301,24 @@ function buildInvitationEmailHtml(data: {
             <td style="padding:0 40px 28px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F6FB;border:1px solid #D3DAEC;border-radius:10px;overflow:hidden;">
                 <tr>
-                  <td style="background-color:#151A54;padding:10px 20px;">
-                    <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.2em;">Your Sign-In Credentials</span>
+                  <td style="background-color:#151A54;padding:12px 20px;">
+                    <span style="font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.22em;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Your Sign-In Credentials</span>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding:20px;">
+                  <td style="padding:22px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="padding-bottom:14px;border-bottom:1px solid #E4ECF9;">
-                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Email Address</div>
-                          <div style="font-size:15px;font-weight:700;color:#151A54;">${data.email}</div>
+                        <td style="padding-bottom:16px;border-bottom:1px solid #E4ECF9;">
+                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Email Address</div>
+                          <div style="font-size:15px;font-weight:700;color:#151A54;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">${data.email}</div>
                         </td>
                       </tr>
                       <tr>
-                        <td style="padding-top:14px;">
-                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Temporary Password</div>
-                          <div style="display:inline-block;">
-                            <span style="font-size:22px;font-weight:800;letter-spacing:0.12em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:10px 18px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
-                          </div>
-                          <div style="font-size:11.5px;color:#747CA1;margin-top:8px;">This is case-sensitive. Copy it exactly as shown.</div>
+                        <td style="padding-top:16px;">
+                          <div style="font-size:11px;font-weight:600;color:#747CA1;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Temporary Password</div>
+                          <span style="font-size:24px;font-weight:800;letter-spacing:0.14em;color:#0140C1;font-family:'Courier New',Courier,monospace;background:#FFFFFF;padding:12px 20px;border-radius:6px;border:2px dashed #2090FF;display:inline-block;">${data.tempPassword}</span>
+                          <div style="font-size:11.5px;color:#747CA1;margin-top:10px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">This is case-sensitive. Copy it exactly as shown.</div>
                         </td>
                       </tr>
                     </table>
@@ -278,17 +328,17 @@ function buildInvitationEmailHtml(data: {
             </td>
           </tr>
 
-          <!-- ── SECURITY ALERT ── -->
+          <!-- ── SECURITY NOTICE ── -->
           <tr>
             <td style="padding:0 40px 28px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBEB;border-left:4px solid #D97706;border-radius:0 6px 6px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBEB;border-left:4px solid #D97706;border-radius:0 8px 8px 0;">
                 <tr>
                   <td style="padding:14px 18px;">
-                    <p style="font-size:13px;font-weight:700;color:#92400E;margin:0 0 4px;">
+                    <p style="font-size:13px;font-weight:700;color:#92400E;margin:0 0 5px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                       🔐 Required: Change your password on first login
                     </p>
-                    <p style="font-size:12.5px;color:#92400E;margin:0;line-height:1.5;font-weight:500;">
-                      The portal will immediately prompt you to set a private password when you sign in. Your account cannot be accessed with the temporary password after this step.
+                    <p style="font-size:12.5px;color:#92400E;margin:0;line-height:1.55;font-weight:500;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                      The portal will immediately prompt you to set a private password when you sign in. Your account cannot be accessed with this temporary password after that step.
                     </p>
                   </td>
                 </tr>
@@ -298,26 +348,27 @@ function buildInvitationEmailHtml(data: {
 
           <!-- ── CTA BUTTON ── -->
           <tr>
-            <td style="padding:0 40px 36px;text-align:center;">
-              <a href="${loginUrl}" target="_blank" style="display:inline-block;background-color:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.08em;padding:16px 44px;border-radius:8px;text-transform:uppercase;box-shadow:0 4px 14px rgba(1,64,193,0.35);">
+            <td style="padding:0 40px 40px;text-align:center;">
+              <a href="${loginUrl}" target="_blank"
+                style="display:inline-block;background-color:#0140C1;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.1em;padding:17px 48px;border-radius:8px;text-transform:uppercase;box-shadow:0 4px 16px rgba(1,64,193,0.38);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 Sign In to the Portal →
               </a>
-              <div style="margin-top:14px;font-size:12px;color:#747CA1;">
+              <div style="margin-top:14px;font-size:12px;color:#747CA1;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 Or visit directly: <a href="${loginUrl}" style="color:#0140C1;text-decoration:none;font-weight:600;">${loginUrl}</a>
               </div>
             </td>
           </tr>
 
-          <!-- ── DIVIDER & ENCOURAGEMENT ── -->
+          <!-- ── SCRIPTURE ── -->
           <tr>
             <td style="padding:0 40px 36px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E4ECF9;">
                 <tr>
-                  <td style="padding-top:28px;">
-                    <p style="font-size:14px;line-height:1.7;color:#4A62A0;margin:0 0 6px;">
-                      <em>"The Lord gave the word: great was the company of those that published it."</em>
+                  <td style="padding-top:28px;text-align:center;">
+                    <p style="font-size:14px;line-height:1.75;color:#4A62A0;margin:0 0 8px;font-style:italic;font-family:Georgia,serif;">
+                      "The Lord gave the word: great was the company of those that published it."
                     </p>
-                    <p style="font-size:12px;color:#9CA6CC;margin:0;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Psalm 68:11</p>
+                    <p style="font-size:11px;color:#9CA6CC;margin:0;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">Psalm 68:11</p>
                   </td>
                 </tr>
               </table>
@@ -326,13 +377,15 @@ function buildInvitationEmailHtml(data: {
 
           <!-- ── FOOTER ── -->
           <tr>
-            <td style="background-color:#F4F6FB;padding:24px 40px;border-top:1px solid #D3DAEC;text-align:center;">
-              <div style="font-size:13px;font-weight:800;color:#151A54;margin-bottom:4px;letter-spacing:0.02em;">The Publishers House</div>
-              <div style="font-size:11.5px;color:#747CA1;line-height:1.6;">
+            <td style="background-color:#F4F6FB;padding:28px 40px;border-top:1px solid #D3DAEC;text-align:center;">
+              <img src="${logoUrl}" alt="The Publishers House" width="70" height="auto"
+                style="display:block;margin:0 auto 12px;width:70px;opacity:0.4;border:0;outline:none;" />
+              <div style="font-size:13px;font-weight:800;color:#151A54;margin-bottom:5px;letter-spacing:0.02em;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">The Publishers House</div>
+              <div style="font-size:11.5px;color:#747CA1;line-height:1.7;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 The House of Bread, Korinjoh House, British, Jos, Plateau State<br>
                 West Africa · <a href="https://www.thepublishershouse.org" style="color:#0140C1;text-decoration:none;">thepublishershouse.org</a>
               </div>
-              <div style="margin-top:10px;font-size:10.5px;color:#B0BAD8;">
+              <div style="margin-top:12px;font-size:10.5px;color:#B0BAD8;line-height:1.6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
                 You received this email because an administrator created a portal account for you.<br>
                 If you did not request this, please contact us at <a href="mailto:thepublishershouse007@gmail.com" style="color:#747CA1;">thepublishershouse007@gmail.com</a><br>
                 &copy; ${year} The Publishers House. All rights reserved.
