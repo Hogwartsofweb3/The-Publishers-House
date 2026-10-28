@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
-import { parseStartAndEnd } from "@/lib/eventTiming";
+import { parseStartAndEnd } from "@/lib/eventTimingUtils";
 
 export const revalidate = 60; // refresh every minute so new sermons and events appear quickly
 

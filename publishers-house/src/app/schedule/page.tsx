@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
 import { getEvents, type EventItem } from "@/lib/firebase";
-import { parseStartAndEnd } from "@/lib/eventTiming";
+import { parseStartAndEnd } from "@/lib/eventTimingUtils";
 
 export const revalidate = 60;
 
