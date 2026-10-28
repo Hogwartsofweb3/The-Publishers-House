@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, setDoc, where, limit } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, getDoc, doc, where, limit } from "firebase/firestore";
 import Link from "next/link";
 
 /* ── tokens ── */
@@ -31,7 +30,7 @@ const TABS = ["hero","setman","gatherings","teaching","articles","whoweare","ann
 type Tab = typeof TABS[number];
 const TAB_LABELS: Record<Tab, string> = { hero:"Hero", setman:"Welcome", gatherings:"This Week", teaching:"Latest Teaching", articles:"Articles Carousel", whoweare:"Who We Are", announcement:"Announcement", giving:"Giving" };
 
-const EMPTY_G = { day:"", date:"", month:"", title:"", desc:"", scripture:"", time:"", city:"Jos", theme:"", speaker:"Rev. Joshua Agunbiade", flierUrl:"", order:0, published:true };
+const EMPTY_G = { day:"", date:"", month:"", title:"", desc:"", scripture:"", time:"", city:"Jos", theme:"", speaker:"Rev. Joshua Agunbiade", flierUrl:"", order:0, published:true, eventId:"", registrationUrl:"" };
 
 const DEF: Record<string, any> = {
   heroEyebrow:"Psalm 68:11", heroHeadline:"Company of the Great",
@@ -80,6 +79,8 @@ export default function HomepageEditor() {
   const [tab, setTab] = useState<Tab>("gatherings");
   const [settings, setSettings] = useState<any>({ ...DEF });
   const [gatherings, setGatherings] = useState<any[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
   const [liveSermons, setLiveSermons] = useState<any[]>([]);
   const [gForm, setGForm] = useState({ ...EMPTY_G });
   const [editId, setEditId] = useState<string|null>(null);
@@ -102,8 +103,9 @@ export default function HomepageEditor() {
       }
     } catch {}
     const snap = await getDoc(doc(db, "homeSettings", "main"));
-    if (snap.exists()) setSettings((p: any) => ({ ...DEF, ...p, ...snap.data() }));
+    if (snap.exists()) setSettings((p: any) => ({ ...DEF, ...p, ...(snap.data() as any) }));
   };
+
   const fetchGatherings = async () => {
     try {
       const res = await fetch("/api/cms/homepage");
@@ -118,6 +120,24 @@ export default function HomepageEditor() {
     const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order","asc")));
     setGatherings(snap.docs.map(d => ({ id:d.id, ...d.data() })));
   };
+
+  const fetchScheduleEvents = async () => {
+    setEventsLoading(true);
+    try {
+      const res = await fetch("/api/cms/events");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.events) {
+          setScheduleEvents(data.events);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load schedule events:", e);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
   const fetchLiveSermons = async () => {
     try {
       const q = query(
@@ -135,7 +155,71 @@ export default function HomepageEditor() {
     fetchSettings();
     fetchGatherings();
     fetchLiveSermons();
+    fetchScheduleEvents();
   }, []);
+
+  const importEventToGathering = (ev: any) => {
+    try {
+      const rawDate = ev.startAt || ev.date;
+      const d = rawDate ? new Date(rawDate) : new Date();
+      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+      let formattedTime = "";
+      if (!isNaN(d.getTime())) {
+        const hours = d.getHours();
+        const minutes = d.getMinutes();
+        const ampm = hours >= 12 ? "PM" : "AM";
+        const h12 = hours % 12 || 12;
+        const mStr = minutes > 0 ? `:${String(minutes).padStart(2, "0")}` : ":00";
+        formattedTime = `${h12}${mStr} ${ampm} WAT`;
+      }
+
+      // Check if this event already exists in gatherings
+      const existing = gatherings.find((g: any) =>
+        (g.eventId && g.eventId === ev.id) ||
+        (g.title && g.title.toLowerCase().trim() === (ev.title || "").toLowerCase().trim())
+      );
+
+      if (existing) {
+        setEditId(existing.id);
+        setGForm({
+          ...EMPTY_G,
+          ...existing,
+          eventId: ev.id,
+          flierUrl: existing.flierUrl || ev.imageUrl || "",
+          registrationUrl: existing.registrationUrl || ev.registrationUrl || "",
+        });
+        flash(`Editing existing gathering linked to "${ev.title}". Update details below!`);
+      } else {
+        setEditId(null);
+        setGForm({
+          ...EMPTY_G,
+          eventId: ev.id,
+          title: ev.title || "",
+          theme: ev.summary || "Upcoming Flagship Gathering",
+          desc: ev.description || "",
+          speaker: ev.speaker || "Rev. Joshua Agunbiade",
+          scripture: ev.scripture || "",
+          city: ev.location ? ev.location.split(",")[0].trim() : "Jos",
+          flierUrl: ev.imageUrl || "",
+          registrationUrl: ev.registrationUrl || "",
+          day: !isNaN(d.getTime()) ? dayNames[d.getDay()] : "WED",
+          date: !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "28",
+          month: !isNaN(d.getTime()) ? monthNames[d.getMonth()] : "OCT",
+          time: formattedTime || "4:00 PM WAT",
+          published: true,
+          order: 0,
+        });
+        flash(`Imported "${ev.title}" from /schedule! Review and save below.`);
+      }
+
+      const el = document.getElementById("gathering-form-anchor");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } catch (e: any) {
+      flash("Error importing event: " + e.message);
+    }
+  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -221,7 +305,13 @@ export default function HomepageEditor() {
       flash("Error: " + e.message);
     }
   };
-  const editG = (g: any) => { setGForm({ ...EMPTY_G, ...g }); setEditId(g.id); window.scrollTo({ top:0, behavior:"smooth" }); };
+
+  const editG = (g: any) => {
+    setGForm({ ...EMPTY_G, ...g });
+    setEditId(g.id);
+    const el = document.getElementById("gathering-form-anchor");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
 
   /* ── Field helpers ── */
   const F = (label: string, key: string, placeholder?: string, multiline?: boolean) => (
@@ -297,8 +387,8 @@ export default function HomepageEditor() {
       {/* ───── GATHERINGS TAB ───── */}
       {tab==="gatherings" && (
         <>
-          {/* Section headings */}
-          <div style={{ ...card, marginBottom:"8px" }}>
+          {/* Section labels */}
+          <div style={{ ...card, marginBottom:"16px" }}>
             <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"16px", color:Navy, margin:"0 0 16px" }}>Section Labels</h2>
             <div style={row2}>
               {F("Eyebrow Label","gatheringsLabel","Next Gatherings")}
@@ -307,45 +397,250 @@ export default function HomepageEditor() {
             <button onClick={saveSettings} disabled={saving} style={{ ...btn(Blue700,White), marginTop:"16px", opacity:saving?0.6:1 }}>Save Labels</button>
           </div>
 
-          {/* Add/Edit form */}
-          <div style={card}>
-            <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:"0 0 24px" }}>{editId?"Edit Gathering":"Add New Gathering"}</h2>
+          {/* 📅 Sync & Edit from /schedule Events */}
+          <div style={{ ...card, border:`1px solid #C7D7F5`, backgroundColor:"#F8FAFF", marginBottom:"20px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"10px", marginBottom:"14px" }}>
+              <div>
+                <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"16px", color:Navy, margin:0, display:"flex", alignItems:"center", gap:"8px" }}>
+                  <span>📅</span> Upcoming Events from /schedule
+                </h2>
+                <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:"4px 0 0" }}>
+                  Events created in the Schedule CMS appear here. Click <strong>Edit on Next Gatherings</strong> to configure or customize how an event appears on the homepage.
+                </p>
+              </div>
+              <Link
+                href="/cms/events"
+                style={{
+                  fontFamily:"'Poppins',sans-serif",
+                  fontSize:"11px",
+                  fontWeight:600,
+                  color:Blue700,
+                  textDecoration:"none",
+                  backgroundColor:Paper100,
+                  padding:"6px 12px",
+                  borderRadius:"4px",
+                  border:`1px solid ${Paper300}`,
+                }}
+              >
+                Open Schedule CMS (/cms/events) →
+              </Link>
+            </div>
+
+            {eventsLoading && (
+              <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:0, padding:"12px 0" }}>
+                Loading events from schedule...
+              </p>
+            )}
+
+            {!eventsLoading && scheduleEvents.length === 0 && (
+              <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:0, padding:"8px 0" }}>
+                No events currently found in the schedule database. <Link href="/cms/events" style={{ color:Blue700, fontWeight:600 }}>Create an event in Schedule CMS</Link> to feature it on the homepage.
+              </p>
+            )}
+
+            {!eventsLoading && scheduleEvents.length > 0 && (
+              <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+                {scheduleEvents.map((ev: any) => {
+                  const isLinked = gatherings.some((g: any) =>
+                    (g.eventId && g.eventId === ev.id) ||
+                    (g.title && g.title.toLowerCase().trim() === (ev.title || "").toLowerCase().trim())
+                  );
+                  const flier = (ev.imageUrl || "").trim();
+
+                  return (
+                    <div
+                      key={ev.id}
+                      style={{
+                        backgroundColor: White,
+                        border: `1px solid ${isLinked ? "#BFDBFE" : Paper300}`,
+                        borderRadius: "6px",
+                        padding: "12px 16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div style={{ display:"flex", alignItems:"center", gap:"14px", minWidth:0, flex:1 }}>
+                        {flier ? (
+                          <img
+                            src={flier}
+                            alt={ev.title}
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "4px",
+                              objectFit: "cover",
+                              border: `1px solid ${Paper200}`,
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "4px",
+                              backgroundColor: Paper100,
+                              border: `1px solid ${Paper300}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontFamily: "'Poppins',sans-serif",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              color: Slate500,
+                              flexShrink: 0,
+                            }}
+                          >
+                            EVENT
+                          </div>
+                        )}
+
+                        <div style={{ minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap" }}>
+                            <span style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"14px", color:Navy }}>
+                              {ev.title}
+                            </span>
+                            {isLinked ? (
+                              <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:700, padding:"2px 8px", borderRadius:"10px", backgroundColor:"#DCFCE7", color:Green, textTransform:"uppercase" }}>
+                                ✓ Linked to Homepage
+                              </span>
+                            ) : (
+                              <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, padding:"2px 8px", borderRadius:"10px", backgroundColor:Paper200, color:Slate500, textTransform:"uppercase" }}>
+                                In Schedule Only
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, marginTop:"2px" }}>
+                            {ev.startAt ? new Date(ev.startAt).toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric", year:"numeric" }) : "No date"}
+                            {ev.location ? ` · ${ev.location}` : ""}
+                            {ev.speaker ? ` · Speaker: ${ev.speaker}` : ""}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0 }}>
+                        <button
+                          type="button"
+                          onClick={() => importEventToGathering(ev)}
+                          style={{
+                            ...btn(isLinked ? Blue700 : "#EBF2FF", isLinked ? White : Blue700),
+                            border: `1px solid ${Blue700}`,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          {isLinked ? "✏️ Edit on Next Gatherings" : "+ Add to Next Gatherings"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Add/Edit Gathering Form */}
+          <div id="gathering-form-anchor" style={card}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px", flexWrap:"wrap", gap:"8px" }}>
+              <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"18px", color:Navy, margin:0 }}>
+                {editId ? "Edit Gathering" : "Add New Gathering"}
+              </h2>
+              {gForm.eventId && (
+                <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                  <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:700, color:Blue700, backgroundColor:"#EBF2FF", border:`1px solid #BFDBFE`, padding:"3px 8px", borderRadius:"4px", textTransform:"uppercase" }}>
+                    🔗 Linked to Schedule Event
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => G("eventId", "")}
+                    style={{ background:"none", border:"none", color:Slate500, fontSize:"11px", cursor:"pointer", textDecoration:"underline" }}
+                    title="Unlink from schedule event"
+                  >
+                    Unlink
+                  </button>
+                </div>
+              )}
+            </div>
+
             <form onSubmit={saveGathering} style={{ display:"flex", flexDirection:"column", gap:"16px" }}>
               <div style={row2}>
                 <div><label style={lbl}>Event Title *</label><input style={inp} value={gForm.title} onChange={e => G("title",e.target.value)} placeholder="e.g. The Time of the Word" required /></div>
-                <div><label style={lbl}>Theme / Series</label><input style={inp} value={gForm.theme} onChange={e => G("theme",e.target.value)} placeholder="e.g. Part 6" /></div>
+                <div><label style={lbl}>Theme / Series</label><input style={inp} value={gForm.theme} onChange={e => G("theme",e.target.value)} placeholder="e.g. Festival of Light — Annual Homecoming" /></div>
               </div>
               <div style={row4}>
-                <div><label style={lbl}>Day (SUN)</label><input style={inp} value={gForm.day} onChange={e => G("day",e.target.value.toUpperCase())} maxLength={3} /></div>
-                <div><label style={lbl}>Date (04)</label><input style={inp} value={gForm.date} onChange={e => G("date",e.target.value)} maxLength={2} /></div>
-                <div><label style={lbl}>Month (OCT)</label><input style={inp} value={gForm.month} onChange={e => G("month",e.target.value.toUpperCase())} maxLength={3} /></div>
-                <div><label style={lbl}>Time</label><input style={inp} value={gForm.time} onChange={e => G("time",e.target.value)} placeholder="9:00 AM" /></div>
+                <div><label style={lbl}>Day (SUN / WED)</label><input style={inp} value={gForm.day} onChange={e => G("day",e.target.value.toUpperCase())} maxLength={3} placeholder="SUN" /></div>
+                <div><label style={lbl}>Date (04 / 28)</label><input style={inp} value={gForm.date} onChange={e => G("date",e.target.value)} maxLength={2} placeholder="04" /></div>
+                <div><label style={lbl}>Month (OCT / NOV)</label><input style={inp} value={gForm.month} onChange={e => G("month",e.target.value.toUpperCase())} maxLength={3} placeholder="OCT" /></div>
+                <div><label style={lbl}>Time</label><input style={inp} value={gForm.time} onChange={e => G("time",e.target.value)} placeholder="9:00 AM WAT" /></div>
               </div>
-              <div><label style={lbl}>Description</label><textarea style={ta} value={gForm.desc} onChange={e => G("desc",e.target.value)} /></div>
+              <div><label style={lbl}>Description</label><textarea style={ta} value={gForm.desc} onChange={e => G("desc",e.target.value)} placeholder="Brief summary of what believers will experience..." /></div>
               <div style={row3}>
-                <div><label style={lbl}>Speaker</label><input style={inp} value={gForm.speaker} onChange={e => G("speaker",e.target.value)} /></div>
-                <div><label style={lbl}>Scripture</label><input style={inp} value={gForm.scripture} onChange={e => G("scripture",e.target.value)} placeholder="Isaiah 59:1" /></div>
-                <div><label style={lbl}>City</label><input style={inp} value={gForm.city} onChange={e => G("city",e.target.value)} /></div>
+                <div><label style={lbl}>Speaker / Minister</label><input style={inp} value={gForm.speaker} onChange={e => G("speaker",e.target.value)} placeholder="Rev. Joshua Agunbiade" /></div>
+                <div><label style={lbl}>Scripture Reference</label><input style={inp} value={gForm.scripture} onChange={e => G("scripture",e.target.value)} placeholder="Numbers 23:21" /></div>
+                <div><label style={lbl}>City / Location</label><input style={inp} value={gForm.city} onChange={e => G("city",e.target.value)} placeholder="Jos" /></div>
               </div>
+
+              {/* Flier Image URL with Live Thumbnail Preview */}
               <div style={row2}>
-                <div><label style={lbl}>Flier Image URL</label><input style={inp} value={gForm.flierUrl} onChange={e => G("flierUrl",e.target.value)} placeholder="https://..." /></div>
-                <div><label style={lbl}>Display Order (1 = first)</label><input type="number" style={inp} value={gForm.order} onChange={e => G("order",e.target.value)} min={0} /></div>
+                <div>
+                  <label style={lbl}>Flier Image URL (Poster on homepage card)</label>
+                  <input
+                    style={inp}
+                    value={gForm.flierUrl}
+                    onChange={e => G("flierUrl", e.target.value)}
+                    placeholder="https://i.postimg.cc/... or /images/..."
+                  />
+                  {gForm.flierUrl.trim() && (
+                    <div style={{ marginTop:"10px", display:"flex", alignItems:"center", gap:"12px", backgroundColor:Paper100, padding:"8px 12px", borderRadius:"6px", border:`1px solid ${Paper300}` }}>
+                      <img
+                        src={gForm.flierUrl.trim()}
+                        alt="Flier preview"
+                        style={{ width:"54px", height:"54px", objectFit:"cover", borderRadius:"4px", border:`1px solid ${Paper200}` }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", fontWeight:600, color:Green }}>✓ Live Flier Preview</div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"10px", color:Slate500, overflow:"hidden", textOverflow:"ellipsis", maxWidth:"280px", whiteSpace:"nowrap" }}>{gForm.flierUrl.trim()}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={lbl}>Display Order (1 = first card on left)</label>
+                  <input type="number" style={inp} value={gForm.order} onChange={e => G("order",e.target.value)} min={-100} />
+                  <div style={{ marginTop:"12px" }}>
+                    <label style={lbl}>Registration URL (Optional)</label>
+                    <input style={inp} value={gForm.registrationUrl || ""} onChange={e => G("registrationUrl",e.target.value)} placeholder="https://forms.gle/... (creates 'Register →' link)" />
+                  </div>
+                </div>
               </div>
+
               <label style={{ display:"flex", alignItems:"center", gap:"10px", fontFamily:"'Poppins',sans-serif", fontSize:"13px", color:Navy, cursor:"pointer" }}>
                 <input type="checkbox" checked={gForm.published} onChange={e => G("published",e.target.checked)} />
-                Show on homepage
+                Show on homepage Next Gatherings section
               </label>
+
               <div style={{ display:"flex", gap:"12px" }}>
-                <button type="submit" disabled={gLoading} style={{ ...btn(Blue700,White), opacity:gLoading?0.6:1 }}>{gLoading?"Saving...":editId?"Update Gathering":"Add Gathering"}</button>
-                {editId && <button type="button" onClick={() => { setGForm({...EMPTY_G}); setEditId(null); }} style={btn(Paper200,Navy)}>Cancel</button>}
+                <button type="submit" disabled={gLoading} style={{ ...btn(Blue700,White), opacity:gLoading?0.6:1 }}>
+                  {gLoading ? "Saving..." : editId ? "Update Gathering" : "Add Gathering"}
+                </button>
+                {editId && (
+                  <button type="button" onClick={() => { setGForm({...EMPTY_G}); setEditId(null); }} style={btn(Paper200,Navy)}>
+                    Cancel
+                  </button>
+                )}
               </div>
             </form>
           </div>
 
-          {/* Gatherings list */}
-          <h3 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"14px", color:Slate500, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 12px" }}>Current Gatherings ({gatherings.length})</h3>
-          {/* ── Gallery Photos Manager ── */}
-          <div style={{ ...card, marginTop:"24px" }}>
+          {/* ── Event Gallery Photos Manager ── */}
+          <div style={{ ...card, marginBottom:"24px" }}>
             <h2 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"16px", color:Navy, margin:"0 0 8px" }}>Event Gallery Photos</h2>
             <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:"12px", color:Slate500, margin:"0 0 16px" }}>
               These photos show under the gatherings list on the homepage. Add image URLs (https://… or /images/…).
@@ -379,30 +674,71 @@ export default function HomepageEditor() {
             </div>
           </div>
 
-          {/* Gatherings list */}
-          <h3 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"14px", color:Slate500, textTransform:"uppercase", letterSpacing:"0.14em", margin:"24px 0 12px" }}>Current Gatherings ({gatherings.length})</h3>
-          {gatherings.length===0 && <p style={{ fontFamily:"'Poppins',sans-serif", color:Slate500, textAlign:"center", padding:"40px 0" }}>No gatherings yet. Add your first one above.</p>}
-          {gatherings.map(g => (
-            <div key={g.id} style={{ backgroundColor:White, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
-                <div style={{ textAlign:"center", minWidth:"50px", backgroundColor:Paper100, borderRadius:"4px", padding:"6px 8px" }}>
-                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:Slate500 }}>{g.day}</div>
-                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"22px", fontWeight:700, color:Navy, lineHeight:1 }}>{g.date}</div>
-                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:Slate500 }}>{g.month}</div>
+          {/* Current Gatherings List */}
+          <div style={{ marginBottom:"20px" }}>
+            <h3 style={{ fontFamily:"'Poppins',sans-serif", fontWeight:600, fontSize:"14px", color:Slate500, textTransform:"uppercase", letterSpacing:"0.14em", margin:"0 0 12px" }}>
+              Current Gatherings on Homepage ({gatherings.length})
+            </h3>
+            {gatherings.length===0 && (
+              <p style={{ fontFamily:"'Poppins',sans-serif", color:Slate500, textAlign:"center", padding:"40px 0" }}>
+                No gatherings yet. Add your first one above or import an event from /schedule.
+              </p>
+            )}
+            {gatherings.map(g => (
+              <div key={g.id} style={{ backgroundColor:White, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"16px", minWidth:0 }}>
+                  <div style={{ textAlign:"center", minWidth:"50px", backgroundColor:Paper100, borderRadius:"4px", padding:"6px 8px", flexShrink:0 }}>
+                    <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:Slate500 }}>{g.day}</div>
+                    <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"22px", fontWeight:700, color:Navy, lineHeight:1 }}>{g.date}</div>
+                    <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:Slate500 }}>{g.month}</div>
+                  </div>
+
+                  {g.flierUrl && (
+                    <img
+                      src={g.flierUrl}
+                      alt={g.title}
+                      style={{
+                        width: "44px",
+                        height: "44px",
+                        objectFit: "cover",
+                        borderRadius: "4px",
+                        border: `1px solid ${Paper200}`,
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  )}
+
+                  <div style={{ minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap" }}>
+                      <span style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"15px", color:Navy }}>
+                        {g.title}
+                      </span>
+                      {g.eventId && (
+                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:700, color:Blue700, backgroundColor:"#EBF2FF", padding:"2px 6px", borderRadius:"4px", textTransform:"uppercase" }}>
+                          From /schedule
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, marginTop:"3px" }}>
+                      {g.time} · {g.city}{g.scripture ? ` · ${g.scripture}` : ""}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontFamily:"'Poppins',sans-serif", fontWeight:700, fontSize:"15px", color:Navy }}>{g.title}</div>
-                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"11px", color:Slate500, marginTop:"3px" }}>{g.time} · {g.city}{g.scripture ? ` · ${g.scripture}` : ""}</div>
+
+                <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0 }}>
+                  <span style={{ padding:"4px 10px", backgroundColor:g.published?"#DCFCE7":Paper200, color:g.published?Green:Slate500, borderRadius:"4px", fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:600, textTransform:"uppercase" }}>
+                    {g.published?"Showing":"Hidden"}
+                  </span>
+                  <button onClick={() => togglePublishG(g)} style={btn(Paper200,Navy)}>{g.published?"Hide":"Show"}</button>
+                  <button onClick={() => editG(g)} style={btn(Paper200,Navy)}>Edit</button>
+                  <button onClick={() => deleteG(g.id)} style={btn("#FEE2E2",Red)}>Delete</button>
                 </div>
               </div>
-              <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0 }}>
-                <span style={{ padding:"4px 10px", backgroundColor:g.published?"#DCFCE7":Paper200, color:g.published?Green:Slate500, borderRadius:"4px", fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:600, textTransform:"uppercase" }}>{g.published?"Showing":"Hidden"}</span>
-                <button onClick={() => togglePublishG(g)} style={btn(Paper200,Navy)}>{g.published?"Hide":"Show"}</button>
-                <button onClick={() => editG(g)} style={btn(Paper200,Navy)}>Edit</button>
-                <button onClick={() => deleteG(g.id)} style={btn("#FEE2E2",Red)}>Delete</button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </>
       )}
 

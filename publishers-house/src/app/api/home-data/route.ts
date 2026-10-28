@@ -14,8 +14,20 @@ function parseEventToGathering(ev: any) {
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
     const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
+    // Format time from Date if available
+    let formattedTime = ev.time;
+    if (!formattedTime && !isNaN(d.getTime())) {
+      const hours = d.getHours();
+      const minutes = d.getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const h12 = hours % 12 || 12;
+      const mStr = minutes > 0 ? `:${String(minutes).padStart(2, "0")}` : ":00";
+      formattedTime = `${h12}${mStr} ${ampm} WAT`;
+    }
+
     return {
       id: ev.id,
+      eventId: ev.id,
       day: dayNames[d.getDay()] || "GAT",
       date: String(d.getDate()).padStart(2, "0"),
       month: monthNames[d.getMonth()] || "OCT",
@@ -23,10 +35,12 @@ function parseEventToGathering(ev: any) {
       theme: ev.summary || ev.theme || "Upcoming Flagship Event",
       desc: ev.description || ev.summary || "Believers gather for sound apostolic doctrine and corporate prayer.",
       scripture: ev.scripture || "Isaiah 60:1",
-      time: ev.time || "4:00 PM WAT",
+      time: formattedTime || "4:00 PM WAT",
       city: ev.location || "Jos",
+      flierUrl: (ev.imageUrl || ev.coverImageUrl || ev.flierUrl || "").trim(),
+      registrationUrl: ev.registrationUrl || "",
       published: true,
-      order: -10,
+      order: ev.order ?? -10,
     };
   } catch {
     return null;
@@ -45,7 +59,7 @@ export async function GET() {
     if (snap.exists()) settings = snap.data();
   } catch (e) {}
 
-  // 2. Load upcoming gatherings and check for upcoming events
+  // 2. Load upcoming gatherings from gatherings collection
   try {
     const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order", "asc")));
     gatherings = snap.docs
@@ -53,7 +67,7 @@ export async function GET() {
       .filter((g: any) => g.published !== false);
   } catch (e) {}
 
-  // 2b. Check events collection in Firestore for upcoming conferences (e.g. The Shout of a King)
+  // 2b. Check events collection in Firestore for upcoming conferences (e.g. The Shout of a King, Merismos)
   try {
     const eventsSnap = await getDocs(
       query(collection(db, "events"), where("published", "==", true), limit(10))
@@ -63,9 +77,25 @@ export async function GET() {
         .map((d) => parseEventToGathering({ id: d.id, ...d.data() }))
         .filter(Boolean);
 
-      // Merge and prioritize upcoming events at the front
+      // Merge and prioritize events:
       convertedEvents.forEach((ce: any) => {
-        if (!gatherings.some((g) => g.title?.toLowerCase() === ce.title?.toLowerCase())) {
+        const existing = gatherings.find((g) =>
+          (g.eventId && g.eventId === ce.eventId) ||
+          (g.title && g.title.toLowerCase() === ce.title?.toLowerCase())
+        );
+
+        if (existing) {
+          // If the gathering in gatherings collection doesn't have a flierUrl yet, use the event's flierUrl
+          if (!existing.flierUrl && ce.flierUrl) {
+            existing.flierUrl = ce.flierUrl;
+          }
+          if (!existing.eventId) {
+            existing.eventId = ce.eventId;
+          }
+          if (!existing.registrationUrl && ce.registrationUrl) {
+            existing.registrationUrl = ce.registrationUrl;
+          }
+        } else {
           gatherings.unshift(ce);
         }
       });
@@ -73,12 +103,12 @@ export async function GET() {
   } catch (e) {}
 
   // Always ensure premier upcoming flagship conference ("The Shout of a King") is presented
-  const hasShoutOfKing = gatherings.some((g) =>
+  const shoutOfKingGathering = gatherings.find((g) =>
     (g.title || "").toLowerCase().includes("shout of a king") ||
     (g.theme || "").toLowerCase().includes("shout of a king")
   );
 
-  if (!hasShoutOfKing) {
+  if (!shoutOfKingGathering) {
     gatherings.unshift({
       id: "fol-2026-upcoming",
       day: "WED",
@@ -90,9 +120,12 @@ export async function GET() {
       scripture: "Numbers 23:21",
       time: "4:00 PM WAT",
       city: "The House of Bread, Jos",
+      flierUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
       published: true,
       order: -20,
     });
+  } else if (!shoutOfKingGathering.flierUrl) {
+    shoutOfKingGathering.flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
   }
 
   // 3. Top 5 latest published sermons, ordered by date descending

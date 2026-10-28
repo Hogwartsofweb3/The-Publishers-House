@@ -98,10 +98,10 @@ const D = {
 };
 
 const FALLBACK_GATHERINGS = [
-  { day:"WED", date:"28", month:"OCT", title:"The Shout of a King", desc:"Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos.", scripture:"Numbers 23:21", time:"4:00 PM WAT", city:"Jos", theme:"Festival of Light 2026", published:true, order:-10 },
-  { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM WAT", city:"Jos", theme:"The Time of the Word — Part 6", published:true, order:0 },
-  { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM WAT", city:"Jos", theme:"The Arm of the Lord", published:true, order:1 },
-  { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"4:30 PM WAT", city:"Jos", published:true, order:2 },
+  { day:"WED", date:"28", month:"OCT", title:"The Shout of a King", desc:"Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos.", scripture:"Numbers 23:21", time:"4:00 PM WAT", city:"Jos", theme:"Festival of Light 2026", flierUrl:"https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg", published:true, order:-10 },
+  { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM WAT", city:"Jos", theme:"The Time of the Word — Part 6", flierUrl:"", published:true, order:0 },
+  { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM WAT", city:"Jos", theme:"The Arm of the Lord", flierUrl:"", published:true, order:1 },
+  { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"4:30 PM WAT", city:"Jos", flierUrl:"", published:true, order:2 },
 ];
 
 export default function HomeContent() {
@@ -412,28 +412,81 @@ export default function HomeContent() {
             <Link href="/schedule" style={{ ...T.label, color:Blue700, textDecoration:"none" }}>All Events →</Link>
           </div>
           <div className="tph-grid-auto" style={{ marginBottom:"40px" }}>
-            {gatherings.map((ev: any, i: number) => (
-              <div key={i} style={{ backgroundColor:White, border:`1px solid ${Paper300}`, borderRadius:"4px", padding:"20px", display:"flex", flexDirection:"column", gap:"12px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
-                  <div style={{ textAlign:"center", minWidth:"44px" }}>
-                    <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.day}</div>
-                    <div style={{ ...T.displayM, color:Navy, fontSize:"28px" }}>{ev.date}</div>
-                    <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.month}</div>
+            {gatherings.map((ev: any, i: number) => {
+              const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
+              return (
+                <div
+                  key={ev.id || i}
+                  style={{
+                    backgroundColor: White,
+                    border: `1px solid ${Paper300}`,
+                    borderRadius: "4px",
+                    padding: "20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "14px",
+                    boxShadow: "0 2px 10px rgba(21, 26, 84, 0.03)",
+                  }}
+                >
+                  {/* Flier Image Poster if available */}
+                  {flierImg && (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "220px",
+                        borderRadius: "3px",
+                        overflow: "hidden",
+                        backgroundColor: "#F4F6FB",
+                        border: `1px solid ${Paper200}`,
+                        position: "relative",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={flierImg}
+                        alt={`${ev.title} poster`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          objectPosition: "center top",
+                          display: "block",
+                        }}
+                        onError={(e) => {
+                          (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
+                    <div style={{ textAlign:"center", minWidth:"44px" }}>
+                      <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.day}</div>
+                      <div style={{ ...T.displayM, color:Navy, fontSize:"28px" }}>{ev.date}</div>
+                      <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.month}</div>
+                    </div>
+                    <div>
+                      <h3 style={{ ...T.displayS, color:Navy, margin:0, fontSize:"16px" }}>{ev.title}</h3>
+                      {ev.theme && <div style={{ ...T.eyebrow, color:Blue500, marginTop:"4px" }}>{ev.theme}</div>}
+                    </div>
                   </div>
-                  <div>
-                    <h3 style={{ ...T.displayS, color:Navy, margin:0, fontSize:"16px" }}>{ev.title}</h3>
-                    {ev.theme && <div style={{ ...T.eyebrow, color:Blue500, marginTop:"4px" }}>{ev.theme}</div>}
+                  <p style={{ ...T.readSmall, color:Slate600, margin:0, flex:1 }}>{ev.desc}</p>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:"12px", borderTop:`1px solid ${Paper200}`, flexWrap:"wrap", gap:"6px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"6px", flexWrap:"wrap" }}>
+                      {ev.scripture && <><span style={{ ...T.colophon, color:Blue700 }}>{ev.scripture}</span><span style={{ ...T.colophon, color:Paper400 }}>·</span></>}
+                      <span style={{ ...T.colophon, color:Slate500 }}>{ev.time}</span>
+                      <span style={{ ...T.colophon, color:Paper400 }}>·</span>
+                      <span style={{ ...T.colophon, color:Slate500 }}>{ev.city}</span>
+                    </div>
+                    {ev.registrationUrl && (
+                      <a href={ev.registrationUrl} target="_blank" rel="noopener noreferrer" style={{ ...T.colophon, color:Blue700, textDecoration:"none", fontWeight:700 }}>
+                        Register →
+                      </a>
+                    )}
                   </div>
                 </div>
-                <p style={{ ...T.readSmall, color:Slate600, margin:0, flex:1 }}>{ev.desc}</p>
-                <div style={{ display:"flex", alignItems:"center", gap:"6px", paddingTop:"12px", borderTop:`1px solid ${Paper200}`, flexWrap:"wrap" }}>
-                  {ev.scripture && <><span style={{ ...T.colophon, color:Blue700 }}>{ev.scripture}</span><span style={{ ...T.colophon, color:Paper400 }}>·</span></>}
-                  <span style={{ ...T.colophon, color:Slate500 }}>{ev.time}</span>
-                  <span style={{ ...T.colophon, color:Paper400 }}>·</span>
-                  <span style={{ ...T.colophon, color:Slate500 }}>{ev.city}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="tph-grid-3 tph-mobile-hide" style={{ height:"300px" }}>
             {((s.gatheringsImages as string[] | undefined)?.length
