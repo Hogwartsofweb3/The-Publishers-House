@@ -957,3 +957,9 @@ html, body {
 
 
 
+
+/* -- Live / Countdown Status Badge Pulse Animation -- */
+@keyframes tphPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}

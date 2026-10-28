@@ -170,6 +170,8 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
           <img
             src={flierImg}
             alt={`${ev.title} poster`}
+            loading="lazy"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = "none";
@@ -350,6 +352,8 @@ function HomeGatheringCard({ ev }: { ev: any }) {
           <img
             src={flierImg}
             alt={`${ev.title} poster`}
+            loading="lazy"
+            decoding="async"
             style={{
               width: "100%",
               height: "100%",
@@ -487,6 +491,213 @@ function HomeGatheringCard({ ev }: { ev: any }) {
   );
 }
 
+/* ── Next Gatherings Dynamic Image Gallery ── */
+function HomeGatheringsGallery({ images }: { images?: string[] }) {
+  const [activeModalImg, setActiveModalImg] = useState<string | null>(null);
+
+  const fallback = ["/images/event-1.webp", "/images/event-2.webp", "/images/event-3.webp"];
+  const list = (images && images.length > 0 ? images : fallback)
+    .map((x) => (typeof x === "string" ? x.trim() : ""))
+    .filter(Boolean);
+
+  if (list.length === 0) return null;
+
+  const count = list.length;
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .tph-gatherings-reel {
+          display: grid;
+          gap: 20px;
+          width: 100%;
+        }
+        @media (min-width: 681px) {
+          .tph-gatherings-reel.reel-count-1 {
+            grid-template-columns: 1fr;
+            max-width: 820px;
+            margin: 0 auto;
+          }
+          .tph-gatherings-reel.reel-count-2 {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .tph-gatherings-reel.reel-count-3 {
+            grid-template-columns: repeat(3, 1fr);
+          }
+          .tph-gatherings-reel.reel-count-many {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          }
+        }
+        @media (max-width: 680px) {
+          .tph-gatherings-reel {
+            display: flex !important;
+            overflow-x: auto !important;
+            scroll-snap-type: x mandatory !important;
+            -webkit-overflow-scrolling: touch !important;
+            gap: 14px !important;
+            padding-bottom: 14px !important;
+            scrollbar-width: thin;
+          }
+          .tph-gatherings-reel-item {
+            flex: 0 0 84% !important;
+            min-width: 260px !important;
+            scroll-snap-align: start !important;
+          }
+        }
+        .tph-gatherings-reel-item {
+          position: relative;
+          border-radius: 6px;
+          overflow: hidden;
+          background-color: #E8ECF7;
+          border: 1px solid #D3DAEC;
+          aspect-ratio: 4 / 3;
+          box-shadow: 0 4px 16px rgba(21, 26, 84, 0.05);
+          cursor: pointer;
+          transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+        .tph-gatherings-reel-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(21, 26, 84, 0.12);
+        }
+        .tph-gatherings-reel-item img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center 18%;
+          display: block;
+          transition: transform 400ms ease;
+        }
+        .tph-gatherings-reel-item:hover img {
+          transform: scale(1.03);
+        }
+      ` }} />
+
+      <div
+        className={`tph-gatherings-reel ${
+          count === 1
+            ? "reel-count-1"
+            : count === 2
+            ? "reel-count-2"
+            : count === 3
+            ? "reel-count-3"
+            : "reel-count-many"
+        }`}
+      >
+        {list.map((url, i) => (
+          <div
+            key={i}
+            className="tph-gatherings-reel-item"
+            onClick={() => setActiveModalImg(url)}
+            title="Click to view full photo"
+          >
+            <img
+              src={url}
+              alt={`The Publishers House Gathering Moment ${i + 1}`}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: "10px",
+                right: "10px",
+                backgroundColor: "rgba(21, 26, 84, 0.65)",
+                color: "#FFFFFF",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "12px",
+                backdropFilter: "blur(4px)",
+                opacity: 0.85,
+                transition: "opacity 180ms ease",
+                pointerEvents: "none",
+              }}
+            >
+              ⤢
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox / Modal for completely viewing any photo in high-resolution */}
+      {activeModalImg && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setActiveModalImg(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: "rgba(10, 14, 38, 0.92)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            cursor: "zoom-out",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              maxWidth: "92vw",
+              maxHeight: "88vh",
+              borderRadius: "8px",
+              overflow: "hidden",
+              boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
+              backgroundColor: "#151A54",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              src={activeModalImg}
+              alt="The Publishers House Gathering Full View"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "88vh",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+            <button
+              onClick={() => setActiveModalImg(null)}
+              aria-label="Close"
+              style={{
+                position: "absolute",
+                top: "14px",
+                right: "14px",
+                backgroundColor: "rgba(21, 26, 84, 0.8)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "#FFFFFF",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                fontWeight: 700,
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function HomeContent() {
   const [cmsSettings, setCmsSettings] = useState<any>({});
   const [s, setS] = useState<any>({ ...D });
@@ -566,151 +777,67 @@ export default function HomeContent() {
 
   return (
     <>
-      {/* ══════════════ HERO SECTION (HERO CAROUSEL) ══════════════ */}
-      <section
-        id="home"
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          paddingTop: "70px",
-          boxSizing: "border-box",
-        }}
-      >
-        {/* Slide 0: Company of the Great (Psalm 68:11) */}
+      {/* ══════════════ HERO CAROUSEL ══════════════ */}
+      <section style={{ position: "relative", minHeight: "100vh", overflow: "hidden", paddingTop: "70px", backgroundColor: Navy }}>
+        {/* Sliding track container */}
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            opacity: heroSlide === 0 ? 1 : 0,
-            transition: "opacity 800ms ease-in-out",
-            pointerEvents: heroSlide === 0 ? "auto" : "none",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            width: "200%",
+            transform: heroSlide === 0 ? "translateX(0%)" : "translateX(-50%)",
+            transition: "transform 0.75s cubic-bezier(0.25, 1, 0.5, 1)",
           }}
         >
+          {/* ── SLIDE 1: Company of the Great ── */}
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url('${s.heroBgImage || D.heroBgImage}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center 25%",
-              zIndex: 0,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to bottom, rgba(21,26,84,0.85) 0%, rgba(1,64,193,0.55) 100%)",
-              zIndex: 1,
-            }}
-          />
-          <div
-            className="tph-hero"
-            style={{
+              width: "50%",
+              minWidth: "50%",
               position: "relative",
-              zIndex: 2,
-              width: "100%",
-              maxWidth: "880px",
-              margin: "0 auto",
+              minHeight: "calc(100vh - 70px)",
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
-              textAlign: "center",
-              gap: "24px",
-              padding: "40px 20px",
+              justifyContent: "center",
+              overflow: "hidden",
             }}
           >
-            <div style={{ ...T.scripture, color: Blue300 }}>{s.heroEyebrow || D.heroEyebrow}</div>
-            <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
-            <p style={{ ...T.readLede, color: "rgba(255,255,255,0.9)", margin: 0, maxWidth: "680px" }}>
-              {s.heroSubtitle || D.heroSubtitle}
-            </p>
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
-              <Link
-                href={s.heroBtn1Url || D.heroBtn1Url}
-                style={{
-                  ...T.button,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "48px",
-                  padding: "0 28px",
-                  borderRadius: "2px",
-                  backgroundColor: Blue700,
-                  color: White,
-                  textDecoration: "none",
-                }}
-              >
-                {s.heroBtn1Label || D.heroBtn1Label}
-              </Link>
-              <Link
-                href={heroWatchUrl}
-                style={{
-                  ...T.button,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "48px",
-                  padding: "0 28px",
-                  borderRadius: "2px",
-                  border: `1px solid rgba(255,255,255,0.4)`,
-                  color: White,
-                  textDecoration: "none",
-                }}
-              >
-                {s.heroBtn2Label || D.heroBtn2Label}
-              </Link>
-            </div>
-            {/* Service times pill */}
-            <div
-              style={{
-                marginTop: "16px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "16px",
-                padding: "10px 24px",
-                borderRadius: "30px",
-                border: "1px solid rgba(255,255,255,0.25)",
-                backgroundColor: "rgba(21,26,84,0.4)",
-                backdropFilter: "blur(6px)",
-                flexWrap: "wrap",
-                justifyContent: "center",
-              }}
-            >
-              <span style={{ ...T.label, color: White, display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ color: Blue300 }}>{s.heroSundayLabel || D.heroSundayLabel}:</span>
-                <span style={{ color: White, fontWeight: 700 }}>{s.heroSundayTime || D.heroSundayTime}</span>
-              </span>
-              <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
-              <span style={{ ...T.label, color: White, display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ color: Blue300 }}>{s.heroMidweekLabel || D.heroMidweekLabel}:</span>
-                <span style={{ color: White, fontWeight: 700 }}>{s.heroMidweekTime || D.heroMidweekTime}</span>
-              </span>
+            <img src={s.heroBgImage || D.heroBgImage} alt="" fetchPriority="high" decoding="sync" loading="eager" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex: 1 }} />
+            <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px" }}>
+              <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>{s.heroEyebrow || D.heroEyebrow}</div>
+              <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
+              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
+              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
+                <Link href="/contact" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: Navy, textDecoration: "none", background: White }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
+                <Link href={heroWatchUrl} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
+              </div>
+              <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
+                <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center", flex: 1 }}>
+                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroSundayLabel || D.heroSundayLabel}</div>
+                  <div style={{ ...T.displayS, color: White }}>{s.heroSundayTime || D.heroSundayTime}</div>
+                </div>
+                <div style={{ padding: "16px 32px", textAlign: "center", flex: 1 }}>
+                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroMidweekLabel || D.heroMidweekLabel}</div>
+                  <div style={{ ...T.displayS, color: White }}>{s.heroMidweekTime || D.heroMidweekTime}</div>
+                </div>
+              </div>
+              <div style={{ ...T.colophon, color: "rgba(255,255,255,0.75)", marginTop: "8px" }}>{s.heroAddress || D.heroAddress}</div>
             </div>
           </div>
-        </div>
 
-        {/* Slide 1: We Are Building */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            opacity: heroSlide === 1 ? 1 : 0,
-            transition: "opacity 800ms ease-in-out",
-            pointerEvents: heroSlide === 1 ? "auto" : "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-          }}
-        >
+          {/* ── SLIDE 2: Building Project Video ── */}
+          <div
+            style={{
+              width: "50%",
+              minWidth: "50%",
+              position: "relative",
+              minHeight: "calc(100vh - 70px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
           <div
             style={{
               position: "absolute",
@@ -813,6 +940,7 @@ export default function HomeContent() {
             </div>
           </div>
         </div>
+        </div>{/* end sliding track */}
 
         {/* Carousel indicator dots */}
         <div
@@ -907,14 +1035,8 @@ export default function HomeContent() {
             </div>
           )}
 
-          <div className="tph-grid-3 tph-mobile-hide" style={{ height:"300px" }}>
-            {((s.gatheringsImages as string[] | undefined)?.length
-              ? (s.gatheringsImages as string[])
-              : ["/images/event-1.webp", "/images/event-2.webp", "/images/event-3.webp"]
-            ).map((img: string, i: number) => (
-              <div key={i} style={{ backgroundImage:`url('${img}')`, backgroundSize:"cover", backgroundPosition:"center", borderRadius:"4px" }} />
-            ))}
-          </div>
+          {/* Dynamic Event Photos Gallery */}
+          <HomeGatheringsGallery images={s.gatheringsImages} />
         </div>
       </section>
 
