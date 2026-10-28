@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+import { parseStartAndEnd } from "@/lib/eventTiming";
 
 export const revalidate = 60; // refresh every minute so new sermons and events appear quickly
 
@@ -25,6 +26,16 @@ function parseEventToGathering(ev: any) {
       formattedTime = `${h12}${mStr} ${ampm} WAT`;
     }
 
+    let flierUrl = (ev.imageUrl || ev.coverImageUrl || ev.flierUrl || "").trim();
+    const titleLower = (ev.title || "").toLowerCase();
+    if (!flierUrl) {
+      if (titleLower.includes("shout of a king") || titleLower.includes("festival of light")) {
+        flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
+      } else if (titleLower.includes("merismos")) {
+        flierUrl = "/images/programs/merismos-2024.jpg";
+      }
+    }
+
     return {
       id: ev.id,
       eventId: ev.id,
@@ -37,10 +48,12 @@ function parseEventToGathering(ev: any) {
       scripture: ev.scripture || "Isaiah 60:1",
       time: formattedTime || "4:00 PM WAT",
       city: ev.location || "Jos",
-      flierUrl: (ev.imageUrl || ev.coverImageUrl || ev.flierUrl || "").trim(),
+      flierUrl,
       registrationUrl: ev.registrationUrl || "",
       published: true,
       order: ev.order ?? -10,
+      startAt: ev.startAt || d.toISOString(),
+      endAt: ev.endAt || "",
     };
   } catch {
     return null;
@@ -81,11 +94,10 @@ export async function GET() {
       convertedEvents.forEach((ce: any) => {
         const existing = gatherings.find((g) =>
           (g.eventId && g.eventId === ce.eventId) ||
-          (g.title && g.title.toLowerCase() === ce.title?.toLowerCase())
+          (g.title && g.title.toLowerCase().trim() === ce.title?.toLowerCase().trim())
         );
 
         if (existing) {
-          // If the gathering in gatherings collection doesn't have a flierUrl yet, use the event's flierUrl
           if (!existing.flierUrl && ce.flierUrl) {
             existing.flierUrl = ce.flierUrl;
           }
@@ -95,8 +107,14 @@ export async function GET() {
           if (!existing.registrationUrl && ce.registrationUrl) {
             existing.registrationUrl = ce.registrationUrl;
           }
+          if (!existing.startAt && ce.startAt) {
+            existing.startAt = ce.startAt;
+          }
+          if (!existing.endAt && ce.endAt) {
+            existing.endAt = ce.endAt;
+          }
         } else {
-          gatherings.unshift(ce);
+          gatherings.push(ce);
         }
       });
     }
@@ -109,7 +127,7 @@ export async function GET() {
   );
 
   if (!shoutOfKingGathering) {
-    gatherings.unshift({
+    gatherings.push({
       id: "fol-2026-upcoming",
       day: "WED",
       date: "28",
@@ -121,12 +139,55 @@ export async function GET() {
       time: "4:00 PM WAT",
       city: "The House of Bread, Jos",
       flierUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
+      startAt: "2026-10-28T16:00:00",
+      endAt: "2026-11-01T23:00:00",
+      registrationUrl: "https://bit.ly/Fol.2026",
       published: true,
       order: -20,
     });
-  } else if (!shoutOfKingGathering.flierUrl) {
-    shoutOfKingGathering.flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
+  } else {
+    if (!shoutOfKingGathering.flierUrl) {
+      shoutOfKingGathering.flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
+    }
+    if (!shoutOfKingGathering.startAt) {
+      shoutOfKingGathering.startAt = "2026-10-28T16:00:00";
+    }
   }
+
+  // Ensure Merismos has flyer if missing
+  const merismosGathering = gatherings.find((g) =>
+    (g.title || "").toLowerCase().includes("merismos") ||
+    (g.theme || "").toLowerCase().includes("merismos")
+  );
+  if (merismosGathering) {
+    if (!merismosGathering.flierUrl) {
+      merismosGathering.flierUrl = "/images/programs/merismos-2024.jpg";
+    }
+    if (!merismosGathering.startAt) {
+      merismosGathering.startAt = "2026-12-10T16:45:00";
+    }
+  }
+
+  // Calculate startMs and endMs for all gatherings and sort chronologically (closest first)
+  const nowMs = Date.now();
+  const gatheringsWithTiming = gatherings.map((g) => {
+    const timing = parseStartAndEnd(g);
+    return {
+      ...g,
+      startAt: g.startAt || timing.start.toISOString(),
+      endAt: g.endAt || timing.end.toISOString(),
+      startMs: timing.startMs,
+      endMs: timing.endMs,
+    };
+  });
+
+  // Filter out events that concluded more than 24h ago, but keep at least what's available
+  const activeGatherings = gatheringsWithTiming.filter((g) => g.endMs > nowMs - 24 * 3600 * 1000);
+  const listToSort = activeGatherings.length > 0 ? activeGatherings : gatheringsWithTiming;
+
+  // Strict chronological sort: closest in time comes first, followed by next, etc.
+  listToSort.sort((a, b) => a.startMs - b.startMs);
+  gatherings = listToSort;
 
   // 3. Top 5 latest published sermons, ordered by date descending
   try {

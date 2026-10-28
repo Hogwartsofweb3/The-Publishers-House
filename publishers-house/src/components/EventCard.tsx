@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { EventItem } from "@/lib/firebase";
 import { useState } from "react";
+import { useEventTiming } from "@/lib/eventTiming";
 
 const Navy    = "#151A54";
 const Blue700 = "#0140C1";
@@ -42,27 +43,6 @@ function formatDateRange(startAt: string, endAt?: string) {
   return startStr + " \u2013 " + endStr;
 }
 
-function getEventStatus(startAt: string, endAt?: string): "upcoming" | "ongoing" | "concluded" {
-  const now = new Date();
-  const start = new Date(startAt);
-  const end = endAt ? new Date(endAt) : null;
-
-  // Add a grace period: event stays "ongoing" until midnight after endAt
-  if (end) {
-    const endOfDay = new Date(end);
-    endOfDay.setHours(23, 59, 59, 999);
-    if (now >= start && now <= endOfDay) return "ongoing";
-    if (now > endOfDay) return "concluded";
-  } else {
-    // No end date — treat as single day
-    const startEnd = new Date(start);
-    startEnd.setHours(23, 59, 59, 999);
-    if (now >= start && now <= startEnd) return "ongoing";
-    if (now > startEnd) return "concluded";
-  }
-  return "upcoming";
-}
-
 export default function EventCard({ event }: { event: EventItem }) {
   const [hovered, setHovered] = useState(false);
   const logoUrl = getLogoUrl(event.title);
@@ -71,13 +51,8 @@ export default function EventCard({ event }: { event: EventItem }) {
   const dateObj = event.startAt ? new Date(event.startAt) : new Date();
   const day = dateObj.getDate().toString().padStart(2, "0");
   const monthStr = dateObj.toLocaleDateString("en-GB", { month: "short", year: "numeric" }).toUpperCase();
-  const status = getEventStatus(event.startAt, event.endAt);
 
-  const statusConfig = {
-    upcoming:  { label: "Upcoming",  bg: "rgba(1,64,193,0.9)",   color: "#fff" },
-    ongoing:   { label: "● Ongoing", bg: "rgba(22,163,74,0.92)", color: "#fff" },
-    concluded: { label: "Concluded", bg: "rgba(100,110,140,0.85)", color: "#fff" },
-  };
+  const timing = useEventTiming(event);
 
   return (
     <Link href={"/schedule/" + event.id} style={{ textDecoration: "none", display: "block" }}>
@@ -96,7 +71,7 @@ export default function EventCard({ event }: { event: EventItem }) {
         }}
       >
         {/* Photo with logo overlay */}
-        <div style={{ position: "relative", height: "220px", overflow: "hidden" }}>
+        <div style={{ position: "relative", height: "200px", overflow: "hidden" }}>
           <div
             style={{
               position: "absolute", inset: 0,
@@ -124,39 +99,62 @@ export default function EventCard({ event }: { event: EventItem }) {
           )}
 
           {/* Date badge — bottom-left */}
-          <div style={{ position: "absolute", top: "16px", left: "16px", backgroundColor: "rgba(21,26,84,0.85)", borderRadius: "2px", padding: "8px 12px", textAlign: "center" }}>
-            <div style={{ ...T.displayM, color: White, fontSize: "22px" }}>{day}</div>
-            <div style={{ ...T.eyebrow, color: Blue300 }}>{monthStr}</div>
+          <div style={{ position: "absolute", top: "14px", left: "14px", backgroundColor: "rgba(21,26,84,0.88)", backdropFilter: "blur(4px)", borderRadius: "2px", padding: "6px 10px", textAlign: "center" }}>
+            <div style={{ ...T.displayM, color: White, fontSize: "20px", lineHeight: 1 }}>{day}</div>
+            <div style={{ ...T.eyebrow, color: Blue300, fontSize: "9px", marginTop: "2px" }}>{monthStr}</div>
           </div>
 
-          {/* Status badge — top-right */}
+          {/* Dynamic Status / Countdown badge — top-right */}
           <div style={{
-            position: "absolute", top: "16px", right: "16px",
-            backgroundColor: statusConfig[status].bg,
-            color: statusConfig[status].color,
-            borderRadius: "2px", padding: "4px 10px",
-            fontFamily: "var(--font-poppins)", fontWeight: 600, fontSize: "9.5px",
-            letterSpacing: "0.16em", textTransform: "uppercase",
+            position: "absolute", top: "14px", right: "14px",
+            backgroundColor: timing.badgeBg,
+            color: timing.badgeColor,
+            border: timing.badgeBorder || "none",
+            borderRadius: "2px", padding: "5px 10px",
+            fontFamily: "var(--font-poppins)", fontWeight: 700, fontSize: "10px",
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.20)",
           }}>
-            {statusConfig[status].label}
+            {timing.isPulsing && (
+              <span
+                style={{
+                  width: "6px", height: "6px", borderRadius: "50%",
+                  backgroundColor: timing.status === "live" ? "#FFFFFF" : "#0140C1",
+                  display: "inline-block",
+                  animation: "tphPulse 1.5s infinite",
+                }}
+              />
+            )}
+            {timing.badgeLabel}
           </div>
         </div>
 
         {/* Card body */}
-        <div style={{ padding: "24px" }}>
-          <h3 style={{ ...T.displayS, color: Navy, margin: "0 0 8px" }}>{event.title}</h3>
-          <p style={{ ...T.readSmall, color: Slate600, margin: "0 0 16px", minHeight: "44px" }}>
+        <div style={{ padding: "20px 24px" }}>
+          <h3 style={{ ...T.displayS, color: Navy, margin: "0 0 8px", fontSize: "17px" }}>{event.title}</h3>
+          <p style={{
+            ...T.readSmall,
+            color: Slate600,
+            margin: "0 0 14px",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            lineHeight: "1.55em",
+            minHeight: "66px",
+          }}>
             {event.summary || event.description}
           </p>
 
           {/* Colophon */}
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", paddingTop: "16px", borderTop: "1px solid " + Paper200 }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", paddingTop: "14px", borderTop: "1px solid " + Paper200 }}>
             <span style={{ ...T.colophon, color: Blue700 }}>{dateRange}</span>
             <span style={{ ...T.colophon, color: Paper400 }}>&middot;</span>
             <span style={{ ...T.colophon, color: Slate500 }}>{event.location}</span>
           </div>
 
-          <div style={{ marginTop: "16px" }}>
+          <div style={{ marginTop: "14px" }}>
             <span style={{ ...T.button, color: Blue700 }}>
               {event.registrationUrl ? "Register Now \u2192" : "View Details \u2192"}
             </span>

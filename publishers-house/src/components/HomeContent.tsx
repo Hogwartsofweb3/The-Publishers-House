@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import LatestTeachingCarousel from "@/components/LatestTeachingCarousel";
+import { useEventTiming, parseStartAndEnd } from "@/lib/eventTiming";
+
 const ArticleCarousel = dynamic(() => import("@/components/ArticleCarousel"), {
   ssr: false,
   loading: () => <div style={{ minHeight: "360px", backgroundColor: "#0B0E14" }} />,
@@ -98,17 +100,395 @@ const D = {
 };
 
 const FALLBACK_GATHERINGS = [
-  { day:"WED", date:"28", month:"OCT", title:"The Shout of a King", desc:"Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos.", scripture:"Numbers 23:21", time:"4:00 PM WAT", city:"Jos", theme:"Festival of Light 2026", flierUrl:"https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg", published:true, order:-10 },
-  { day:"SUN", date:"04", month:"OCT", title:"The Time of the Word", desc:"A continuation of our ongoing series — come ready for an encounter.", scripture:"2 Timothy 2:15", time:"9:00 AM WAT", city:"Jos", theme:"The Time of the Word — Part 6", flierUrl:"", published:true, order:0 },
-  { day:"SUN", date:"04", month:"OCT", title:"FYB Prayer — The Arm of the Lord", desc:"Final Year Brethren gather in prayer, trusting in the strength and mighty hand of God.", scripture:"Isaiah 59:1", time:"3:00 PM WAT", city:"Jos", theme:"The Arm of the Lord", flierUrl:"", published:true, order:1 },
-  { day:"THU", date:"08", month:"OCT", title:"Midweek Service", desc:"Doctrine, spiritual re-alignment and corporate prayer.", scripture:"Acts 2:42", time:"4:30 PM WAT", city:"Jos", flierUrl:"", published:true, order:2 },
+  {
+    id: "fol-2026-upcoming",
+    day: "WED",
+    date: "28",
+    month: "OCT",
+    title: "The Shout of a King",
+    desc: "Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos for worship, sound teaching and Holy Ghost encounters.",
+    scripture: "Numbers 23:21",
+    time: "4:00 PM WAT",
+    city: "Jos",
+    theme: "Festival of Light 2026",
+    flierUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
+    startAt: "2026-10-28T16:00:00",
+    endAt: "2026-11-01T23:00:00",
+    registrationUrl: "https://bit.ly/Fol.2026",
+    published: true,
+    order: -10,
+  },
+  {
+    id: "merismos-2026-upcoming",
+    day: "THU",
+    date: "10",
+    month: "DEC",
+    title: "Merismos",
+    desc: "Annual Word & Power Conference in Jos. Believers gather for intensive doctrine, spiritual renewal, and ministry of the Holy Spirit.",
+    scripture: "Hebrews 4:12",
+    time: "4:45 PM WAT",
+    city: "The House of Bread, Jos",
+    theme: "Word & Power Conference",
+    flierUrl: "/images/programs/merismos-2024.jpg",
+    startAt: "2026-12-10T16:45:00",
+    endAt: "2026-12-13T22:00:00",
+    registrationUrl: "",
+    published: true,
+    order: 0,
+  },
 ];
 
+/* ── Single Event Executive Feature Card (When exactly 1 event is in Next Gatherings) ── */
+function HomeGatheringSingleFeature({ ev }: { ev: any }) {
+  const timing = useEventTiming(ev);
+  const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
+
+  return (
+    <div
+      style={{
+        backgroundColor: White,
+        border: `1px solid ${Paper300}`,
+        borderRadius: "6px",
+        overflow: "hidden",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))",
+        boxShadow: "0 4px 20px rgba(21, 26, 84, 0.04)",
+        marginBottom: "40px",
+      }}
+    >
+      {/* Poster Column */}
+      <div
+        style={{
+          minHeight: "280px",
+          maxHeight: "360px",
+          position: "relative",
+          overflow: "hidden",
+          backgroundColor: "#151A54",
+        }}
+      >
+        {flierImg ? (
+          <img
+            src={flierImg}
+            alt={`${ev.title} poster`}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(135deg, #151A54 0%, #0140C1 100%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "40px 20px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ ...T.eyebrow, color: "#6496EF", letterSpacing: "0.2em" }}>The Publishers House</div>
+            <div style={{ ...T.displayM, color: White, marginTop: "8px" }}>{ev.title}</div>
+            <div style={{ ...T.colophon, color: "rgba(255,255,255,0.75)", marginTop: "6px" }}>Apostolic Gathering · Jos</div>
+          </div>
+        )}
+
+        {/* Live Countdown / Status Overlay Badge */}
+        <div
+          style={{
+            position: "absolute",
+            top: "14px",
+            right: "14px",
+            backgroundColor: timing.badgeBg,
+            color: timing.badgeColor,
+            border: timing.badgeBorder || "none",
+            borderRadius: "2px",
+            padding: "5px 12px",
+            fontFamily: "var(--font-poppins, 'Poppins', sans-serif)",
+            fontWeight: 700,
+            fontSize: "10px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+            zIndex: 2,
+          }}
+        >
+          {timing.isPulsing && (
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: timing.status === "live" ? "#FFFFFF" : "#0140C1",
+                display: "inline-block",
+                animation: "tphPulse 1.5s infinite",
+              }}
+            />
+          )}
+          {timing.badgeLabel}
+        </div>
+      </div>
+
+      {/* Content Column */}
+      <div
+        style={{
+          padding: "clamp(24px, 4vw, 36px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          gap: "16px",
+        }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "14px" }}>
+            <div style={{ textAlign: "center", minWidth: "50px", backgroundColor: Paper100, padding: "8px 6px", borderRadius: "4px", border: `1px solid ${Paper200}` }}>
+              <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.day}</div>
+              <div style={{ ...T.displayM, color: Navy, fontSize: "26px", lineHeight: 1 }}>{ev.date}</div>
+              <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.month}</div>
+            </div>
+            <div>
+              <div style={{ ...T.eyebrow, color: Blue500 }}>{ev.theme || "Upcoming Flagship Event"}</div>
+              <h3 style={{ ...T.displayM, color: Navy, margin: "4px 0 0", fontSize: "clamp(20px, 2.5vw, 26px)" }}>{ev.title}</h3>
+            </div>
+          </div>
+
+          <p style={{ ...T.readSmall, color: Slate600, margin: 0, lineHeight: "1.65em", fontSize: "15px" }}>
+            {ev.desc}
+          </p>
+        </div>
+
+        <div style={{ paddingTop: "16px", borderTop: `1px solid ${Paper200}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            {ev.scripture && (
+              <>
+                <span style={{ ...T.colophon, color: Blue700, fontWeight: 700 }}>{ev.scripture}</span>
+                <span style={{ ...T.colophon, color: Paper400 }}>·</span>
+              </>
+            )}
+            <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
+            <span style={{ ...T.colophon, color: Paper400 }}>·</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            {ev.registrationUrl && (
+              <a
+                href={ev.registrationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...T.button,
+                  padding: "10px 22px",
+                  borderRadius: "2px",
+                  backgroundColor: Blue700,
+                  color: White,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                Register Now →
+              </a>
+            )}
+            <Link
+              href="/schedule"
+              style={{
+                ...T.button,
+                padding: "9px 18px",
+                borderRadius: "2px",
+                border: `1px solid ${Paper300}`,
+                color: Navy,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              All Events
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Standard Gathering Card (Dynamic Width, Sleek 170px Header, Live Countdown Tag) ── */
+function HomeGatheringCard({ ev }: { ev: any }) {
+  const timing = useEventTiming(ev);
+  const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
+
+  return (
+    <div
+      style={{
+        backgroundColor: White,
+        border: `1px solid ${Paper300}`,
+        borderRadius: "4px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 2px 10px rgba(21, 26, 84, 0.03)",
+        transition: "box-shadow 200ms ease, transform 200ms ease",
+      }}
+    >
+      {/* 170px Header Banner (reduced height for sleeker, wider card proportions) */}
+      <div
+        style={{
+          width: "100%",
+          height: "170px",
+          position: "relative",
+          overflow: "hidden",
+          backgroundColor: "#151A54",
+          flexShrink: 0,
+        }}
+      >
+        {flierImg ? (
+          <img
+            src={flierImg}
+            alt={`${ev.title} poster`}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center top",
+              display: "block",
+            }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
+          />
+        ) : (
+          /* Branded visual fallback if no custom flier is set */
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(135deg, #151A54 0%, #0140C1 100%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ ...T.eyebrow, color: "#6496EF", letterSpacing: "0.2em" }}>The Publishers House</div>
+            <div style={{ ...T.displayS, color: White, marginTop: "6px", fontSize: "16px" }}>{ev.title}</div>
+            <div style={{ ...T.colophon, color: "rgba(255,255,255,0.7)", marginTop: "4px" }}>Apostolic Gathering · Jos</div>
+          </div>
+        )}
+
+        {/* Live Status / Countdown Tag */}
+        <div
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            backgroundColor: timing.badgeBg,
+            color: timing.badgeColor,
+            border: timing.badgeBorder || "none",
+            borderRadius: "2px",
+            padding: "4px 10px",
+            fontFamily: "var(--font-poppins, 'Poppins', sans-serif)",
+            fontWeight: 700,
+            fontSize: "9.5px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+            zIndex: 2,
+          }}
+        >
+          {timing.isPulsing && (
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: timing.status === "live" ? "#FFFFFF" : "#0140C1",
+                display: "inline-block",
+                animation: "tphPulse 1.5s infinite",
+              }}
+            />
+          )}
+          {timing.badgeLabel}
+        </div>
+      </div>
+
+      {/* Card Content Area */}
+      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ textAlign: "center", minWidth: "44px", backgroundColor: Paper100, padding: "6px 4px", borderRadius: "3px", border: `1px solid ${Paper200}` }}>
+            <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.day}</div>
+            <div style={{ ...T.displayM, color: Navy, fontSize: "24px", lineHeight: 1 }}>{ev.date}</div>
+            <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.month}</div>
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h3 style={{ ...T.displayS, color: Navy, margin: 0, fontSize: "16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {ev.title}
+            </h3>
+            {ev.theme && (
+              <div style={{ ...T.eyebrow, color: Blue500, marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {ev.theme}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p
+          style={{
+            ...T.readSmall,
+            color: Slate600,
+            margin: 0,
+            flex: 1,
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            lineHeight: "1.55em",
+            fontSize: "14px",
+            minHeight: "44px",
+          }}
+        >
+          {ev.desc}
+        </p>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "12px", borderTop: `1px solid ${Paper200}`, flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+            {ev.scripture && (
+              <>
+                <span style={{ ...T.colophon, color: Blue700 }}>{ev.scripture}</span>
+                <span style={{ ...T.colophon, color: Paper400 }}>·</span>
+              </>
+            )}
+            <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
+            <span style={{ ...T.colophon, color: Paper400 }}>·</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
+          </div>
+          {ev.registrationUrl && (
+            <a
+              href={ev.registrationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ ...T.colophon, color: Blue700, textDecoration: "none", fontWeight: 700 }}
+            >
+              Register →
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomeContent() {
-  // cmsSettings: only fields the editor has *explicitly* saved in Firestore
-  // (starts empty — we never pre-fill it with defaults)
   const [cmsSettings, setCmsSettings] = useState<any>({});
-  // s: merged view used by all the non-teaching JSX (hero, setman, giving, etc.)
   const [s, setS] = useState<any>({ ...D });
   const [gatherings, setGatherings] = useState<any[]>(FALLBACK_GATHERINGS);
   const [latestSermon, setLatestSermon] = useState<any>(null);
@@ -131,7 +511,6 @@ export default function HomeContent() {
       .then(data => {
         if (data.settings) {
           setCmsSettings(data.settings);
-          // merge into s for all other sections that still use s.*
           setS((prev: any) => ({ ...prev, ...data.settings }));
         }
         if (data.gatherings?.length > 0) setGatherings(data.gatherings);
@@ -151,7 +530,6 @@ export default function HomeContent() {
     : s.setmanSubtext;
 
   // ── Latest Teaching: CMS explicit save → auto-fetched sermon → static default ──
-  // Priority: CMS override → latestSermon YouTube URL → internal sermon page → default
   const latestSermonUrl = latestSermon?.videoUrl || (latestSermon?.youtubeVideoId
     ? `https://www.youtube.com/watch?v=${latestSermon.youtubeVideoId}`
     : latestSermon ? `/sermons/${latestSermon.id}` : null);
@@ -179,170 +557,259 @@ export default function HomeContent() {
 
   const givingCats = (s.givingCategories || D.givingCategories).split(",").map((x: string) => x.trim()).filter(Boolean);
 
+  // Chronological sort: closest in time comes first, followed by the next
+  const sortedGatherings = [...gatherings].sort((a, b) => {
+    const aMs = parseStartAndEnd(a).startMs;
+    const bMs = parseStartAndEnd(b).startMs;
+    return aMs - bMs;
+  });
+
   return (
     <>
-      {/* ══════════════ HERO CAROUSEL ══════════════ */}
-      <section style={{ position: "relative", minHeight: "100vh", overflow: "hidden", paddingTop: "70px", backgroundColor: Navy }}>
-        {/* Sliding track container */}
+      {/* ══════════════ HERO SECTION (HERO CAROUSEL) ══════════════ */}
+      <section
+        id="home"
+        style={{
+          position: "relative",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          paddingTop: "70px",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Slide 0: Company of the Great (Psalm 68:11) */}
         <div
           style={{
+            position: "absolute",
+            inset: 0,
+            opacity: heroSlide === 0 ? 1 : 0,
+            transition: "opacity 800ms ease-in-out",
+            pointerEvents: heroSlide === 0 ? "auto" : "none",
             display: "flex",
-            width: "200%",
-            transform: heroSlide === 0 ? "translateX(0%)" : "translateX(-50%)",
-            transition: "transform 0.75s cubic-bezier(0.25, 1, 0.5, 1)",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {/* ── SLIDE 1: Company of the Great ── */}
           <div
             style={{
-              width: "50%",
-              minWidth: "50%",
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url('${s.heroBgImage || D.heroBgImage}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center 25%",
+              zIndex: 0,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to bottom, rgba(21,26,84,0.85) 0%, rgba(1,64,193,0.55) 100%)",
+              zIndex: 1,
+            }}
+          />
+          <div
+            className="tph-hero"
+            style={{
               position: "relative",
-              minHeight: "calc(100vh - 70px)",
+              zIndex: 2,
+              width: "100%",
+              maxWidth: "880px",
+              margin: "0 auto",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
+              textAlign: "center",
+              gap: "24px",
+              padding: "40px 20px",
             }}
           >
-            <img src={s.heroBgImage || D.heroBgImage} alt="" fetchPriority="high" decoding="sync" loading="eager" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", zIndex: 0 }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex: 1 }} />
-            <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px" }}>
-              <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>{s.heroEyebrow || D.heroEyebrow}</div>
-              <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
-              <p style={{ ...T.readLede, color: "rgba(255,255,255,0.82)", maxWidth: "560px", margin: 0 }}>{s.heroSubtitle || D.heroSubtitle}</p>
-              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
-                <Link href="/contact" style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: Navy, textDecoration: "none", background: White }}>{s.heroBtn1Label || D.heroBtn1Label}</Link>
-                <Link href={heroWatchUrl} style={{ ...T.button, display: "inline-flex", alignItems: "center", justifyContent: "center", height: "48px", padding: "0 26px", borderRadius: "2px", border: `1px solid ${White}`, color: White, textDecoration: "none", background: "transparent" }}>{s.heroBtn2Label || D.heroBtn2Label}</Link>
-              </div>
-              <div className="tph-times-strip" style={{ display: "flex", gap: "0", marginTop: "16px", border: `1px solid rgba(255,255,255,0.35)`, borderRadius: "2px", overflow: "hidden" }}>
-                <div style={{ padding: "16px 32px", borderRight: `1px solid rgba(255,255,255,0.35)`, textAlign: "center", flex: 1 }}>
-                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroSundayLabel || D.heroSundayLabel}</div>
-                  <div style={{ ...T.displayS, color: White }}>{s.heroSundayTime || D.heroSundayTime}</div>
-                </div>
-                <div style={{ padding: "16px 32px", textAlign: "center", flex: 1 }}>
-                  <div style={{ ...T.eyebrow, color: White, marginBottom: "6px", opacity: 0.75 }}>{s.heroMidweekLabel || D.heroMidweekLabel}</div>
-                  <div style={{ ...T.displayS, color: White }}>{s.heroMidweekTime || D.heroMidweekTime}</div>
-                </div>
-              </div>
-              <div style={{ ...T.colophon, color: "rgba(255,255,255,0.75)", marginTop: "8px" }}>{s.heroAddress || D.heroAddress}</div>
+            <div style={{ ...T.scripture, color: Blue300 }}>{s.heroEyebrow || D.heroEyebrow}</div>
+            <h1 style={{ ...T.displayXL, color: White, margin: 0 }}>{s.heroHeadline || D.heroHeadline}</h1>
+            <p style={{ ...T.readLede, color: "rgba(255,255,255,0.9)", margin: 0, maxWidth: "680px" }}>
+              {s.heroSubtitle || D.heroSubtitle}
+            </p>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "8px" }}>
+              <Link
+                href={s.heroBtn1Url || D.heroBtn1Url}
+                style={{
+                  ...T.button,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "48px",
+                  padding: "0 28px",
+                  borderRadius: "2px",
+                  backgroundColor: Blue700,
+                  color: White,
+                  textDecoration: "none",
+                }}
+              >
+                {s.heroBtn1Label || D.heroBtn1Label}
+              </Link>
+              <Link
+                href={heroWatchUrl}
+                style={{
+                  ...T.button,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "48px",
+                  padding: "0 28px",
+                  borderRadius: "2px",
+                  border: `1px solid rgba(255,255,255,0.4)`,
+                  color: White,
+                  textDecoration: "none",
+                }}
+              >
+                {s.heroBtn2Label || D.heroBtn2Label}
+              </Link>
+            </div>
+            {/* Service times pill */}
+            <div
+              style={{
+                marginTop: "16px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "16px",
+                padding: "10px 24px",
+                borderRadius: "30px",
+                border: "1px solid rgba(255,255,255,0.25)",
+                backgroundColor: "rgba(21,26,84,0.4)",
+                backdropFilter: "blur(6px)",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ ...T.label, color: White, display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ color: Blue300 }}>{s.heroSundayLabel || D.heroSundayLabel}:</span>
+                <span style={{ color: White, fontWeight: 700 }}>{s.heroSundayTime || D.heroSundayTime}</span>
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.3)" }}>·</span>
+              <span style={{ ...T.label, color: White, display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ color: Blue300 }}>{s.heroMidweekLabel || D.heroMidweekLabel}:</span>
+                <span style={{ color: White, fontWeight: 700 }}>{s.heroMidweekTime || D.heroMidweekTime}</span>
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* ── SLIDE 2: Building Project Video ── */}
+        {/* Slide 1: We Are Building */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: heroSlide === 1 ? 1 : 0,
+            transition: "opacity 800ms ease-in-out",
+            pointerEvents: heroSlide === 1 ? "auto" : "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
-              width: "50%",
-              minWidth: "50%",
-              position: "relative",
-              minHeight: "calc(100vh - 70px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "url('/images/building-render.webp')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              zIndex: 0,
             }}
-          >
-            <div
+          />
+          {heroSlide === 1 && (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundImage: "url('/images/building-render.webp')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
                 zIndex: 0,
               }}
-            />
-            {heroSlide === 1 && (
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
+            >
+              <source src="/videos/building.mp4" type="video/mp4" />
+            </video>
+          )}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.88) 0%, rgba(1,64,193,0.55) 100%)", zIndex: 1 }} />
+          
+          <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "880px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px", padding: "40px 20px" }}>
+            <div style={{ ...T.scripture, color: "#2090FF", backgroundColor: "rgba(32,144,255,0.15)", padding: "4px 16px", borderRadius: "20px", border: "1px solid rgba(32,144,255,0.3)" }}>
+              Special Announcement
+            </div>
+            <h1 style={{ ...T.displayXL, color: White, margin: 0, letterSpacing: "-0.02em" }}>
+              We Are Building
+            </h1>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+                maxWidth: "680px",
+                width: "100%",
+                margin: "0 auto",
+                padding: "0 12px",
+                boxSizing: "border-box",
+              }}
+            >
+              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+                After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
+              </p>
+              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+                We are at Phase 3 — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000).
+              </p>
+              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+                We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "12px" }}>
+              <Link
+                href="/giving"
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  zIndex: 0,
+                  ...T.button,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "48px",
+                  padding: "0 32px",
+                  borderRadius: "2px",
+                  backgroundColor: "#0140C1",
+                  color: White,
+                  textDecoration: "none",
+                  border: "1px solid #0140C1",
+                  boxShadow: "0 4px 16px rgba(1,64,193,0.35)"
                 }}
               >
-                <source src="/videos/building.mp4" type="video/mp4" />
-              </video>
-            )}
-            {/* Deep blue overlay matching Slide 1 */}
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.88) 0%, rgba(1,64,193,0.55) 100%)", zIndex: 1 }} />
-            
-            <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "880px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px", padding: "40px 20px" }}>
-              <div style={{ ...T.scripture, color: "#2090FF", backgroundColor: "rgba(32,144,255,0.15)", padding: "4px 16px", borderRadius: "20px", border: "1px solid rgba(32,144,255,0.3)" }}>
-                Special Announcement
-              </div>
-              <h1 style={{ ...T.displayXL, color: White, margin: 0, letterSpacing: "-0.02em" }}>
-                We Are Building
-              </h1>
-              <div
+                Give Toward the Project
+              </Link>
+              <a
+                href="https://forms.gle/4Gimdh1WcUerMQvVA"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "14px",
-                  maxWidth: "680px",
-                  width: "100%",
-                  margin: "0 auto",
-                  padding: "0 12px",
-                  boxSizing: "border-box",
+                  ...T.button,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "48px",
+                  padding: "0 28px",
+                  borderRadius: "2px",
+                  border: `1px solid ${White}`,
+                  color: White,
+                  textDecoration: "none",
+                  background: "transparent"
                 }}
               >
-                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
-                  After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
-                </p>
-                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
-                  We are at Phase 3 — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000).
-                </p>
-                <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
-                  We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginTop: "12px" }}>
-                <Link
-                  href="/giving"
-                  style={{
-                    ...T.button,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "48px",
-                    padding: "0 32px",
-                    borderRadius: "2px",
-                    backgroundColor: "#0140C1",
-                    color: White,
-                    textDecoration: "none",
-                    border: "1px solid #0140C1",
-                    boxShadow: "0 4px 16px rgba(1,64,193,0.35)"
-                  }}
-                >
-                  Give Toward the Project
-                </Link>
-                <a
-                  href="https://forms.gle/4Gimdh1WcUerMQvVA"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    ...T.button,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "48px",
-                    padding: "0 28px",
-                    borderRadius: "2px",
-                    border: `1px solid ${White}`,
-                    color: White,
-                    textDecoration: "none",
-                    background: "transparent"
-                  }}
-                >
-                  Partner With Us
-                </a>
-              </div>
+                Make a Pledge
+              </a>
             </div>
           </div>
         </div>
@@ -402,92 +869,44 @@ export default function HomeContent() {
 
       {/* ══════════════ THIS WEEK AT THE HOUSE / NEXT GATHERINGS ══════════════ */}
       <section id="next-gatherings" className="tph-section" style={{ backgroundColor:White, scrollMarginTop: "80px" }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes tphPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.55; }
+          }
+        ` }} />
         <div id="gatherings" style={{ position: "relative", top: "-80px" }} />
         <div className="tph-inner">
-          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:"40px" }}>
+          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:"36px" }}>
             <div>
               <div style={{ ...T.eyebrow, color:Blue500, marginBottom:"10px" }}>{s.gatheringsLabel||D.gatheringsLabel}</div>
               <h2 style={{ ...T.displayL, color:Navy, margin:0 }}>{s.gatheringsHeading||D.gatheringsHeading}</h2>
             </div>
             <Link href="/schedule" style={{ ...T.label, color:Blue700, textDecoration:"none" }}>All Events →</Link>
           </div>
-          <div className="tph-grid-auto" style={{ marginBottom:"40px" }}>
-            {gatherings.map((ev: any, i: number) => {
-              const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
-              return (
-                <div
-                  key={ev.id || i}
-                  style={{
-                    backgroundColor: White,
-                    border: `1px solid ${Paper300}`,
-                    borderRadius: "4px",
-                    padding: "20px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
-                    boxShadow: "0 2px 10px rgba(21, 26, 84, 0.03)",
-                  }}
-                >
-                  {/* Flier Image Poster if available */}
-                  {flierImg && (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "220px",
-                        borderRadius: "3px",
-                        overflow: "hidden",
-                        backgroundColor: "#F4F6FB",
-                        border: `1px solid ${Paper200}`,
-                        position: "relative",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={flierImg}
-                        alt={`${ev.title} poster`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          objectPosition: "center top",
-                          display: "block",
-                        }}
-                        onError={(e) => {
-                          (e.currentTarget.parentElement as HTMLElement).style.display = "none";
-                        }}
-                      />
-                    </div>
-                  )}
 
-                  <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
-                    <div style={{ textAlign:"center", minWidth:"44px" }}>
-                      <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.day}</div>
-                      <div style={{ ...T.displayM, color:Navy, fontSize:"28px" }}>{ev.date}</div>
-                      <div style={{ ...T.label, color:Slate500, fontSize:"9px" }}>{ev.month}</div>
-                    </div>
-                    <div>
-                      <h3 style={{ ...T.displayS, color:Navy, margin:0, fontSize:"16px" }}>{ev.title}</h3>
-                      {ev.theme && <div style={{ ...T.eyebrow, color:Blue500, marginTop:"4px" }}>{ev.theme}</div>}
-                    </div>
-                  </div>
-                  <p style={{ ...T.readSmall, color:Slate600, margin:0, flex:1 }}>{ev.desc}</p>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:"12px", borderTop:`1px solid ${Paper200}`, flexWrap:"wrap", gap:"6px" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:"6px", flexWrap:"wrap" }}>
-                      {ev.scripture && <><span style={{ ...T.colophon, color:Blue700 }}>{ev.scripture}</span><span style={{ ...T.colophon, color:Paper400 }}>·</span></>}
-                      <span style={{ ...T.colophon, color:Slate500 }}>{ev.time}</span>
-                      <span style={{ ...T.colophon, color:Paper400 }}>·</span>
-                      <span style={{ ...T.colophon, color:Slate500 }}>{ev.city}</span>
-                    </div>
-                    {ev.registrationUrl && (
-                      <a href={ev.registrationUrl} target="_blank" rel="noopener noreferrer" style={{ ...T.colophon, color:Blue700, textDecoration:"none", fontWeight:700 }}>
-                        Register →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* Dynamic Grid Layout: fills full width when 1 event, expands to balanced wide cards when 2+, no empty right space */}
+          {sortedGatherings.length === 1 ? (
+            <HomeGatheringSingleFeature ev={sortedGatherings[0]} />
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: sortedGatherings.length === 2
+                  ? "repeat(auto-fit, minmax(min(100%, 460px), 1fr))"
+                  : sortedGatherings.length === 3
+                  ? "repeat(auto-fit, minmax(min(100%, 320px), 1fr))"
+                  : "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                gap: "24px",
+                marginBottom: "40px",
+              }}
+            >
+              {sortedGatherings.map((ev: any, i: number) => (
+                <HomeGatheringCard key={ev.id || i} ev={ev} />
+              ))}
+            </div>
+          )}
+
           <div className="tph-grid-3 tph-mobile-hide" style={{ height:"300px" }}>
             {((s.gatheringsImages as string[] | undefined)?.length
               ? (s.gatheringsImages as string[])

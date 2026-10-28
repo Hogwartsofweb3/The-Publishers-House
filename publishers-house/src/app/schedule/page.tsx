@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EventCard from "@/components/EventCard";
 import { getEvents, type EventItem } from "@/lib/firebase";
+import { parseStartAndEnd } from "@/lib/eventTiming";
 
 export const revalidate = 60;
 
@@ -101,7 +102,7 @@ export default async function EventsPage() {
         description:
           "A power-packed encounter where the Word of God is rightly taught and the Holy Spirit moves tangibly to transform lives.",
         startAt: "2026-12-10T16:45",
-        endAt: "",
+        endAt: "2026-12-13T22:00",
         location: "The House of Bread, Jos",
         imageUrl: "/images/programs/merismos-2024.jpg",
         registrationUrl: "",
@@ -111,6 +112,13 @@ export default async function EventsPage() {
       },
     ] as any;
   }
+
+  // Strict chronological sorting: closest in time comes first
+  events.sort((a, b) => {
+    const aMs = parseStartAndEnd(a).startMs;
+    const bMs = parseStartAndEnd(b).startMs;
+    return aMs - bMs;
+  });
 
   return (
     <div style={{ backgroundColor: Paper100, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
