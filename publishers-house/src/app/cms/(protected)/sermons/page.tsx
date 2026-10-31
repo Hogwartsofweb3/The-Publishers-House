@@ -73,6 +73,7 @@ const emptySermon = {
   duration: "",
   videoUrl: "",
   audioUrl: "",
+  spotifyEpisodeId: "",
   studyGuideUrl: "",
   tags: "",
   coverImageUrl: "",
@@ -105,6 +106,11 @@ export default function SermonsEditor() {
   const [ytPasteUrl, setYtPasteUrl] = useState("");
   const [ytFetching, setYtFetching] = useState(false);
   const [ytMsg, setYtMsg] = useState("");
+  const [spotifySyncing, setSpotifySyncing] = useState(false);
+  const [spotifySyncResult, setSpotifySyncResult] = useState<string | null>(null);
+  const [spotifyPasteUrl, setSpotifyPasteUrl] = useState("");
+  const [spotifyFetching, setSpotifyFetching] = useState(false);
+  const [spotifyMsg, setSpotifyMsg] = useState("");
 
 
   // Search, Filter & Pagination controls
@@ -164,6 +170,27 @@ export default function SermonsEditor() {
     }
   };
 
+  // ── Spotify Full Show Auto-Sync ────────────────────────────────────────
+  const handleSpotifySync = async () => {
+    setSpotifySyncing(true);
+    setSpotifySyncResult("Connecting to Spotify show...");
+    try {
+      const res = await fetch("/api/sync-spotify", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSpotifySyncResult(`✓ ${data.message || `Synced ${data.total} Spotify episodes`}`);
+        fetchSermons();
+      } else {
+        setSpotifySyncResult(`Spotify sync error: ${data.error || "Failed"}`);
+      }
+    } catch (e: any) {
+      setSpotifySyncResult(`Spotify sync error: ${e.message}`);
+    } finally {
+      setSpotifySyncing(false);
+      setTimeout(() => setSpotifySyncResult(null), 12000);
+    }
+  };
+
   // ── YouTube Quick-Paste Auto-fill ──────────────────────────────────────
   const handleYtAutoFill = async () => {
     const url = ytPasteUrl.trim();
@@ -197,6 +224,40 @@ export default function SermonsEditor() {
     }
     setYtFetching(false);
     setTimeout(() => setYtMsg(""), 5000);
+  };
+
+  // ── Spotify Quick-Paste Auto-fill ──────────────────────────────────────
+  const handleSpotifyAutoFill = async () => {
+    const url = spotifyPasteUrl.trim();
+    if (!url) return;
+    setSpotifyFetching(true);
+    setSpotifyMsg("");
+    try {
+      const res = await fetch(`/api/sync-spotify/ep-meta?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Could not fetch Spotify episode metadata");
+      }
+
+      setForm((prev: any) => ({
+        ...prev,
+        title: data.title || prev.title,
+        coverImageUrl: data.coverImageUrl || prev.coverImageUrl,
+        duration: data.duration || prev.duration,
+        date: data.date || prev.date,
+        summary: data.summary || prev.summary,
+        speaker: data.speaker || prev.speaker,
+        series: data.series || prev.series,
+        audioUrl: data.audioUrl || prev.audioUrl || url,
+        spotifyEpisodeId: data.episodeId || prev.spotifyEpisodeId,
+      }));
+      setSpotifyMsg("✓ Auto-filled from Spotify");
+      setSpotifyPasteUrl("");
+    } catch (e: any) {
+      setSpotifyMsg("Error: " + e.message);
+    }
+    setSpotifyFetching(false);
+    setTimeout(() => setSpotifyMsg(""), 5000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,6 +300,7 @@ export default function SermonsEditor() {
       duration: s.duration || "",
       videoUrl: s.videoUrl || "",
       audioUrl: s.audioUrl || "",
+      spotifyEpisodeId: s.spotifyEpisodeId || "",
       studyGuideUrl: s.studyGuideUrl || "",
       tags: Array.isArray(s.tags) ? s.tags.join(", ") : s.tags || "",
       coverImageUrl: s.coverImageUrl || "",
@@ -380,6 +442,18 @@ export default function SermonsEditor() {
               {syncResult}
             </span>
           )}
+          {spotifySyncResult && (
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "12px",
+                color: spotifySyncResult.startsWith("✓") ? "#16A34A" : S.Red,
+                fontWeight: 600,
+              }}
+            >
+              {spotifySyncResult}
+            </span>
+          )}
           <button
             onClick={() => {
               setForm({ ...emptySermon });
@@ -394,6 +468,21 @@ export default function SermonsEditor() {
             }}
           >
             + Add New Sermon
+          </button>
+          <button
+            onClick={handleSpotifySync}
+            disabled={spotifySyncing}
+            style={{
+              ...S.btn("#ECFDF5", "#047857"),
+              opacity: spotifySyncing ? 0.6 : 1,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              border: "1px solid #A7F3D0",
+            }}
+            title="Sync all episodes from The Publishers House on Spotify"
+          >
+            {spotifySyncing ? "Syncing Spotify..." : "🎧 Sync From Spotify"}
           </button>
           <button
             onClick={handleManualSync}
@@ -572,6 +661,39 @@ export default function SermonsEditor() {
                   </div>
                 )}
 
+                {/* ── Spotify Quick-Paste Auto-fill ─────────────────────────────── */}
+                {!editingId && (
+                  <div style={{ padding: "16px 20px", backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "6px" }}>
+                    <label style={{ ...S.label, color: "#166534", marginBottom: "8px" }}>🎧 Spotify Quick-Paste Auto-fill</label>
+                    <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", color: S.Slate600, margin: "0 0 10px", lineHeight: "1.5em" }}>
+                      Paste any Spotify episode URL (e.g. <code>https://open.spotify.com/episode/...</code>) and click <strong>Auto-fill</strong> — the title, synopsis, series, preacher, duration, date, and cover artwork will import automatically.
+                    </p>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      <input
+                        type="url"
+                        placeholder="https://open.spotify.com/episode/..."
+                        value={spotifyPasteUrl}
+                        onChange={e => setSpotifyPasteUrl(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleSpotifyAutoFill())}
+                        style={{ ...S.input, flex: 1, border: "1px solid #BBF7D0", backgroundColor: "#FFFFFF" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSpotifyAutoFill}
+                        disabled={spotifyFetching || !spotifyPasteUrl.trim()}
+                        style={{ ...S.btn("#16A34A", S.White), opacity: (spotifyFetching || !spotifyPasteUrl.trim()) ? 0.6 : 1, whiteSpace: "nowrap" }}
+                      >
+                        {spotifyFetching ? "Fetching..." : "Auto-fill →"}
+                      </button>
+                    </div>
+                    {spotifyMsg && (
+                      <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", color: spotifyMsg.startsWith("✓") ? "#16A34A" : S.Red, margin: "8px 0 0", fontWeight: 600 }}>
+                        {spotifyMsg}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Row 1: Title & Speaker */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div>
@@ -703,25 +825,53 @@ export default function SermonsEditor() {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                     <div>
-                      <label style={S.label}>Audio URL (MP3 / Podcast)</label>
+                      <label style={S.label}>Spotify Episode Link or ID</label>
+                      <input
+                        type="text"
+                        placeholder="https://open.spotify.com/episode/... or ID"
+                        value={form.spotifyEpisodeId || ""}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          const match = val.match(/episode\/([a-zA-Z0-9]+)/);
+                          const epId = match ? match[1] : val;
+                          setForm({ ...form, spotifyEpisodeId: epId, audioUrl: form.audioUrl || (match ? val : form.audioUrl) });
+                        }}
+                        style={S.input}
+                      />
+                      {form.spotifyEpisodeId && (
+                        <span style={{ fontSize: "11px", color: "#16A34A", fontWeight: 600, display: "block", marginTop: "4px" }}>
+                          ✓ In-page Spotify Embed Active ({form.spotifyEpisodeId})
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <label style={S.label}>Audio URL (Direct MP3 Stream)</label>
                       <input
                         type="url"
                         placeholder="https://... (Direct audio stream)"
                         value={form.audioUrl}
-                        onChange={(e) => setForm({ ...form, audioUrl: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const match = val.match(/episode\/([a-zA-Z0-9]+)/);
+                          if (match) {
+                            setForm({ ...form, audioUrl: val, spotifyEpisodeId: match[1] });
+                          } else {
+                            setForm({ ...form, audioUrl: val });
+                          }
+                        }}
                         style={S.input}
                       />
                     </div>
-                    <div>
-                      <label style={S.label}>Study Guide URL</label>
-                      <input
-                        type="url"
-                        placeholder="https://... (PDF Study Guide)"
-                        value={form.studyGuideUrl}
-                        onChange={(e) => setForm({ ...form, studyGuideUrl: e.target.value })}
-                        style={S.input}
-                      />
-                    </div>
+                  </div>
+                  <div>
+                    <label style={S.label}>Study Guide URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://... (PDF Study Guide)"
+                      value={form.studyGuideUrl}
+                      onChange={(e) => setForm({ ...form, studyGuideUrl: e.target.value })}
+                      style={S.input}
+                    />
                   </div>
                 </div>
 

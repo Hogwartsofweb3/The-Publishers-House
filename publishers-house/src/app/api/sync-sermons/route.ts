@@ -263,6 +263,65 @@ async function fetchSpotifyEpisodes(
   }
 }
 
+async function scrapePublicSpotifyShow(showId: string): Promise<Partial<SermonDoc>[]> {
+  try {
+    const res = await fetch(`https://open.spotify.com/show/${showId}`, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const segments = html.split('<a href="/episode/');
+    const episodes: Partial<SermonDoc>[] = [];
+
+    for (let i = 1; i < segments.length; i++) {
+      const seg = segments[i];
+      const id = seg.slice(0, seg.indexOf('"'));
+      const titleMatch = seg.match(/data-testid="episodeTitle"[^>]*>([\s\S]*?)<\/h4>/);
+      const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, "").trim() : "";
+      const descMatch =
+        seg.match(/data-testid="episodeDescription"[^>]*>([\s\S]*?)<\/p>/) ||
+        seg.match(/<p[^>]*class="[^"]*encore-text-body-small[^"]*"[^>]*>([\s\S]*?)<\/p>/);
+      const summary = descMatch ? descMatch[1].replace(/<[^>]+>/g, "").trim() : "";
+
+      if (id && title && !episodes.some((e) => e.spotifyEpisodeId === id)) {
+        let series = "";
+        let speaker = "Dr. Joshua Agunbiade";
+        if (summary.includes("~")) {
+          const parts = summary.split("~").map((p) => p.trim());
+          if (parts.length >= 2) {
+            series = parts[0];
+            speaker = parts[1];
+          }
+        }
+
+        episodes.push({
+          title,
+          speaker,
+          date: new Date().toISOString().split("T")[0],
+          series,
+          videoUrl: "",
+          audioUrl: `https://open.spotify.com/episode/${id}`,
+          spotifyEpisodeId: id,
+          duration: "45:00",
+          coverImageUrl: "/images/giving-bg.webp",
+          summary: summary.slice(0, 400),
+          tags: ["Spotify", "Audio Message", series].filter(Boolean),
+          published: true,
+          source: "spotify",
+          studyGuideUrl: "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }
+    return episodes;
+  } catch (e) {
+    console.warn("Public Spotify scrape fallback error:", e);
+    return [];
+  }
+}
+
 // ─── Firestore Upsert ─────────────────────────────────────────────────────────
 async function upsertSermons(sermons: Partial<SermonDoc>[]): Promise<{ added: number; skipped: number }> {
   const col = adminDb.collection("sermons");
@@ -360,14 +419,26 @@ export async function handleSync(req: NextRequest) {
       notes.push("YouTube API key missing in environment");
     }
 
-    // 2. Fetch Spotify (graceful fallback)
-    if (spotifyClientId && spotifyClientSecret && spotifyShowId) {
-      const spResult = await fetchSpotifyEpisodes(spotifyClientId, spotifyClientSecret, spotifyShowId);
+    // 2. Fetch Spotify (API or public show fallback)
+    const targetShowId = spotifyShowId || "0FELkmsjm7yVoytlwCXXDG";
+    if (spotifyClientId && spotifyClientSecret) {
+      const spResult = await fetchSpotifyEpisodes(spotifyClientId, spotifyClientSecret, targetShowId);
       results.spotify = spResult.sermons.length;
       allSermons.push(...spResult.sermons);
       if (spResult.error) {
         notes.push(`Spotify: ${spResult.error}`);
+        const fallbackSermons = await scrapePublicSpotifyShow(targetShowId);
+        if (fallbackSermons.length > 0) {
+          results.spotify = fallbackSermons.length;
+          allSermons.push(...fallbackSermons);
+          notes.push(`Spotify fallback: synced ${fallbackSermons.length} public show episodes`);
+        }
       }
+    } else {
+      const publicSermons = await scrapePublicSpotifyShow(targetShowId);
+      results.spotify = publicSermons.length;
+      allSermons.push(...publicSermons);
+      notes.push(`Spotify: synced ${publicSermons.length} public show episodes`);
     }
 
     // 3. Upsert to Firestore

@@ -401,7 +401,7 @@ export default function ProgramEditionsClient({
             margin: "0 0 10px",
           }}
         >
-          {programName} Editions &amp; Fliers
+          {`${programName} Editions & Fliers`}
         </h2>
         <p
           style={{

@@ -345,6 +345,8 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
                   src={
                     sermon.spotifyEpisodeId
                       ? `https://open.spotify.com/embed/episode/${sermon.spotifyEpisodeId}?utm_source=generator&theme=0`
+                      : (sermon.audioUrl && sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1])
+                      ? `https://open.spotify.com/embed/episode/${sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1]}?utm_source=generator&theme=0`
                       : "https://open.spotify.com/embed/show/0FELkmsjm7yVoytlwCXXDG?utm_source=generator&theme=0"
                   }
                   width="100%"

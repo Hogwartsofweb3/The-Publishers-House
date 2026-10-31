@@ -34,6 +34,12 @@ export async function POST(req: NextRequest) {
         ? sermon.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
         : [];
 
+      let spotifyEpisodeId = (sermon.spotifyEpisodeId || "").trim();
+      if (!spotifyEpisodeId && sermon.audioUrl) {
+        const match = sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/);
+        if (match) spotifyEpisodeId = match[1];
+      }
+
       const cleanData: Record<string, any> = {
         title: sermon.title || "",
         speaker: sermon.speaker || "Dr. Joshua Agunbiade",
@@ -43,6 +49,7 @@ export async function POST(req: NextRequest) {
         duration: sermon.duration || "",
         videoUrl: sermon.videoUrl || "",
         audioUrl: sermon.audioUrl || "",
+        spotifyEpisodeId: spotifyEpisodeId || "",
         studyGuideUrl: sermon.studyGuideUrl || "",
         tags: tagsArray,
         coverImageUrl: sermon.coverImageUrl || "",

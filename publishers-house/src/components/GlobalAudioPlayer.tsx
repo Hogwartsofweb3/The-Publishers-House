@@ -12,6 +12,9 @@ export interface PlayableMedia extends Partial<Sermon> {
   scripture?: string;
   videoUrl?: string;
   audioUrl?: string;
+  spotifyEpisodeId?: string;
+  coverImageUrl?: string;
+  thumbnailUrl?: string;
   duration?: string;
   type?: "sermon" | "resource";
   resourceSlug?: string;
@@ -343,9 +346,13 @@ function FloatingDockedPlayer({
   }, []);
 
   const videoId = getYouTubeVideoId(sermon.videoUrl);
+  const spotifyEpId =
+    sermon.spotifyEpisodeId ||
+    (sermon.audioUrl && sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1]) ||
+    null;
   const thumbnailUrl = videoId
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-    : "/images/sermon-hero-bg.jpg";
+    : sermon.coverImageUrl || "/images/sermon-hero-bg.jpg";
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
@@ -427,12 +434,12 @@ function FloatingDockedPlayer({
               fontWeight: 700,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
-              backgroundColor: mode === "video" ? "#2090FF" : "#0140C1",
+              backgroundColor: mode === "video" ? "#2090FF" : spotifyEpId ? "#1DB954" : "#0140C1",
               color: "#FFFFFF",
               flexShrink: 0,
             }}
           >
-            {mode === "video" ? "VIDEO" : "AUDIO"}
+            {mode === "video" ? "VIDEO" : spotifyEpId ? "SPOTIFY" : "AUDIO"}
           </span>
           <span
             style={{
@@ -619,6 +626,20 @@ function FloatingDockedPlayer({
                       ))}
                     </div>
                   </div>
+                </div>
+              ) : spotifyEpId ? (
+                /* In-page Spotify Embed Player (Zero Redirection) */
+                <div style={{ padding: "8px", backgroundColor: "#0D1238" }}>
+                  <iframe
+                    key={spotifyEpId}
+                    src={`https://open.spotify.com/embed/episode/${spotifyEpId}?utm_source=generator&theme=0`}
+                    width="100%"
+                    height="152"
+                    frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    style={{ borderRadius: "8px", border: "none", display: "block" }}
+                  />
                 </div>
               ) : (
                 <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
