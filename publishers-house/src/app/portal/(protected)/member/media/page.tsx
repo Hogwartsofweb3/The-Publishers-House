@@ -51,7 +51,7 @@ export default function MemberMediaPage() {
   }, []);
 
   const handleResume = (item: PlaybackRecord) => {
-    if (item.videoUrl) {
+    if (item.videoUrl && !item.spotifyEpisodeId) {
       playVideo(
         {
           id: item.id,
@@ -61,6 +61,7 @@ export default function MemberMediaPage() {
           scripture: item.scripture,
           videoUrl: item.videoUrl,
           audioUrl: item.audioUrl,
+          spotifyEpisodeId: item.spotifyEpisodeId,
           type: item.type,
           resourceSlug: item.resourceSlug,
         },
@@ -76,6 +77,7 @@ export default function MemberMediaPage() {
           scripture: item.scripture,
           videoUrl: item.videoUrl,
           audioUrl: item.audioUrl,
+          spotifyEpisodeId: item.spotifyEpisodeId,
           type: item.type,
           resourceSlug: item.resourceSlug,
         },
@@ -85,7 +87,7 @@ export default function MemberMediaPage() {
   };
 
   const handlePlayFromStart = (item: PlaybackRecord) => {
-    if (item.videoUrl) {
+    if (item.videoUrl && !item.spotifyEpisodeId) {
       playVideo(
         {
           id: item.id,
@@ -95,6 +97,7 @@ export default function MemberMediaPage() {
           scripture: item.scripture,
           videoUrl: item.videoUrl,
           audioUrl: item.audioUrl,
+          spotifyEpisodeId: item.spotifyEpisodeId,
           type: item.type,
           resourceSlug: item.resourceSlug,
         },
@@ -110,6 +113,7 @@ export default function MemberMediaPage() {
           scripture: item.scripture,
           videoUrl: item.videoUrl,
           audioUrl: item.audioUrl,
+          spotifyEpisodeId: item.spotifyEpisodeId,
           type: item.type,
           resourceSlug: item.resourceSlug,
         },

@@ -76,6 +76,29 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
   const { playVideo, playAudio } = useAudio();
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [audioNotice, setAudioNotice] = useState<string | null>(null);
+
+  const handleListenClick = () => {
+    const hasSpotify = Boolean(
+      sermon.spotifyEpisodeId ||
+      (sermon.audioUrl && (sermon.audioUrl.includes("/episode/") || sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)))
+    );
+    const hasDirectAudio = Boolean(
+      sermon.audioUrl &&
+      !sermon.audioUrl.includes("/show/") &&
+      !sermon.audioUrl.includes("0FELkmsjm7yVoytlwCXXDG") &&
+      (sermon.audioUrl.match(/\.(mp3|wav|m4a|aac)($|\?)/i) || (sermon.audioUrl.startsWith("http") && !sermon.audioUrl.includes("youtube") && !sermon.audioUrl.includes("youtu.be")))
+    );
+
+    if (!hasSpotify && !hasDirectAudio) {
+      setAudioNotice("Audio has not been uploaded by admin");
+      setTimeout(() => setAudioNotice(null), 5000);
+      return;
+    }
+
+    setAudioNotice(null);
+    playAudio(sermon);
+  };
 
   const dateStr = sermon.date
     ? new Date(sermon.date).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, ".")
@@ -190,7 +213,7 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
           <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center" }}>
             {/* LISTEN BUTTON — always visible, plays on the website directly */}
             <button
-              onClick={() => playAudio(sermon)}
+              onClick={handleListenClick}
               style={{
                 ...T.button,
                 padding: "14px 30px",
@@ -260,6 +283,32 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
               SHARE
             </button>
           </div>
+
+          {audioNotice && (
+            <div
+              style={{
+                marginTop: "16px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "10px 18px",
+                backgroundColor: "rgba(239, 68, 68, 0.18)",
+                border: "1px solid rgba(239, 68, 68, 0.45)",
+                borderRadius: "6px",
+                color: "#FCA5A5",
+                fontFamily: "var(--font-poppins)",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{audioNotice}</span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -338,24 +387,6 @@ export default function SermonDetailClient({ sermon, relatedSermons }: Props) {
             {/* Audio Platforms */}
             <div style={{ marginTop: "12px", paddingTop: "16px", borderTop: `1px solid ${Paper300}` }}>
               <div style={{ ...T.eyebrow, color: Slate500, marginBottom: "8px" }}>Audio Channels & Podcasts:</div>
-              {/* Spotify Embed Player */}
-              <div style={{ marginBottom: "14px" }}>
-                <iframe
-                  style={{ borderRadius: "10px", border: "none" }}
-                  src={
-                    sermon.spotifyEpisodeId
-                      ? `https://open.spotify.com/embed/episode/${sermon.spotifyEpisodeId}?utm_source=generator&theme=0`
-                      : (sermon.audioUrl && sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1])
-                      ? `https://open.spotify.com/embed/episode/${sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1]}?utm_source=generator&theme=0`
-                      : "https://open.spotify.com/embed/show/0FELkmsjm7yVoytlwCXXDG?utm_source=generator&theme=0"
-                  }
-                  width="100%"
-                  height="152"
-                  frameBorder="0"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                />
-              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <a
                   href={sermon.spotifyEpisodeId ? `https://open.spotify.com/episode/${sermon.spotifyEpisodeId}` : "https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"}

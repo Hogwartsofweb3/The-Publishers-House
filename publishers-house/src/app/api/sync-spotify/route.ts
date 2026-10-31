@@ -159,37 +159,52 @@ async function handleSync(req: NextRequest) {
 
     const db = getAdminDb();
     const existingSnap = await db.collection("sermons").get();
-    const existingBySpotifyId = new Map<string, any>();
-    const existingByTitle = new Map<string, any>();
+    const firestoreDocs = existingSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as any));
 
-    existingSnap.docs.forEach((doc) => {
-      const data = doc.data();
-      if (data.spotifyEpisodeId) {
-        existingBySpotifyId.set(data.spotifyEpisodeId, { id: doc.id, ...data });
-      }
-      if (data.title) {
-        existingByTitle.set(data.title.toLowerCase().trim(), { id: doc.id, ...data });
-      }
-    });
+    function normalizeText(str: string) {
+      return (str || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
 
     let added = 0;
     let updated = 0;
     const now = new Date().toISOString();
 
     for (const ep of episodes) {
-      const existing =
-        existingBySpotifyId.get(ep.spotifyEpisodeId) ||
-        existingByTitle.get(ep.title.toLowerCase().trim());
+      const epNorm = normalizeText(ep.title);
+
+      // 1. By Spotify Episode ID
+      let existing = firestoreDocs.find(
+        (s) => s.spotifyEpisodeId === ep.spotifyEpisodeId
+      );
+
+      // 2. By Normalized Title or Substring / Prefix match
+      if (!existing) {
+        existing = firestoreDocs.find((s) => {
+          const sNorm = normalizeText(s.title);
+          if (sNorm === epNorm) return true;
+          if (sNorm.startsWith(epNorm)) return true;
+          if (epNorm.startsWith(sNorm)) return true;
+          if (epNorm.includes("pre fol intervention") && sNorm.includes("pre fol intervention")) return true;
+          if (epNorm.includes("preparing for a visitation") && sNorm.includes("preparing for a visitation")) return true;
+          if (epNorm.includes("water for the thirsty") && sNorm.includes("water for the thirsty")) return true;
+          if (epNorm.includes("and he prayed again") && sNorm.includes("and he prayed again")) return true;
+          return false;
+        });
+      }
 
       if (existing) {
-        // Update existing sermon with Spotify episode details if missing
+        // Update existing sermon with Spotify episode details
         await db
           .collection("sermons")
           .doc(existing.id)
           .set(
             {
               spotifyEpisodeId: ep.spotifyEpisodeId,
-              audioUrl: existing.audioUrl || ep.audioUrl,
+              audioUrl: ep.audioUrl,
               duration: existing.duration || ep.duration,
               coverImageUrl: existing.coverImageUrl || ep.coverImageUrl,
               updatedAt: now,

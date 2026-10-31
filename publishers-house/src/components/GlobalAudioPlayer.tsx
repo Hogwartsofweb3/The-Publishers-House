@@ -332,6 +332,7 @@ function FloatingDockedPlayer({
   onToggleMinimize,
   onClose,
 }: PlayerProps) {
+  const videoId = getYouTubeVideoId(sermon.videoUrl);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState("00:00");
   const [duration, setDuration] = useState(sermon.duration || "00:00");
@@ -345,14 +346,16 @@ function FloatingDockedPlayer({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const videoId = getYouTubeVideoId(sermon.videoUrl);
+  // Extract Spotify Episode ID from spotifyEpisodeId field or audioUrl
   const spotifyEpId =
     sermon.spotifyEpisodeId ||
     (sermon.audioUrl && sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1]) ||
     null;
+
+  // Only use YouTube thumbnail if there's no spotifyEpId; for audio-only Spotify sermons, use coverImageUrl or fallback
   const thumbnailUrl = videoId
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-    : sermon.coverImageUrl || "/images/sermon-hero-bg.jpg";
+    : (sermon.coverImageUrl || sermon.thumbnailUrl || "/images/sermon-hero-bg.jpg");
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
@@ -538,103 +541,17 @@ function FloatingDockedPlayer({
             </div>
           )}
 
-          {/* AUDIO MODE — YouTube iframe as audio source with artwork overlay */}
+          {/* AUDIO MODE — Spotify embed (preferred) or artwork + native audio fallback */}
           {mode === "audio" && (
             <div style={{ backgroundColor: "#0D1238" }}>
-              {videoId ? (
-                <div style={{ position: "relative", width: "100%" }}>
-                  <div style={{ width: "100%", aspectRatio: "16/9" }}>
-                    <iframe
-                      key={`${videoId}-${startSeconds}`}
-                      width="100%"
-                      height="100%"
-                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${startParam}`}
-                      title={sermon.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      style={{ display: "block" }}
-                    />
-                  </div>
-
-                  {/* Artwork overlay */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: "46px",
-                      background: "linear-gradient(160deg, #0D1238 0%, #151A54 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "14px",
-                      padding: "14px 16px",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <img
-                      src={thumbnailUrl}
-                      alt={sermon.title}
-                      style={{
-                        width: "56px",
-                        height: "56px",
-                        borderRadius: "8px",
-                        objectFit: "cover",
-                        flexShrink: 0,
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-                      }}
-                    />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-poppins)",
-                          fontWeight: 700,
-                          fontSize: "13px",
-                          color: "#FFFFFF",
-                          lineHeight: "1.3em",
-                          overflow: "hidden",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        {sermon.title}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.65)" }}>
-                        {sermon.speaker || "Dr. Joshua Agunbiade"}
-                      </div>
-                      {sermon.series && (
-                        <div style={{ fontSize: "10px", color: "#2090FF", marginTop: "2px", fontWeight: 600 }}>
-                          {sermon.series}
-                        </div>
-                      )}
-                    </div>
-                    {/* Sound wave visual indicator */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
-                      {[14, 22, 18, 26, 16, 20].map((h, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            width: "3px",
-                            height: `${h}px`,
-                            borderRadius: "2px",
-                            backgroundColor: "#2090FF",
-                            opacity: 0.8,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : spotifyEpId ? (
-                /* In-page Spotify Embed Player (Zero Redirection) */
+              {spotifyEpId ? (
+                /* Spotify In-Page Embed — full episode, no redirection */
                 <div style={{ padding: "8px", backgroundColor: "#0D1238" }}>
                   <iframe
                     key={spotifyEpId}
                     src={`https://open.spotify.com/embed/episode/${spotifyEpId}?utm_source=generator&theme=0`}
                     width="100%"
-                    height="152"
+                    height={isExpanded ? "232" : "152"}
                     frameBorder="0"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     loading="lazy"
@@ -642,6 +559,7 @@ function FloatingDockedPlayer({
                   />
                 </div>
               ) : (
+                /* Artwork + native audio fallback for direct mp3/non-Spotify audio */
                 <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <img
@@ -662,7 +580,7 @@ function FloatingDockedPlayer({
                         </div>
                       )}
                     </div>
-                    {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+                    {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && !sermon.audioUrl.includes("spotify") && (
                       <button
                         onClick={onTogglePlay}
                         style={{
@@ -687,7 +605,7 @@ function FloatingDockedPlayer({
                   </div>
 
                   {/* Scrub slider & time */}
-                  {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+                  {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && !sermon.audioUrl.includes("spotify") && (
                     <div>
                       <input
                         type="range"
@@ -710,11 +628,18 @@ function FloatingDockedPlayer({
                       </div>
                     </div>
                   )}
+
+                  {/* No audio message */}
+                  {(!sermon.audioUrl || sermon.audioUrl.includes("t.me")) && (
+                    <div style={{ textAlign: "center", padding: "8px 0", fontSize: "11px", color: "rgba(255,255,255,0.45)" }}>
+                      No direct audio available. Check Spotify or Telegram.
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Native audio element hook */}
-              {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && (
+              {/* Native audio element hook — only for direct mp3, not Spotify */}
+              {sermon.audioUrl && !sermon.audioUrl.includes("t.me") && !sermon.audioUrl.includes("spotify") && !spotifyEpId && (
                 <audio
                   ref={audioRef}
                   src={sermon.audioUrl}
@@ -726,7 +651,8 @@ function FloatingDockedPlayer({
                 />
               )}
 
-              {/* Listen externally row */}
+              {/* "Also on" external links — only show when NO Spotify embed and NO direct audio (i.e. no audio at all) */}
+              {!spotifyEpId && (!sermon.audioUrl || sermon.audioUrl.includes("t.me")) && (
               <div
                 style={{
                   display: "flex",
@@ -737,7 +663,7 @@ function FloatingDockedPlayer({
                 }}
               >
                 <span style={{ fontFamily: "var(--font-poppins)", fontSize: "10px", color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", textTransform: "uppercase", flexShrink: 0 }}>
-                  Also on:
+                  Listen on:
                 </span>
                 <a
                   href="https://open.spotify.com/show/0FELkmsjm7yVoytlwCXXDG"
@@ -782,6 +708,7 @@ function FloatingDockedPlayer({
                   Telegram
                 </a>
               </div>
+              )}
             </div>
           )}
 

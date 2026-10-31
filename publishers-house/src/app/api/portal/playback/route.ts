@@ -13,6 +13,7 @@ export interface PlaybackRecord {
   scripture?: string;
   videoUrl?: string;
   audioUrl?: string;
+  spotifyEpisodeId?: string;
   thumbnailUrl?: string;
   progressSeconds: number;
   durationSeconds: number;
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
       scripture,
       videoUrl,
       audioUrl,
+      spotifyEpisodeId,
       thumbnailUrl,
       progressSeconds = 0,
       durationSeconds = 0,
@@ -85,6 +87,7 @@ export async function POST(req: NextRequest) {
       scripture: scripture ? String(scripture) : undefined,
       videoUrl: videoUrl ? String(videoUrl) : undefined,
       audioUrl: audioUrl ? String(audioUrl) : undefined,
+      spotifyEpisodeId: spotifyEpisodeId ? String(spotifyEpisodeId) : undefined,
       thumbnailUrl: thumbnailUrl ? String(thumbnailUrl) : undefined,
       progressSeconds: Math.max(0, Math.round(Number(progressSeconds) || 0)),
       durationSeconds: Math.max(0, Math.round(Number(durationSeconds) || 0)),
