@@ -277,7 +277,7 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
             <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
             {ev.registrationUrl && (
               <a
                 href={ev.registrationUrl}
@@ -297,6 +297,28 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
                 Register Now →
               </a>
             )}
+            <a
+              href={ev.youtubeUrl || "https://www.youtube.com/@ThePublishersHouse"}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                ...T.button,
+                padding: "9px 18px",
+                borderRadius: "2px",
+                backgroundColor: "#FF0000",
+                color: White,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
+              }}
+            >
+              <svg width="14" height="10" viewBox="0 0 24 17" fill="none">
+                <path d="M23.5 2.7a3 3 0 0 0-2.1-2.1C19.5 0 12 0 12 0S4.5 0 2.6.6A3 3 0 0 0 .5 2.7C0 4.6 0 8.5 0 8.5s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 17 12 17 12 17s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 12.4 24 8.5 24 8.5s0-3.9-.5-5.8z" fill="#FF0000"/>
+                <path d="M9.5 12.1V4.9l6.3 3.6-6.3 3.6z" fill="#fff"/>
+              </svg>
+              Watch Live
+            </a>
             <Link
               href="/schedule"
               style={{
@@ -324,8 +346,12 @@ function HomeGatheringCard({ ev }: { ev: any }) {
   const timing = useEventTiming(ev);
   const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
 
+  const ytUrl = ev.youtubeUrl || "https://www.youtube.com/@ThePublishersHouse";
   return (
-    <div
+    <a
+      href={ytUrl}
+      target="_blank"
+      rel="noopener noreferrer"
       style={{
         backgroundColor: White,
         border: `1px solid ${Paper300}`,
@@ -334,7 +360,20 @@ function HomeGatheringCard({ ev }: { ev: any }) {
         display: "flex",
         flexDirection: "column",
         boxShadow: "0 2px 10px rgba(21, 26, 84, 0.03)",
-        transition: "box-shadow 200ms ease, transform 200ms ease",
+        transition: "box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease",
+        textDecoration: "none",
+        color: "inherit",
+        cursor: "pointer",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = "#FF0000";
+        e.currentTarget.style.boxShadow = "0 6px 24px rgba(255,0,0,0.12)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = Paper300;
+        e.currentTarget.style.boxShadow = "0 2px 10px rgba(21, 26, 84, 0.03)";
+        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
       {/* 170px Header Banner (reduced height for sleeker, wider card proportions) */}
@@ -487,7 +526,7 @@ function HomeGatheringCard({ ev }: { ev: any }) {
           )}
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
