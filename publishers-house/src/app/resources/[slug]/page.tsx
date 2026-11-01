@@ -39,19 +39,28 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
   const { slug } = await params;
   let track = TRACK_DETAILS[slug];
 
-  // Fetch live track data from Firestore (settings/resources_tracks or fallback to resource_tracks/slug)
+  // Fetch live track data from Firestore (settings/resources_tracks and resource_tracks/slug)
   try {
-    const settingsDoc = await getAdminDb().collection("settings").doc("resources_tracks").get();
-    let custom: any = null;
-    if (settingsDoc.exists) {
+    const [settingsDoc, directDoc] = await Promise.all([
+      getAdminDb().collection("settings").doc("resources_tracks").get().catch(() => null),
+      getAdminDb().collection("resource_tracks").doc(slug).get().catch(() => null),
+    ]);
+
+    let customFromSettings: any = null;
+    if (settingsDoc && settingsDoc.exists) {
       const allTracks = settingsDoc.data()?.tracks || {};
-      custom = allTracks[slug];
+      customFromSettings = allTracks[slug];
     }
-    if (!custom) {
-      const directDoc = await getAdminDb().collection("resource_tracks").doc(slug).get();
-      if (directDoc.exists) {
-        custom = directDoc.data();
-      }
+    const customFromDirect = (directDoc && directDoc.exists) ? directDoc.data() : null;
+
+    // Pick whichever source has more materials
+    let custom: any = null;
+    if (customFromSettings && customFromDirect) {
+      const sCount = Array.isArray(customFromSettings.materials) ? customFromSettings.materials.length : 0;
+      const dCount = Array.isArray(customFromDirect.materials) ? customFromDirect.materials.length : 0;
+      custom = dCount >= sCount ? customFromDirect : customFromSettings;
+    } else {
+      custom = customFromDirect || customFromSettings;
     }
 
     if (custom) {

@@ -63,24 +63,28 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     const events = await getEvents(50);
     event = events.find((e) => e.id === id) || null;
     
-    // Fallback: check mock events
-    if (!event && id === "mock-1") {
+    // Fallback: check known default events
+    if (!event && (id === "fol-2026" || id === "mock-1" || id === "fol-2026-upcoming")) {
       event = {
-        id: "mock-1", title: "The Shout of a King", summary: "Festival of Light 2026 — The annual homecoming conference of The Publishers House.",
+        id, title: "The Shout of a King", summary: "Festival of Light 2026 — The annual homecoming conference of The Publishers House.",
         description: "Festival of Light brings together believers from across the world for a season of worship, sound teaching, Holy Ghost expressions, fellowship and divine encounters.\n\nIt is a celebration of God's faithfulness, of spiritual renewal, and of the shared mission of raising a great company of publishers.\n\nIf you are travelling in, register early. Registration closes when the hall is full rather than on a fixed date.",
         startAt: "2026-10-28T16:00", endAt: "2026-11-01T23:00",
-        location: "Jos, Nigeria", imageUrl: "/images/event-1.jpg",
-        registrationUrl: "https://bitly.com/FoL2026",
+        startDate: "2026-10-28", endDate: "2026-11-01",
+        location: "Jos, Nigeria", imageUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
+        registrationUrl: "https://bit.ly/Fol.2026",
         published: true, createdAt: null, updatedAt: null,
       } as any;
     }
-    if (!event && id === "mock-2") {
+    if (!event && (id === "merismos-2026" || id === "mock-2")) {
       event = {
-        id: "mock-2", title: "The Forge",
-        summary: "Monthly end-of-month prayer and fasting retreat. A time to birth prophetic realities.",
-        description: "The Forge is a monthly gathering of intense prayer, fasting, and intercession. It is a time to press in for the things of the Spirit and contend for the advancing of God's Word.",
-        startAt: "2026-09-30T17:00", endAt: "", location: "The House of Bread, Jos",
-        imageUrl: "/images/event-2.jpg", registrationUrl: "",
+        id, title: "Merismos",
+        summary: "Annual Word & Power Conference in Jos.",
+        description: "A power-packed encounter where the Word of God is rightly taught and the Holy Spirit moves tangibly to transform lives.",
+        startAt: "2026-12-10T16:45", endAt: "2026-12-13T22:00",
+        startDate: "2026-12-10", endDate: "2026-12-13",
+        location: "The House of Bread, Jos",
+        imageUrl: "/images/programs/merismos-2024.jpg",
+        registrationUrl: "",
         published: true, createdAt: null, updatedAt: null,
       } as any;
     }

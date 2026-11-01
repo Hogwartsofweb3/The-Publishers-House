@@ -43,34 +43,61 @@ const DOWNLOADABLE_GUIDES = [
 export default async function ResourcesHubPage() {
   let tracks = { ...TRACK_DETAILS };
   try {
-    const docSnap = await getAdminDb().collection("settings").doc("resources_tracks").get();
-    if (docSnap.exists) {
-      const live = docSnap.data()?.tracks || {};
-      for (const [slug, custom] of Object.entries(live) as [string, any][]) {
-        if (tracks[slug] && custom) {
-          tracks[slug] = {
-            ...tracks[slug],
-            title: custom.title || tracks[slug].title,
-            eyebrow: custom.eyebrow || tracks[slug].eyebrow,
-            scripture: custom.scripture || tracks[slug].scripture,
-            lede: custom.lede || tracks[slug].lede,
-            description: custom.description || tracks[slug].description,
-            materials: (custom.materials && custom.materials.length > 0)
-              ? custom.materials.filter((m: any) => m && m.published !== false)
-              : tracks[slug].materials,
-          };
-        } else if (custom) {
-          tracks[slug] = {
-            title: custom.title || "Curriculum Track",
-            eyebrow: custom.eyebrow || "Apostolic Curriculum",
-            scripture: custom.scripture || "Psalm 68:11",
-            lede: custom.lede || "",
-            description: custom.description || "",
-            materials: (custom.materials && custom.materials.length > 0)
-              ? custom.materials.filter((m: any) => m && m.published !== false)
-              : [],
-          };
-        }
+    const [settingsSnap, colSnap] = await Promise.all([
+      getAdminDb().collection("settings").doc("resources_tracks").get().catch(() => null),
+      getAdminDb().collection("resource_tracks").get().catch(() => null),
+    ]);
+
+    const liveFromSettings = (settingsSnap && settingsSnap.exists) ? (settingsSnap.data()?.tracks || {}) : {};
+    const liveFromCol: Record<string, any> = {};
+    if (colSnap && !colSnap.empty) {
+      colSnap.forEach((d) => {
+        liveFromCol[d.id] = d.data();
+      });
+    }
+
+    const mergedLive: Record<string, any> = {};
+    const allSlugs = new Set([
+      ...Object.keys(TRACK_DETAILS),
+      ...Object.keys(liveFromSettings),
+      ...Object.keys(liveFromCol),
+    ]);
+
+    for (const slug of allSlugs) {
+      const s = liveFromSettings[slug];
+      const c = liveFromCol[slug];
+      if (!s && !c) continue;
+      if (!s) { mergedLive[slug] = c; continue; }
+      if (!c) { mergedLive[slug] = s; continue; }
+      const sCount = (s.materials && Array.isArray(s.materials)) ? s.materials.length : 0;
+      const cCount = (c.materials && Array.isArray(c.materials)) ? c.materials.length : 0;
+      mergedLive[slug] = cCount >= sCount ? c : s;
+    }
+
+    for (const [slug, custom] of Object.entries(mergedLive) as [string, any][]) {
+      if (tracks[slug] && custom) {
+        tracks[slug] = {
+          ...tracks[slug],
+          title: custom.title || tracks[slug].title,
+          eyebrow: custom.eyebrow || tracks[slug].eyebrow,
+          scripture: custom.scripture || tracks[slug].scripture,
+          lede: custom.lede || tracks[slug].lede,
+          description: custom.description || tracks[slug].description,
+          materials: (custom.materials && custom.materials.length > 0)
+            ? custom.materials.filter((m: any) => m && m.published !== false)
+            : tracks[slug].materials,
+        };
+      } else if (custom) {
+        tracks[slug] = {
+          title: custom.title || "Curriculum Track",
+          eyebrow: custom.eyebrow || "Apostolic Curriculum",
+          scripture: custom.scripture || "Psalm 68:11",
+          lede: custom.lede || "",
+          description: custom.description || "",
+          materials: (custom.materials && custom.materials.length > 0)
+            ? custom.materials.filter((m: any) => m && m.published !== false)
+            : [],
+        };
       }
     }
   } catch (err) {}

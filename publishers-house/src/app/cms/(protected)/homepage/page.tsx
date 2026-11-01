@@ -102,8 +102,12 @@ export default function HomepageEditor() {
         return;
       }
     } catch {}
-    const snap = await getDoc(doc(db, "homeSettings", "main"));
-    if (snap.exists()) setSettings((p: any) => ({ ...DEF, ...p, ...(snap.data() as any) }));
+    try {
+      const snap = await getDoc(doc(db, "homeSettings", "main"));
+      if (snap.exists()) setSettings((p: any) => ({ ...DEF, ...p, ...(snap.data() as any) }));
+    } catch (e) {
+      console.warn("Client fallback failed for homeSettings:", e);
+    }
   };
 
   const fetchGatherings = async () => {
@@ -117,8 +121,12 @@ export default function HomepageEditor() {
         }
       }
     } catch {}
-    const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order","asc")));
-    setGatherings(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+    try {
+      const snap = await getDocs(query(collection(db, "gatherings"), orderBy("order","asc")));
+      setGatherings(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+    } catch (e) {
+      console.warn("Client fallback failed for gatherings:", e);
+    }
   };
 
   const fetchScheduleEvents = async () => {

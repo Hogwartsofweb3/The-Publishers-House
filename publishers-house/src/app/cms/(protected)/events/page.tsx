@@ -59,9 +59,13 @@ export default function EventsEditor() {
         }
       }
     } catch {}
-    const q = query(collection(db, "events"), orderBy("startAt", "desc"));
-    const snap = await getDocs(q);
-    setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    try {
+      const q = query(collection(db, "events"), orderBy("startAt", "desc"));
+      const snap = await getDocs(q);
+      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.warn("Client events fallback failed:", e);
+    }
   };
 
   useEffect(() => { fetchEvents(); }, []);
