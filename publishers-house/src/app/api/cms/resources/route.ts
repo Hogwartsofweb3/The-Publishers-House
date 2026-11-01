@@ -6,18 +6,43 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const doc = await getAdminDb().collection("settings").doc("resources_tracks").get();
-    let tracks = doc.exists ? doc.data()?.tracks || {} : {};
+    // Always read individual resource_tracks docs first — they are the source of truth
+    // for user-entered materials. The settings/resources_tracks doc is a mirror that
+    // can lag or be overwritten with defaults; individual docs survive independently.
+    const [settingsDoc, individualSnap] = await Promise.all([
+      getAdminDb().collection("settings").doc("resources_tracks").get(),
+      getAdminDb().collection("resource_tracks").get(),
+    ]);
 
-    // Fallback: check individual documents if settings doc is empty
-    if (Object.keys(tracks).length === 0) {
-      const snap = await getAdminDb().collection("resource_tracks").get();
-      if (!snap.empty) {
-        tracks = {};
-        snap.forEach((d) => {
-          tracks[d.id] = d.data();
-        });
-      }
+    // Build a map from individual docs (most authoritative)
+    const fromIndividual: Record<string, any> = {};
+    if (!individualSnap.empty) {
+      individualSnap.forEach((d) => {
+        fromIndividual[d.id] = d.data();
+      });
+    }
+
+    // Build a map from the unified settings doc
+    const fromSettings: Record<string, any> = settingsDoc.exists
+      ? settingsDoc.data()?.tracks || {}
+      : {};
+
+    // Merge: prefer whichever source has more materials for each slug
+    const tracks: Record<string, any> = {};
+    const allSlugs = new Set([
+      ...Object.keys(fromSettings),
+      ...Object.keys(fromIndividual),
+    ]);
+    for (const slug of allSlugs) {
+      const s = fromSettings[slug];
+      const i = fromIndividual[slug];
+      if (!s && !i) continue;
+      if (!s) { tracks[slug] = i; continue; }
+      if (!i) { tracks[slug] = s; continue; }
+      // Both exist — pick the one with more materials (the richer record)
+      const sMats = Array.isArray(s.materials) ? s.materials : [];
+      const iMats = Array.isArray(i.materials) ? i.materials : [];
+      tracks[slug] = iMats.length >= sMats.length ? i : s;
     }
 
     const hubDoc = await getAdminDb().collection("settings").doc("resources_hub").get();

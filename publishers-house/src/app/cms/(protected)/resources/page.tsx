@@ -176,7 +176,9 @@ export default function ResourcesEditor() {
         }
 
         const live = data.tracks || {};
-        // Initialize with default materials if not set in Firestore
+        // IMPORTANT: Only populate trackData with what is actually in Firestore.
+        // Never fall back to cmsDefaults seed materials here — that would cause
+        // the seed data to be saved back and overwrite real user-entered lessons.
         const merged: Record<string, any> = {};
         for (const t of TRACK_LIST) {
           const defaultTrack = TRACK_DETAILS[t.slug];
@@ -184,16 +186,18 @@ export default function ResourcesEditor() {
             merged[t.slug] = {
               title: live[t.slug].title || defaultTrack?.title || "",
               description: live[t.slug].description || defaultTrack?.description || "",
-              materials:
-                live[t.slug].materials && live[t.slug].materials.length > 0
-                  ? live[t.slug].materials
-                  : defaultTrack?.materials || [],
+              // Only use live materials. If empty, keep empty — never inject defaults.
+              materials: Array.isArray(live[t.slug].materials)
+                ? live[t.slug].materials
+                : [],
             };
           } else {
+            // Track exists in defaults but has no Firestore record yet.
+            // Use an empty materials array so Save Changes does not write seed data.
             merged[t.slug] = {
               title: defaultTrack?.title || "",
               description: defaultTrack?.description || "",
-              materials: defaultTrack?.materials || [],
+              materials: [],
             };
           }
         }
@@ -204,9 +208,9 @@ export default function ResourcesEditor() {
   }, []);
 
   const currentTrack = trackData[activeTrack] || {
-    title: "",
-    description: "",
-    materials: TRACK_DETAILS[activeTrack]?.materials || [],
+    title: TRACK_DETAILS[activeTrack]?.title || "",
+    description: TRACK_DETAILS[activeTrack]?.description || "",
+    materials: [],
   };
 
   const updateTrackField = (field: string, value: string) => {
