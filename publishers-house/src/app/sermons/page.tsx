@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { getSermons, type Sermon } from "@/lib/firebase";
 import SermonsClient from "./SermonsClient";
 
-export const revalidate = 0; // Always fetch fresh — no caching
+export const revalidate = 600; // Cache page for 10 minutes (prevents burning Firestore read quota)
 
 export const metadata: Metadata = {
   title: "Sermons & Teachings | TPH",

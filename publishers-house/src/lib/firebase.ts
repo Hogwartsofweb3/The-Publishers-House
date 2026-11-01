@@ -50,6 +50,8 @@ export type Sermon = ContentTimestamps & {
   summary?: string;
   spotifyEpisodeId?: string;
   telegramMessageId?: string;
+  coverImageUrl?: string;
+  thumbnailUrl?: string;
 };
 
 export type EventItem = ContentTimestamps & {
@@ -152,16 +154,87 @@ export function normalizeSermon(s: Sermon): Sermon {
   return s;
 }
 
+
+export function getCanonicalSermonKey(title: string): string {
+  return (title || "")
+    .toLowerCase()
+    .replace(/[|/]{1,2}\s*the latter rain[^\n]*/gi, "")
+    .replace(/[^a-z0-9]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function deduplicateSermons(sermons: Sermon[]): Sermon[] {
+  const map = new Map<string, Sermon>();
+
+  for (const s of sermons) {
+    const key = getCanonicalSermonKey(s.title);
+    if (!key) {
+      map.set(s.id, s);
+      continue;
+    }
+
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, s);
+    } else {
+      // Merge records: prefer the record with videoUrl as primary base
+      const primary = existing.videoUrl ? existing : s;
+      const secondary = existing.videoUrl ? s : existing;
+
+      const merged: Sermon = {
+        ...secondary,
+        ...primary,
+        // Ensure audioUrl & spotifyEpisodeId are preserved from whichever record has them
+        audioUrl: primary.audioUrl || secondary.audioUrl || "",
+        spotifyEpisodeId: primary.spotifyEpisodeId || secondary.spotifyEpisodeId || "",
+        coverImageUrl: primary.coverImageUrl || secondary.coverImageUrl || "",
+        summary:
+          primary.summary && primary.summary.length > (secondary.summary?.length || 0)
+            ? primary.summary
+            : secondary.summary || primary.summary,
+      };
+
+      map.set(key, merged);
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+let sermonsMemoryCache: { data: Sermon[]; expires: number } | null = null;
+
 export async function getSermons(limitCount = 1000): Promise<Sermon[]> {
-  const q = query(
-    collection(db, "sermons"),
-    where("published", "==", true),
-    firestoreLimit(limitCount)
-  );
-  const snap = await getDocs(q);
-  const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
-  // Sort from oldest to newest by default
-  return results.sort((a, b) => (a.date < b.date ? -1 : 1));
+  const now = Date.now();
+  if (sermonsMemoryCache && sermonsMemoryCache.expires > now && sermonsMemoryCache.data.length > 0) {
+    return sermonsMemoryCache.data.slice(0, limitCount);
+  }
+
+  try {
+    const q = query(
+      collection(db, "sermons"),
+      where("published", "==", true),
+      firestoreLimit(limitCount)
+    );
+    const snap = await getDocs(q);
+    const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
+    const deduped = deduplicateSermons(results);
+    // Sort from oldest to newest by default
+    const sorted = deduped.sort((a, b) => (a.date < b.date ? -1 : 1));
+
+    sermonsMemoryCache = {
+      data: sorted,
+      expires: now + 5 * 60 * 1000, // 5 minutes in-memory cache
+    };
+
+    return sorted;
+  } catch (err) {
+    console.warn("Firestore getSermons error (using cache fallback if available):", err);
+    if (sermonsMemoryCache && sermonsMemoryCache.data.length > 0) {
+      return sermonsMemoryCache.data.slice(0, limitCount);
+    }
+    return [];
+  }
 }
 
 export async function getSermonsBySeries(seriesName: string, excludeId?: string, limitCount = 6): Promise<Sermon[]> {
@@ -354,12 +427,23 @@ export async function getSermonById(id: string): Promise<Sermon | null> {
     if (docSnap.exists()) {
       return normalizeSermon({ id: docSnap.id, ...docSnap.data() } as Sermon);
     }
-    const snap = await getDocs(query(collection(db, "sermons")));
-    const found = snap.docs.find((d) => d.id === id || (d.data() as any).slug === id);
-    if (found) return normalizeSermon({ id: found.id, ...found.data() } as Sermon);
+    // Query by slug with limit 1 instead of full collection scan
+    const slugSnap = await getDocs(query(collection(db, "sermons"), where("slug", "==", id), firestoreLimit(1)));
+    if (!slugSnap.empty) {
+      return normalizeSermon({ id: slugSnap.docs[0].id, ...slugSnap.docs[0].data() } as Sermon);
+    }
+    // Check in-memory cache if available
+    if (sermonsMemoryCache && sermonsMemoryCache.data.length > 0) {
+      const found = sermonsMemoryCache.data.find((s) => s.id === id || (s as any).slug === id);
+      if (found) return found;
+    }
     return null;
   } catch (e) {
-    console.error("Error in getSermonById:", e);
+    console.warn("Error in getSermonById:", e);
+    if (sermonsMemoryCache && sermonsMemoryCache.data.length > 0) {
+      const found = sermonsMemoryCache.data.find((s) => s.id === id || (s as any).slug === id);
+      if (found) return found;
+    }
     return null;
   }
 }

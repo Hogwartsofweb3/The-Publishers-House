@@ -78,22 +78,27 @@ function parseDurationToSeconds(durationStr?: string): number {
   return total > 0 ? total : 2400;
 }
 
-function persistPlayback(item: {
-  id: string;
-  title: string;
-  speaker?: string;
-  series?: string;
-  scripture?: string;
-  videoUrl?: string;
-  audioUrl?: string;
-  thumbnailUrl?: string;
-  progressSeconds: number;
-  durationSeconds: number;
-  percent: number;
-  completed: boolean;
-  type?: "sermon" | "resource";
-  resourceSlug?: string;
-}) {
+let lastBackendSyncTime = 0;
+
+function persistPlayback(
+  item: {
+    id: string;
+    title: string;
+    speaker?: string;
+    series?: string;
+    scripture?: string;
+    videoUrl?: string;
+    audioUrl?: string;
+    thumbnailUrl?: string;
+    progressSeconds: number;
+    durationSeconds: number;
+    percent: number;
+    completed: boolean;
+    type?: "sermon" | "resource";
+    resourceSlug?: string;
+  },
+  forceBackendSync = false
+) {
   if (typeof window === "undefined") return;
   try {
     const raw = localStorage.getItem("tph_playback_history");
@@ -115,11 +120,16 @@ function persistPlayback(item: {
     localStorage.setItem("tph_playback_history", JSON.stringify(history.slice(0, 50)));
     window.dispatchEvent(new CustomEvent("tph_playback_update", { detail: updated }));
 
-    fetch("/api/portal/playback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updated),
-    }).catch(() => {});
+    // Throttle backend network sync to at most once per 60 seconds (or when explicitly forced)
+    const now = Date.now();
+    if (forceBackendSync || now - lastBackendSyncTime > 60000) {
+      lastBackendSyncTime = now;
+      fetch("/api/portal/playback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+    }
   } catch (e) {
     // silently catch storage errors
   }
@@ -192,22 +202,25 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
       const dur = durationPosRef.current || 2400;
       const pct = Math.min(100, Math.round((currentPosRef.current / dur) * 100));
-      persistPlayback({
-        id: currentSermon.id,
-        title: currentSermon.title,
-        speaker: currentSermon.speaker,
-        series: currentSermon.series,
-        scripture: currentSermon.scripture,
-        videoUrl: currentSermon.videoUrl,
-        audioUrl: currentSermon.audioUrl,
-        thumbnailUrl: thumb,
-        progressSeconds: currentPosRef.current,
-        durationSeconds: dur,
-        percent: pct,
-        completed: pct >= 90,
-        type: currentSermon.type || "sermon",
-        resourceSlug: currentSermon.resourceSlug,
-      });
+      persistPlayback(
+        {
+          id: currentSermon.id,
+          title: currentSermon.title,
+          speaker: currentSermon.speaker,
+          series: currentSermon.series,
+          scripture: currentSermon.scripture,
+          videoUrl: currentSermon.videoUrl,
+          audioUrl: currentSermon.audioUrl,
+          thumbnailUrl: thumb,
+          progressSeconds: currentPosRef.current,
+          durationSeconds: dur,
+          percent: pct,
+          completed: pct >= 90,
+          type: currentSermon.type || "sermon",
+          resourceSlug: currentSermon.resourceSlug,
+        },
+        true
+      );
     }
     setCurrentSermon(null);
     setMode(null);
@@ -254,22 +267,25 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
 
       // Persist to localStorage and backend
-      persistPlayback({
-        id: currentSermon.id,
-        title: currentSermon.title,
-        speaker: currentSermon.speaker,
-        series: currentSermon.series,
-        scripture: currentSermon.scripture,
-        videoUrl: currentSermon.videoUrl,
-        audioUrl: currentSermon.audioUrl,
-        thumbnailUrl: thumb,
-        progressSeconds: currentPosRef.current,
-        durationSeconds: dur,
-        percent: pct,
-        completed: pct >= 90,
-        type: currentSermon.type || "sermon",
-        resourceSlug: currentSermon.resourceSlug,
-      });
+      persistPlayback(
+        {
+          id: currentSermon.id,
+          title: currentSermon.title,
+          speaker: currentSermon.speaker,
+          series: currentSermon.series,
+          scripture: currentSermon.scripture,
+          videoUrl: currentSermon.videoUrl,
+          audioUrl: currentSermon.audioUrl,
+          thumbnailUrl: thumb,
+          progressSeconds: currentPosRef.current,
+          durationSeconds: dur,
+          percent: pct,
+          completed: pct >= 90,
+          type: currentSermon.type || "sermon",
+          resourceSlug: currentSermon.resourceSlug,
+        },
+        true
+      );
     }, 4000);
 
     return () => clearInterval(interval);

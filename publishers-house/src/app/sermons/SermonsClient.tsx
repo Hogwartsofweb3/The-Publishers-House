@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import type { Sermon } from "@/lib/firebase";
+import { type Sermon, deduplicateSermons } from "@/lib/firebase";
 import SermonCard from "@/components/SermonCard";
 import { useAudio } from "@/components/GlobalAudioPlayer";
 
@@ -338,7 +338,7 @@ export default function SermonsClient({ initialSermons }: { initialSermons: Serm
   const mobileTopRef = useRef<HTMLDivElement>(null);
 
   const normalizedSermons = useMemo(() => {
-    return initialSermons.map(normalizeSermonSpeaker);
+    return deduplicateSermons(initialSermons.map(normalizeSermonSpeaker));
   }, [initialSermons]);
 
   const uniqueSpeakers = Array.from(new Set(normalizedSermons.map(s => s.speaker))).filter(Boolean).sort() as string[];
