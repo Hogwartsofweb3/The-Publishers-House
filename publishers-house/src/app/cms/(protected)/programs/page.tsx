@@ -262,7 +262,7 @@ const DEFAULT_PROGRAMS: ProgramRecord[] = [
       "A close spiritual camp focused on equipping believers, prophetic words and deep spiritual alignment.",
     description:
       "Monthly apostolic gatherings in Abuja and across Nigeria, focused on equipping believers, prophetic alignment, and deep spiritual formation.",
-    logoImage: "/images/TPH ABUJA.png",
+    logoImage: "/images/tph-main-logo.png",
     bannerImage: "/images/programs-hero.jpg",
     published: true,
     editions: [

@@ -15,6 +15,70 @@ const labelStyle = {
   color: "#4A62A0",
 };
 
+async function compressImageBeforeUpload(file: File): Promise<Blob | File> {
+  if (
+    !file.type.startsWith("image/") ||
+    file.type.includes("svg") ||
+    file.type.includes("gif")
+  ) {
+    return file;
+  }
+
+  // Already lightweight
+  if (file.size <= 250 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_DIM = 1400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round(height * (MAX_DIM / width));
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round(width * (MAX_DIM / height));
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                resolve(blob);
+              } else {
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            0.82
+          );
+        } else {
+          resolve(file);
+        }
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+}
+
 export default function ImageUpload({
   value,
   onChange,
@@ -29,17 +93,20 @@ export default function ImageUpload({
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const uploadFile = (file: File) => {
+  const uploadFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
 
-    const ext = file.name.split(".").pop();
+    setUploading(true);
+    setProgress(10);
+
+    // Auto-compress high-res image so website always loads fast
+    const compressedBlob = await compressImageBeforeUpload(file);
+
+    const ext = "jpg";
     const uniqueName = Date.now() + "_" + Math.random().toString(36).slice(2) + "." + ext;
     const storageRef = ref(storage, "uploads/" + uniqueName);
 
-    setUploading(true);
-    setProgress(0);
-
-    const task = uploadBytesResumable(storageRef, file);
+    const task = uploadBytesResumable(storageRef, compressedBlob);
     task.on(
       "state_changed",
       (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),

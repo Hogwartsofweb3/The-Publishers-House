@@ -3,9 +3,9 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProgramEditionsClient from "./ProgramEditionsClient";
-import { getSermons, getPrograms, type Sermon } from "@/lib/firebase";
+import { getPrograms, type Sermon } from "@/lib/firebase";
 
-export const revalidate = 60;
+export const revalidate = 3600; // Cache for 1 hour for fast mobile rendering
 
 // ─── Per-program metadata & brand information (Strict Style Guide Compliance) ──
 
@@ -91,7 +91,7 @@ const PROGRAM_REGISTRY: Record<string, ProgramInfo> = {
     description:
       "A close spiritual camp and apostolic intensive focused on equipping believers, prophetic alignment, and deep spiritual formation across Abuja and nationwide centers.",
     liveUrl: "https://www.youtube.com/@thepublishershouse",
-    logoImage: "/images/TPH ABUJA.png",
+    logoImage: "/images/tph-main-logo.png",
     bannerImage: "/images/programs-hero.jpg",
   },
   "abuja-apostolic-camp": {
@@ -105,7 +105,7 @@ const PROGRAM_REGISTRY: Record<string, ProgramInfo> = {
     description:
       "A close spiritual camp and apostolic intensive focused on equipping believers, prophetic alignment, and deep spiritual formation across Abuja and nationwide centers.",
     liveUrl: "https://www.youtube.com/@thepublishershouse",
-    logoImage: "/images/TPH ABUJA.png",
+    logoImage: "/images/tph-main-logo.png",
     bannerImage: "/images/programs-hero.jpg",
   },
 };
@@ -179,14 +179,6 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
     bannerImage: cmsProg?.bannerImage || regProg?.bannerImage || "/images/programs-hero.jpg",
     logoImage: cmsProg?.logoImage || cmsProg?.imageUrl || regProg?.logoImage,
   };
-
-  // Fetch live sermons from Firestore catalog for in-page message cross-referencing
-  let allSermons: Sermon[] = [];
-  try {
-    allSermons = await getSermons(1000);
-  } catch (err) {
-    console.error("Failed to fetch sermons catalog:", err);
-  }
 
   // Pass any CMS editions if saved in Firestore
   const cmsEditions = cmsProg?.editions && Array.isArray(cmsProg.editions) ? cmsProg.editions : undefined;
@@ -449,7 +441,6 @@ export default async function ProgramSlugPage({ params }: { params: Promise<{ sl
           <ProgramEditionsClient
             programSlug={program.slug}
             programName={program.name}
-            allSermons={allSermons}
             cmsEditions={cmsEditions}
           />
         </section>

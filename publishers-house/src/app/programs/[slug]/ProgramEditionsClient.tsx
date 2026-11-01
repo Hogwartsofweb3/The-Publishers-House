@@ -723,10 +723,14 @@ function EditionRow({
           <img
             src={edition.flierSrc}
             alt={`${programName} ${edition.label} flyer - ${edition.theme}`}
+            loading="lazy"
+            decoding="async"
             style={{
               width: "100%",
               height: "auto",
               display: "block",
+              aspectRatio: "1 / 1",
+              objectFit: "cover",
             }}
           />
 

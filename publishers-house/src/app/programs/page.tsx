@@ -89,7 +89,10 @@ export default async function ProgramsPage() {
         scripture: "Eph 4:12",
         cadence: "Gathering",
         location: "Jos",
-        logoImage: p.imageUrl || "/images/tph-main-logo.png"
+        logoImage:
+          p.slug === "apostolic-camps" || p.slug === "abuja-apostolic-camp" || p.imageUrl?.includes("ABUJA")
+            ? "/images/tph-main-logo.png"
+            : (p.imageUrl || "/images/tph-main-logo.png")
       }))
     : programs;
 
