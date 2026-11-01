@@ -57,9 +57,15 @@ export async function GET() {
           downloadables: [],
         };
 
-    return NextResponse.json({ tracks, hub });
-  } catch {
-    return NextResponse.json({ tracks: {}, hub: {} });
+    return NextResponse.json({ tracks, hub, error: null, quotaBlocked: false });
+  } catch (err: any) {
+    const isQuota = err?.code === 8 || String(err?.message || "").includes("RESOURCE_EXHAUSTED") || String(err?.message || "").includes("Quota exceeded");
+    return NextResponse.json({
+      tracks: {},
+      hub: {},
+      error: err?.message || "Failed to load from database",
+      quotaBlocked: isQuota,
+    });
   }
 }
 

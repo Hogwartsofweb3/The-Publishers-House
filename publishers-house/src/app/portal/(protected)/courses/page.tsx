@@ -57,6 +57,7 @@ export default function CoursesAdminPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [msg, setMsg] = useState("");
+  const [dbQuotaBlocked, setDbQuotaBlocked] = useState(false);
 
   // Track Modal State
   const [trackModalOpen, setTrackModalOpen] = useState(false);
@@ -75,6 +76,7 @@ export default function CoursesAdminPage() {
       const res = await fetch("/api/cms/resources");
       if (res.ok) {
         const data = await res.json();
+        setDbQuotaBlocked(Boolean(data.quotaBlocked) || Boolean(data.error));
         const liveTracks = data.tracks || {};
         const merged: Record<string, CourseTrack> = {};
 
@@ -393,6 +395,34 @@ export default function CoursesAdminPage() {
           </button>
         </div>
       </div>
+
+      {dbQuotaBlocked && (
+        <div
+          style={{
+            backgroundColor: "#FEF3C7",
+            border: "1px solid #F59E0B",
+            borderRadius: "10px",
+            padding: "14px 18px",
+            color: "#92400E",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "12.5px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "14px",
+          }}
+        >
+          <div>
+            <strong>⚠️ Live Database Updates Temporarily Paused (Firestore Daily Quota Reached)</strong>
+            <div style={{ fontSize: "11.5px", color: "#B45309", marginTop: "3px" }}>
+              Your saved curriculum in Firestore is completely intact. Live reads are paused by Google Cloud until the daily quota resets or the project is upgraded to Blaze. Showing cached curriculum.
+            </div>
+          </div>
+          <span style={{ fontSize: "11px", fontWeight: 700, backgroundColor: "#FDE68A", padding: "4px 10px", borderRadius: "4px" }}>
+            CACHED
+          </span>
+        </div>
+      )}
 
       {/* KPI Stats Strip */}
       <div

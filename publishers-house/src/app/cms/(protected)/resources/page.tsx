@@ -106,6 +106,7 @@ export default function ResourcesEditor() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [dbQuotaBlocked, setDbQuotaBlocked] = useState(false);
 
   // Main /resources Hub State
   const [hubForm, setHubForm] = useState({
@@ -176,34 +177,45 @@ export default function ResourcesEditor() {
         }
 
         const live = data.tracks || {};
-        // IMPORTANT: Only populate trackData with what is actually in Firestore.
-        // Never fall back to cmsDefaults seed materials here — that would cause
-        // the seed data to be saved back and overwrite real user-entered lessons.
+        const isQuota = data.quotaBlocked || Boolean(data.error) || Object.keys(live).length === 0;
+        setDbQuotaBlocked(isQuota);
+
         const merged: Record<string, any> = {};
         for (const t of TRACK_LIST) {
           const defaultTrack = TRACK_DETAILS[t.slug];
-          if (live[t.slug]) {
+          if (live[t.slug] && Array.isArray(live[t.slug].materials) && live[t.slug].materials.length > 0) {
             merged[t.slug] = {
               title: live[t.slug].title || defaultTrack?.title || "",
               description: live[t.slug].description || defaultTrack?.description || "",
-              // Only use live materials. If empty, keep empty — never inject defaults.
-              materials: Array.isArray(live[t.slug].materials)
-                ? live[t.slug].materials
-                : [],
+              materials: live[t.slug].materials,
             };
           } else {
-            // Track exists in defaults but has no Firestore record yet.
-            // Use an empty materials array so Save Changes does not write seed data.
+            // When live data is not available (e.g. database quota exceeded or track not yet edited),
+            // display the default seed curriculum so CMS matches the Portal (instead of showing a blank 0)
             merged[t.slug] = {
-              title: defaultTrack?.title || "",
-              description: defaultTrack?.description || "",
-              materials: [],
+              title: live[t.slug]?.title || defaultTrack?.title || "",
+              description: live[t.slug]?.description || defaultTrack?.description || "",
+              materials: defaultTrack?.materials || [],
             };
           }
         }
         setTrackData(merged);
       })
-      .catch((err) => console.error("Error loading resources data:", err))
+      .catch((err) => {
+        console.error("Error loading resources data:", err);
+        setDbQuotaBlocked(true);
+        // Fallback to default curriculum on network/fetch error
+        const fallback: Record<string, any> = {};
+        for (const t of TRACK_LIST) {
+          const d = TRACK_DETAILS[t.slug];
+          fallback[t.slug] = {
+            title: d?.title || "",
+            description: d?.description || "",
+            materials: d?.materials || [],
+          };
+        }
+        setTrackData(fallback);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -379,6 +391,10 @@ export default function ResourcesEditor() {
 
   // Save all tracks and main hub settings to API
   const saveAllChanges = async () => {
+    if (dbQuotaBlocked) {
+      alert("Cannot save changes right now: The Firestore daily read/write quota has been reached on Firebase. Any saved lessons in the database are protected and safe. Please wait for the daily quota to reset or upgrade to the Firebase Blaze plan before saving.");
+      return;
+    }
     setSaving(true);
     setMsg("");
     try {
@@ -442,18 +458,61 @@ export default function ResourcesEditor() {
           )}
           <button
             onClick={saveAllChanges}
-            disabled={saving}
+            disabled={saving || dbQuotaBlocked}
+            title={dbQuotaBlocked ? "Saving is disabled while Firestore daily quota is exceeded to prevent overwrites" : "Save Changes"}
             style={{
-              ...S.btn(S.Blue700, S.White),
+              ...S.btn(dbQuotaBlocked ? "#94A3B8" : S.Blue700, S.White),
               padding: "12px 28px",
-              opacity: saving ? 0.6 : 1,
-              boxShadow: "0 4px 12px rgba(1, 64, 193, 0.25)",
+              opacity: (saving || dbQuotaBlocked) ? 0.6 : 1,
+              cursor: dbQuotaBlocked ? "not-allowed" : "pointer",
+              boxShadow: dbQuotaBlocked ? "none" : "0 4px 12px rgba(1, 64, 193, 0.25)",
             }}
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving..." : dbQuotaBlocked ? "Read-Only (Quota Reached)" : "Save Changes"}
           </button>
         </div>
       </div>
+
+      {/* Firestore Quota Exceeded Warning Banner */}
+      {dbQuotaBlocked && (
+        <div
+          style={{
+            backgroundColor: "#FEF3C7",
+            border: "1px solid #F59E0B",
+            borderRadius: "8px",
+            padding: "16px 20px",
+            color: "#92400E",
+            fontFamily: "'Poppins', sans-serif",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+            marginBottom: "24px",
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "13px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>⚠️</span> Database Read Limit Reached (Firestore Daily Quota Exceeded)
+            </div>
+            <div style={{ marginTop: "4px", fontSize: "12px", color: "#B45309", lineHeight: "1.5em" }}>
+              Your previously saved YouTube links and lessons are safely stored in Firestore. Because the daily free-tier read quota was reached today, Firestore is temporarily rejecting live queries. Showing default curriculum in <strong>Read-Only Mode</strong> until the quota resets or the project is upgraded to the Blaze plan.
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              backgroundColor: "#FDE68A",
+              color: "#78350F",
+              padding: "6px 12px",
+              borderRadius: "4px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            PROTECTED
+          </span>
+        </div>
+      )}
 
       {/* Top Tab Bar: Main Hub vs Subpages */}
       <div style={{ display: "flex", gap: "12px", marginBottom: "28px", borderBottom: `2px solid ${S.Paper200}`, paddingBottom: "12px" }}>
