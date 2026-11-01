@@ -325,7 +325,7 @@ export default async function ResourcesHubPage() {
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "16px", borderTop: "1px solid #E8ECF7" }}>
                     <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "11px", fontWeight: 600, color: "#747CA1" }}>
-                      {track.materials.length} Materials
+                      {track.materials.length} {track.materials.length === 1 ? "Lesson" : "Lessons"}
                     </span>
                     <Link
                       href={`/resources/${slug}`}

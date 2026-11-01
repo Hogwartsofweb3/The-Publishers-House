@@ -291,7 +291,11 @@ export default function CoursesAdminPage() {
     );
   });
 
-  const totalLessons = trackList.reduce((acc, t) => acc + (t.materials?.length || 0), 0);
+  const totalLessons = trackList.reduce(
+    (acc, t) => acc + (t.materials?.filter((m) => m.published !== false).length || 0),
+    0
+  );
+  const totalLessonsAll = trackList.reduce((acc, t) => acc + (t.materials?.length || 0), 0);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -407,7 +411,7 @@ export default function CoursesAdminPage() {
         <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D5DCF2", borderRadius: "12px", padding: "18px 20px" }}>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Total Lesson Modules</div>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "28px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>{totalLessons} Lessons</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#1F46C8" }}>Audio, video, and PDF study outlines</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#1F46C8" }}>{totalLessonsAll > totalLessons ? `${totalLessonsAll - totalLessons} draft · ` : ""}Audio, video, and PDF study outlines</div>
         </div>
 
         <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D5DCF2", borderRadius: "12px", padding: "18px 20px" }}>
@@ -526,8 +530,9 @@ export default function CoursesAdminPage() {
                       backgroundColor: "#E4F5EA",
                       color: "#0F6B38",
                     }}
+                    title={`${crs.materials?.filter((m) => m.published !== false).length || 0} published · ${crs.materials?.length || 0} total`}
                   >
-                    {crs.materials?.length || 0} Lessons
+                    {crs.materials?.filter((m) => m.published !== false).length || 0} {(crs.materials?.filter((m) => m.published !== false).length || 0) === 1 ? "Lesson" : "Lessons"}
                   </span>
                 </div>
 

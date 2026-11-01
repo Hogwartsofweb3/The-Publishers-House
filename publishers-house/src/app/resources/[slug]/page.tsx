@@ -252,7 +252,7 @@ export default async function ResourceSubpage({ params }: { params: Promise<{ sl
                 </h2>
               </div>
               <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600, color: "#747CA1" }}>
-                {track.materials.length} Materials Available
+                {track.materials.length} {track.materials.length === 1 ? "Lesson" : "Lessons"} Available
               </span>
             </div>
 
