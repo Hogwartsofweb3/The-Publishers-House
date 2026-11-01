@@ -261,6 +261,10 @@ export default function Footer() {
                 textDecoration: "underline",
                 textUnderlineOffset: "3px",
                 transition: "color 150ms ease",
+                padding: "10px 8px",
+                minHeight: "44px",
+                display: "inline-flex",
+                alignItems: "center",
               }}
             >
               Privacy Policy
@@ -276,6 +280,10 @@ export default function Footer() {
                 textDecoration: "underline",
                 textUnderlineOffset: "3px",
                 transition: "color 150ms ease",
+                padding: "10px 8px",
+                minHeight: "44px",
+                display: "inline-flex",
+                alignItems: "center",
               }}
             >
               Copyright & Permissions
@@ -292,6 +300,8 @@ export default function Footer() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
+                padding: "10px 8px",
+                minHeight: "44px",
               }}
             >
               <span>Portal Login</span>

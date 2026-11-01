@@ -798,6 +798,16 @@ function HomeGatheringsGallery({ images }: { images?: string[] }) {
   );
 }
 
+function optimizeLocalImg(url?: string): string {
+  if (!url) return "";
+  return url
+    .replace("/images/hero-v2.jpg", "/images/hero-v2.webp")
+    .replace("/images/who-we-are-v2.jpg", "/images/who-we-are-v2.webp")
+    .replace("/images/giving-bg.jpg", "/images/giving-bg.webp")
+    .replace("/images/about-hero.jpg", "/images/about-hero.webp")
+    .replace("/images/sermon-v2.jpg", "/images/sermon-v2.webp");
+}
+
 export default function HomeContent() {
   const [cmsSettings, setCmsSettings] = useState<any>({});
   const [s, setS] = useState<any>({ ...D });
@@ -901,7 +911,7 @@ export default function HomeContent() {
               overflow: "hidden",
             }}
           >
-            <img src={s.heroBgImage || D.heroBgImage} alt="" fetchPriority="high" decoding="sync" loading="eager" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", zIndex: 0 }} />
+            <img src={optimizeLocalImg(s.heroBgImage) || D.heroBgImage} alt="" fetchPriority="high" decoding="sync" loading="eager" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", zIndex: 0 }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.9) 0%, rgba(1,64,193,0.45) 100%)", zIndex: 1 }} />
             <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px" }}>
               <div style={{ ...T.scripture, color: "rgba(255,255,255,0.7)" }}>{s.heroEyebrow || D.heroEyebrow}</div>
@@ -1061,16 +1071,30 @@ export default function HomeContent() {
               onClick={() => setHeroSlide(index)}
               aria-label={`Slide ${index + 1}`}
               style={{
-                width: heroSlide === index ? "28px" : "8px",
-                height: "8px",
-                borderRadius: "4px",
-                backgroundColor: heroSlide === index ? "#2090FF" : "rgba(255,255,255,0.45)",
+                width: "48px",
+                height: "48px",
+                minWidth: "48px",
+                minHeight: "48px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                transition: "all 300ms ease",
                 padding: 0,
               }}
-            />
+            >
+              <span
+                style={{
+                  display: "block",
+                  width: heroSlide === index ? "28px" : "8px",
+                  height: "8px",
+                  borderRadius: "4px",
+                  backgroundColor: heroSlide === index ? "#2090FF" : "rgba(255,255,255,0.45)",
+                  transition: "all 300ms ease",
+                }}
+              />
+            </button>
           ))}
         </div>
       </section>
@@ -1152,7 +1176,7 @@ export default function HomeContent() {
 
       {/* ══════════════ WHO WE ARE ══════════════ */}
       <section className="tph-hero" style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:"24px", overflow:"hidden", borderBottom:"none" }}>
-        <div style={{ position:"absolute", inset:0, backgroundImage:`url('${s.whoBgImage||D.whoBgImage}')`, backgroundSize:"cover", backgroundPosition:"center top", zIndex:0 }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:`url('${optimizeLocalImg(s.whoBgImage)||D.whoBgImage}')`, backgroundSize:"cover", backgroundPosition:"center top", zIndex:0 }} />
         <div style={{ position:"absolute", inset:0, backgroundColor:"rgba(21,26,84,0.6)", zIndex:1 }} />
         <div style={{ position:"relative", zIndex:2, display:"flex", flexDirection:"column", alignItems:"center", gap:"24px", maxWidth:"700px" }}>
           <div style={{ ...T.eyebrow, color:Blue300 }}>{s.whoEyebrow||D.whoEyebrow}</div>
@@ -1243,7 +1267,7 @@ export default function HomeContent() {
 
       {/* ══════════════ GIVING ══════════════ */}
       <section className="tph-section" style={{ position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", inset:0, backgroundImage:`url('${s.givingBgImage||D.givingBgImage}')`, backgroundSize:"cover", backgroundPosition:"center 25%", zIndex:0 }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:`url('${optimizeLocalImg(s.givingBgImage)||D.givingBgImage}')`, backgroundSize:"cover", backgroundPosition:"center 25%", zIndex:0 }} />
         <div style={{ position:"absolute", inset:0, backgroundColor:"rgba(21,26,84,0.82)", zIndex:1 }} />
         <div className="tph-two-col tph-inner" style={{ position:"relative", zIndex:2, alignItems:"center" }}>
           <div style={{ display:"flex", flexDirection:"column", gap:"20px" }}>

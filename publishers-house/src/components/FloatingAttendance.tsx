@@ -99,13 +99,19 @@ export default function FloatingAttendance() {
       // ignore
     }
 
+  }, []);
+
+  useEffect(() => {
+    // Defer Firebase Auth subscription until user interacts with the attendance button or modal opens
+    if (!showModal && !isPressing) return;
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAuthUser(user);
-        if (!foundProfile && user.displayName) {
+        if (!fullName && user.displayName) {
           setFullName(user.displayName);
         }
-        if (!foundProfile && user.phoneNumber) {
+        if (!phone && user.phoneNumber) {
           setPhone(user.phoneNumber);
         }
       } else {
@@ -114,7 +120,7 @@ export default function FloatingAttendance() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [showModal, isPressing, fullName, phone]);
 
   const handlePressStart = (e: React.TouchEvent | React.MouseEvent) => {
     if (showModal || showSuccess) return;

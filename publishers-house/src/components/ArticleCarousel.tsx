@@ -34,8 +34,10 @@ const COVER_FALLBACKS: Record<string, string> = {
 };
 
 function getCoverImage(article: Article): string {
+  const fallback = COVER_FALLBACKS[article.title?.toLowerCase().trim()];
+  if (fallback) return fallback;
   if (article.coverImageUrl) return article.coverImageUrl;
-  return COVER_FALLBACKS[article.title?.toLowerCase().trim()] || "";
+  return "";
 }
 
 const Navy = "#151A54";
@@ -343,11 +345,11 @@ export default function ArticleCarousel() {
           </div>
         </Link>
 
-        {/* Dot navigation */}
+                {/* Dot navigation */}
         <div
           style={{
             display: "flex",
-            gap: "0px",
+            gap: "4px",
             justifyContent: "center",
             marginTop: "24px",
           }}
@@ -358,8 +360,10 @@ export default function ArticleCarousel() {
               onClick={() => advance(i)}
               aria-label={`Go to article ${i + 1}`}
               style={{
-                width: "40px",
-                height: "40px",
+                width: "48px",
+                height: "48px",
+                minWidth: "48px",
+                minHeight: "48px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

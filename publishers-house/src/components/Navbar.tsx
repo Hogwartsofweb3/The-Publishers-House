@@ -454,9 +454,15 @@ export default function Navbar() {
             background: "none",
             border: "none",
             cursor: "pointer",
-            padding: "8px",
+            padding: "0",
             display: "none",
             flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "48px",
+            height: "48px",
+            minWidth: "48px",
+            minHeight: "48px",
             gap: "5px",
           }}
         >

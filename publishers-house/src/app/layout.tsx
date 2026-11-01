@@ -90,10 +90,8 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/icon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icon-16x16.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        {/* Preconnect to Google Fonts and Firebase CDN to reduce DNS lookup latency */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+        {/* Preload critical LCP Hero image for instant discovery by browser HTML parser */}
+        <link rel="preload" as="image" href="/images/hero-v2.webp" type="image/webp" fetchPriority="high" />
         <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
       </head>
       <body>
