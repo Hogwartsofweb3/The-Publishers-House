@@ -31,15 +31,25 @@ export async function POST(req: NextRequest) {
 
       const cleanData: Record<string, any> = {
         title: event.title || "",
-        location: event.location || "",
+        location: event.location || event.venue || "",
+        venue: event.venue || event.location || "",
+        category: event.category || "Weekly Service",
         startAt: event.startAt || "",
         endAt: event.endAt || "",
+        startDate: event.startDate || event.date || "",
+        endDate: event.endDate || "",
+        date: event.startDate || event.date || "",
+        time: event.time || "",
+        endTime: event.endTime || "",
+        days: Array.isArray(event.days) ? event.days : [],
         registrationUrl: event.registrationUrl || "",
         speaker: event.speaker || "",
         scripture: event.scripture || "",
         imageUrl: event.imageUrl || "",
+        summary: event.summary || event.description || "",
         description: event.description || "",
-        published: event.published !== false,
+        status: event.status || (event.published === false ? "draft" : "published"),
+        published: event.published !== false && event.status !== "draft",
         updatedAt: now,
       };
 

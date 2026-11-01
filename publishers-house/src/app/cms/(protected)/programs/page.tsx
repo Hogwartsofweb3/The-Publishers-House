@@ -5,11 +5,21 @@ import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface ProgramEditionDay {
+  dayNumber: number;
+  label: string;
+  date?: string;
+  title?: string;
+  time?: string;
+  speaker?: string;
+}
+
 interface EditionMessage {
   id: string;
   title: string;
   speaker: string;
   date?: string;
+  day?: string; // "Day 1", "Day 2", etc.
   scripture?: string;
   duration?: string;
   audioUrl?: string;
@@ -23,6 +33,9 @@ interface ProgramEdition {
   label: string;
   theme: string;
   dates: string;
+  startDate?: string;
+  endDate?: string;
+  days?: ProgramEditionDay[];
   location: string;
   flierSrc: string;
   listenButtonText: string;
@@ -592,6 +605,7 @@ export default function ProgramsCmsPage() {
         title: "",
         speaker: defaultSpeaker,
         date: new Date().toISOString().split("T")[0],
+        day: "",
         scripture: "",
         duration: "",
         audioUrl: "",
@@ -1356,15 +1370,193 @@ export default function ProgramsCmsPage() {
                       />
                     </div>
 
-                    <div>
-                      <label style={S.label}>Dates Held</label>
-                      <input
-                        type="text"
-                        value={ed.dates || ""}
-                        onChange={(e) => updateEdition(edIdx, "dates", e.target.value)}
-                        placeholder="e.g. 24–27 October 2024"
-                        style={S.input}
-                      />
+                    {/* ── DATES: Start Date & End Date (Multi-Day Conferences) ── */}
+                    <div style={{ gridColumn: "1 / -1", border: "1px solid #D3DAEC", borderRadius: "6px", padding: "14px", backgroundColor: "#F8FAFD" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr", gap: "12px", alignItems: "end" }}>
+                        <div>
+                          <label style={S.label}>Start Date</label>
+                          <input
+                            type="date"
+                            value={ed.startDate || ""}
+                            onChange={(e) => {
+                              const s = e.target.value;
+                              updateEdition(edIdx, "startDate", s);
+                              if (s && ed.endDate) {
+                                try {
+                                  const sD = new Date(s + "T00:00:00");
+                                  const eD = new Date(ed.endDate + "T00:00:00");
+                                  const sStr = sD.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                                  const eStr = eD.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+                                  updateEdition(edIdx, "dates", `${sStr} – ${eStr}`);
+                                } catch {}
+                              } else if (s && !ed.dates) {
+                                try {
+                                  const sD = new Date(s + "T00:00:00");
+                                  updateEdition(edIdx, "dates", sD.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }));
+                                } catch {}
+                              }
+                            }}
+                            style={S.input}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={S.label}>End Date (Multi-Day)</label>
+                          <input
+                            type="date"
+                            min={ed.startDate || undefined}
+                            value={ed.endDate || ""}
+                            onChange={(e) => {
+                              const endVal = e.target.value;
+                              updateEdition(edIdx, "endDate", endVal);
+                              if (ed.startDate && endVal) {
+                                try {
+                                  const sD = new Date(ed.startDate + "T00:00:00");
+                                  const eD = new Date(endVal + "T00:00:00");
+                                  const sStr = sD.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                                  const eStr = eD.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+                                  updateEdition(edIdx, "dates", `${sStr} – ${eStr}`);
+                                } catch {}
+                              }
+                            }}
+                            style={S.input}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={S.label}>Dates Display Text *</label>
+                          <input
+                            type="text"
+                            value={ed.dates || ""}
+                            onChange={(e) => updateEdition(edIdx, "dates", e.target.value)}
+                            placeholder="e.g. 28 October – 1 November 2026"
+                            style={S.input}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Conference Days (Day 1, Day 2, etc.) */}
+                      <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed #D3DAEC" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+                          <span style={{ fontFamily: "var(--font-poppins)", fontSize: "11px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase" }}>
+                            Conference Daily Schedule ({ed.days?.length || 0} Days)
+                          </span>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentDays = ed.days || [];
+                                const nextNum = currentDays.length + 1;
+                                const newDay: ProgramEditionDay = {
+                                  dayNumber: nextNum,
+                                  label: `Day ${nextNum}`,
+                                  date: ed.endDate || ed.startDate || "",
+                                  title: `Day ${nextNum} Session`,
+                                  time: "4:00 PM WAT",
+                                  speaker: "",
+                                };
+                                updateEdition(edIdx, "days", [...currentDays, newDay]);
+                              }}
+                              style={{ ...S.input, width: "auto", padding: "4px 10px", fontSize: "11px", fontWeight: 700, color: "#0140C1", cursor: "pointer", backgroundColor: "#FFFFFF" }}
+                            >
+                              + Add Day
+                            </button>
+                            {ed.startDate && ed.endDate && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  try {
+                                    const s = new Date(ed.startDate + "T00:00:00").getTime();
+                                    const e = new Date(ed.endDate + "T00:00:00").getTime();
+                                    const diff = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1);
+                                    const startObj = new Date(ed.startDate + "T00:00:00");
+                                    const autoDays: ProgramEditionDay[] = [];
+                                    for (let i = 0; i < diff; i++) {
+                                      const cur = new Date(startObj);
+                                      cur.setDate(startObj.getDate() + i);
+                                      const num = i + 1;
+                                      autoDays.push({
+                                        dayNumber: num,
+                                        label: `Day ${num}`,
+                                        date: cur.toISOString().split("T")[0],
+                                        title: num === 1 ? "Opening Encounter" : num === diff && diff > 1 ? "Grand Finale & Impartation" : `Day ${num} Sessions`,
+                                        time: "4:00 PM WAT",
+                                        speaker: "",
+                                      });
+                                    }
+                                    updateEdition(edIdx, "days", autoDays);
+                                  } catch {}
+                                }}
+                                style={{ ...S.input, width: "auto", padding: "4px 10px", fontSize: "11px", fontWeight: 700, color: "#FFFFFF", cursor: "pointer", backgroundColor: "#0140C1" }}
+                              >
+                                ⚡ Auto-Generate Day 1 to Day N
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {ed.days && ed.days.length > 0 && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+                            {ed.days.map((dayItem, dIdx) => (
+                              <div key={dIdx} style={{ display: "flex", gap: "8px", alignItems: "center", backgroundColor: "#FFFFFF", padding: "8px 10px", borderRadius: "4px", border: "1px solid #D3DAEC" }}>
+                                <input
+                                  type="text"
+                                  value={dayItem.label}
+                                  onChange={(e) => {
+                                    const list = [...(ed.days || [])];
+                                    list[dIdx] = { ...list[dIdx], label: e.target.value };
+                                    updateEdition(edIdx, "days", list);
+                                  }}
+                                  placeholder={`Day ${dIdx + 1}`}
+                                  style={{ ...S.input, width: "80px", padding: "4px 6px", fontSize: "11px", fontWeight: 700, color: "#0140C1" }}
+                                />
+                                <input
+                                  type="date"
+                                  value={dayItem.date || ""}
+                                  onChange={(e) => {
+                                    const list = [...(ed.days || [])];
+                                    list[dIdx] = { ...list[dIdx], date: e.target.value };
+                                    updateEdition(edIdx, "days", list);
+                                  }}
+                                  style={{ ...S.input, padding: "4px 6px", fontSize: "11px", width: "130px" }}
+                                />
+                                <input
+                                  type="text"
+                                  value={dayItem.title || ""}
+                                  onChange={(e) => {
+                                    const list = [...(ed.days || [])];
+                                    list[dIdx] = { ...list[dIdx], title: e.target.value };
+                                    updateEdition(edIdx, "days", list);
+                                  }}
+                                  placeholder="Session Title (e.g. Morning Word, Holy Ghost Night)"
+                                  style={{ ...S.input, flex: 1, padding: "4px 8px", fontSize: "11px" }}
+                                />
+                                <input
+                                  type="text"
+                                  value={dayItem.speaker || ""}
+                                  onChange={(e) => {
+                                    const list = [...(ed.days || [])];
+                                    list[dIdx] = { ...list[dIdx], speaker: e.target.value };
+                                    updateEdition(edIdx, "days", list);
+                                  }}
+                                  placeholder="Minister"
+                                  style={{ ...S.input, width: "140px", padding: "4px 8px", fontSize: "11px" }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const list = (ed.days || []).filter((_, i) => i !== dIdx);
+                                    updateEdition(edIdx, "days", list);
+                                  }}
+                                  style={{ background: "#FEE2E2", border: "none", color: "#DC2626", borderRadius: "3px", padding: "4px 8px", fontSize: "11px", cursor: "pointer", fontWeight: 700 }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1574,6 +1766,22 @@ export default function ProgramsCmsPage() {
                                 >
                                   #{mIdx + 1}
                                 </span>
+                                {msgItem.day && (
+                                  <span
+                                    style={{
+                                      backgroundColor: "#EEF4FF",
+                                      color: "#0140C1",
+                                      border: "1px solid #C7D9FB",
+                                      borderRadius: "3px",
+                                      padding: "1px 6px",
+                                      fontSize: "10px",
+                                      fontWeight: 700,
+                                      fontFamily: "var(--font-poppins)",
+                                    }}
+                                  >
+                                    {msgItem.day}
+                                  </span>
+                                )}
                                 <h5
                                   style={{
                                     fontFamily: "var(--font-poppins)",
@@ -2051,8 +2259,24 @@ export default function ProgramsCmsPage() {
                   </div>
                 </div>
 
-                {/* Row 2: Date, Scripture & Duration */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+                {/* Row 2: Conference Day, Date, Scripture & Duration */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr 1fr", gap: "12px" }}>
+                  <div>
+                    <label style={S.label}>Conference Day</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Day 1, Day 2..."
+                      value={activeSermonModal.form.day || ""}
+                      onChange={(e) =>
+                        setActiveSermonModal({
+                          ...activeSermonModal,
+                          form: { ...activeSermonModal.form, day: e.target.value },
+                        })
+                      }
+                      style={S.input}
+                    />
+                  </div>
+
                   <div>
                     <label style={S.label}>Date Preached</label>
                     <input

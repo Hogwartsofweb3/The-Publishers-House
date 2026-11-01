@@ -115,8 +115,29 @@ export default function MemberEventsPage() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase" }}>
-                    {event.startAt ? new Date(event.startAt).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "Scheduled"}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase" }}>
+                      {(() => {
+                        if (!event.startAt) return "Scheduled";
+                        try {
+                          const s = new Date(event.startAt);
+                          if (!event.endAt) {
+                            return s.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+                          }
+                          const e = new Date(event.endAt);
+                          const sStr = s.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                          const eStr = e.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+                          return `${sStr} – ${eStr}`;
+                        } catch {
+                          return event.startAt;
+                        }
+                      })()}
+                    </div>
+                    {event.days && event.days.length > 0 && (
+                      <span style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE", borderRadius: "3px", padding: "1px 6px", fontSize: "10px", fontWeight: 700 }}>
+                        {event.days.length} Days (Day 1 – {event.days.length})
+                      </span>
+                    )}
                   </div>
                   <h3 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "16px", fontWeight: 700, color: "#141C6E", margin: "4px 0 6px" }}>
                     {event.title}

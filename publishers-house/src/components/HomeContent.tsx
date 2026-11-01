@@ -254,7 +254,26 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
               <div style={{ ...T.label, color: Slate500, fontSize: "9px" }}>{ev.month}</div>
             </div>
             <div>
-              <div style={{ ...T.eyebrow, color: Blue500 }}>{ev.theme || "Upcoming Flagship Event"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ ...T.eyebrow, color: Blue500 }}>{ev.theme || "Upcoming Flagship Event"}</span>
+                {ev.days && ev.days.length > 0 && (
+                  <span
+                    style={{
+                      backgroundColor: "#EFF6FF",
+                      color: "#1D4ED8",
+                      border: "1px solid #BFDBFE",
+                      borderRadius: "3px",
+                      padding: "1px 6px",
+                      fontSize: "9.5px",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-poppins)",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {ev.days.length} Days · Day 1 – Day {ev.days.length}
+                  </span>
+                )}
+              </div>
               <h3 style={{ ...T.displayM, color: Navy, margin: "4px 0 0", fontSize: "clamp(20px, 2.5vw, 26px)" }}>{ev.title}</h3>
             </div>
           </div>
@@ -262,6 +281,29 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
           <p style={{ ...T.readSmall, color: Slate600, margin: 0, lineHeight: "1.65em", fontSize: "15px" }}>
             {ev.desc}
           </p>
+
+          {ev.days && ev.days.length > 0 && (
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "12px" }}>
+              {ev.days.slice(0, 5).map((d: any, idx: number) => (
+                <span
+                  key={idx}
+                  style={{
+                    backgroundColor: "#F4F6FB",
+                    border: "1px solid #D3DAEC",
+                    borderRadius: "4px",
+                    padding: "3px 8px",
+                    fontSize: "11px",
+                    fontFamily: "var(--font-poppins)",
+                    color: Navy,
+                    fontWeight: 600,
+                  }}
+                >
+                  <strong style={{ color: Blue700 }}>{d.label || `Day ${idx + 1}`}</strong>
+                  {d.title ? `: ${d.title}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ paddingTop: "16px", borderTop: `1px solid ${Paper200}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
@@ -480,6 +522,25 @@ function HomeGatheringCard({ ev }: { ev: any }) {
               <div style={{ ...T.eyebrow, color: Blue500, marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {ev.theme}
               </div>
+            )}
+            {ev.days && ev.days.length > 0 && (
+              <span
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "#EFF6FF",
+                  color: "#1D4ED8",
+                  border: "1px solid #BFDBFE",
+                  borderRadius: "3px",
+                  padding: "1px 6px",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-poppins)",
+                  textTransform: "uppercase",
+                  marginTop: "3px",
+                }}
+              >
+                {ev.days.length} Days · Day 1 to {ev.days.length}
+              </span>
             )}
           </div>
         </div>

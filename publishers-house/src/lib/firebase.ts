@@ -54,6 +54,16 @@ export type Sermon = ContentTimestamps & {
   thumbnailUrl?: string;
 };
 
+export type EventDaySession = {
+  dayNumber: number;
+  label: string;
+  date?: string;
+  title?: string;
+  time?: string;
+  speaker?: string;
+  description?: string;
+};
+
 export type EventItem = ContentTimestamps & {
   id: string;
   title: string;
@@ -61,9 +71,16 @@ export type EventItem = ContentTimestamps & {
   description: string;
   startAt: string;
   endAt: string;
+  startDate?: string;
+  endDate?: string;
   location: string;
+  venue?: string;
+  category?: string;
   imageUrl: string;
   registrationUrl: string;
+  speaker?: string;
+  scripture?: string;
+  days?: EventDaySession[];
 };
 
 export type Article = ContentTimestamps & {

@@ -54,6 +54,9 @@ function parseEventToGathering(ev: any) {
       order: ev.order ?? -10,
       startAt: ev.startAt || d.toISOString(),
       endAt: ev.endAt || "",
+      startDate: ev.startDate || "",
+      endDate: ev.endDate || "",
+      days: Array.isArray(ev.days) ? ev.days : [],
     };
   } catch {
     return null;
@@ -112,6 +115,15 @@ export async function GET() {
           }
           if (!existing.endAt && ce.endAt) {
             existing.endAt = ce.endAt;
+          }
+          if (!existing.endDate && ce.endDate) {
+            existing.endDate = ce.endDate;
+          }
+          if (!existing.startDate && ce.startDate) {
+            existing.startDate = ce.startDate;
+          }
+          if ((!existing.days || existing.days.length === 0) && ce.days && ce.days.length > 0) {
+            existing.days = ce.days;
           }
         } else {
           gatherings.push(ce);

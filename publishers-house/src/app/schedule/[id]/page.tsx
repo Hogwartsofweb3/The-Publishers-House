@@ -162,6 +162,90 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </section>
         )}
 
+        {/* CONFERENCE MULTI-DAY SCHEDULE (DAY 1, DAY 2, ETC.) */}
+        {ev.days && Array.isArray(ev.days) && ev.days.length > 0 && (
+          <section style={{ backgroundColor: "#F4F6FB", padding: "clamp(40px,6vw,80px) clamp(20px,6vw,100px)", borderTop: "1px solid #D3DAEC", borderBottom: "1px solid #D3DAEC" }}>
+            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+              <div style={{ ...T.eyebrow, color: Blue500, marginBottom: "8px" }}>Conference Daily Schedule</div>
+              <h2 style={{ ...T.displayL, color: Navy, margin: "0 0 24px", fontSize: "28px" }}>Day-by-Day Sessions</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                {ev.days.map((dayItem: any, idx: number) => {
+                  let formattedDayDate = dayItem.date;
+                  try {
+                    if (dayItem.date) {
+                      const d = new Date(dayItem.date + "T00:00:00");
+                      if (!isNaN(d.getTime())) {
+                        formattedDayDate = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+                      }
+                    }
+                  } catch {}
+
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: White,
+                        border: "1px solid #D3DAEC",
+                        borderRadius: "6px",
+                        padding: "20px 24px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        boxShadow: "0 2px 8px rgba(21,26,84,0.03)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span
+                            style={{
+                              backgroundColor: Blue700,
+                              color: White,
+                              fontFamily: "var(--font-poppins)",
+                              fontWeight: 700,
+                              fontSize: "11px",
+                              padding: "3px 10px",
+                              borderRadius: "3px",
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {dayItem.label || `Day ${dayItem.dayNumber || idx + 1}`}
+                          </span>
+                          {formattedDayDate && (
+                            <span style={{ ...T.colophon, color: Slate600, fontWeight: 600 }}>
+                              {formattedDayDate}
+                            </span>
+                          )}
+                        </div>
+                        {dayItem.time && (
+                          <span style={{ ...T.colophon, color: Blue500, fontWeight: 700 }}>
+                            ⏰ {dayItem.time}
+                          </span>
+                        )}
+                      </div>
+                      {dayItem.title && (
+                        <h3 style={{ ...T.displayL, color: Navy, margin: "4px 0 0", fontSize: "16px" }}>
+                          {dayItem.title}
+                        </h3>
+                      )}
+                      {dayItem.speaker && (
+                        <div style={{ ...T.colophon, color: Slate600, fontSize: "12px", textTransform: "none" }}>
+                          Minister: <strong style={{ color: Navy }}>{dayItem.speaker}</strong>
+                        </div>
+                      )}
+                      {dayItem.description && (
+                        <p style={{ ...T.readBody, color: Slate600, margin: "4px 0 0", fontSize: "14px" }}>
+                          {dayItem.description}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* REGISTER CTA */}
         {event.registrationUrl && (
           <section style={{ position: "relative", overflow: "hidden" }}>

@@ -13,6 +13,7 @@ export interface EditionMessage {
   duration?: string;
   scripture?: string;
   date?: string;
+  day?: string; // e.g. "Day 1", "Day 2", etc.
   audioUrl?: string;
   videoUrl?: string;
   summary?: string;
@@ -24,6 +25,16 @@ export interface ProgramEdition {
   label: string; // e.g. "2024", "July 2024", "September 2026"
   theme: string;
   dates: string;
+  startDate?: string;
+  endDate?: string;
+  days?: {
+    dayNumber: number;
+    label: string;
+    date?: string;
+    title?: string;
+    time?: string;
+    speaker?: string;
+  }[];
   location: string;
   flierSrc: string;
   listenButtonText: string; // e.g. "Listen to Merismos 2024 Messages"
