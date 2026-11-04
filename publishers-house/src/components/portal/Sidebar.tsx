@@ -7,7 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser } from "@/lib/portalAuth";
-import { getRoleLabel } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId } from "@/lib/portalAuth";
 
 export const adminNav = [
   { href: "/portal", label: "Dashboard", icon: "◈" },
@@ -72,10 +72,15 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
     }
   } catch {}
 
+  const isSecretariat =
+    activeRole === "unit_head" &&
+    normalizeUnitId(activeUser.assignedUnitId) === "secretariat";
+
   const isSuperOrAdminOrManager =
     activeRole === "super_admin" ||
     activeRole === "admin" ||
-    activeRole === "portal_manager";
+    activeRole === "portal_manager" ||
+    isSecretariat;
   const navItems = isSuperOrAdminOrManager
     ? adminNav
     : activeRole === "unit_head"

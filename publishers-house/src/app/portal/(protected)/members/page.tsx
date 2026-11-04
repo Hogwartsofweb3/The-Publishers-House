@@ -20,7 +20,17 @@ const TIER_OPTIONS: { value: ActivityTier; label: string }[] = [
 ];
 
 export default function MembersPage() {
-  const { campus: globalCampus } = usePortal();
+  const { effectiveUser, campus: globalCampus } = usePortal();
+
+  const isSecretariat =
+    effectiveUser?.role === "unit_head" &&
+    normalizeUnitId(effectiveUser.assignedUnitId) === "secretariat";
+
+  const canCreateAccounts =
+    effectiveUser?.role === "super_admin" ||
+    effectiveUser?.role === "admin" ||
+    effectiveUser?.role === "portal_manager";
+
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [filtered, setFiltered] = useState<PortalUser[]>([]);
   const [search, setSearch] = useState("");
@@ -154,6 +164,8 @@ export default function MembersPage() {
     if (!addForm.displayName) return;
     setSubmitting(true);
 
+    const shouldCreateAuth = canCreateAccounts && Boolean(addForm.createAuthImmediately);
+
     try {
       const res = await fetch("/api/portal/members", {
         method: "POST",
@@ -161,6 +173,7 @@ export default function MembersPage() {
         body: JSON.stringify({
           action: "add_member",
           ...addForm,
+          createAuthImmediately: shouldCreateAuth,
         }),
       });
       const json = await res.json();
@@ -201,6 +214,10 @@ export default function MembersPage() {
 
   // Handle Create Account / Send Invite
   const handleCreateAccount = async (member: PortalUser) => {
+    if (!canCreateAccounts) {
+      alert("Only Administrators and Super Admin can create accounts and generate credentials.");
+      return;
+    }
     if (!member.email) {
       alert("Please add an email address for this member first by editing their details.");
       setEditUser(member);
@@ -804,32 +821,34 @@ export default function MembersPage() {
                             textAlign: "left",
                           }}
                         >
-                          {/* Create Account / Send Invite */}
-                          <button
-                            onClick={() => {
-                              setActiveMenuUid(null);
-                              handleCreateAccount(m);
-                            }}
-                            style={{
-                              padding: "8px 12px",
-                              border: "none",
-                              borderRadius: "6px",
-                              backgroundColor: "transparent",
-                              color: "#1F46C8",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              textAlign: "left",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#EEF2FB")}
-                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                          >
-                            <span>⚡</span>
-                            <span>{hasPortalAccess ? "Resend Account Invite" : "Create Account & Invite"}</span>
-                          </button>
+                          {/* Create Account / Send Invite (Admins only) */}
+                          {canCreateAccounts && (
+                            <button
+                              onClick={() => {
+                                setActiveMenuUid(null);
+                                handleCreateAccount(m);
+                              }}
+                              style={{
+                                padding: "8px 12px",
+                                border: "none",
+                                borderRadius: "6px",
+                                backgroundColor: "transparent",
+                                color: "#1F46C8",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                textAlign: "left",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#EEF2FB")}
+                              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                            >
+                              <span>⚡</span>
+                              <span>{hasPortalAccess ? "Resend Account Invite" : "Create Account & Invite"}</span>
+                            </button>
+                          )}
 
                           {/* Assign to Unit */}
                           <button
@@ -885,34 +904,37 @@ export default function MembersPage() {
                             <span>Edit Details</span>
                           </button>
 
-                          <div style={{ height: "1px", backgroundColor: "#E8EDFB", margin: "4px 0" }} />
-
-                          {/* Delete Account */}
-                          <button
-                            onClick={() => {
-                              setActiveMenuUid(null);
-                              handleDeleteMember(m);
-                            }}
-                            style={{
-                              padding: "8px 12px",
-                              border: "none",
-                              borderRadius: "6px",
-                              backgroundColor: "transparent",
-                              color: "#DC2626",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              textAlign: "left",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
-                            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                          >
-                            <span>🗑️</span>
-                            <span>Delete Account</span>
-                          </button>
+                          {/* Delete Account (Admins only) */}
+                          {canCreateAccounts && (
+                            <>
+                              <div style={{ height: "1px", backgroundColor: "#E8EDFB", margin: "4px 0" }} />
+                              <button
+                                onClick={() => {
+                                  setActiveMenuUid(null);
+                                  handleDeleteMember(m);
+                                }}
+                                style={{
+                                  padding: "8px 12px",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  backgroundColor: "transparent",
+                                  color: "#DC2626",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
+                                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                              >
+                                <span>🗑️</span>
+                                <span>Delete Account</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </td>
@@ -1263,7 +1285,7 @@ export default function MembersPage() {
                 </select>
               </div>
 
-              {addForm.email && (
+              {canCreateAccounts && addForm.email && (
                 <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#141C6E", cursor: "pointer" }}>
                   <input
                     type="checkbox"

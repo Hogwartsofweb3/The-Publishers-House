@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { SESSION_COOKIE } from "@/lib/sessionCookie";
 import type { ActivityTier, PortalUser, UserRole } from "@/lib/portalAuth";
+import { normalizeUnitId } from "@/lib/portalAuth";
 
 const ROLES: UserRole[] = ["super_admin", "admin", "portal_manager", "unit_head", "member"];
 const TIERS: ActivityTier[] = ["seeker", "regular", "active", "leader"];
@@ -79,17 +80,21 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
   }
 }
 
-export function portalHomeFor(role: UserRole): string {
+export function portalHomeFor(role: UserRole, assignedUnitId?: string): string {
   if (role === "super_admin" || role === "admin" || role === "portal_manager") return "/portal";
-  if (role === "unit_head") return "/portal/unit";
+  if (role === "unit_head") {
+    if (normalizeUnitId(assignedUnitId) === "secretariat") return "/portal";
+    return "/portal/unit";
+  }
   return "/portal/member";
 }
 
-export function canAccessPortal(pathname: string, role: UserRole): boolean {
+export function canAccessPortal(pathname: string, role: UserRole, assignedUnitId?: string): boolean {
   if (pathname === "/portal/login") return true;
 
+  const isSecretariat = role === "unit_head" && normalizeUnitId(assignedUnitId) === "secretariat";
   const isSuperOrAdminOrManager =
-    role === "super_admin" || role === "admin" || role === "portal_manager";
+    role === "super_admin" || role === "admin" || role === "portal_manager" || isSecretariat;
 
   if (pathname === "/portal" || pathname === "/portal/") {
     return isSuperOrAdminOrManager;

@@ -10,7 +10,7 @@ export default async function PortalProtectedLayout({ children }: { children: Re
   const pathname = (await headers()).get("x-pathname") || "";
   const user = await requirePortalUser();
   if (!user) redirect("/portal/login");
-  if (pathname && !canAccessPortal(pathname, user.role)) redirect(portalHomeFor(user.role));
+  if (pathname && !canAccessPortal(pathname, user.role, user.assignedUnitId)) redirect(portalHomeFor(user.role, user.assignedUnitId));
 
   return <PortalShell user={user}>{children}</PortalShell>;
 }

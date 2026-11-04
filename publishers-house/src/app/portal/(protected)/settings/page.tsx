@@ -7,6 +7,7 @@ import { sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import { usePortal } from "@/lib/portalContext";
+import { normalizeUnitId } from "@/lib/portalAuth";
 import MemberSettings from "@/components/portal/MemberSettings";
 
 interface ChurchSettings {
@@ -54,7 +55,8 @@ export default function PortalSettingsPage() {
   const isChurchAdmin =
     effectiveUser.role === "admin" ||
     effectiveUser.role === "super_admin" ||
-    effectiveUser.role === "portal_manager";
+    effectiveUser.role === "portal_manager" ||
+    (effectiveUser.role === "unit_head" && normalizeUnitId(effectiveUser.assignedUnitId) === "secretariat");
 
   const [activeTab, setActiveTab] = useState<"general" | "portal" | "notifications" | "security">("general");
   const [form, setForm] = useState<ChurchSettings>(DEFAULT_SETTINGS);
