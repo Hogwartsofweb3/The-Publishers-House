@@ -101,24 +101,6 @@ const D = {
 
 const FALLBACK_GATHERINGS = [
   {
-    id: "fol-2026-upcoming",
-    day: "WED",
-    date: "28",
-    month: "OCT",
-    title: "The Shout of a King",
-    desc: "Festival of Light 2026 — Annual homecoming conference. Believers from across Nigeria and the world gather in Jos for worship, sound teaching and Holy Ghost encounters.",
-    scripture: "Numbers 23:21",
-    time: "4:00 PM WAT",
-    city: "Jos",
-    theme: "Festival of Light 2026",
-    flierUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
-    startAt: "2026-10-28T16:00:00",
-    endAt: "2026-11-01T23:00:00",
-    registrationUrl: "https://bit.ly/Fol.2026",
-    published: true,
-    order: -10,
-  },
-  {
     id: "merismos-2026-upcoming",
     day: "THU",
     date: "10",
@@ -129,9 +111,9 @@ const FALLBACK_GATHERINGS = [
     time: "4:45 PM WAT",
     city: "The House of Bread, Jos",
     theme: "Word & Power Conference",
-    flierUrl: "/images/programs/merismos-2024.jpg",
+    flierUrl: "https://i.postimg.cc/NMWknRpc/image.png",
     startAt: "2026-12-10T16:45:00",
-    endAt: "2026-12-13T22:00:00",
+    endAt: "2026-12-13T23:40:00",
     registrationUrl: "",
     published: true,
     order: 0,
@@ -878,8 +860,17 @@ export default function HomeContent() {
 
   const givingCats = (s.givingCategories || D.givingCategories).split(",").map((x: string) => x.trim()).filter(Boolean);
 
-  // Chronological sort: closest in time comes first, followed by the next
-  const sortedGatherings = [...gatherings].sort((a, b) => {
+  // Auto-hide fulfilled / concluded events from the public homepage:
+  // When an event date/time has passed (nowMs > endMs), it is automatically hidden from visitors.
+  const nowMs = Date.now();
+  const activePublicGatherings = gatherings.filter((ev: any) => {
+    if (ev.published === false) return false;
+    const { endMs } = parseStartAndEnd(ev);
+    return nowMs <= endMs;
+  });
+
+  const listToSort = activePublicGatherings.length > 0 ? activePublicGatherings : FALLBACK_GATHERINGS;
+  const sortedGatherings = [...listToSort].sort((a, b) => {
     const aMs = parseStartAndEnd(a).startMs;
     const bMs = parseStartAndEnd(b).startMs;
     return aMs - bMs;

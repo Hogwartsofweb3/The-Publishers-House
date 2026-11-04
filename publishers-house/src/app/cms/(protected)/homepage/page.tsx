@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, getDoc, doc, where, limit } from "firebase/firestore";
 import Link from "next/link";
+import { parseStartAndEnd } from "@/lib/eventTimingUtils";
 
 /* ── tokens ── */
 const Navy   = "#151A54";
@@ -166,6 +167,25 @@ export default function HomepageEditor() {
     fetchScheduleEvents();
   }, []);
 
+  const quickPushEvent = async (ev: any) => {
+    setGLoading(true);
+    try {
+      const res = await fetch("/api/cms/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "quick_push_event", event: ev }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to push event");
+      flash(data.message || `"${ev.title}" is now live on Next Gatherings ✓`);
+      await fetchGatherings();
+    } catch (e: any) {
+      flash("Error: " + e.message);
+    } finally {
+      setGLoading(false);
+    }
+  };
+
   const importEventToGathering = (ev: any) => {
     try {
       const rawDate = ev.startAt || ev.date;
@@ -210,7 +230,7 @@ export default function HomepageEditor() {
           speaker: ev.speaker || "Rev. Joshua Agunbiade",
           scripture: ev.scripture || "",
           city: ev.location ? ev.location.split(",")[0].trim() : "Jos",
-          flierUrl: ev.imageUrl || "",
+          flierUrl: ev.imageUrl || ((ev.title || "").toLowerCase().includes("merismos") ? "https://i.postimg.cc/NMWknRpc/image.png" : ""),
           registrationUrl: ev.registrationUrl || "",
           day: !isNaN(d.getTime()) ? dayNames[d.getDay()] : "WED",
           date: !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "28",
@@ -449,10 +469,12 @@ export default function HomepageEditor() {
             {!eventsLoading && scheduleEvents.length > 0 && (
               <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                 {scheduleEvents.map((ev: any) => {
-                  const isLinked = gatherings.some((g: any) =>
+                  const linkedGathering = gatherings.find((g: any) =>
                     (g.eventId && g.eventId === ev.id) ||
                     (g.title && g.title.toLowerCase().trim() === (ev.title || "").toLowerCase().trim())
                   );
+                  const isLinked = Boolean(linkedGathering);
+                  const isPastScheduleEvent = ev.endAt ? Date.now() > new Date(ev.endAt).getTime() : false;
                   const flier = (ev.imageUrl || "").trim();
 
                   return (
@@ -529,20 +551,63 @@ export default function HomepageEditor() {
                         </div>
                       </div>
 
-                      <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0 }}>
-                        <button
-                          type="button"
-                          onClick={() => importEventToGathering(ev)}
-                          style={{
-                            ...btn(isLinked ? Blue700 : "#EBF2FF", isLinked ? White : Blue700),
-                            border: `1px solid ${Blue700}`,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          {isLinked ? "✏️ Edit on Next Gatherings" : "+ Add to Next Gatherings"}
-                        </button>
+                      <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0, flexWrap:"wrap" }}>
+                        {isLinked ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => importEventToGathering(ev)}
+                              style={{
+                                ...btn(Blue700, White),
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              ✏️ Edit Details
+                            </button>
+                            {linkedGathering && (
+                              <button
+                                type="button"
+                                onClick={() => deleteG(linkedGathering.id)}
+                                style={btn("#FEE2E2", Red)}
+                                title="Remove from Next Gatherings (remains in /schedule)"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => quickPushEvent(ev)}
+                              style={{
+                                ...btn("#DCFCE7", Green),
+                                border: `1px solid ${Green}`,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                fontWeight: 700,
+                              }}
+                              title="Directly push this event to Next Gatherings on the homepage"
+                            >
+                              ⚡ Push to Homepage
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => importEventToGathering(ev)}
+                              style={{
+                                ...btn(Paper200, Navy),
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              ✏️ Customize & Add
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -692,8 +757,11 @@ export default function HomepageEditor() {
                 No gatherings yet. Add your first one above or import an event from /schedule.
               </p>
             )}
-            {gatherings.map(g => (
-              <div key={g.id} style={{ backgroundColor:White, border:`1px solid ${Paper300}`, borderRadius:"8px", padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
+            {gatherings.map(g => {
+              const timing = parseStartAndEnd(g);
+              const isFulfilled = Date.now() > timing.endMs;
+              return (
+              <div key={g.id} style={{ backgroundColor:isFulfilled ? "#FFFDF5" : White, border:`1px solid ${isFulfilled ? "#FCD34D" : Paper300}`, borderRadius:"8px", padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"16px", minWidth:0 }}>
                   <div style={{ textAlign:"center", minWidth:"50px", backgroundColor:Paper100, borderRadius:"4px", padding:"6px 8px", flexShrink:0 }}>
                     <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:"9px", fontWeight:600, letterSpacing:"0.14em", textTransform:"uppercase", color:Slate500 }}>{g.day}</div>
@@ -736,16 +804,29 @@ export default function HomepageEditor() {
                   </div>
                 </div>
 
-                <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0 }}>
-                  <span style={{ padding:"4px 10px", backgroundColor:g.published?"#DCFCE7":Paper200, color:g.published?Green:Slate500, borderRadius:"4px", fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:600, textTransform:"uppercase" }}>
-                    {g.published?"Showing":"Hidden"}
-                  </span>
-                  <button onClick={() => togglePublishG(g)} style={btn(Paper200,Navy)}>{g.published?"Hide":"Show"}</button>
-                  <button onClick={() => editG(g)} style={btn(Paper200,Navy)}>Edit</button>
-                  <button onClick={() => deleteG(g.id)} style={btn("#FEE2E2",Red)}>Delete</button>
+                <div style={{ display:"flex", gap:"8px", alignItems:"center", flexShrink:0, flexWrap:"wrap" }}>
+                  {isFulfilled ? (
+                    <>
+                      <span style={{ padding:"4px 10px", backgroundColor:"#FEF3C7", color:"#B45309", border:"1px solid #FCD34D", borderRadius:"4px", fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:700, textTransform:"uppercase" }}>
+                        ⚠️ Past / Concluded (Auto-Hidden)
+                      </span>
+                      <button onClick={() => editG(g)} style={btn(Paper200,Navy)}>Edit</button>
+                      <button onClick={() => deleteG(g.id)} style={{ ...btn("#FEE2E2",Red), fontWeight:700 }}>🗑️ Delete Permanently</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ padding:"4px 10px", backgroundColor:g.published?"#DCFCE7":Paper200, color:g.published?Green:Slate500, borderRadius:"4px", fontFamily:"'Poppins',sans-serif", fontSize:"10px", fontWeight:600, textTransform:"uppercase" }}>
+                        {g.published?"Showing on Site":"Hidden by Admin"}
+                      </span>
+                      <button onClick={() => togglePublishG(g)} style={btn(Paper200,Navy)}>{g.published?"Hide":"Show"}</button>
+                      <button onClick={() => editG(g)} style={btn(Paper200,Navy)}>Edit</button>
+                      <button onClick={() => deleteG(g.id)} style={btn("#FEE2E2",Red)}>Delete</button>
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </>
       )}

@@ -28,11 +28,9 @@ function parseEventToGathering(ev: any) {
 
     let flierUrl = (ev.imageUrl || ev.coverImageUrl || ev.flierUrl || "").trim();
     const titleLower = (ev.title || "").toLowerCase();
-    if (!flierUrl) {
-      if (titleLower.includes("shout of a king") || titleLower.includes("festival of light")) {
-        flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
-      } else if (titleLower.includes("merismos")) {
-        flierUrl = "/images/programs/merismos-2024.jpg";
+    if (!flierUrl || titleLower.includes("merismos")) {
+      if (titleLower.includes("merismos")) {
+        flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
       }
     }
 
@@ -41,17 +39,17 @@ function parseEventToGathering(ev: any) {
       eventId: ev.id,
       day: dayNames[d.getDay()] || "GAT",
       date: String(d.getDate()).padStart(2, "0"),
-      month: monthNames[d.getMonth()] || "OCT",
+      month: monthNames[d.getMonth()] || "DEC",
       title: ev.title || "Special Gathering",
       theme: ev.summary || ev.theme || "Upcoming Flagship Event",
       desc: ev.description || ev.summary || "Believers gather for sound apostolic doctrine and corporate prayer.",
-      scripture: ev.scripture || "Isaiah 60:1",
-      time: formattedTime || "4:00 PM WAT",
+      scripture: ev.scripture || "Hebrews 4:12",
+      time: formattedTime || "4:45 PM WAT",
       city: ev.location || "Jos",
       flierUrl,
       registrationUrl: ev.registrationUrl || "",
       published: true,
-      order: ev.order ?? -10,
+      order: ev.order ?? 0,
       startAt: ev.startAt || d.toISOString(),
       endAt: ev.endAt || "",
       startDate: ev.startDate || "",
@@ -83,7 +81,7 @@ export async function GET() {
       .filter((g: any) => g.published !== false);
   } catch (e) {}
 
-  // 2b. Check events collection in Firestore for upcoming conferences (e.g. The Shout of a King, Merismos)
+  // 2b. Check events collection in Firestore for linked or upcoming events (e.g. Merismos)
   try {
     const eventsSnap = await getDocs(
       query(collection(db, "events"), where("published", "==", true), limit(10))
@@ -93,7 +91,6 @@ export async function GET() {
         .map((d) => parseEventToGathering({ id: d.id, ...d.data() }))
         .filter(Boolean);
 
-      // Merge and prioritize events:
       convertedEvents.forEach((ce: any) => {
         const existing = gatherings.find((g) =>
           (g.eventId && g.eventId === ce.eventId) ||
@@ -101,86 +98,33 @@ export async function GET() {
         );
 
         if (existing) {
-          if (!existing.flierUrl && ce.flierUrl) {
-            existing.flierUrl = ce.flierUrl;
-          }
-          if (!existing.eventId) {
-            existing.eventId = ce.eventId;
-          }
-          if (!existing.registrationUrl && ce.registrationUrl) {
-            existing.registrationUrl = ce.registrationUrl;
-          }
-          if (!existing.startAt && ce.startAt) {
-            existing.startAt = ce.startAt;
-          }
-          if (!existing.endAt && ce.endAt) {
-            existing.endAt = ce.endAt;
-          }
-          if (!existing.endDate && ce.endDate) {
-            existing.endDate = ce.endDate;
-          }
-          if (!existing.startDate && ce.startDate) {
-            existing.startDate = ce.startDate;
-          }
+          if (!existing.flierUrl && ce.flierUrl) existing.flierUrl = ce.flierUrl;
+          if (!existing.eventId) existing.eventId = ce.eventId;
+          if (!existing.registrationUrl && ce.registrationUrl) existing.registrationUrl = ce.registrationUrl;
+          if (!existing.startAt && ce.startAt) existing.startAt = ce.startAt;
+          if (!existing.endAt && ce.endAt) existing.endAt = ce.endAt;
+          if (!existing.endDate && ce.endDate) existing.endDate = ce.endDate;
+          if (!existing.startDate && ce.startDate) existing.startDate = ce.startDate;
           if ((!existing.days || existing.days.length === 0) && ce.days && ce.days.length > 0) {
             existing.days = ce.days;
           }
-        } else {
-          gatherings.push(ce);
         }
       });
     }
   } catch (e) {}
 
-  // Always ensure premier upcoming flagship conference ("The Shout of a King") is presented
-  const shoutOfKingGathering = gatherings.find((g) =>
-    (g.title || "").toLowerCase().includes("shout of a king") ||
-    (g.theme || "").toLowerCase().includes("shout of a king")
-  );
+  // Ensure Merismos has the updated logo flier
+  gatherings.forEach((g) => {
+    if ((g.title || "").toLowerCase().includes("merismos")) {
+      if (!g.flierUrl || g.flierUrl.includes("merismos-2024")) {
+        g.flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
+      }
+      if (!g.startAt) g.startAt = "2026-12-10T16:45:00";
+      if (!g.endAt) g.endAt = "2026-12-13T23:40:00";
+    }
+  });
 
-  if (!shoutOfKingGathering) {
-    gatherings.push({
-      id: "fol-2026-upcoming",
-      day: "WED",
-      date: "28",
-      month: "OCT",
-      title: "The Shout of a King",
-      theme: "Festival of Light 2026 — Annual Homecoming",
-      desc: "Annual homecoming conference in Jos. Believers from across the world gather for worship, sound teaching and Holy Ghost encounters.",
-      scripture: "Numbers 23:21",
-      time: "4:00 PM WAT",
-      city: "The House of Bread, Jos",
-      flierUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
-      startAt: "2026-10-28T16:00:00",
-      endAt: "2026-11-01T23:00:00",
-      registrationUrl: "https://bit.ly/Fol.2026",
-      published: true,
-      order: -20,
-    });
-  } else {
-    if (!shoutOfKingGathering.flierUrl) {
-      shoutOfKingGathering.flierUrl = "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg";
-    }
-    if (!shoutOfKingGathering.startAt) {
-      shoutOfKingGathering.startAt = "2026-10-28T16:00:00";
-    }
-  }
-
-  // Ensure Merismos has flyer if missing
-  const merismosGathering = gatherings.find((g) =>
-    (g.title || "").toLowerCase().includes("merismos") ||
-    (g.theme || "").toLowerCase().includes("merismos")
-  );
-  if (merismosGathering) {
-    if (!merismosGathering.flierUrl) {
-      merismosGathering.flierUrl = "/images/programs/merismos-2024.jpg";
-    }
-    if (!merismosGathering.startAt) {
-      merismosGathering.startAt = "2026-12-10T16:45:00";
-    }
-  }
-
-  // Calculate startMs and endMs for all gatherings and sort chronologically (closest first)
+  // Calculate startMs and endMs for all gatherings
   const nowMs = Date.now();
   const gatheringsWithTiming = gatherings.map((g) => {
     const timing = parseStartAndEnd(g);
@@ -193,13 +137,37 @@ export async function GET() {
     };
   });
 
-  // Filter out events that concluded more than 24h ago, but keep at least what's available
-  const activeGatherings = gatheringsWithTiming.filter((g) => g.endMs > nowMs - 24 * 3600 * 1000);
-  const listToSort = activeGatherings.length > 0 ? activeGatherings : gatheringsWithTiming;
+  // AUTO-HIDE FULFILLED EVENTS:
+  // Strictly filter out any event where the end date/time has passed (nowMs > endMs).
+  // Concluded events are NEVER presented to public website visitors.
+  const activeGatherings = gatheringsWithTiming.filter((g) => {
+    if (g.published === false) return false;
+    return g.endMs >= nowMs;
+  });
 
-  // Strict chronological sort: closest in time comes first, followed by next, etc.
-  listToSort.sort((a, b) => a.startMs - b.startMs);
-  gatherings = listToSort;
+  activeGatherings.sort((a, b) => a.startMs - b.startMs);
+  gatherings = activeGatherings;
+
+  // Fallback: If no custom gatherings are currently upcoming in gatherings collection,
+  // check if there is an upcoming schedule event (e.g. Merismos) that has not yet concluded
+  if (gatherings.length === 0) {
+    try {
+      const allEventsSnap = await getDocs(
+        query(collection(db, "events"), where("published", "==", true), limit(5))
+      );
+      const futureEvents = allEventsSnap.docs
+        .map((d) => parseEventToGathering({ id: d.id, ...d.data() }))
+        .filter((ce: any) => ce && parseStartAndEnd(ce).endMs >= nowMs);
+      if (futureEvents.length > 0) {
+        gatherings = futureEvents
+          .map((g: any) => {
+            const timing = parseStartAndEnd(g);
+            return { ...g, startMs: timing.startMs, endMs: timing.endMs };
+          })
+          .sort((a: any, b: any) => a.startMs - b.startMs);
+      }
+    } catch (e) {}
+  }
 
   // 3. Top 5 latest published sermons, ordered by date descending
   try {

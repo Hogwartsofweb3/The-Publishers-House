@@ -63,6 +63,72 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (action === "quick_push_event") {
+      const { event } = body;
+      if (!event || !event.title) {
+        return NextResponse.json({ error: "Missing event data" }, { status: 400 });
+      }
+
+      const rawDate = event.startAt || event.date;
+      const d = rawDate ? new Date(rawDate) : new Date();
+      const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+      let formattedTime = event.time || "";
+      if (!formattedTime && !isNaN(d.getTime())) {
+        const hours = d.getHours();
+        const minutes = d.getMinutes();
+        const ampm = hours >= 12 ? "PM" : "AM";
+        const h12 = hours % 12 || 12;
+        const mStr = minutes > 0 ? `:${String(minutes).padStart(2, "0")}` : ":00";
+        formattedTime = `${h12}${mStr} ${ampm} WAT`;
+      }
+
+      let flierUrl = event.imageUrl || event.flierUrl || "";
+      if (!flierUrl || (event.title || "").toLowerCase().includes("merismos")) {
+        if ((event.title || "").toLowerCase().includes("merismos")) {
+          flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
+        }
+      }
+
+      const gatheringData = {
+        eventId: event.id || "",
+        title: event.title || "",
+        theme: event.summary || event.theme || "Upcoming Flagship Gathering",
+        desc: event.description || event.summary || "",
+        speaker: event.speaker || "Rev. Joshua Agunbiade",
+        scripture: event.scripture || "",
+        city: event.location ? event.location.split(",")[0].trim() : "Jos",
+        flierUrl,
+        registrationUrl: event.registrationUrl || "",
+        day: !isNaN(d.getTime()) ? dayNames[d.getDay()] : "THU",
+        date: !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "10",
+        month: !isNaN(d.getTime()) ? monthNames[d.getMonth()] : "DEC",
+        time: formattedTime || "4:45 PM WAT",
+        startAt: event.startAt || d.toISOString(),
+        endAt: event.endAt || "",
+        published: true,
+        order: 0,
+        updatedAt: now,
+      };
+
+      // Check if gathering already exists for this event
+      const existingSnap = await db.collection("gatherings").where("eventId", "==", event.id).get();
+      let docId = "";
+      if (!existingSnap.empty) {
+        docId = existingSnap.docs[0].id;
+        await db.collection("gatherings").doc(docId).set(gatheringData, { merge: true });
+      } else {
+        const ref = await db.collection("gatherings").add({
+          ...gatheringData,
+          createdAt: now,
+        });
+        docId = ref.id;
+      }
+
+      return NextResponse.json({ ok: true, id: docId, message: `"${event.title}" is now live on Next Gatherings ✓` });
+    }
+
     if (action === "delete_gathering") {
       if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
       await db.collection("gatherings").doc(id).delete();
