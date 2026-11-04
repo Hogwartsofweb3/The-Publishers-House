@@ -64,6 +64,11 @@ export default function AttendanceAdminPage() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
+  // Attendance button visibility toggle
+  const [showAttendanceButton, setShowAttendanceButton] = useState<boolean>(true);
+  const [toggleLoading, setToggleLoading] = useState(false);
+  const [toggleMsg, setToggleMsg] = useState("");
+
   // Usher Headcount Form
   const [headcount, setHeadcount] = useState<HeadcountRecord>({
     date: new Date().toISOString().split("T")[0],
@@ -106,6 +111,8 @@ export default function AttendanceAdminPage() {
             setCustomMinutes(data.durationMinutes);
           }
         }
+        // Attendance button toggle — default true if not set
+        setShowAttendanceButton(data.showAttendanceButton !== false);
       }
     } catch (err) {
       console.error("Error fetching stream settings:", err);
@@ -190,6 +197,46 @@ export default function AttendanceAdminPage() {
   useEffect(() => {
     fetchStreamSettings();
   }, []);
+
+  // Toggle the homepage attendance button on/off
+  const handleToggleAttendanceButton = async () => {
+    setToggleLoading(true);
+    setToggleMsg("");
+    try {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const newValue = !showAttendanceButton;
+      const res = await fetch("/api/attendance/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          // Keep existing code/active state unchanged — only update visibility
+          code: streamCode || "PLACEHOLDER",
+          active: streamCodeActive,
+          durationMinutes: timerDuration === "custom" ? customMinutes : Number(timerDuration),
+          showAttendanceButton: newValue,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setShowAttendanceButton(newValue);
+        setToggleMsg(
+          newValue
+            ? "Attendance button is now visible on the homepage."
+            : "Attendance button is now hidden from the homepage."
+        );
+      } else {
+        setToggleMsg(data.error || "Failed to update setting.");
+      }
+    } catch {
+      setToggleMsg("Network error — please try again.");
+    } finally {
+      setToggleLoading(false);
+      setTimeout(() => setToggleMsg(""), 4000);
+    }
+  };
 
   useEffect(() => {
     fetchAttendance();
@@ -772,6 +819,93 @@ export default function AttendanceAdminPage() {
               )}
             </div>
           </form>
+        </div>
+
+        {/* ── Homepage Attendance Button Visibility Toggle ── */}
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "24px",
+            gridColumn: "1 / -1", // span full width below the two-col grid
+            marginTop: "0",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+            <div>
+              <h2
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  color: "#141C6E",
+                  margin: "0 0 4px",
+                }}
+              >
+                Homepage Attendance Button
+              </h2>
+              <p
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  color: "#4A5490",
+                  margin: 0,
+                }}
+              >
+                Toggle the &ldquo;Tap &amp; Hold to Sign Attendance&rdquo; button on the public homepage. Turn it off on days when church is not meeting.
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: showAttendanceButton ? "#0F6B38" : "#9B1C1C",
+                  backgroundColor: showAttendanceButton ? "#E4F5EA" : "#FDE7E7",
+                  border: `1px solid ${showAttendanceButton ? "#A7F3D0" : "#F8B4B4"}`,
+                  borderRadius: "6px",
+                  padding: "4px 10px",
+                }}
+              >
+                {showAttendanceButton ? "● Visible" : "○ Hidden"}
+              </span>
+              <button
+                type="button"
+                onClick={handleToggleAttendanceButton}
+                disabled={toggleLoading}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: showAttendanceButton ? "#FDE7E7" : "#1F46C8",
+                  color: showAttendanceButton ? "#9B1C1C" : "#FFFFFF",
+                  border: showAttendanceButton ? "1px solid #F8B4B4" : "none",
+                  borderRadius: "8px",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: "12.5px",
+                  cursor: toggleLoading ? "not-allowed" : "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {toggleLoading ? "Saving..." : showAttendanceButton ? "Hide Button" : "Show Button"}
+              </button>
+            </div>
+          </div>
+          {toggleMsg && (
+            <p
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "12px",
+                fontWeight: 600,
+                color: toggleMsg.includes("error") || toggleMsg.includes("Failed") ? "#9B1C1C" : "#0F6B38",
+                marginTop: "12px",
+                marginBottom: 0,
+              }}
+            >
+              {toggleMsg}
+            </p>
+          )}
         </div>
 
         {/* Usher Headcount Form Card */}

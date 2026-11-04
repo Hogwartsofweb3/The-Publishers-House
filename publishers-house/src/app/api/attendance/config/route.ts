@@ -104,6 +104,8 @@ export async function GET(req: Request) {
       remainingSeconds,
       durationMinutes: data.durationMinutes || null,
       updatedAt: data.updatedAt || null,
+      // Whether the "Tap & Hold to Sign Attendance" button is visible on the homepage
+      showAttendanceButton: data.showAttendanceButton !== false, // default true
     });
   } catch (err: any) {
     console.error("Failed to read attendance config:", err);
@@ -140,6 +142,11 @@ export async function POST(req: Request) {
     const now = Date.now();
     const expiresAt = active ? new Date(now + durationMinutes * 60 * 1000).toISOString() : null;
 
+    // Homepage attendance button visibility toggle (defaults to true)
+    const showAttendanceButton = body?.showAttendanceButton !== undefined
+      ? Boolean(body.showAttendanceButton)
+      : undefined; // undefined = don't change the existing value
+
     const updatePayload: Record<string, any> = {
       streamCode: active ? streamCode : "",
       streamCodeActive: active,
@@ -150,6 +157,11 @@ export async function POST(req: Request) {
       updatedBy: requester.email || requester.uid,
     };
 
+    // Only include showAttendanceButton in payload when explicitly provided by caller
+    if (showAttendanceButton !== undefined) {
+      updatePayload.showAttendanceButton = showAttendanceButton;
+    }
+
     await getAdminDb().collection("homeSettings").doc("attendance").set(updatePayload, { merge: true });
 
     return NextResponse.json({
@@ -158,6 +170,7 @@ export async function POST(req: Request) {
       code: updatePayload.streamCode,
       durationMinutes,
       expiresAt,
+      showAttendanceButton: showAttendanceButton ?? true,
       message: active
         ? `Service Code "${streamCode}" is active for ${durationMinutes} minute${durationMinutes > 1 ? "s" : ""}.`
         : "Service Code requirement has been deactivated.",

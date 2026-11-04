@@ -62,6 +62,9 @@ export default function FloatingAttendance() {
   const [isEditing, setIsEditing] = useState(false);
   const [isCodeRequired, setIsCodeRequired] = useState(false);
 
+  // Homepage button visibility (controlled by admin toggle)
+  const [isButtonVisible, setIsButtonVisible] = useState(true);
+
   // Multi-guest check-in state
   const [guests, setGuests] = useState<GuestAttendee[]>([]);
   const [isCheckingInOther, setIsCheckingInOther] = useState(false);
@@ -77,6 +80,8 @@ export default function FloatingAttendance() {
         if (data && typeof data.active === "boolean") {
           setIsCodeRequired(data.active);
         }
+        // Hide the button if admin has toggled it off (default: visible)
+        setIsButtonVisible(data.showAttendanceButton !== false);
       })
       .catch(() => {});
   };
@@ -353,7 +358,8 @@ export default function FloatingAttendance() {
         }
       `}</style>
 
-      {/* Floating Container */}
+      {/* Hidden when admin has toggled off the button */}
+      {!isButtonVisible ? null : (
       <div
         style={{
           position: "fixed",
@@ -365,8 +371,7 @@ export default function FloatingAttendance() {
           alignItems: "flex-end",
           gap: "14px",
         }}
-      >
-        {/* Success Banner */}
+      >        {/* Success Banner */}
         {showSuccess && (
           <div
             className="tph-modal-anim"
@@ -1137,6 +1142,7 @@ export default function FloatingAttendance() {
           </div>
         )}
       </div>
+      )}
     </>
   );
 }

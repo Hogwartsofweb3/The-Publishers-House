@@ -152,7 +152,7 @@ const DEFAULT_PROGRAMS: ProgramRecord[] = [
           "Dr. Joshua Agunbiade",
           "Apostle Gideon Odoma",
           "Rev. Rasine Irem",
-          "Min. Sharon Agunbiade",
+          "Min. Sharon Amana",
         ],
         searchTerms: ["festival of light", "fol 2024", "immanuel"],
         curatedMessages: [],
@@ -452,20 +452,22 @@ export default function ProgramsCmsPage() {
             );
             if (!found) return def;
 
-            // Sanitize editions from Firestore: remove demo sermons and ensure FOL 2024 speakers are accurate
+            // Sanitize editions from Firestore: remove placeholder demo sermons only.
+            // Speakers are taken as-is from Firestore (user edits must be preserved).
             const editions = (
               found.editions && found.editions.length > 0 ? found.editions : def.editions
             ).map((ed: ProgramEdition) => {
               let sps = ed.speakers || [];
-              if (ed.key === "fol-2024" && sps.includes("Pastor Damilare Ayodele")) {
+              // Only correct if the list still contains known placeholder/demo names
+              if (ed.key === "fol-2024" && (sps.length === 0 || sps.includes("Pastor Damilare Ayodele"))) {
                 sps = [
                   "Dr. Joshua Agunbiade",
                   "Apostle Gideon Odoma",
                   "Rev. Rasine Irem",
-                  "Min. Sharon Agunbiade",
+                  "Min. Sharon Amana",
                 ];
               }
-              if (ed.key === "fol-2026" && sps.includes("Guest Apostolic Ministers")) {
+              if (ed.key === "fol-2026" && (sps.length === 0 || sps.includes("Guest Apostolic Ministers"))) {
                 sps = [
                   "Rev. Joshua Agunbiade",
                   "Rev. Rasine Irem",
@@ -1619,7 +1621,7 @@ export default function ProgramsCmsPage() {
                             .filter(Boolean);
                           updateEdition(edIdx, "speakers", sps);
                         }}
-                        placeholder="e.g. Dr. Joshua Agunbiade, Apostle Gideon Odoma, Rev. Rasine Irem, Min. Sharon Agunbiade"
+                        placeholder="e.g. Dr. Joshua Agunbiade, Apostle Gideon Odoma, Rev. Rasine Irem, Min. Sharon Amana"
                         style={{ ...S.input, borderColor: "#0140C1" }}
                       />
                       <span
@@ -2229,7 +2231,7 @@ export default function ProgramsCmsPage() {
                         "Rev. Joshua Agunbiade",
                         "Rev. Rasine Irem",
                         "Apostle Gideon Odoma",
-                        "Min. Sharon Agunbiade",
+                        "Min. Sharon Amana",
                         "Pastor Theophilus Makinde",
                       ].map((sp) => (
                         <button
