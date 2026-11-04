@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 
@@ -107,6 +107,12 @@ export default function MembersPage() {
     }
     setFiltered(result);
   }, [search, roleFilter, unitFilter, campusFilter, members]);
+
+  // Scoped members matching current campus filter for accurate header statistics
+  const scopedMembers = useMemo(() => {
+    if (campusFilter === "all") return members;
+    return members.filter((m) => (m.campus || "jos") === campusFilter);
+  }, [members, campusFilter]);
 
   // Handle Member Details Update (including Email!)
   const handleUpdate = async () => {
@@ -433,27 +439,27 @@ export default function MembersPage() {
       >
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Total Members</div>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>{members.length}</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>{scopedMembers.length}</div>
         </div>
 
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Portal Accounts</div>
           <div style={{ fontSize: "26px", fontWeight: 800, color: "#1F46C8", marginTop: "4px" }}>
-            {members.filter((m) => m.hasAccount || m.role === "admin" || m.role === "super_admin" || m.role === "portal_manager").length}
+            {scopedMembers.filter((m: PortalUser) => m.hasAccount || m.role === "admin" || m.role === "super_admin" || m.role === "portal_manager").length}
           </div>
         </div>
 
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Assigned to Units</div>
           <div style={{ fontSize: "26px", fontWeight: 800, color: "#0F6B38", marginTop: "4px" }}>
-            {members.filter((m) => m.assignedUnitId).length}
+            {scopedMembers.filter((m: PortalUser) => m.assignedUnitId).length}
           </div>
         </div>
 
         <div style={{ padding: "18px 24px", backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #D5DCF2" }}>
           <div style={{ fontSize: "11px", fontWeight: 600, color: "#747CA1", textTransform: "uppercase" }}>Active Leaders</div>
           <div style={{ fontSize: "26px", fontWeight: 800, color: "#7A5200", marginTop: "4px" }}>
-            {members.filter((m) => m.activityTier === "leader" || m.role === "super_admin" || m.role === "admin" || m.role === "portal_manager" || m.role === "unit_head").length}
+            {scopedMembers.filter((m: PortalUser) => m.activityTier === "leader" || m.role === "super_admin" || m.role === "admin" || m.role === "portal_manager" || m.role === "unit_head").length}
           </div>
         </div>
       </div>

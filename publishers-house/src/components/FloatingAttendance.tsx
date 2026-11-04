@@ -8,6 +8,7 @@ interface AttendanceUser {
   fullName: string;
   phone: string;
   uid?: string;
+  email?: string;
 }
 
 interface GuestAttendee {
@@ -92,6 +93,7 @@ export default function FloatingAttendance() {
           setSavedUser(parsed);
           setFullName(parsed.fullName);
           if (parsed.phone) setPhone(parsed.phone);
+          if (parsed.email) setEmail(parsed.email);
           foundProfile = true;
         }
       }
@@ -157,10 +159,12 @@ export default function FloatingAttendance() {
 
   const recognizedName = savedUser?.fullName || authUser?.displayName || "";
   const recognizedPhone = savedUser?.phone || authUser?.phoneNumber || "";
-  const isRecognized = Boolean(recognizedName) && !isEditing;
+  const recognizedEmail = savedUser?.email || authUser?.email || "";
+  const isRecognized = Boolean(recognizedName && recognizedEmail) && !isEditing;
 
   const targetName = isRecognized ? recognizedName.trim() : fullName.trim();
   const targetPhone = isRecognized ? (recognizedPhone.trim() || phone.trim()) : phone.trim();
+  const targetEmail = isRecognized ? (recognizedEmail.trim() || email.trim()) : email.trim();
 
   // Guest Management
   const addGuest = () => {
@@ -205,6 +209,10 @@ export default function FloatingAttendance() {
         setError("Please enter your full name.");
         return;
       }
+      if (!targetEmail || !targetEmail.includes("@")) {
+        setError("Please enter your email address. It is compulsory for first-time attendance verification.");
+        return;
+      }
       if (isFirstTimer && !targetPhone) {
         setError("Please enter your phone number so our pastoral team can welcome you.");
         return;
@@ -212,11 +220,12 @@ export default function FloatingAttendance() {
       attendeesToSubmit.push({
         fullName: targetName,
         phone: targetPhone,
+        email: targetEmail,
         mode,
         location: locString,
         streamChannel,
         serviceCode: enteredCode.trim(),
-        ...(isFirstTimer ? { isFirstTimer: true, email: email.trim(), hearAboutUs: hearAboutUs.trim() } : {}),
+        ...(isFirstTimer ? { isFirstTimer: true, hearAboutUs: hearAboutUs.trim() } : {}),
       } as any);
     }
 
@@ -277,7 +286,7 @@ export default function FloatingAttendance() {
 
       // Update local storage if signed self
       if (checkInSelf && !isCheckingInOther && targetName) {
-        const toSave = { fullName: targetName, phone: targetPhone };
+        const toSave = { fullName: targetName, phone: targetPhone, email: targetEmail };
         localStorage.setItem("tph_attendance_user", JSON.stringify(toSave));
         setSavedUser(toSave);
         setIsEditing(false);
@@ -538,8 +547,8 @@ export default function FloatingAttendance() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: "14px", fontWeight: 700, color: White }}>{recognizedName}</div>
-                      <div style={{ fontSize: "11px", color: recognizedPhone ? Slate400 : AmberWarm, marginTop: "2px" }}>
-                        {recognizedPhone ? `Phone: ${recognizedPhone}` : "Phone: Not provided"}
+                      <div style={{ fontSize: "11px", color: Slate400, marginTop: "2px" }}>
+                        {recognizedEmail ? recognizedEmail : (recognizedPhone ? `Phone: ${recognizedPhone}` : "")}
                       </div>
                     </div>
                     <button
@@ -593,6 +602,31 @@ export default function FloatingAttendance() {
                     />
                   </div>
                   <div>
+                    <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: !email ? "#FBBF24" : Slate400, marginBottom: "6px" }}>
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. yourname@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: "6px",
+                        border: !email ? "1px solid rgba(251,191,36,0.6)" : "1px solid rgba(255,255,255,0.15)",
+                        background: "rgba(255,255,255,0.05)",
+                        color: White,
+                        fontSize: "13px",
+                        fontFamily: "'Poppins', sans-serif",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: isFirstTimer ? "#FBBF24" : Slate400, marginBottom: "6px" }}>
                       Phone Number {isFirstTimer ? "*" : "(optional)"}
                     </label>
@@ -620,29 +654,6 @@ export default function FloatingAttendance() {
                   {/* Extra First-Timer Details */}
                   {isFirstTimer && (
                     <>
-                      <div>
-                        <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
-                          Email Address (Optional)
-                        </label>
-                        <input
-                          type="email"
-                          placeholder="e.g. yourname@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            background: "rgba(255,255,255,0.05)",
-                            color: White,
-                            fontSize: "13px",
-                            fontFamily: "'Poppins', sans-serif",
-                            outline: "none",
-                            boxSizing: "border-box",
-                          }}
-                        />
-                      </div>
                       <div>
                         <label style={{ display: "block", fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: Slate400, marginBottom: "6px" }}>
                           How Did You Hear About Us?

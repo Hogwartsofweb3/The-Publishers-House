@@ -62,6 +62,13 @@ export default function PastoralCarePage() {
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
   const [notesEdit, setNotesEdit] = useState("");
   const [msg, setMsg] = useState("");
+  const [activeTab, setActiveTab] = useState<"pipeline" | "inquiries">("pipeline");
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
+  const [inquiryNotes, setInquiryNotes] = useState("");
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState("all");
+  const [inquirySearch, setInquirySearch] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -91,9 +98,52 @@ export default function PastoralCarePage() {
     }
   };
 
+  const fetchInquiries = async () => {
+    setInquiriesLoading(true);
+    try {
+      const res = await fetch("/api/portal/inquiries");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.inquiries && Array.isArray(data.inquiries)) {
+          setInquiries(data.inquiries);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load inquiries:", err);
+    } finally {
+      setInquiriesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchVisitors();
+    fetchInquiries();
+    if (typeof window !== "undefined" && window.location.search.includes("tab=inquiries")) {
+      setActiveTab("inquiries");
+    }
   }, []);
+
+  const handleUpdateInquiryStatus = async (id: string, status: string, notes?: string) => {
+    try {
+      await fetch("/api/portal/inquiries", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, pastoralNotes: notes }),
+      });
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === id ? { ...inq, status, ...(notes !== undefined ? { pastoralNotes: notes } : {}) } : inq
+        )
+      );
+      setMsg(`Inquiry marked as ${status} ✓`);
+      setTimeout(() => setMsg(""), 3000);
+      if (selectedInquiry?.id === id) {
+        setSelectedInquiry(null);
+      }
+    } catch (err) {
+      alert("Failed to update inquiry status");
+    }
+  };
 
   const handleAdvance = async (visitor: Visitor) => {
     const nextStatus: VisitorStatus =
@@ -260,7 +310,8 @@ export default function PastoralCarePage() {
         </div>
       </div>
 
-      {/* 3-Column Kanban Board */}
+      {/* 3-Column Kanban Board (Rendered only on Visitor Pipeline tab) */}
+      {activeTab === "pipeline" ? (
       <div
         style={{
           display: "grid",
@@ -488,6 +539,195 @@ export default function PastoralCarePage() {
           );
         })}
       </div>
+      ) : (
+        /* Member Inquiries & Unit Applications View */
+        <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D5DCF2", borderRadius: "14px", padding: "24px", boxShadow: "0 2px 10px rgba(14,21,86,0.03)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                type="text"
+                placeholder="Search member, unit, or phone..."
+                value={inquirySearch}
+                onChange={(e) => setInquirySearch(e.target.value)}
+                style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", minWidth: "260px" }}
+              />
+              <select
+                value={inquiryStatusFilter}
+                onChange={(e) => setInquiryStatusFilter(e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E" }}
+              >
+                <option value="all">All Inquiries</option>
+                <option value="pending">⏳ Pending Review</option>
+                <option value="contacted">📞 Contacted</option>
+                <option value="resolved">✓ Resolved</option>
+              </select>
+            </div>
+            <button
+              onClick={fetchInquiries}
+              style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#F4F6FB", color: "#141C6E", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}
+            >
+              ↻ Refresh
+            </button>
+          </div>
+
+          {inquiriesLoading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748B" }}>Loading member inquiries...</div>
+          ) : inquiries.length === 0 ? (
+            <div style={{ padding: "48px 24px", textAlign: "center", color: "#64748B" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>📬</div>
+              <div style={{ fontSize: "15px", fontWeight: 700, color: "#141C6E" }}>No Pastoral Inquiries Yet</div>
+              <div style={{ fontSize: "13px", marginTop: "4px" }}>When members inquire with the pastorate or apply to join service units, they appear here.</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {inquiries
+                .filter((inq) => {
+                  if (inquiryStatusFilter !== "all" && inq.status !== inquiryStatusFilter) return false;
+                  if (inquirySearch.trim()) {
+                    const q = inquirySearch.toLowerCase();
+                    return (
+                      inq.memberName?.toLowerCase().includes(q) ||
+                      inq.memberEmail?.toLowerCase().includes(q) ||
+                      inq.memberPhone?.includes(q) ||
+                      inq.targetUnit?.toLowerCase().includes(q) ||
+                      inq.subject?.toLowerCase().includes(q)
+                    );
+                  }
+                  return true;
+                })
+                .map((inq) => {
+                  const isPending = inq.status === "pending";
+                  const isContacted = inq.status === "contacted";
+                  const dateStr = inq.createdAt ? new Date(inq.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+
+                  return (
+                    <div
+                      key={inq.id}
+                      style={{
+                        border: isPending ? "2px solid #F59E0B" : "1px solid #D5DCF2",
+                        borderRadius: "10px",
+                        padding: "20px",
+                        backgroundColor: isPending ? "#FFFDF7" : "#FFFFFF",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
+                        <div>
+                          <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", padding: "3px 8px", borderRadius: "4px", backgroundColor: "#EEF2FB", color: "#1F46C8", marginRight: "8px" }}>
+                            {inq.category}
+                          </span>
+                          {inq.targetUnit && (
+                            <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", padding: "3px 8px", borderRadius: "4px", backgroundColor: "#FEF3C7", color: "#92400E", marginRight: "8px" }}>
+                              Unit: {inq.targetUnit}
+                            </span>
+                          )}
+                          <strong style={{ fontSize: "15px", color: "#0E1556" }}>{inq.subject}</strong>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              padding: "4px 10px",
+                              borderRadius: "12px",
+                              backgroundColor: isPending ? "#FEF3C7" : isContacted ? "#EFF6FF" : "#ECFDF5",
+                              color: isPending ? "#92400E" : isContacted ? "#1E40AF" : "#065F46",
+                            }}
+                          >
+                            {isPending ? "⏳ Pending Review" : isContacted ? "📞 In Follow-Up" : "✓ Resolved"}
+                          </span>
+                          <span style={{ fontSize: "11px", color: "#94A3B8" }}>{dateStr}</span>
+                        </div>
+                      </div>
+
+                      {/* Member Info Strip */}
+                      <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#4A5490", flexWrap: "wrap", backgroundColor: "#F8FAFD", padding: "8px 12px", borderRadius: "6px" }}>
+                        <div><strong>Member:</strong> {inq.memberName}</div>
+                        {inq.memberEmail && <div><strong>Email:</strong> {inq.memberEmail}</div>}
+                        {inq.memberPhone && <div><strong>Phone / WhatsApp:</strong> {inq.memberPhone}</div>}
+                        <div><strong>Preferred Channel:</strong> {inq.preferredContact || "WhatsApp"}</div>
+                        <div><strong>Campus:</strong> {inq.campus || "jos"}</div>
+                      </div>
+
+                      <p style={{ fontSize: "13.5px", color: "#334155", margin: "4px 0", lineHeight: 1.6 }}>
+                        {inq.message}
+                      </p>
+
+                      {inq.pastoralNotes && (
+                        <div style={{ backgroundColor: "#F1F5F9", padding: "10px 14px", borderRadius: "6px", fontSize: "12.5px", color: "#1E293B", borderLeft: "3px solid #1F46C8" }}>
+                          <strong>Pastoral Note:</strong> {inq.pastoralNotes}
+                        </div>
+                      )}
+
+                      {/* Action Bar */}
+                      <div style={{ display: "flex", gap: "10px", marginTop: "6px", flexWrap: "wrap" }}>
+                        {isPending && (
+                          <button
+                            onClick={() => handleUpdateInquiryStatus(inq.id, "contacted")}
+                            style={{ padding: "6px 14px", borderRadius: "6px", border: "1px solid #BFDBFE", backgroundColor: "#EFF6FF", color: "#1D4ED8", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            📞 Mark as Contacted
+                          </button>
+                        )}
+                        {inq.status !== "resolved" && (
+                          <button
+                            onClick={() => handleUpdateInquiryStatus(inq.id, "resolved")}
+                            style={{ padding: "6px 14px", borderRadius: "6px", border: "1px solid #BBF7D0", backgroundColor: "#F0FDF4", color: "#15803D", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                          >
+                            ✓ Mark as Resolved
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setSelectedInquiry(inq);
+                            setInquiryNotes(inq.pastoralNotes || "");
+                          }}
+                          style={{ padding: "6px 14px", borderRadius: "6px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", color: "#141C6E", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                        >
+                          ✎ Add / Edit Note
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pastoral Note Edit Modal */}
+      {selectedInquiry && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(14,21,86,0.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+          <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", padding: "28px", maxWidth: "520px", width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 800, color: "#141C6E" }}>Pastoral Note for {selectedInquiry.memberName}</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "12px", color: "#64748B" }}>Record your conversation notes, spiritual counseling summary, or next action steps.</p>
+            <textarea
+              rows={4}
+              value={inquiryNotes}
+              onChange={(e) => setInquiryNotes(e.target.value)}
+              placeholder="e.g. Spoke with brother Michael on WhatsApp. He has 3 years of audio mixing experience. Assigned to Media Head for orientation..."
+              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
+              <button
+                onClick={() => setSelectedInquiry(null)}
+                style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#FFFFFF", color: "#64748B", fontSize: "13px", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, selectedInquiry.status, inquiryNotes)}
+                style={{ padding: "8px 18px", borderRadius: "8px", border: "none", backgroundColor: "#1F46C8", color: "#FFFFFF", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notes Modal */}
       {selectedVisitor && (

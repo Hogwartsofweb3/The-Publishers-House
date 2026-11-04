@@ -475,7 +475,19 @@ export async function GET(req: NextRequest) {
       members.push(manager007);
     }
 
-    return NextResponse.json({ ok: true, members });
+    // Deduplicate members by email address to prevent duplicate cards
+    const seenEmails = new Set<string>();
+    const uniqueMembers: PortalUser[] = [];
+    for (const m of members) {
+      const emailKey = (m.email || "").trim().toLowerCase();
+      if (emailKey) {
+        if (seenEmails.has(emailKey)) continue;
+        seenEmails.add(emailKey);
+      }
+      uniqueMembers.push(m);
+    }
+
+    return NextResponse.json({ ok: true, members: uniqueMembers });
   } catch (err: any) {
     console.error("Error fetching members:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

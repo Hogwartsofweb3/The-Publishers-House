@@ -1211,7 +1211,7 @@ export default function FashionableMemberDashboard() {
                 </p>
               </div>
               <Link
-                href="/portal/member/prayers"
+                href="/portal/member/inquire"
                 style={{
                   display: "inline-block",
                   textAlign: "center",

@@ -103,6 +103,7 @@ export async function POST(req: Request) {
       const record: Record<string, any> = {
         fullName: att.fullName,
         phone: att.phone || "Not Provided",
+        email: att.email || "",
         mode: att.mode,
         location: att.mode === "in_person" ? att.location : "Online Stream",
         streamChannel: att.mode === "online" ? att.streamChannel : "none",

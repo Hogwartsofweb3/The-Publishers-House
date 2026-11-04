@@ -105,6 +105,31 @@ export default function FinancePage() {
     }, 0);
   }, [transactions]);
 
+  const monthlyAverage = useMemo(() => {
+    const monthKeys = new Set<string>();
+    transactions.forEach((tx) => {
+      if (tx.status !== "failed" && tx.timestamp) {
+        const d = new Date(tx.timestamp);
+        if (!isNaN(d.getTime())) {
+          monthKeys.add(`${d.getFullYear()}-${d.getMonth()}`);
+        }
+      }
+    });
+    const monthsCount = Math.max(monthKeys.size, 1);
+    return totalSum > 0 ? Math.round(totalSum / monthsCount) : 0;
+  }, [transactions, totalSum]);
+
+  const activeContributors = useMemo(() => {
+    const contributors = new Set<string>();
+    transactions.forEach((tx) => {
+      if (tx.status !== "failed") {
+        const id = (tx.email || tx.name || "").trim().toLowerCase();
+        if (id) contributors.add(id);
+      }
+    });
+    return contributors.size;
+  }, [transactions]);
+
   const monthlyTrend = useMemo(() => {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const currentYear = new Date().getFullYear();
@@ -122,6 +147,18 @@ export default function FinancePage() {
       barPct: t.amount > 0 ? Math.round((t.amount / max) * 90) + 10 : 4,
     }));
   }, [transactions]);
+
+  const peakMonth = useMemo<{ month: string; amount: number } | null>(() => {
+    let max = 0;
+    let peak: { month: string; amount: number } | null = null;
+    monthlyTrend.forEach((m) => {
+      if (m.amount > max) {
+        max = m.amount;
+        peak = { month: m.month, amount: m.amount };
+      }
+    });
+    return peak;
+  }, [monthlyTrend]);
 
   const categoryBreakdown = useMemo(() => {
     const total = transactions.reduce((acc, t) => acc + (t.status !== "failed" ? Number(t.amountNGN) || 0 : 0), 0);
@@ -321,9 +358,11 @@ export default function FinancePage() {
         >
           <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Monthly Average</span>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "32px", fontWeight: 800, color: "#141C6E", lineHeight: 1 }}>
-            ₦1,025,500
+            ₦{monthlyAverage.toLocaleString()}
           </div>
-          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>Over 10 months tracking</span>
+          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>
+            {totalSum > 0 ? "Calculated from recorded transactions" : "No transactions recorded"}
+          </span>
         </div>
 
         <div
@@ -339,9 +378,11 @@ export default function FinancePage() {
         >
           <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Active Contributors</span>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "32px", fontWeight: 800, color: "#141C6E", lineHeight: 1 }}>
-            164
+            {activeContributors}
           </div>
-          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#1F46C8", fontWeight: 600 }}>48% of active church members</span>
+          <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#1F46C8", fontWeight: 600 }}>
+            {activeContributors > 0 ? `${activeContributors} verified contributor${activeContributors > 1 ? "s" : ""}` : "0 contributors recorded"}
+          </span>
         </div>
       </div>
 
@@ -396,19 +437,21 @@ export default function FinancePage() {
                     Giving progression across months
                   </span>
                 </div>
-                <span
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "6px",
-                    backgroundColor: "#E8EDFB",
-                    color: "#1F46C8",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Peak: Oct ₦1.155M
-                </span>
+                {peakMonth ? (
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      backgroundColor: "#E8EDFB",
+                      color: "#1F46C8",
+                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Peak: {peakMonth.month} ₦{peakMonth.amount >= 1000000 ? `${(peakMonth.amount / 1000000).toFixed(2)}M` : peakMonth.amount.toLocaleString()}
+                  </span>
+                ) : null}
               </div>
 
               {/* Bar visualization */}

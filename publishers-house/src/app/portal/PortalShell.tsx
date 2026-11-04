@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut, updatePassword } from "firebase/auth";
@@ -45,6 +45,26 @@ function PortalHeaderAndContent({
   // Mobile Drawer & Sidebar Collapse State
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Pastoral Inquiries Notification State
+  const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
+
+  useEffect(() => {
+    if (
+      effectiveUser.role === "super_admin" ||
+      effectiveUser.role === "admin" ||
+      effectiveUser.role === "portal_manager"
+    ) {
+      fetch("/api/portal/inquiries?countOnly=true")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok && typeof data.count === "number") {
+            setPendingInquiriesCount(data.count);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [effectiveUser.role, pathname]);
 
   const handleSignOut = async () => {
     try {
@@ -364,6 +384,56 @@ function PortalHeaderAndContent({
                 }}
               />
             </div>
+
+            {/* Pastoral Inquiries Notification Bell for Pastors & Leadership */}
+            {(effectiveUser.role === "super_admin" || effectiveUser.role === "admin" || effectiveUser.role === "portal_manager") && (
+              <Link
+                href="/portal/pastoral?tab=inquiries"
+                title={pendingInquiriesCount > 0 ? `${pendingInquiriesCount} Pending Member Inquiry${pendingInquiriesCount > 1 ? "ies" : ""}` : "Pastoral Inquiries"}
+                style={{
+                  position: "relative",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "8px",
+                  backgroundColor: pendingInquiriesCount > 0 ? "#FEF3C7" : "#F4F6FB",
+                  border: pendingInquiriesCount > 0 ? "1px solid #F59E0B" : "1px solid #D5DCF2",
+                  color: pendingInquiriesCount > 0 ? "#B45309" : "#141C6E",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {pendingInquiriesCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-4px",
+                      right: "-4px",
+                      backgroundColor: "#DC2626",
+                      color: "#FFFFFF",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      padding: "1px 5px",
+                      borderRadius: "10px",
+                      lineHeight: "14px",
+                      minWidth: "16px",
+                      textAlign: "center",
+                      boxShadow: "0 2px 4px rgba(220,38,38,0.3)",
+                    }}
+                  >
+                    {pendingInquiriesCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Settings Link */}
             <Link

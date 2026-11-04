@@ -17,6 +17,7 @@ interface AttendanceRecord {
   id: string;
   fullName: string;
   phone: string;
+  email?: string;
   mode?: "in_person" | "online";
   location?: string;
   streamChannel?: string;
@@ -994,6 +995,11 @@ export default function AttendanceAdminPage() {
                       >
                         {r.fullName}
                       </div>
+                      {r.email && (
+                        <div style={{ fontSize: "11px", color: "#4A5490", marginTop: "2px" }}>
+                          {r.email}
+                        </div>
+                      )}
                     </td>
 
                     <td
@@ -1063,10 +1069,11 @@ export default function AttendanceAdminPage() {
                       {timeStr}
                     </td>
 
-                    {/* Action: Add to Members */}
+                    {/* Action: Create Account */}
                     <td style={{ padding: "14px 24px", textAlign: "right" }}>
                       <button
-                        onClick={() => setEnrollAttendee({ fullName: r.fullName, phone: r.phone || "", email: "" })}
+                        onClick={() => setEnrollAttendee({ fullName: r.fullName, phone: r.phone || "", email: r.email || "" })}
+                        title="Create Account & Invite Member"
                         style={{
                           backgroundColor: "#EEF2FB",
                           color: "#1F46C8",
@@ -1078,9 +1085,12 @@ export default function AttendanceAdminPage() {
                           fontWeight: 700,
                           cursor: "pointer",
                           whiteSpace: "nowrap",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
                         }}
                       >
-                        + Add Member
+                        <span>⚡ Create Account</span>
                       </button>
                     </td>
                   </tr>
@@ -1126,7 +1136,7 @@ export default function AttendanceAdminPage() {
                 margin: "0 0 8px",
               }}
             >
-              Move Attendee to Church Membership
+              Create Account & Invite Member
             </h2>
             <p
               style={{
@@ -1136,7 +1146,7 @@ export default function AttendanceAdminPage() {
                 margin: "0 0 20px",
               }}
             >
-              Enroll <strong>{enrollAttendee.fullName}</strong> into the church member directory and optionally generate their portal access credentials.
+              Create a portal account for <strong>{enrollAttendee.fullName}</strong>. Their login credentials will be generated and an invitation email will be sent immediately.
             </p>
 
             <form
