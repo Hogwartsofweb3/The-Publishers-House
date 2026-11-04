@@ -33,10 +33,13 @@
   --color-border-light: #E8ECF7;
 
   /* Typography — next/font injects these variables via layout.tsx */
-  --font-serif: var(--font-playfair, 'Playfair Display', Georgia, serif);
-  
-  --font-sans:     var(--font-poppins, 'Poppins'), system-ui, -apple-system, sans-serif;
-  --font-montserrat-family: var(--font-montserrat, 'Montserrat'), sans-serif;
+    --font-poppins: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-montserrat: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --font-playfair: 'Playfair Display', Georgia, serif;
+
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-poppins);
+  --font-montserrat-family: var(--font-montserrat);
 
   /* Type Scale */
   --text-xs:   0.75rem;    /* 12px */

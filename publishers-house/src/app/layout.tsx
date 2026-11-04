@@ -1,28 +1,7 @@
 import type { Metadata } from "next";
-import { Poppins, Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-montserrat",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-playfair",
-  display: "swap",
-});
+import Providers from "@/components/Providers";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.thepublishershouse.org"),
@@ -74,16 +53,13 @@ export const metadata: Metadata = {
   },
 };
 
-import Providers from "@/components/Providers";
-import { Analytics } from "@vercel/analytics/react";
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${montserrat.variable} ${playfair.variable}`}>
+    <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="48x48" href="/icon-48x48.png" />
@@ -93,6 +69,13 @@ export default function RootLayout({
         {/* Preload critical LCP Hero image for instant discovery by browser HTML parser */}
         <link rel="preload" as="image" href="/images/hero-v2.webp" type="image/webp" fetchPriority="high" />
         <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+        {/* Google Fonts direct load - eliminates Turbopack build-time font fetch errors */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..800;1,400..800&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Poppins:ital,wght@0,400..800;1,400..800&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <Providers>
