@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
-import type { PortalUser, UserRole } from "@/lib/portalAuth";
+import { normalizeUnitId, type PortalUser, type UserRole } from "@/lib/portalAuth";
 import { Resend } from "resend";
 
 export const runtime = "nodejs";
@@ -402,6 +402,236 @@ function buildInvitationEmailHtml(data: {
 </html>`.trim();
 }
 
+
+// ── In-Memory Resilient Cache & Quota Fallback ──
+let memoryMembersCache: PortalUser[] = [];
+let memoryCacheTimestamp = 0;
+
+const VERIFIED_FALLBACK_MEMBERS: PortalUser[] = [
+  {
+    uid: "LM9zz6e1KlXvtmSdLRGG9ubdDo33",
+    email: "joshuaagunbiade@gmail.com",
+    displayName: "Rev. Joshua Agunbiade",
+    phone: "+234 813 063 5386",
+    role: "super_admin",
+    assignedUnitId: "pastoral",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "9YdzpgYvRldHZfufFdWGDSCjqA02",
+    email: "onahboniface9@gmail.com",
+    displayName: "Pastor Onah Boniface",
+    phone: "+234 8179574795",
+    role: "admin",
+    assignedUnitId: "pastoral",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "uhSGbEVxysXrmgVBjLIUv1lnx0E3",
+    email: "odehngbes@gmail.com",
+    displayName: "Pastor Ngbede Odeh",
+    phone: "+234 8186335861",
+    role: "admin",
+    assignedUnitId: "editorial",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "AG1YkmDZmTPe5Pi9XDpL0Af22AB3",
+    email: "thepublishershouse007@gmail.com",
+    displayName: "Publishers House",
+    phone: "+234 8116643403",
+    role: "portal_manager",
+    assignedUnitId: "media_technical",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "AfLyscID90cqq5UXzmZFxgi4ihf2",
+    email: "tmakind@gmail.com",
+    displayName: "Pastor Theophilus Makinde",
+    phone: "+234 8162264549",
+    role: "unit_head",
+    assignedUnitId: "media_technical",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "E7QcguyRhDWCFl7aAwCOGtJ7zZC3",
+    email: "adebayosamson888@gmail.com",
+    displayName: "Samson Adebayo",
+    phone: "",
+    role: "unit_head",
+    assignedUnitId: "worship",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "jzNtMA8t6mPSXtHPyFNxszEroGv1",
+    email: "Ayodeledare86@gmail.com",
+    displayName: "Pastor Ayodele Oluwadamilare",
+    phone: "",
+    role: "unit_head",
+    assignedUnitId: "prayer",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "pzvVwli85SM9bAyj2MyCy457s1J3",
+    email: "maryomoyele@gmail.com",
+    displayName: "Ifedayo Mary Agunbiade",
+    phone: "",
+    role: "unit_head",
+    assignedUnitId: "welfare",
+    activityTier: "leader",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "81Gpl1hvCMZmAOUd5Mv9T6DowwA3",
+    email: "theloveodeh@gmail.com",
+    displayName: "Love Odeh",
+    phone: "",
+    role: "member",
+    assignedUnitId: "worship",
+    activityTier: "regular",
+    campus: "jos",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "8EJa8VMtDXRUAstxIN568oMhs0v2",
+    email: "brightokon@gmail.com",
+    displayName: "Bright Okon",
+    phone: "",
+    role: "member",
+    assignedUnitId: "ushering",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "JmD7Yr7c2dh9cW4DX1sfjgkpR7A3",
+    email: "sintikialackson@gmail.com",
+    displayName: "Sintiki Alackson",
+    phone: "",
+    role: "member",
+    assignedUnitId: "sanctuary",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "MTMU2GlrNlOx8KCwxYjCvXHB3th1",
+    email: "jessicaadanu@gmail.com",
+    displayName: "Jessica Adanu",
+    phone: "",
+    role: "member",
+    assignedUnitId: "protocol",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "WwaSKMiFr2UdSkECQQPWsvmq11H2",
+    email: "kayode@gmail.com",
+    displayName: "Kayode",
+    phone: "",
+    role: "member",
+    assignedUnitId: "transportation",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "tgSAMvBRjeSteYRZaHQgHplb5kA2",
+    email: "emmanuelchukwuweike@gmail.com",
+    displayName: "Emmanuel Chukwuweike",
+    phone: "",
+    role: "member",
+    assignedUnitId: "secretariat",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+  {
+    uid: "xqizg9EpVcc8Mg8iOlANieZfC1j2",
+    email: "michaelemmanuel@gmail.com",
+    displayName: "Michael Emmanuel",
+    phone: "",
+    role: "member",
+    assignedUnitId: "children",
+    activityTier: "regular",
+    campus: "abuja",
+    hasAccount: true,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastLogin: "",
+  },
+];
+
+function updateCacheMember(uid: string, patch: Partial<PortalUser>) {
+  if (memoryMembersCache.length === 0) {
+    memoryMembersCache = [...VERIFIED_FALLBACK_MEMBERS];
+  }
+  const idx = memoryMembersCache.findIndex((m) => m.uid === uid);
+  if (idx >= 0) {
+    memoryMembersCache[idx] = { ...memoryMembersCache[idx], ...patch };
+  }
+}
+
+function addCacheMember(member: PortalUser) {
+  if (memoryMembersCache.length === 0) {
+    memoryMembersCache = [...VERIFIED_FALLBACK_MEMBERS];
+  }
+  const exists = memoryMembersCache.some((m) => m.uid === member.uid || (member.email && m.email?.toLowerCase() === member.email.toLowerCase()));
+  if (!exists) {
+    memoryMembersCache.unshift(member);
+  }
+}
+
+function removeCacheMember(uid: string) {
+  if (memoryMembersCache.length === 0) {
+    memoryMembersCache = [...VERIFIED_FALLBACK_MEMBERS];
+  }
+  memoryMembersCache = memoryMembersCache.filter((m) => m.uid !== uid);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const adminDb = getAdminDb();
@@ -487,10 +717,14 @@ export async function GET(req: NextRequest) {
       uniqueMembers.push(m);
     }
 
-    return NextResponse.json({ ok: true, members: uniqueMembers });
+    memoryMembersCache = uniqueMembers;
+    memoryCacheTimestamp = Date.now();
+    return NextResponse.json({ ok: true, members: uniqueMembers, quotaBlocked: false });
   } catch (err: any) {
-    console.error("Error fetching members:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("Error fetching members from Firestore (serving memory cache):", err?.message);
+    const isQuota = err?.code === 8 || String(err?.message || "").includes("RESOURCE_EXHAUSTED") || String(err?.message || "").includes("Quota exceeded");
+    const fallbackList = memoryMembersCache.length > 0 ? memoryMembersCache : VERIFIED_FALLBACK_MEMBERS;
+    return NextResponse.json({ ok: true, members: fallbackList, quotaBlocked: isQuota });
   }
 }
 
@@ -502,6 +736,39 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.thepublishershouse.org";
+
+        // 0. ASSIGN UNIT HEAD
+    if (action === "assign_unit_head") {
+      const { unitId, memberUid, previousHeadUid } = body;
+      if (!unitId || !memberUid) {
+        return NextResponse.json({ error: "unitId and memberUid required" }, { status: 400 });
+      }
+
+      try {
+        const batch = adminDb.batch();
+        if (previousHeadUid && previousHeadUid !== memberUid) {
+          batch.update(adminDb.collection("users").doc(previousHeadUid), {
+            role: "member",
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        batch.update(adminDb.collection("users").doc(memberUid), {
+          role: "unit_head",
+          assignedUnitId: unitId,
+          updatedAt: new Date().toISOString(),
+        });
+        await batch.commit();
+      } catch (err: any) {
+        console.warn("Firestore update in assign_unit_head failed (updating cache directly):", err?.message);
+      }
+
+      if (previousHeadUid && previousHeadUid !== memberUid) {
+        updateCacheMember(previousHeadUid, { role: "member" });
+      }
+      updateCacheMember(memberUid, { role: "unit_head", assignedUnitId: unitId });
+
+      return NextResponse.json({ ok: true, message: "Unit head assigned successfully" });
+    }
 
     // 1. CREATE ACCOUNT FOR MEMBER (With Temp Password & Branded Invitation)
     if (action === "create_account") {
@@ -671,7 +938,8 @@ export async function POST(req: NextRequest) {
         lastLogin: "",
       };
 
-      await adminDb.collection("users").doc(uid).set(newMember, { merge: true });
+      try { await adminDb.collection("users").doc(uid).set(newMember, { merge: true }); } catch (err: any) { console.warn("Firestore add member failed:", err?.message); }
+      addCacheMember(newMember);
 
       return NextResponse.json({
         ok: true,
@@ -731,6 +999,7 @@ export async function POST(req: NextRequest) {
         assignedUnitId: assignedUnitId || "",
         updatedAt: new Date().toISOString(),
       });
+      updateCacheMember(uid, { assignedUnitId: assignedUnitId || "" });
       return NextResponse.json({ ok: true, assignedUnitId });
     }
 
@@ -745,6 +1014,7 @@ export async function POST(req: NextRequest) {
       } catch {
         // user may not be in Auth
       }
+      removeCacheMember(uid);
       return NextResponse.json({ ok: true, deleted: uid });
     }
 

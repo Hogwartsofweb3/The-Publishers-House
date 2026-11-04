@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
-import { getPortalUser, PortalUser, UNITS } from "@/lib/portalAuth";
+import { getPortalUser, PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
@@ -27,7 +27,7 @@ export default function UnitCommandCenter() {
     setDate(new Date().toISOString().split("T")[0]);
   }, []);
 
-  const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId);
+  const activeUnit = UNITS.find((u) => u.id === normalizeUnitId(user?.assignedUnitId));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -52,12 +52,33 @@ export default function UnitCommandCenter() {
     const fetchMembers = async () => {
       setLoadingMembers(true);
       try {
-        const q = query(
-          collection(db, "users"),
-          where("assignedUnitId", "==", user.assignedUnitId)
-        );
-        const snap = await getDocs(q);
-        setMembers(snap.docs.map((doc) => doc.data() as PortalUser));
+        const normUnitId = normalizeUnitId(user.assignedUnitId);
+        let mList: PortalUser[] = [];
+        try {
+          const res = await fetch("/api/portal/members");
+          if (res.ok) {
+            const data = await res.json();
+            const allMembers: PortalUser[] = data.members || [];
+            mList = allMembers.filter((u) => normalizeUnitId(u.assignedUnitId) === normUnitId);
+          }
+        } catch {
+          // Fallback to client query
+        }
+
+        if (mList.length === 0) {
+          try {
+            const q = query(
+              collection(db, "users"),
+              where("assignedUnitId", "==", user.assignedUnitId)
+            );
+            const snap = await getDocs(q);
+            mList = snap.docs.map((doc) => doc.data() as PortalUser);
+          } catch {
+            // Quota reached
+          }
+        }
+
+        setMembers(mList);
       } catch (err) {
         console.error("Error fetching unit members:", err);
       } finally {

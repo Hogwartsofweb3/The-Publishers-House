@@ -33,11 +33,18 @@ export const UNITS = [
   { id: "ushering", name: "Ushering" },
   { id: "protocol", name: "Protocol" },
   { id: "children", name: "Children" },
-  { id: "registration", name: "Registration" },
+  { id: "secretariat", name: "Secretariat" },
   { id: "transportation", name: "Transportation" },
   { id: "prayer", name: "Prayer" },
-  { id: "followup_hospitality", name: "Follow & Hospitality" },
+  { id: "followup_hospitality", name: "Follow Up & Hospitality" },
 ];
+
+export function normalizeUnitId(unitId?: string): string {
+  if (!unitId) return "";
+  if (unitId === "registration") return "secretariat";
+  if (unitId === "media") return "media_technical";
+  return unitId;
+}
 
 export async function getPortalUser(uid: string): Promise<PortalUser | null> {
   try {

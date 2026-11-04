@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS } from "@/lib/portalAuth";
+import { getPortalUser, PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 interface RosterAssignment {
@@ -57,21 +57,44 @@ export default function UnitRosterPage() {
 
   const fetchUnitData = async (unitId: string) => {
     try {
-      // Fetch unit members
-      const mq = query(collection(db, "users"), where("assignedUnitId", "==", unitId));
-      const msnap = await getDocs(mq);
-      const mList = msnap.docs.map((d) => d.data() as PortalUser);
+      const normUnitId = normalizeUnitId(unitId);
+      let mList: PortalUser[] = [];
+      try {
+        const res = await fetch("/api/portal/members");
+        if (res.ok) {
+          const data = await res.json();
+          const allMembers: PortalUser[] = data.members || [];
+          mList = allMembers.filter((u) => normalizeUnitId(u.assignedUnitId) === normUnitId);
+        }
+      } catch {
+        // Fallback to client SDK
+      }
+
+      if (mList.length === 0) {
+        try {
+          const mq = query(collection(db, "users"), where("assignedUnitId", "==", unitId));
+          const msnap = await getDocs(mq);
+          mList = msnap.docs.map((d) => d.data() as PortalUser);
+        } catch {
+          // Firestore quota reached
+        }
+      }
+
       setMembers(mList);
       if (mList.length > 0 && !selectedMember) {
         setSelectedMember(mList[0].displayName || mList[0].email);
       }
 
       // Fetch unit roster
-      const rq = query(collection(db, "unit_rosters"), where("unitId", "==", unitId));
-      const rsnap = await getDocs(rq);
-      const rList = rsnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
-      rList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
-      setRoster(rList);
+      try {
+        const rq = query(collection(db, "unit_rosters"), where("unitId", "==", unitId));
+        const rsnap = await getDocs(rq);
+        const rList = rsnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
+        rList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
+        setRoster(rList);
+      } catch (err) {
+        console.warn("Could not load unit roster:", err);
+      }
     } catch (e) {
       console.error(e);
     }

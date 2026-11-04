@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor } from "@/lib/portalAuth";
+import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor, normalizeUnitId } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
@@ -100,7 +100,7 @@ export default function MembersPage() {
       result = result.filter((m) => m.role === roleFilter);
     }
     if (unitFilter !== "all") {
-      result = result.filter((m) => m.assignedUnitId === unitFilter);
+      result = result.filter((m) => normalizeUnitId(m.assignedUnitId) === unitFilter);
     }
     if (campusFilter !== "all") {
       result = result.filter((m) => (m.campus || "jos") === campusFilter);
@@ -606,7 +606,7 @@ export default function MembersPage() {
                 </tr>
               )}
               {filtered.map((m) => {
-                const unit = UNITS.find((u) => u.id === m.assignedUnitId);
+                const unit = UNITS.find((u) => u.id === normalizeUnitId(m.assignedUnitId));
                 const hasPortalAccess = m.hasAccount || m.role === "admin" || m.role === "super_admin" || m.role === "portal_manager";
                 const isMenuOpen = activeMenuUid === m.uid;
 
@@ -1633,7 +1633,7 @@ export default function MembersPage() {
                 🚫 Remove from all units (Unassigned)
               </button>
               {UNITS.map((u) => {
-                const selected = unitAssignUser.assignedUnitId === u.id;
+                const selected = normalizeUnitId(unitAssignUser.assignedUnitId) === u.id;
                 return (
                   <button
                     key={u.id}

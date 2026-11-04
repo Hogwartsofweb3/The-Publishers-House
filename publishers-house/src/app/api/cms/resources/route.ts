@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { TRACK_DETAILS } from "@/lib/cmsDefaults";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// In-memory cache for resources & tracks to withstand Firestore quota exhaustion
+let cachedTracks: Record<string, any> | null = null;
+let cachedHub: any = null;
 
 export async function GET() {
   try {
@@ -57,12 +62,31 @@ export async function GET() {
           downloadables: [],
         };
 
+    // Update memory cache
+    cachedTracks = tracks;
+    cachedHub = hub;
+
     return NextResponse.json({ tracks, hub, error: null, quotaBlocked: false });
   } catch (err: any) {
+    console.error("Error reading resources from Firestore (serving cached tracks):", err?.message);
     const isQuota = err?.code === 8 || String(err?.message || "").includes("RESOURCE_EXHAUSTED") || String(err?.message || "").includes("Quota exceeded");
+    
+    // Use in-memory cache if available, or fall back to TRACK_DETAILS default courses
+    const fallbackTracks = (cachedTracks && Object.keys(cachedTracks).length > 0)
+      ? cachedTracks
+      : TRACK_DETAILS;
+    const fallbackHub = cachedHub || {
+      heroEyebrow: "Equipping the Saints · Psalm 68:11",
+      heroHeadline: "Resources & Study Guides",
+      heroDescription:
+        "Systematic teaching series, prayer class manuals, devotionals, and foundational apostolic courses designed to establish believers in Christ.",
+      heroImage: "/images/teaching-and-resources.jpg",
+      downloadables: [],
+    };
+
     return NextResponse.json({
-      tracks: {},
-      hub: {},
+      tracks: fallbackTracks,
+      hub: fallbackHub,
       error: err?.message || "Failed to load from database",
       quotaBlocked: isQuota,
     });
@@ -75,6 +99,14 @@ export async function POST(req: NextRequest) {
     const tracks = body.tracks || {};
     const hub = body.hub || null;
     const updatedAt = new Date().toISOString();
+
+    // Optimistically update memory cache
+    if (body.tracks) {
+      cachedTracks = { ...(cachedTracks || {}), ...tracks };
+    }
+    if (hub) {
+      cachedHub = { ...(cachedHub || {}), ...hub };
+    }
 
     const batch = getAdminDb().batch();
 

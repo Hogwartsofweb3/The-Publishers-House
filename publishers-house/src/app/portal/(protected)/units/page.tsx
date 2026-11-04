@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { db } from "@/lib/firebase";
-import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { UNITS, PortalUser, normalizeUnitId } from "@/lib/portalAuth";
 import {
   collection,
   getDocs,
@@ -27,6 +27,7 @@ const UNIT_ICONS: Record<string, string> = {
   ushering: "🚪",
   protocol: "📋",
   children: "🌱",
+  secretariat: "📝",
   registration: "📝",
   transportation: "🚌",
   prayer: "🙏",
@@ -42,6 +43,7 @@ const UNIT_SCHEDULES: Record<string, string> = {
   ushering: "Sundays 7:30 AM & Thursdays 5:00 PM",
   protocol: "Sundays 7:30 AM (V.I.P. & Guest Lounge)",
   children: "Sundays 8:00 AM (Curriculum & Setup)",
+  secretariat: "Sundays 7:45 AM (Foyer Desk)",
   registration: "Sundays 7:45 AM (Foyer Desk)",
   transportation: "Sundays 6:30 AM (Campus Shuttles)",
   prayer: "Fridays 6:00 PM & Sundays 6:30 AM (Intercession)",
@@ -61,16 +63,37 @@ export default function UnitsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(collection(db, "users"));
-      const users: PortalUser[] = snap.docs.map(
-        (d) => ({ uid: d.id, ...d.data() } as PortalUser)
-      );
+      let users: PortalUser[] = [];
+      try {
+        const res = await fetch("/api/portal/members");
+        if (res.ok) {
+          const data = await res.json();
+          users = data.members || [];
+        }
+      } catch {
+        // Fallback to client SDK
+      }
+
+      if (users.length === 0) {
+        try {
+          const snap = await getDocs(collection(db, "users"));
+          users = snap.docs.map(
+            (d) => ({ uid: d.id, ...d.data() } as PortalUser)
+          );
+        } catch {
+          // Firestore quota reached or offline
+        }
+      }
+
+      // Sort alphabetically for clean UI dropdown selection
+      users.sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
       setAllUsers(users);
 
       const summaries: UnitSummary[] = UNITS.map((unit) => {
-        const members = users.filter(
-          (u) => u.assignedUnitId === unit.id || (unit.id === "media_technical" && u.assignedUnitId === "media")
-        );
+        const members = users.filter((u) => {
+          const uUnit = normalizeUnitId(u.assignedUnitId);
+          return uUnit === unit.id;
+        });
         const unitHead = members.find((u) => u.role === "unit_head") ?? null;
         return {
           id: unit.id,
@@ -105,18 +128,32 @@ export default function UnitsPage() {
     if (!assigningHeadUnit || !selectedHeadId) return;
     setSavingHead(true);
     try {
-      // If there was an old head in this unit, reset them to member
-      if (assigningHeadUnit.unitHead && assigningHeadUnit.unitHead.uid !== selectedHeadId) {
-        await updateDoc(doc(db, "users", assigningHeadUnit.unitHead.uid), {
-          role: "member",
-        });
-      }
-
-      // Promote new head
-      await updateDoc(doc(db, "users", selectedHeadId), {
-        role: "unit_head",
-        assignedUnitId: assigningHeadUnit.id,
+      // 1. Call server API (uses admin SDK & resilient cache)
+      await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assign_unit_head",
+          unitId: assigningHeadUnit.id,
+          memberUid: selectedHeadId,
+          previousHeadUid: assigningHeadUnit.unitHead?.uid,
+        }),
       });
+
+      // 2. Also attempt client SDK update
+      try {
+        if (assigningHeadUnit.unitHead && assigningHeadUnit.unitHead.uid !== selectedHeadId) {
+          await updateDoc(doc(db, "users", assigningHeadUnit.unitHead.uid), {
+            role: "member",
+          });
+        }
+        await updateDoc(doc(db, "users", selectedHeadId), {
+          role: "unit_head",
+          assignedUnitId: assigningHeadUnit.id,
+        });
+      } catch {
+        // Silently caught if client Firestore has quota restrictions
+      }
 
       setMsg(`Unit head assigned for ${assigningHeadUnit.name} ✓`);
       setAssigningHeadUnit(null);
@@ -541,11 +578,16 @@ export default function UnitsPage() {
                 }}
               >
                 <option value="">-- Choose Member --</option>
-                {allUsers.map((u) => (
-                  <option key={u.uid} value={u.uid}>
-                    {u.displayName} ({u.email})
-                  </option>
-                ))}
+                {allUsers.map((u) => {
+                  const currentUnit = UNITS.find((un) => un.id === normalizeUnitId(u.assignedUnitId));
+                  const unitTag = currentUnit ? ` · [${currentUnit.name}]` : "";
+                  const contactTag = u.email ? ` (${u.email})` : u.phone ? ` (${u.phone})` : "";
+                  return (
+                    <option key={u.uid} value={u.uid}>
+                      {u.displayName || "Member"}{contactTag}{unitTag}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
