@@ -26,32 +26,96 @@ export async function POST(req: Request) {
 
     const auth = getAdminAuth();
     const decoded = await auth.verifyIdToken(idToken);
-    const userEmail = (decoded.email || "").toLowerCase();
-        const isJoshua = userEmail === "joshuaagunbiade@gmail.com";
+    const userEmail = (decoded.email || "").trim().toLowerCase();
+    const isJoshua = userEmail === "joshuaagunbiade@gmail.com";
     const isPortalManager = userEmail === "thepublishershouse007@gmail.com";
 
     let userData: any = null;
+    let userDocId: string | null = null;
     try {
-      let snap = await getAdminDb().collection("users").doc(decoded.uid).get();
-      userData = snap.exists ? snap.data() : null;
+      const snap = await getAdminDb().collection("users").doc(decoded.uid).get();
+      if (snap.exists) {
+        userData = snap.data();
+        userDocId = snap.id;
+      }
 
       // Fallback: If not found by UID, search by email to link pre-created member records
       if (!userData && userEmail) {
-        const emailQuery = await getAdminDb()
+        let emailQuery = await getAdminDb()
           .collection("users")
           .where("email", "==", userEmail)
           .limit(1)
           .get();
+
+        if (emailQuery.empty && decoded.email && decoded.email !== userEmail) {
+          emailQuery = await getAdminDb()
+            .collection("users")
+            .where("email", "==", decoded.email)
+            .limit(1)
+            .get();
+        }
+
         if (!emailQuery.empty) {
-          userData = emailQuery.docs[0].data();
-          await getAdminDb().collection("users").doc(decoded.uid).set(
-            { ...userData, uid: decoded.uid },
-            { merge: true }
-          ).catch(() => {});
+          const docSnap = emailQuery.docs[0];
+          userData = docSnap.data();
+          userDocId = docSnap.id;
+        } else {
+          // Fallback scan in case an admin stored the email with different casing/whitespace
+          const allUsersSnap = await getAdminDb().collection("users").get();
+          for (const d of allUsersSnap.docs) {
+            const data = d.data();
+            if ((data?.email || "").trim().toLowerCase() === userEmail) {
+              userData = data;
+              userDocId = d.id;
+              break;
+            }
+          }
+        }
+
+        // If found by email, link Firebase Auth UID and mark hasAccount = true
+        if (userData && userDocId) {
+          const linkPayload = {
+            uid: decoded.uid,
+            email: userEmail,
+            hasAccount: true,
+            lastLogin: new Date().toISOString(),
+            photoURL: decoded.picture || userData.photoURL || null,
+          };
+          await getAdminDb().collection("users").doc(userDocId).set(linkPayload, { merge: true }).catch(() => {});
+
+          // If doc ID was not decoded.uid (e.g. member-173...), mirror to decoded.uid for fast subsequent lookups
+          if (userDocId !== decoded.uid) {
+            await getAdminDb().collection("users").doc(decoded.uid).set(
+              {
+                ...userData,
+                ...linkPayload,
+              },
+              { merge: true }
+            ).catch(() => {});
+          }
         }
       }
     } catch (dbErr) {
-      console.warn("Firestore lookup error during session creation (using resilient fallback):", dbErr);
+      console.warn("Firestore lookup error during session creation:", dbErr);
+    }
+
+    // STRICT ACCESS CONTROL:
+    // If the account was not registered in Firestore by an admin, and is not a seeded super admin,
+    // REJECT ACCESS, delete the unauthorized Firebase Auth record, and do NOT create a session.
+    if (!userData && !isJoshua && !isPortalManager) {
+      try {
+        await auth.deleteUser(decoded.uid);
+      } catch (delErr) {
+        console.warn("Could not delete unauthorized Firebase Auth user:", delErr);
+      }
+
+      return NextResponse.json(
+        {
+          error: `Access Denied: The email "${userEmail}" has not been registered by a church administrator. Member portal access is by invitation only. Please contact the church office to set up your account.`,
+          code: "NOT_REGISTERED",
+        },
+        { status: 403 }
+      );
     }
 
     let role = userData?.role;
@@ -59,7 +123,6 @@ export async function POST(req: Request) {
     if (!userData) {
       if (isJoshua || isPortalManager) {
         role = isJoshua ? "super_admin" : "portal_manager";
-        // Attempt background provisioning, ignore quota failures
         try {
           const now = new Date().toISOString();
           const autoData = {
@@ -77,9 +140,6 @@ export async function POST(req: Request) {
           };
           await getAdminDb().collection("users").doc(decoded.uid).set(autoData, { merge: true }).catch(() => {});
         } catch {}
-      } else {
-        // Fallback for regular verified members even if database query hit quota
-        role = "member";
       }
     } else {
       // Sync canonical roles for leadership

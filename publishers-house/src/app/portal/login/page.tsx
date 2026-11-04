@@ -8,6 +8,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  signOut,
   type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
@@ -70,10 +71,18 @@ export default function PortalLoginPage() {
       const next = destinationFor(role);
       router.push(next);
     } catch (err: unknown) {
+      await signOut(auth).catch(() => {});
       const msg = err instanceof Error ? err.message : "Could not complete sign in.";
-      if (msg.includes("No portal profile")) {
+      if (
+        msg.includes("not been registered") ||
+        msg.includes("not registered") ||
+        msg.includes("No portal profile") ||
+        msg.includes("No portal account") ||
+        msg.includes("NOT_REGISTERED") ||
+        msg.includes("Access Denied")
+      ) {
         setError(
-          "No portal account found for this email. Please contact the church admin to have your account created."
+          "Access Denied: This account has not been registered by a church administrator. Member portal access is by invitation only. Please contact the church office to set up your account."
         );
       } else {
         setError(msg);

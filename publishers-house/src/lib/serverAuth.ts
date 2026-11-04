@@ -16,14 +16,32 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
     let data: any = null;
     try {
       const snap = await getAdminDb().collection("users").doc(decoded.uid).get();
-      if (snap.exists) data = snap.data();
+      if (snap.exists) {
+        data = snap.data();
+      } else if (decoded.email) {
+        const cleanEmail = decoded.email.trim().toLowerCase();
+        const emailSnap = await getAdminDb()
+          .collection("users")
+          .where("email", "==", cleanEmail)
+          .limit(1)
+          .get();
+        if (!emailSnap.empty) {
+          data = emailSnap.docs[0].data();
+        }
+      }
     } catch (e) {
-      console.warn("Firestore user lookup failed in requirePortalUser (using fallback):", e);
+      console.warn("Firestore user lookup failed in requirePortalUser:", e);
     }
 
-    const email = (decoded.email || data?.email || "").toLowerCase();
+    const email = (decoded.email || data?.email || "").trim().toLowerCase();
     const isJoshua = email === "joshuaagunbiade@gmail.com";
     const isPortalManager = email === "thepublishershouse007@gmail.com";
+
+    // STRICT ACCESS CONTROL:
+    // If the account has not been registered in Firestore and is not a super admin, deny portal entry.
+    if (!data && !isJoshua && !isPortalManager) {
+      return null;
+    }
 
     let role: UserRole = "member";
     if (data?.role && ROLES.includes(data.role as UserRole)) {

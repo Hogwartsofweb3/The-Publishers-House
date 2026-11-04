@@ -124,6 +124,11 @@ const FALLBACK_GATHERINGS = [
 function HomeGatheringSingleFeature({ ev }: { ev: any }) {
   const timing = useEventTiming(ev);
   const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
+  const isLogo =
+    flierImg.toLowerCase().includes("logo") ||
+    flierImg.toLowerCase().includes("merismos") ||
+    (ev.title || "").toLowerCase().includes("merismos") ||
+    flierImg.includes("NMWknRpc");
 
   return (
     <div
@@ -145,7 +150,13 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
           maxHeight: "360px",
           position: "relative",
           overflow: "hidden",
-          backgroundColor: "#151A54",
+          backgroundColor: isLogo ? Paper100 : "#151A54",
+          display: isLogo ? "flex" : "block",
+          alignItems: isLogo ? "center" : undefined,
+          justifyContent: isLogo ? "center" : undefined,
+          padding: isLogo ? "44px 32px" : "0",
+          borderRight: isLogo ? `1px solid ${Paper200}` : "none",
+          borderBottom: isLogo ? `1px solid ${Paper200}` : "none",
         }}
       >
         {flierImg ? (
@@ -154,7 +165,25 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
             alt={`${ev.title} poster`}
             loading="lazy"
             decoding="async"
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+            style={
+              isLogo
+                ? {
+                    maxWidth: "85%",
+                    maxHeight: "140px",
+                    width: "auto",
+                    height: "auto",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    display: "block",
+                  }
+                : {
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: "center top",
+                    display: "block",
+                  }
+            }
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = "none";
             }}
@@ -198,7 +227,7 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
             display: "inline-flex",
             alignItems: "center",
             gap: "6px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+            boxShadow: isLogo ? "0 2px 8px rgba(21, 26, 84, 0.08)" : "0 2px 10px rgba(0,0,0,0.3)",
             zIndex: 2,
           }}
         >
@@ -369,6 +398,11 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
 function HomeGatheringCard({ ev }: { ev: any }) {
   const timing = useEventTiming(ev);
   const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
+  const isLogo =
+    flierImg.toLowerCase().includes("logo") ||
+    flierImg.toLowerCase().includes("merismos") ||
+    (ev.title || "").toLowerCase().includes("merismos") ||
+    flierImg.includes("NMWknRpc");
 
   const ytUrl = ev.youtubeUrl || "https://www.youtube.com/@ThePublishersHouse";
   return (
@@ -407,7 +441,12 @@ function HomeGatheringCard({ ev }: { ev: any }) {
           height: "170px",
           position: "relative",
           overflow: "hidden",
-          backgroundColor: "#151A54",
+          backgroundColor: isLogo ? Paper100 : "#151A54",
+          borderBottom: isLogo ? `1px solid ${Paper200}` : "none",
+          display: isLogo ? "flex" : "block",
+          alignItems: isLogo ? "center" : undefined,
+          justifyContent: isLogo ? "center" : undefined,
+          padding: isLogo ? "24px 20px" : "0",
           flexShrink: 0,
         }}
       >
@@ -417,13 +456,25 @@ function HomeGatheringCard({ ev }: { ev: any }) {
             alt={`${ev.title} poster`}
             loading="lazy"
             decoding="async"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center top",
-              display: "block",
-            }}
+            style={
+              isLogo
+                ? {
+                    maxWidth: "85%",
+                    maxHeight: "90px",
+                    width: "auto",
+                    height: "auto",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    display: "block",
+                  }
+                : {
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: "center top",
+                    display: "block",
+                  }
+            }
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = "none";
             }}
@@ -468,7 +519,7 @@ function HomeGatheringCard({ ev }: { ev: any }) {
             display: "inline-flex",
             alignItems: "center",
             gap: "6px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+            boxShadow: isLogo ? "0 2px 8px rgba(21, 26, 84, 0.08)" : "0 2px 8px rgba(0,0,0,0.25)",
             zIndex: 2,
           }}
         >
