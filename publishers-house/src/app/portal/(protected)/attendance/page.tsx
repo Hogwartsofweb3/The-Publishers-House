@@ -35,6 +35,16 @@ interface HeadcountRecord {
   updatedAt?: any;
 }
 
+interface AttendeeAccountConfig {
+  attendanceId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: string;
+  campus: "jos" | "abuja";
+  assignedUnitId: string;
+}
+
 export default function AttendanceAdminPage() {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
@@ -90,11 +100,13 @@ export default function AttendanceAdminPage() {
 
   // Batch Create Accounts state
   const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchRole, setBatchRole] = useState<string>("member");
-  const [batchUnit, setBatchUnit] = useState<string>("");
-  const [batchCampus, setBatchCampus] = useState<string>("jos");
+  const [attendeesConfigs, setAttendeesConfigs] = useState<AttendeeAccountConfig[]>([]);
   const [batchSendEmail, setBatchSendEmail] = useState<boolean>(true);
   const [batchCreating, setBatchCreating] = useState<boolean>(false);
+  // Quick bulk apply options
+  const [quickRole, setQuickRole] = useState<string>("keep");
+  const [quickCampus, setQuickCampus] = useState<string>("keep");
+  const [quickUnit, setQuickUnit] = useState<string>("keep");
   const [batchResults, setBatchResults] = useState<{
     total: number;
     createdCount: number;
@@ -298,18 +310,68 @@ export default function AttendanceAdminPage() {
     }
   };
 
-  /** Bulk create accounts for selected records */
-  const handleConfirmBatchCreate = async () => {
+  /** Open Batch Create Modal and initialize individual configs per attendee */
+  const handleOpenBatchModal = () => {
     const selectedAttendees = records.filter((r) => selectedRecordIds.includes(r.id));
     if (selectedAttendees.length === 0) return;
 
-    setBatchCreating(true);
-    try {
-      const payloadAttendees = selectedAttendees.map((r) => ({
+    const initialConfigs: AttendeeAccountConfig[] = selectedAttendees.map((r) => {
+      const loc = (r.location || "").toLowerCase();
+      const detectedCampus: "jos" | "abuja" = loc.includes("abuja") ? "abuja" : "jos";
+      return {
         attendanceId: r.id,
         fullName: r.fullName,
         email: r.email || "",
         phone: r.phone || "",
+        role: "member",
+        campus: detectedCampus,
+        assignedUnitId: "",
+      };
+    });
+
+    setAttendeesConfigs(initialConfigs);
+    setQuickRole("keep");
+    setQuickCampus("keep");
+    setQuickUnit("keep");
+    setShowBatchModal(true);
+  };
+
+  /** Update individual attendee configuration */
+  const updateAttendeeConfig = (attendanceId: string, patch: Partial<AttendeeAccountConfig>) => {
+    setAttendeesConfigs((prev) =>
+      prev.map((c) => (c.attendanceId === attendanceId ? { ...c, ...patch } : c))
+    );
+  };
+
+  /** Bulk apply quick settings to all attendees in the modal */
+  const handleApplyToAll = () => {
+    setAttendeesConfigs((prev) =>
+      prev.map((c) => ({
+        ...c,
+        ...(quickRole !== "keep" ? { role: quickRole } : {}),
+        ...(quickCampus !== "keep" ? { campus: quickCampus as "jos" | "abuja" } : {}),
+        ...(quickUnit !== "keep" ? { assignedUnitId: quickUnit } : {}),
+      }))
+    );
+  };
+
+  /** Bulk create accounts for selected records */
+  const handleConfirmBatchCreate = async () => {
+    const eligibleConfigs = attendeesConfigs.filter(
+      (c) => c.email && c.email.trim().length > 0 && c.email.includes("@")
+    );
+    if (eligibleConfigs.length === 0) return;
+
+    setBatchCreating(true);
+    try {
+      const payloadAttendees = eligibleConfigs.map((c) => ({
+        attendanceId: c.attendanceId,
+        fullName: c.fullName,
+        email: c.email.trim().toLowerCase(),
+        phone: c.phone || "",
+        role: c.role,
+        campus: c.campus,
+        assignedUnitId: c.assignedUnitId,
       }));
 
       const res = await fetch("/api/portal/members", {
@@ -318,9 +380,6 @@ export default function AttendanceAdminPage() {
         body: JSON.stringify({
           action: "batch_create_accounts",
           attendees: payloadAttendees,
-          role: batchRole,
-          assignedUnitId: batchUnit,
-          campus: batchCampus,
           sendEmail: batchSendEmail,
           actorEmail: auth.currentUser?.email || "admin",
         }),
@@ -1368,7 +1427,7 @@ export default function AttendanceAdminPage() {
               {/* Batch Create Accounts Button */}
               <button
                 type="button"
-                onClick={() => setShowBatchModal(true)}
+                onClick={handleOpenBatchModal}
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#1F46C8",
@@ -1833,132 +1892,281 @@ export default function AttendanceAdminPage() {
       )}
 
       {/* Batch Create Accounts Modal */}
-      {showBatchModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.6)",
-            backdropFilter: "blur(4px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
+      {showBatchModal && (() => {
+        const activeWithEmailCount = attendeesConfigs.filter(
+          (c) => c.email && c.email.trim().length > 0 && c.email.includes("@")
+        ).length;
+        const activeWithoutEmailCount = attendeesConfigs.length - activeWithEmailCount;
+
+        return (
           <div
             style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "560px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
-              border: "1px solid #D5DCF2",
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(14, 21, 86, 0.6)",
+              backdropFilter: "blur(4px)",
+              zIndex: 100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
             }}
           >
-            {/* Modal Title */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <h2
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "18px",
-                  fontWeight: 800,
-                  color: "#141C6E",
-                  margin: 0,
-                }}
-              >
-                Create Accounts for Selected Attendees
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(false)}
-                style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#747CA1" }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <p
+            <div
               style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "12.5px",
-                color: "#4A5490",
-                margin: "0 0 16px",
+                backgroundColor: "#FFFFFF",
+                borderRadius: "16px",
+                padding: "28px 32px",
+                maxWidth: "700px",
+                width: "100%",
+                maxHeight: "92vh",
+                overflowY: "auto",
+                boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
+                border: "1px solid #D5DCF2",
               }}
             >
-              Set up portal member accounts and generate temporary sign-in passwords for <strong>{selectedAttendees.length}</strong> attendee{selectedAttendees.length !== 1 ? "s" : ""}.
-            </p>
-
-            {/* Email readiness summary badges */}
-            <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-              <div style={{ flex: 1, backgroundColor: "#EAF6ED", border: "1px solid #C4E9CE", borderRadius: "8px", padding: "10px 14px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F6B38", textTransform: "uppercase" }}>Ready to Create</div>
-                <div style={{ fontSize: "18px", fontWeight: 800, color: "#0F6B38", marginTop: "2px" }}>{withEmailCount} Attendee{withEmailCount !== 1 ? "s" : ""}</div>
-                <div style={{ fontSize: "11px", color: "#1C7F46" }}>Valid email address on record</div>
+              {/* Modal Title */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "19px",
+                    fontWeight: 800,
+                    color: "#141C6E",
+                    margin: 0,
+                  }}
+                >
+                  Create Accounts for Selected Attendees
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#747CA1" }}
+                >
+                  ✕
+                </button>
               </div>
-              {withoutEmailCount > 0 && (
-                <div style={{ flex: 1, backgroundColor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "8px", padding: "10px 14px" }}>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#C2410C", textTransform: "uppercase" }}>Will Be Skipped</div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#C2410C", marginTop: "2px" }}>{withoutEmailCount} Attendee{withoutEmailCount !== 1 ? "s" : ""}</div>
-                  <div style={{ fontSize: "11px", color: "#EA580C" }}>No email address provided</div>
+
+              <p
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12.5px",
+                  color: "#4A5490",
+                  margin: "0 0 16px",
+                }}
+              >
+                Configure individual member roles, units, and campus locations for each of the <strong>{attendeesConfigs.length}</strong> selected attendee{attendeesConfigs.length !== 1 ? "s" : ""}.
+              </p>
+
+              {/* Email readiness summary badges */}
+              <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+                <div style={{ flex: 1, backgroundColor: "#EAF6ED", border: "1px solid #C4E9CE", borderRadius: "8px", padding: "8px 14px" }}>
+                  <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F6B38", textTransform: "uppercase" }}>Ready to Create</div>
+                  <div style={{ fontSize: "17px", fontWeight: 800, color: "#0F6B38", marginTop: "1px" }}>{activeWithEmailCount} Attendee{activeWithEmailCount !== 1 ? "s" : ""}</div>
+                </div>
+                {activeWithoutEmailCount > 0 && (
+                  <div style={{ flex: 1, backgroundColor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "8px", padding: "8px 14px" }}>
+                    <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#C2410C", textTransform: "uppercase" }}>Needs Email Address</div>
+                    <div style={{ fontSize: "17px", fontWeight: 800, color: "#C2410C", marginTop: "1px" }}>{activeWithoutEmailCount} Attendee{activeWithoutEmailCount !== 1 ? "s" : ""}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Bulk Set Toolbar (when 2+ attendees selected) */}
+              {attendeesConfigs.length > 1 && (
+                <div
+                  style={{
+                    backgroundColor: "#F4F7FD",
+                    border: "1px solid #D5DCF2",
+                    borderRadius: "10px",
+                    padding: "12px 14px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>⚡</span> Quick Set (Apply to All Selected):
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr auto", gap: "8px", alignItems: "center" }}>
+                    <select
+                      value={quickRole}
+                      onChange={(e) => setQuickRole(e.target.value)}
+                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                    >
+                      <option value="keep">Role (Keep current)</option>
+                      <option value="member">Set all to Member</option>
+                      <option value="unit_head">Set all to Unit Head</option>
+                      <option value="admin">Set all to Administrator</option>
+                    </select>
+
+                    <select
+                      value={quickCampus}
+                      onChange={(e) => setQuickCampus(e.target.value)}
+                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                    >
+                      <option value="keep">Campus (Keep current)</option>
+                      <option value="jos">Set all to Jos</option>
+                      <option value="abuja">Set all to Abuja</option>
+                    </select>
+
+                    <select
+                      value={quickUnit}
+                      onChange={(e) => setQuickUnit(e.target.value)}
+                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                    >
+                      <option value="keep">Unit (Keep current)</option>
+                      <option value="">Unassigned</option>
+                      {UNITS.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyToAll}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#1F46C8",
+                        color: "#FFFFFF",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "11.5px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Options Form */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "20px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>
-                    Member Role
-                  </label>
-                  <select
-                    value={batchRole}
-                    onChange={(e) => setBatchRole(e.target.value)}
-                    style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", backgroundColor: "#FFFFFF" }}
-                  >
-                    <option value="member">Member</option>
-                    <option value="unit_head">Unit Head</option>
-                    <option value="admin">Administrator</option>
-                  </select>
+              {/* Per-Attendee Cards List */}
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "8px" }}>
+                  Attendee Details & Assignments ({attendeesConfigs.length}):
                 </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>
-                    Campus
-                  </label>
-                  <select
-                    value={batchCampus}
-                    onChange={(e) => setBatchCampus(e.target.value)}
-                    style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", backgroundColor: "#FFFFFF" }}
-                  >
-                    <option value="jos">Jos Campus</option>
-                    <option value="abuja">Abuja Campus</option>
-                  </select>
+                <div style={{ maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px", paddingRight: "4px" }}>
+                  {attendeesConfigs.map((att) => {
+                    const hasValidEmail = Boolean(att.email && att.email.trim().length > 0 && att.email.includes("@"));
+
+                    return (
+                      <div
+                        key={att.attendanceId}
+                        style={{
+                          backgroundColor: "#FFFFFF",
+                          border: "1px solid " + (hasValidEmail ? "#DCE4F8" : "#FCD34D"),
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                          boxShadow: "0 2px 6px rgba(14, 21, 86, 0.04)",
+                        }}
+                      >
+                        {/* Attendee Name Header */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13.5px", color: "#141C6E" }}>
+                              {att.fullName}
+                            </span>
+                            {att.phone && (
+                              <span style={{ fontSize: "11px", color: "#747CA1" }}>({att.phone})</span>
+                            )}
+                          </div>
+                          <div>
+                            {hasValidEmail ? (
+                              <span style={{ fontSize: "10px", backgroundColor: "#E4F5EA", color: "#0F6B38", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
+                                ✓ Eligible
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: "10px", backgroundColor: "#FEF3C7", color: "#92400E", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
+                                ⚠️ Needs Email
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Email row / input if missing */}
+                        <div style={{ marginBottom: "10px" }}>
+                          {hasValidEmail ? (
+                            <div style={{ fontSize: "11.5px", color: "#1F46C8", display: "flex", alignItems: "center", gap: "5px" }}>
+                              <span>✉️</span> {att.email}
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <input
+                                type="email"
+                                placeholder="Enter email to enable portal login for this attendee..."
+                                value={att.email}
+                                onChange={(e) => updateAttendeeConfig(att.attendanceId, { email: e.target.value })}
+                                style={{
+                                  flex: 1,
+                                  padding: "6px 10px",
+                                  borderRadius: "6px",
+                                  border: "1px solid #FCD34D",
+                                  backgroundColor: "#FFFBEB",
+                                  fontSize: "12px",
+                                  color: "#141C6E",
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Individual Role, Campus, Unit Selection */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr", gap: "8px" }}>
+                          <div>
+                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
+                              Role
+                            </label>
+                            <select
+                              value={att.role}
+                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { role: e.target.value })}
+                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                            >
+                              <option value="member">Member</option>
+                              <option value="unit_head">Unit Head</option>
+                              <option value="admin">Administrator</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
+                              Campus
+                            </label>
+                            <select
+                              value={att.campus}
+                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { campus: e.target.value as "jos" | "abuja" })}
+                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                            >
+                              <option value="jos">Jos Campus</option>
+                              <option value="abuja">Abuja Campus</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
+                              Church Unit
+                            </label>
+                            <select
+                              value={att.assignedUnitId}
+                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { assignedUnitId: e.target.value })}
+                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
+                            >
+                              <option value="">-- Unassigned --</option>
+                              {UNITS.map((u) => (
+                                <option key={u.id} value={u.id}>{u.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "4px" }}>
-                  Assign to Church Unit (Optional)
-                </label>
-                <select
-                  value={batchUnit}
-                  onChange={(e) => setBatchUnit(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "13px", backgroundColor: "#FFFFFF" }}
-                >
-                  <option value="">-- Unassigned --</option>
-                  {UNITS.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "#141C6E", cursor: "pointer", marginTop: "2px" }}>
+              {/* Email dispatch toggle */}
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#141C6E", cursor: "pointer", marginBottom: "16px" }}>
                 <input
                   type="checkbox"
                   checked={batchSendEmail}
@@ -1967,79 +2175,54 @@ export default function AttendanceAdminPage() {
                 />
                 Dispatch branded invitation emails with temporary passwords automatically
               </label>
-            </div>
 
-            {/* Preview list */}
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
-                Selected Attendees Preview ({selectedAttendees.length})
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={handleConfirmBatchCreate}
+                  disabled={batchCreating || activeWithEmailCount === 0}
+                  style={{
+                    flex: 1,
+                    padding: "11px",
+                    backgroundColor: activeWithEmailCount === 0 ? "#CBD5E1" : "#1F46C8",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: batchCreating || activeWithEmailCount === 0 ? "not-allowed" : "pointer",
+                    boxShadow: activeWithEmailCount > 0 ? "0 4px 12px rgba(31, 70, 200, 0.25)" : "none",
+                  }}
+                >
+                  {batchCreating
+                    ? "Creating Accounts..."
+                    : activeWithEmailCount === 0
+                    ? "Enter Email for Attendees"
+                    : `Confirm & Create ${activeWithEmailCount} Account${activeWithEmailCount !== 1 ? "s" : ""}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  disabled={batchCreating}
+                  style={{
+                    padding: "11px 20px",
+                    backgroundColor: "#F4F6FB",
+                    color: "#141C6E",
+                    border: "1px solid #D5DCF2",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "12.5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-              <div style={{ maxHeight: "160px", overflowY: "auto", border: "1px solid #E8EDFB", borderRadius: "8px", backgroundColor: "#F9FAFD" }}>
-                {selectedAttendees.map((att) => {
-                  const hasEmail = Boolean(att.email && att.email.trim().length > 0);
-                  return (
-                    <div key={att.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderBottom: "1px solid #EEF2FB", fontSize: "12px" }}>
-                      <div>
-                        <div style={{ fontWeight: 700, color: "#141C6E" }}>{att.fullName}</div>
-                        <div style={{ fontSize: "11px", color: hasEmail ? "#1F46C8" : "#94A3B8" }}>
-                          {hasEmail ? att.email : "⚠️ No email on record (will be skipped)"}
-                        </div>
-                      </div>
-                      <div>
-                        {hasEmail ? (
-                          <span style={{ fontSize: "10.5px", backgroundColor: "#E4F5EA", color: "#0F6B38", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>Eligible</span>
-                        ) : (
-                          <span style={{ fontSize: "10.5px", backgroundColor: "#FEE2E2", color: "#991B1B", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>Skipped</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                type="button"
-                onClick={handleConfirmBatchCreate}
-                disabled={batchCreating || withEmailCount === 0}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: withEmailCount === 0 ? "#CBD5E1" : "#1F46C8",
-                  color: "#FFFFFF",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: 700,
-                  fontSize: "13px",
-                  cursor: batchCreating || withEmailCount === 0 ? "not-allowed" : "pointer",
-                  boxShadow: withEmailCount > 0 ? "0 4px 12px rgba(31, 70, 200, 0.25)" : "none",
-                }}
-              >
-                {batchCreating ? "Creating Accounts..." : withEmailCount === 0 ? "No Eligible Attendees" : `Confirm & Create ${withEmailCount} Account${withEmailCount !== 1 ? "s" : ""}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(false)}
-                disabled={batchCreating}
-                style={{
-                  padding: "12px 20px",
-                  backgroundColor: "#F4F6FB",
-                  color: "#141C6E",
-                  border: "1px solid #D5DCF2",
-                  borderRadius: "8px",
-                  fontWeight: 600,
-                  fontSize: "12.5px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Batch Results & Credentials Sheet Modal */}
       {batchResults && (

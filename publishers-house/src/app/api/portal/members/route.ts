@@ -1253,16 +1253,23 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          const itemRole = (att.role as UserRole) || (role as UserRole) || "member";
+          const itemUnit = att.assignedUnitId !== undefined ? att.assignedUnitId : (assignedUnitId || "");
+          const itemCampus = (att.campus as Campus) || (campus as Campus) || "jos";
+          const isUnitHead = itemRole === "unit_head";
+
           // Save / update in Firestore
           const userDocData: PortalUser = {
             uid: authUid,
             email: rawEmail,
             displayName: fullName,
             phone: phone || "",
-            role: (role as UserRole) || "member",
-            assignedUnitId: assignedUnitId || "",
+            role: itemRole,
+            roles: isUnitHead ? ["member", "unit_head"] : [itemRole],
+            isUnitHead,
+            assignedUnitId: itemUnit,
             activityTier: "active",
-            campus: (campus as Campus) || "jos",
+            campus: itemCampus,
             mustChangePassword: true,
             tempPassword,
             hasAccount: true,
@@ -1289,10 +1296,10 @@ export async function POST(req: NextRequest) {
           if (sendEmail) {
             try {
               const roleLabel =
-                role === "unit_head" ? "Unit Head" :
-                role === "admin" ? "Administrator" :
-                role === "portal_manager" ? "Portal Manager" :
-                role === "super_admin" ? "Senior Pastor" :
+                itemRole === "unit_head" ? "Unit Head" :
+                itemRole === "admin" ? "Administrator" :
+                itemRole === "portal_manager" ? "Portal Manager" :
+                itemRole === "super_admin" ? "Senior Pastor" :
                 "Member";
 
               await sendInvitationEmail({
