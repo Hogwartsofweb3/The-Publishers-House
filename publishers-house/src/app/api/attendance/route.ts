@@ -7,6 +7,92 @@ import { getAdminAuth } from "@/lib/firebaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Helper: resolve the caller's uid, email and admin status */
+async function getRequester(req?: Request) {
+  let uid = "";
+  let email = "";
+  let role = "";
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get(SESSION_COOKIE)?.value;
+    if (session) {
+      const decoded = await getAdminAuth().verifySessionCookie(session, false);
+      uid = decoded.uid || "";
+      email = (decoded.email || "").toLowerCase();
+    }
+  } catch {}
+  if (!uid && req) {
+    try {
+      const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const idToken = authHeader.substring(7).trim();
+        const decoded = await getAdminAuth().verifyIdToken(idToken);
+        uid = decoded.uid || "";
+        email = (decoded.email || "").toLowerCase();
+      }
+    } catch {}
+  }
+  if (uid) {
+    try {
+      const snap = await getAdminDb().collection("users").doc(uid).get();
+      if (snap.exists) role = String(snap.data()?.role || "");
+    } catch {}
+  }
+  const ADMIN_EMAILS = ["joshuaagunbiade@gmail.com", "thepublishershouse007@gmail.com"];
+  const ADMIN_ROLES = ["admin", "super_admin", "portal_manager"];
+  const isAdmin = ADMIN_ROLES.includes(role) || ADMIN_EMAILS.includes(email);
+  return { uid, email, role, isAdmin };
+}
+
+/**
+ * GET /api/attendance?date=YYYY-MM-DD
+ * Admin-only: returns all attendance records for a given date.
+ */
+export async function GET(req: Request) {
+  try {
+    const requester = await getRequester(req);
+    if (!requester.uid || !requester.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const url = new URL(req.url);
+    const date = url.searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const db = getAdminDb();
+    const snap = await db.collection("attendance").where("date", "==", date).get();
+    const records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Sort newest first (by timestamp)
+    records.sort((a: any, b: any) => {
+      const ta = a.timestamp?._seconds ?? a.timestamp?.seconds ?? 0;
+      const tb = b.timestamp?._seconds ?? b.timestamp?.seconds ?? 0;
+      return tb - ta;
+    });
+    return NextResponse.json({ records });
+  } catch (err: any) {
+    console.error("GET /api/attendance error:", err);
+    return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/attendance?id=<docId>
+ * Admin-only: delete a single attendance record.
+ */
+export async function DELETE(req: Request) {
+  try {
+    const requester = await getRequester(req);
+    if (!requester.uid || !requester.isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Record ID required" }, { status: 400 });
+    await getAdminDb().collection("attendance").doc(id).delete();
+    return NextResponse.json({ ok: true, message: "Record deleted." });
+  } catch (err: any) {
+    console.error("DELETE /api/attendance error:", err);
+    return NextResponse.json({ error: "Failed to delete record" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -46,41 +132,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please enter your full name." }, { status: 400 });
     }
 
+    // Service code is ALWAYS required — no code = no attendance
+    const submittedCode = validAttendees[0]?.serviceCode || "";
+    if (!submittedCode) {
+      return NextResponse.json(
+        { error: "Please enter the Service Check-In Code announced during the service. Attendance cannot be confirmed without it." },
+        { status: 400 }
+      );
+    }
+
     const db = getAdminDb();
 
-    // Verify service code for all attendees (both in-person and online) when active & not expired
-    try {
-      const streamSettingSnap = await db.collection("homeSettings").doc("attendance").get();
-      if (streamSettingSnap.exists) {
-        const config = streamSettingSnap.data();
-        let isActive = Boolean(config?.streamCodeActive && config?.streamCode);
-        if (isActive && config?.expiresAt) {
-          if (Date.now() >= new Date(config.expiresAt).getTime()) {
-            isActive = false;
-          }
-        }
+    // Fetch current attendance config from Firestore
+    const streamSettingSnap = await db.collection("homeSettings").doc("attendance").get();
+    const config = streamSettingSnap.exists ? streamSettingSnap.data() || {} : {};
 
-        if (isActive) {
-          const expectedCode = String(config?.streamCode ?? "").trim().toUpperCase();
-          for (const att of validAttendees) {
-            const codeToTest = att.serviceCode || "";
-            if (!codeToTest) {
-              return NextResponse.json(
-                { error: "Please enter the active Service Check-In Code announced during the service." },
-                { status: 400 }
-              );
-            }
-            if (codeToTest !== expectedCode) {
-              return NextResponse.json(
-                { error: "Invalid check-in code. Please verify the code announced during the service." },
-                { status: 400 }
-              );
-            }
-          }
-        }
+    let isActive = Boolean(config?.streamCodeActive && config?.streamCode);
+    if (isActive && config?.expiresAt) {
+      if (Date.now() >= new Date(config.expiresAt).getTime()) {
+        isActive = false;
       }
-    } catch (err) {
-      console.warn("Could not check streamCode settings:", err);
+    }
+
+    if (!isActive) {
+      // No active code — attendance cannot be accepted
+      return NextResponse.json(
+        { error: "No active service code is set. An administrator must activate a service code from the portal before attendance can be signed." },
+        { status: 403 }
+      );
+    }
+
+    // Validate code for every attendee
+    const expectedCode = String(config?.streamCode ?? "").trim().toUpperCase();
+    for (const att of validAttendees) {
+      const codeToTest = att.serviceCode || "";
+      if (!codeToTest) {
+        return NextResponse.json(
+          { error: "Please enter the active Service Check-In Code announced during the service." },
+          { status: 400 }
+        );
+      }
+      if (codeToTest !== expectedCode) {
+        return NextResponse.json(
+          { error: "Invalid check-in code. Please verify the code announced during the service and try again." },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if requester has a logged-in session cookie
@@ -107,6 +204,7 @@ export async function POST(req: Request) {
         mode: att.mode,
         location: att.mode === "in_person" ? att.location : "Online Stream",
         streamChannel: att.mode === "online" ? att.streamChannel : "none",
+        serviceCode: att.serviceCode,
         type: "weekend_service",
         date: todayDate,
         timestamp: new Date(),
@@ -130,10 +228,6 @@ export async function POST(req: Request) {
           timestamp: new Date(),
           status: "new",
         }).catch(() => {});
-      }
-
-      if (att.serviceCode) {
-        record.serviceCode = att.serviceCode;
       }
 
       if (userId && !att.checkedInBy) {

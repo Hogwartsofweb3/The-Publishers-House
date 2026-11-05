@@ -1,17 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
+import { useEffect, useState, useRef } from "react";
 import { auth } from "@/lib/firebaseAuth";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
 
 interface AttendanceRecord {
   id: string;
@@ -23,10 +13,12 @@ interface AttendanceRecord {
   streamChannel?: string;
   serviceCode?: string;
   isGuest?: boolean;
+  isFirstTimer?: boolean;
+  hearAboutUs?: string;
   userId?: string;
   checkedInBy?: string;
   date: string;
-  timestamp?: any;
+  timestamp?: any; // Firestore server timestamp — arrives as { _seconds, _nanoseconds } via Admin SDK JSON
   type?: string;
 }
 
@@ -49,6 +41,10 @@ export default function AttendanceAdminPage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Three-dot dropdown state: which record's menu is open
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -81,10 +77,21 @@ export default function AttendanceAdminPage() {
   const [headcountLoading, setHeadcountLoading] = useState(false);
   const [headcountMsg, setHeadcountMsg] = useState("");
 
-  // Move Attendee to Member State
+  // Create Account modal state
   const [enrollAttendee, setEnrollAttendee] = useState<{ fullName: string; phone: string; email: string } | null>(null);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [createAccountImmediately, setCreateAccountImmediately] = useState(true);
+
+  // Close three-dot menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch Stream Code Settings
   const fetchStreamSettings = async () => {
@@ -136,61 +143,72 @@ export default function AttendanceAdminPage() {
     return () => clearInterval(interval);
   }, [streamCodeActive, remainingSeconds]);
 
-  // Fetch Attendance Records & Headcount for Selected Date
+  /** Fetch attendance records for selectedDate via the server API (bypasses Firestore quota) */
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      const q = query(
-        collection(db, "attendance"),
-        where("date", "==", selectedDate)
-      );
-      const snap = await getDocs(q);
-      const items: AttendanceRecord[] = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<AttendanceRecord, "id">),
-      }));
-
-      items.sort((a, b) => {
-        const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
-        const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
-        return timeB - timeA;
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const res = await fetch(`/api/attendance?date=${selectedDate}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      setRecords(items);
-      setFilteredRecords(items);
-
-      try {
-        const hcRes = await fetch(`/api/portal/headcount?date=${selectedDate}`);
-        if (hcRes.ok) {
-          const hcJson = await hcRes.json();
-          if (hcJson.exists && hcJson.data) {
-            setHeadcount(hcJson.data as HeadcountRecord);
-          } else {
-            setHeadcount({
-              date: selectedDate,
-              men: 0,
-              women: 0,
-              children: 0,
-              total: 0,
-              notes: "",
-            });
-          }
-        } else {
-          const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
-          if (hcSnap.exists()) {
-            setHeadcount(hcSnap.data() as HeadcountRecord);
-          }
-        }
-      } catch {
-        const hcSnap = await getDoc(doc(db, "attendance_headcounts", selectedDate));
-        if (hcSnap.exists()) {
-          setHeadcount(hcSnap.data() as HeadcountRecord);
-        }
+      if (res.ok) {
+        const data = await res.json();
+        const items: AttendanceRecord[] = (data.records || []).map((r: any) => ({
+          ...r,
+          // Normalize Admin SDK timestamp ({ _seconds }) into a millisecond epoch
+          timestamp: r.timestamp?._seconds
+            ? { toDate: () => new Date(r.timestamp._seconds * 1000) }
+            : r.timestamp,
+        }));
+        setRecords(items);
+        setFilteredRecords(items);
+      } else {
+        setRecords([]);
+        setFilteredRecords([]);
       }
     } catch (err) {
       console.error("Error fetching attendance records:", err);
+      setRecords([]);
+      setFilteredRecords([]);
     } finally {
       setLoading(false);
+    }
+
+    // Also fetch headcount for this date
+    try {
+      const hcRes = await fetch(`/api/portal/headcount?date=${selectedDate}`);
+      if (hcRes.ok) {
+        const hcJson = await hcRes.json();
+        if (hcJson.exists && hcJson.data) {
+          setHeadcount(hcJson.data as HeadcountRecord);
+        } else {
+          setHeadcount({ date: selectedDate, men: 0, women: 0, children: 0, total: 0, notes: "" });
+        }
+      }
+    } catch {
+      setHeadcount({ date: selectedDate, men: 0, women: 0, children: 0, total: 0, notes: "" });
+    }
+  };
+
+  /** Delete an attendance record */
+  const handleDeleteRecord = async (id: string) => {
+    if (!confirm("Delete this attendance record? This cannot be undone.")) return;
+    try {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const res = await fetch(`/api/attendance?id=${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        setRecords((prev) => prev.filter((r) => r.id !== id));
+        setFilteredRecords((prev) => prev.filter((r) => r.id !== id));
+        setOpenMenuId(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert("Error: " + (data.error || "Failed to delete record."));
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -251,6 +269,7 @@ export default function AttendanceAdminPage() {
           r.fullName?.toLowerCase().includes(term) ||
           r.phone?.toLowerCase().includes(term) ||
           r.location?.toLowerCase().includes(term) ||
+          r.email?.toLowerCase().includes(term) ||
           r.checkedInBy?.toLowerCase().includes(term)
       );
     }
@@ -375,10 +394,14 @@ export default function AttendanceAdminPage() {
     }
     const headers = [
       "Full Name",
+      "Email",
       "Phone",
       "Mode",
       "Location / Channel",
+      "Service Code",
       "Member Type",
+      "First Timer",
+      "Heard About Us",
       "Date",
       "Time",
     ];
@@ -388,10 +411,14 @@ export default function AttendanceAdminPage() {
         : "";
       return [
         `"${r.fullName || ""}"`,
+        `"${r.email || ""}"`,
         `"${r.phone || ""}"`,
         `"${r.mode || "in_person"}"`,
         `"${r.location || r.streamChannel || ""}"`,
+        `"${r.serviceCode || ""}"`,
         `"${r.userId ? "Member" : "Guest"}"`,
+        `"${r.isFirstTimer ? "Yes" : "No"}"`,
+        `"${r.hearAboutUs || ""}"`,
         `"${r.date || ""}"`,
         `"${timeStr}"`,
       ].join(",");
@@ -1038,7 +1065,7 @@ export default function AttendanceAdminPage() {
           <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "260px", maxWidth: "420px" }}>
             <input
               type="text"
-              placeholder="Filter attendees by name or phone..."
+              placeholder="Filter by name, email or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -1082,26 +1109,28 @@ export default function AttendanceAdminPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Attendee</th>
-                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Phone</th>
-                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Mode</th>
-                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Location / Channel</th>
-                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Type</th>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Time</th>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", textAlign: "right" }}>Action</th>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Attendee</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Email</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Phone</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Mode</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Location</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Code Used</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Type</th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Time</th>
+                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", textAlign: "right", whiteSpace: "nowrap" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     Loading attendance records...
                   </td>
                 </tr>
               )}
               {!loading && filteredRecords.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     No check-ins recorded for {selectedDate}.
                   </td>
                 </tr>
@@ -1110,6 +1139,7 @@ export default function AttendanceAdminPage() {
                 const timeStr = r.timestamp?.toDate
                   ? r.timestamp.toDate().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })
                   : "—";
+                const isMenuOpen = openMenuId === r.id;
                 return (
                   <tr
                     key={r.id}
@@ -1118,114 +1148,183 @@ export default function AttendanceAdminPage() {
                       transition: "background-color 0.15s",
                     }}
                   >
-                    <td style={{ padding: "14px 24px" }}>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "13.5px",
-                          fontWeight: 700,
-                          color: "#141C6E",
-                        }}
-                      >
+                    {/* Attendee Name */}
+                    <td style={{ padding: "14px 24px", whiteSpace: "nowrap" }}>
+                      <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13.5px", fontWeight: 700, color: "#141C6E" }}>
                         {r.fullName}
                       </div>
-                      {r.email && (
-                        <div style={{ fontSize: "11px", color: "#4A5490", marginTop: "2px" }}>
-                          {r.email}
-                        </div>
+                      {r.isFirstTimer && (
+                        <span style={{ fontSize: "10px", backgroundColor: "#FFF2D6", color: "#7A5200", borderRadius: "4px", padding: "1px 6px", fontWeight: 700 }}>
+                          First Timer
+                        </span>
                       )}
                     </td>
 
-                    <td
-                      style={{
-                        padding: "14px 20px",
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "12px",
-                        color: "#141C6E",
-                      }}
-                    >
+                    {/* Email */}
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#1F46C8", whiteSpace: "nowrap" }}>
+                      {r.email ? (
+                        <a href={`mailto:${r.email}`} style={{ color: "#1F46C8", textDecoration: "none" }}>{r.email}</a>
+                      ) : (
+                        <span style={{ color: "#CBD5E1" }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Phone */}
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#141C6E", whiteSpace: "nowrap" }}>
                       {r.phone || "—"}
                     </td>
 
-                    <td style={{ padding: "14px 20px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: "99px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          backgroundColor: r.mode === "online" ? "#FFF2D6" : "#E8EDFB",
-                          color: r.mode === "online" ? "#7A5200" : "#1F46C8",
-                        }}
-                      >
-                        {r.mode === "online" ? "Virtual Stream" : "In-Person"}
+                    {/* Mode */}
+                    <td style={{ padding: "14px 20px", whiteSpace: "nowrap" }}>
+                      <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: "99px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, backgroundColor: r.mode === "online" ? "#FFF2D6" : "#E8EDFB", color: r.mode === "online" ? "#7A5200" : "#1F46C8" }}>
+                        {r.mode === "online" ? "🌐 Virtual" : "🏛️ In-Person"}
                       </span>
                     </td>
 
-                    <td
-                      style={{
-                        padding: "14px 20px",
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "12px",
-                        color: "#4A5490",
-                      }}
-                    >
+                    {/* Location */}
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490", whiteSpace: "nowrap" }}>
                       {r.location || r.streamChannel || "Main Sanctuary"}
                     </td>
 
-                    <td style={{ padding: "14px 20px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 8px",
-                          borderRadius: "6px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "10.5px",
-                          fontWeight: 700,
-                          backgroundColor: r.userId ? "#E4F5EA" : "#FFF2D6",
-                          color: r.userId ? "#0F6B38" : "#7A5200",
-                        }}
-                      >
-                        {r.userId ? "Member" : "Guest"}
+                    {/* Service Code Used */}
+                    <td style={{ padding: "14px 20px", whiteSpace: "nowrap" }}>
+                      {r.serviceCode ? (
+                        <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: 700, color: "#0F6B38", backgroundColor: "#E4F5EA", padding: "2px 8px", borderRadius: "4px" }}>
+                          {r.serviceCode}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#CBD5E1", fontSize: "12px" }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Member Type */}
+                    <td style={{ padding: "14px 20px", whiteSpace: "nowrap" }}>
+                      <span style={{ display: "inline-block", padding: "3px 8px", borderRadius: "6px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "10.5px", fontWeight: 700, backgroundColor: r.userId ? "#E4F5EA" : "#FFF2D6", color: r.userId ? "#0F6B38" : "#7A5200" }}>
+                        {r.checkedInBy ? `Guest (via ${r.checkedInBy.split(" ")[0]})` : r.userId ? "Member" : "Walk-in"}
                       </span>
                     </td>
 
-                    <td
-                      style={{
-                        padding: "14px 24px",
-                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                        fontSize: "12px",
-                        color: "#4A5490",
-                      }}
-                    >
+                    {/* Time */}
+                    <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490", whiteSpace: "nowrap" }}>
                       {timeStr}
                     </td>
 
-                    {/* Action: Create Account */}
-                    <td style={{ padding: "14px 24px", textAlign: "right" }}>
-                      <button
-                        onClick={() => setEnrollAttendee({ fullName: r.fullName, phone: r.phone || "", email: r.email || "" })}
-                        title="Create Account & Invite Member"
-                        style={{
-                          backgroundColor: "#EEF2FB",
-                          color: "#1F46C8",
-                          border: "1px solid #C4D3FA",
-                          borderRadius: "6px",
-                          padding: "6px 12px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          whiteSpace: "nowrap",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
-                      >
-                        <span>⚡ Create Account</span>
-                      </button>
+                    {/* Three-dot Actions Menu */}
+                    <td style={{ padding: "14px 24px", textAlign: "right", position: "relative" }}>
+                      <div style={{ position: "relative", display: "inline-block" }} ref={isMenuOpen ? menuRef : null}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenMenuId(isMenuOpen ? null : r.id)}
+                          title="More actions"
+                          style={{
+                            background: isMenuOpen ? "#EEF2FB" : "transparent",
+                            border: "1px solid " + (isMenuOpen ? "#C4D3FA" : "transparent"),
+                            borderRadius: "6px",
+                            padding: "5px 10px",
+                            cursor: "pointer",
+                            fontSize: "18px",
+                            color: "#4A5490",
+                            lineHeight: 1,
+                          }}
+                        >
+                          ⋮
+                        </button>
+
+                        {isMenuOpen && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: 0,
+                              top: "calc(100% + 4px)",
+                              backgroundColor: "#FFFFFF",
+                              border: "1px solid #D5DCF2",
+                              borderRadius: "10px",
+                              boxShadow: "0 8px 24px rgba(14,21,86,0.15)",
+                              zIndex: 50,
+                              minWidth: "190px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {/* Create Account */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEnrollAttendee({ fullName: r.fullName, phone: r.phone || "", email: r.email || "" });
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "11px 16px",
+                                background: "none",
+                                border: "none",
+                                borderBottom: "1px solid #EEF2FB",
+                                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                                fontSize: "12.5px",
+                                fontWeight: 600,
+                                color: "#1F46C8",
+                                cursor: "pointer",
+                                textAlign: "left",
+                              }}
+                            >
+                              <span>⚡</span> Create Account &amp; Invite
+                            </button>
+
+                            {/* Send Pastoral Note */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (r.email) window.location.href = `mailto:${r.email}?subject=The Publishers House - Follow Up&body=Dear ${r.fullName.split(" ")[0]},`;
+                                else alert("No email address on record for this attendee.");
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "11px 16px",
+                                background: "none",
+                                border: "none",
+                                borderBottom: "1px solid #EEF2FB",
+                                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                                fontSize: "12.5px",
+                                fontWeight: 600,
+                                color: "#0F6B38",
+                                cursor: "pointer",
+                                textAlign: "left",
+                              }}
+                            >
+                              <span>✉️</span> Send Pastoral Note
+                            </button>
+
+                            {/* Delete Record */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRecord(r.id)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "11px 16px",
+                                background: "none",
+                                border: "none",
+                                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                                fontSize: "12.5px",
+                                fontWeight: 600,
+                                color: "#9B1C1C",
+                                cursor: "pointer",
+                                textAlign: "left",
+                              }}
+                            >
+                              <span>🗑</span> Delete Record
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
