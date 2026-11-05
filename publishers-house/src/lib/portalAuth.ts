@@ -13,6 +13,8 @@ export interface PortalUser {
   displayName: string;
   phone?: string;
   role: UserRole;
+  roles?: UserRole[];
+  isUnitHead?: boolean;
   assignedUnitId?: string;
   activityTier: ActivityTier;
   campus?: Campus;
@@ -137,6 +139,58 @@ export function getRoleColor(role: UserRole): string {
     case "member": return "#10B981";
     default: return "#64748B";
   }
+}
+
+/** Returns true if user is an Administrator or Super Admin */
+export function isChurchAdmin(user?: PortalUser | null): boolean {
+  if (!user) return false;
+  return (
+    user.role === "admin" ||
+    user.role === "super_admin" ||
+    user.role === "portal_manager" ||
+    Boolean(user.roles?.includes("admin")) ||
+    Boolean(user.roles?.includes("super_admin"))
+  );
+}
+
+/** Returns true if user is a Unit Head (either as their primary role or as an admin leading a unit) */
+export function isUserUnitHead(user?: PortalUser | null, unitId?: string): boolean {
+  if (!user) return false;
+  const isHead =
+    user.role === "unit_head" ||
+    user.isUnitHead === true ||
+    Boolean(user.roles?.includes("unit_head"));
+
+  if (!isHead) return false;
+  if (!unitId) return true;
+  return normalizeUnitId(user.assignedUnitId) === normalizeUnitId(unitId);
+}
+
+/** Returns all active role tags for a user (supporting dual-role e.g. Administrator + Unit Head) */
+export function getUserRoleBadges(user?: PortalUser | null): { role: UserRole; label: string; color: string }[] {
+  if (!user) return [{ role: "member", label: "Member", color: "#64748B" }];
+  const badges: { role: UserRole; label: string; color: string }[] = [];
+
+  // 1. Primary administrative tag
+  if (user.role === "super_admin" || user.roles?.includes("super_admin")) {
+    badges.push({ role: "super_admin", label: "Super Admin", color: "#0140C1" });
+  } else if (user.role === "admin" || user.roles?.includes("admin")) {
+    badges.push({ role: "admin", label: "Administrator", color: "#1F46C8" });
+  } else if (user.role === "portal_manager" || user.roles?.includes("portal_manager")) {
+    badges.push({ role: "portal_manager", label: "Project Manager", color: "#7C3AED" });
+  }
+
+  // 2. Unit Head tag (can coexist with Administrator)
+  if (user.isUnitHead || user.role === "unit_head" || user.roles?.includes("unit_head")) {
+    badges.push({ role: "unit_head", label: "Unit Head", color: "#2090FF" });
+  }
+
+  // 3. Fallback to Member if no special roles
+  if (badges.length === 0) {
+    badges.push({ role: "member", label: "Member", color: "#10B981" });
+  }
+
+  return badges;
 }
 
 export function getTierLabel(tier: ActivityTier): string {

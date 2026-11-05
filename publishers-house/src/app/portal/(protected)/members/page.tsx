@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor, normalizeUnitId } from "@/lib/portalAuth";
+import { UNITS, type PortalUser, type UserRole, type ActivityTier, type Campus, getRoleLabel, getRoleColor, normalizeUnitId, getUserRoleBadges } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
@@ -107,7 +107,12 @@ export default function MembersPage() {
       );
     }
     if (roleFilter !== "all") {
-      result = result.filter((m) => m.role === roleFilter);
+      result = result.filter((m) => {
+        if (m.role === roleFilter) return true;
+        if (m.roles?.includes(roleFilter as UserRole)) return true;
+        if (roleFilter === "unit_head" && m.isUnitHead) return true;
+        return false;
+      });
     }
     if (unitFilter !== "all") {
       result = result.filter((m) => normalizeUnitId(m.assignedUnitId) === unitFilter);
@@ -139,6 +144,8 @@ export default function MembersPage() {
           email: editUser.email,
           phone: editUser.phone,
           role: editUser.role,
+          isUnitHead: editUser.isUnitHead,
+          roles: editUser.roles,
           assignedUnitId: editUser.assignedUnitId,
           activityTier: editUser.activityTier,
           campus: editUser.campus || "jos",
@@ -700,22 +707,28 @@ export default function MembersPage() {
                       {m.phone || "—"}
                     </td>
 
-                    {/* Role Badge */}
+                    {/* Role Badges */}
                     <td style={{ padding: "14px 20px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: "99px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          backgroundColor: `${getRoleColor(m.role)}1A`,
-                          color: getRoleColor(m.role),
-                        }}
-                      >
-                        {getRoleLabel(m.role)}
-                      </span>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                        {getUserRoleBadges(m).map((b) => (
+                          <span
+                            key={b.role}
+                            style={{
+                              display: "inline-block",
+                              padding: "3px 10px",
+                              borderRadius: "99px",
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              backgroundColor: `${b.color}1A`,
+                              color: b.color,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {b.label}
+                          </span>
+                        ))}
+                      </div>
                     </td>
 
                     {/* Church Unit Badge */}
@@ -1096,6 +1109,34 @@ export default function MembersPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Multi-role assignment: Unit Head */}
+              <div style={{ padding: "12px 14px", backgroundColor: "#F8FAFD", borderRadius: "8px", border: "1px solid #E8EDFB" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, color: "#141C6E" }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editUser.isUnitHead || editUser.role === "unit_head" || editUser.roles?.includes("unit_head"))}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const updatedRoles = new Set(editUser.roles || [editUser.role]);
+                      if (isChecked) {
+                        updatedRoles.add("unit_head");
+                      } else {
+                        updatedRoles.delete("unit_head");
+                      }
+                      setEditUser({
+                        ...editUser,
+                        isUnitHead: isChecked,
+                        roles: Array.from(updatedRoles) as UserRole[],
+                      });
+                    }}
+                  />
+                  <span>Also serves as Unit Head (Dual Role)</span>
+                </label>
+                <div style={{ fontSize: "11px", color: "#747CA1", marginTop: "4px", marginLeft: "22px" }}>
+                  Enables pastors and administrators to retain their administrator role while also leading their unit.
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>

@@ -39,7 +39,15 @@ export default function UnitCommandCenter() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const portalUser = await getPortalUser(firebaseUser.uid);
-        if (portalUser && (portalUser.role === "unit_head" || portalUser.role === "admin")) {
+        if (
+          portalUser &&
+          (portalUser.role === "unit_head" ||
+           portalUser.role === "admin" ||
+           portalUser.role === "super_admin" ||
+           portalUser.role === "portal_manager" ||
+           portalUser.isUnitHead ||
+           portalUser.roles?.includes("unit_head"))
+        ) {
           setUser(portalUser);
         } else {
           router.push("/portal/login");
@@ -168,6 +176,31 @@ export default function UnitCommandCenter() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* Admin Link if user has Admin privileges */}
+      {(user.role === "admin" || user.role === "super_admin" || user.roles?.includes("admin") || user.role === "portal_manager") && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: "10px", padding: "10px 16px", flexWrap: "wrap", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "#1E40AF", fontWeight: 600 }}>
+            <span>👑</span>
+            <span>You are viewing this Unit Command Center with your Administrator privileges.</span>
+          </div>
+          <a
+            href="/portal"
+            style={{
+              padding: "6px 14px",
+              backgroundColor: "#1F46C8",
+              color: "#FFFFFF",
+              borderRadius: "6px",
+              textDecoration: "none",
+              fontSize: "12px",
+              fontWeight: 700,
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            }}
+          >
+            ← Back to Church Admin Portal
+          </a>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1

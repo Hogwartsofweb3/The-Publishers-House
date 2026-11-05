@@ -7,7 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser } from "@/lib/portalAuth";
-import { getRoleLabel, normalizeUnitId } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId, UNITS } from "@/lib/portalAuth";
 
 export const adminNav = [
   { href: "/portal", label: "Dashboard", icon: "◈" },
@@ -82,11 +82,32 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
     activeRole === "admin" ||
     activeRole === "portal_manager" ||
     isSecretariat;
-  const navItems = isSuperOrAdminOrManager
-    ? adminNav
+
+  const assignedUnit = UNITS.find((u) => u.id === normalizeUnitId(activeUser.assignedUnitId));
+  const isDualUnitHead =
+    Boolean(activeUser.isUnitHead || activeUser.roles?.includes("unit_head") || activeRole === "unit_head") &&
+    Boolean(assignedUnit);
+
+  let navItems = isSuperOrAdminOrManager
+    ? [...adminNav]
     : activeRole === "unit_head"
-    ? unitNav
-    : memberNav;
+    ? [...unitNav]
+    : [...memberNav];
+
+  // If the user is an administrator who ALSO leads a unit, inject a direct shortcut to their Unit Command Center!
+  if (isSuperOrAdminOrManager && isDualUnitHead && assignedUnit) {
+    const unitsIndex = navItems.findIndex((item) => item.href === "/portal/units");
+    const myUnitItem = {
+      href: "/portal/unit",
+      label: `My Unit: ${assignedUnit.name}`,
+      icon: "🛡️",
+    };
+    if (unitsIndex !== -1) {
+      navItems.splice(unitsIndex + 1, 0, myUnitItem);
+    } else {
+      navItems.unshift(myUnitItem);
+    }
+  }
 
   const handleSignOut = async () => {
     await clearSession();
@@ -339,9 +360,14 @@ export default function Sidebar({ user, mobileOpen = false, onCloseMobile, colla
                   fontWeight: 500,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {getRoleLabel(user.role)}
+                {isDualUnitHead && activeRole !== "unit_head"
+                  ? `${getRoleLabel(user.role)} · Unit Head`
+                  : getRoleLabel(user.role)}
               </div>
             </div>
           )}

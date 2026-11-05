@@ -737,7 +737,7 @@ export async function POST(req: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.thepublishershouse.org";
 
-        // 0. ASSIGN UNIT HEAD
+    // 0. ASSIGN UNIT HEAD (Preserves admin/super_admin privileges)
     if (action === "assign_unit_head") {
       const { unitId, memberUid, previousHeadUid } = body;
       if (!unitId || !memberUid) {
@@ -746,48 +746,84 @@ export async function POST(req: NextRequest) {
 
       try {
         const batch = adminDb.batch();
-        if (previousHeadUid && previousHeadUid !== memberUid) {
-          batch.update(adminDb.collection("users").doc(previousHeadUid), {
-            role: "member",
-            updatedAt: new Date().toISOString(),
-          });
-        }
-        batch.update(adminDb.collection("users").doc(memberUid), {
-          role: "unit_head",
-          assignedUnitId: unitId,
-          updatedAt: new Date().toISOString(),
-        });
-        await batch.commit();
-      } catch (err: any) {
-        console.warn("Firestore update in assign_unit_head failed (updating cache directly):", err?.message);
-      }
 
-      if (previousHeadUid && previousHeadUid !== memberUid) {
-        updateCacheMember(previousHeadUid, { role: "member" });
+        // 1. If previous head is being replaced
+        if (previousHeadUid && previousHeadUid !== memberUid) {
+          const prevDoc = await adminDb.collection("users").doc(previousHeadUid).get();
+          const prevData = prevDoc.exists ? prevDoc.data() : null;
+          const isPrevAdmin = prevData?.role === "admin" || prevData?.role === "super_admin" || prevData?.role === "portal_manager";
+          
+          const prevUpdate: Record<string, any> = {
+            isUnitHead: false,
+            updatedAt: new Date().toISOString(),
+          };
+          if (!isPrevAdmin) {
+            prevUpdate.role = "member";
+          }
+          batch.update(adminDb.collection("users").doc(previousHeadUid), prevUpdate);
+          updateCacheMember(previousHeadUid, prevUpdate);
+        }
+
+        // 2. Assign the new unit head — DO NOT overwrite admin or super_admin status!
+        const memberDoc = await adminDb.collection("users").doc(memberUid).get();
+        const memberData = memberDoc.exists ? memberDoc.data() : null;
+        const currentRole = memberData?.role || "member";
+        const isExistingAdmin = currentRole === "admin" || currentRole === "super_admin" || currentRole === "portal_manager";
+
+        const newUpdate: Record<string, any> = {
+          isUnitHead: true,
+          assignedUnitId: unitId,
+          roles: Array.from(new Set([...(memberData?.roles || []), currentRole, "unit_head"])),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // If they were already an administrator, PRESERVE their admin role!
+        if (isExistingAdmin) {
+          newUpdate.role = currentRole;
+        } else {
+          newUpdate.role = "unit_head";
+        }
+
+        batch.update(adminDb.collection("users").doc(memberUid), newUpdate);
+        await batch.commit();
+        updateCacheMember(memberUid, newUpdate);
+      } catch (err: any) {
+        console.warn("Firestore update in assign_unit_head failed:", err?.message);
       }
-      updateCacheMember(memberUid, { role: "unit_head", assignedUnitId: unitId });
 
       return NextResponse.json({ ok: true, message: "Unit head assigned successfully" });
     }
 
-    // 0b. REMOVE UNIT HEAD (demote to plain member, keep in unit)
+    // 0b. REMOVE UNIT HEAD (demotes unit_head to member, but leaves admin/super_admin intact)
     if (action === "remove_unit_head") {
       const { memberUid, keepInUnit } = body;
       if (!memberUid) {
         return NextResponse.json({ error: "memberUid required" }, { status: 400 });
       }
       try {
+        const memberDoc = await adminDb.collection("users").doc(memberUid).get();
+        const memberData = memberDoc.exists ? memberDoc.data() : null;
+        const isExistingAdmin = memberData?.role === "admin" || memberData?.role === "super_admin" || memberData?.role === "portal_manager";
+
         const updatePayload: Record<string, any> = {
-          role: "member",
+          isUnitHead: false,
           updatedAt: new Date().toISOString(),
         };
-        // If keepInUnit is explicitly false, also clear their unit assignment
+
+        if (!isExistingAdmin) {
+          updatePayload.role = "member";
+          updatePayload.roles = ["member"];
+        } else {
+          updatePayload.roles = (memberData?.roles || []).filter((r: string) => r !== "unit_head");
+        }
+
         if (keepInUnit === false) {
           updatePayload.assignedUnitId = null;
         }
+
         await adminDb.collection("users").doc(memberUid).update(updatePayload);
         updateCacheMember(memberUid, updatePayload);
-        return NextResponse.json({ ok: true, message: "Unit head demoted to member." });
+        return NextResponse.json({ ok: true, message: "Unit head removed successfully." });
       } catch (err: any) {
         console.warn("remove_unit_head failed:", err?.message);
         return NextResponse.json({ error: "Failed to remove unit head" }, { status: 500 });
@@ -1009,7 +1045,17 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
+      if (body.isUnitHead !== undefined) {
+        updates.isUnitHead = Boolean(body.isUnitHead);
+      }
+      if (Array.isArray(body.roles)) {
+        updates.roles = body.roles;
+      } else if (body.isUnitHead) {
+        updates.roles = Array.from(new Set([role || "member", "unit_head"]));
+      }
+
       await adminDb.collection("users").doc(uid).set(updates, { merge: true });
+      updateCacheMember(uid, updates);
 
       // If email or displayName changed, also update Firebase Auth if auth user exists
       if (email || displayName) {
