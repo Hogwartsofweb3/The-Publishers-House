@@ -770,6 +770,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, message: "Unit head assigned successfully" });
     }
 
+    // 0b. REMOVE UNIT HEAD (demote to plain member, keep in unit)
+    if (action === "remove_unit_head") {
+      const { memberUid, keepInUnit } = body;
+      if (!memberUid) {
+        return NextResponse.json({ error: "memberUid required" }, { status: 400 });
+      }
+      try {
+        const updatePayload: Record<string, any> = {
+          role: "member",
+          updatedAt: new Date().toISOString(),
+        };
+        // If keepInUnit is explicitly false, also clear their unit assignment
+        if (keepInUnit === false) {
+          updatePayload.assignedUnitId = null;
+        }
+        await adminDb.collection("users").doc(memberUid).update(updatePayload);
+        updateCacheMember(memberUid, updatePayload);
+        return NextResponse.json({ ok: true, message: "Unit head demoted to member." });
+      } catch (err: any) {
+        console.warn("remove_unit_head failed:", err?.message);
+        return NextResponse.json({ error: "Failed to remove unit head" }, { status: 500 });
+      }
+    }
+
     // 1. CREATE ACCOUNT FOR MEMBER (With Temp Password & Branded Invitation)
     if (action === "create_account") {
       const { uid, email, displayName, role, assignedUnitId, phone, campus, activityTier } = body;

@@ -58,6 +58,7 @@ export default function UnitsPage() {
   const [assigningHeadUnit, setAssigningHeadUnit] = useState<UnitSummary | null>(null);
   const [selectedHeadId, setSelectedHeadId] = useState<string>("");
   const [savingHead, setSavingHead] = useState(false);
+  const [removingHeadUid, setRemovingHeadUid] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
   const fetchData = useCallback(async () => {
@@ -165,6 +166,41 @@ export default function UnitsPage() {
     } finally {
       setSavingHead(false);
       setTimeout(() => setMsg(""), 3000);
+    }
+  };
+
+  /** Demote a unit head back to plain member (keeps them in the unit roster) */
+  const handleRemoveUnitHead = async (unit: UnitSummary) => {
+    if (!unit.unitHead) return;
+    if (!confirm(`Remove ${unit.unitHead.displayName} as head of ${unit.name}?\n\nThey will remain a member of the unit.`)) return;
+    setRemovingHeadUid(unit.unitHead.uid);
+    try {
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "remove_unit_head",
+          memberUid: unit.unitHead.uid,
+          keepInUnit: true,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg(`${unit.unitHead.displayName} removed as head of ${unit.name} ✓`);
+        try {
+          const { doc, updateDoc } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
+          await updateDoc(doc(db, "users", unit.unitHead.uid), { role: "member" });
+        } catch { /* quota / offline — server already handled it */ }
+        await fetchData();
+      } else {
+        setMsg(data.error || "Failed to remove unit head");
+      }
+    } catch {
+      setMsg("Network error. Please try again.");
+    } finally {
+      setRemovingHeadUid(null);
+      setTimeout(() => setMsg(""), 4000);
     }
   };
 
@@ -440,25 +476,48 @@ export default function UnitsPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setAssigningHeadUnit(unit);
-                      setSelectedHeadId(unit.unitHead?.uid || "");
-                    }}
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #D5DCF2",
-                      borderRadius: "6px",
-                      padding: "4px 8px",
-                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      color: "#1F46C8",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {unit.unitHead ? "Change" : "Assign"}
-                  </button>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      onClick={() => {
+                        setAssigningHeadUnit(unit);
+                        setSelectedHeadId(unit.unitHead?.uid || "");
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #D5DCF2",
+                        borderRadius: "6px",
+                        padding: "4px 8px",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#1F46C8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {unit.unitHead ? "Change" : "Assign"}
+                    </button>
+                    {unit.unitHead && (
+                      <button
+                        onClick={() => handleRemoveUnitHead(unit)}
+                        disabled={removingHeadUid === unit.unitHead.uid}
+                        title="Remove as unit head (keeps them as a member)"
+                        style={{
+                          background: "transparent",
+                          border: "1px solid #FCA5A5",
+                          borderRadius: "6px",
+                          padding: "4px 8px",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#9B1C1C",
+                          cursor: removingHeadUid === unit.unitHead.uid ? "not-allowed" : "pointer",
+                          opacity: removingHeadUid === unit.unitHead.uid ? 0.5 : 1,
+                        }}
+                      >
+                        {removingHeadUid === unit.unitHead.uid ? "Removing..." : "Remove"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Meeting Schedule */}
@@ -710,9 +769,10 @@ export default function UnitsPage() {
                       backgroundColor: "#F8FAFD",
                       border: "1px solid #E8EDFB",
                       borderRadius: "10px",
+                      gap: "12px",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
                       <div
                         style={{
                           width: "34px",
@@ -726,6 +786,7 @@ export default function UnitsPage() {
                           fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                           fontWeight: 700,
                           fontSize: "11px",
+                          flexShrink: 0,
                         }}
                       >
                         {getInitials(m.displayName)}
@@ -735,24 +796,91 @@ export default function UnitsPage() {
                           {m.displayName}
                         </div>
                         <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490" }}>
-                          {m.phone || m.email}
+                          {m.email || m.phone}
                         </div>
                       </div>
                     </div>
 
-                    <span
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        backgroundColor: m.role === "unit_head" ? "#E8EDFB" : "#E4F5EA",
-                        color: m.role === "unit_head" ? "#1F46C8" : "#0F6B38",
-                      }}
-                    >
-                      {m.role === "unit_head" ? "Unit Head" : "Member"}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                      <span
+                        style={{
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          backgroundColor: m.role === "unit_head" ? "#E8EDFB" : "#E4F5EA",
+                          color: m.role === "unit_head" ? "#1F46C8" : "#0F6B38",
+                        }}
+                      >
+                        {m.role === "unit_head" ? "Unit Head" : "Member"}
+                      </span>
+
+                      {/* If this member is the unit head, show "Remove as Head" */}
+                      {m.role === "unit_head" && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Remove ${m.displayName} as head of ${selectedUnit.name}? They will remain a member.`)) return;
+                            setRemovingHeadUid(m.uid);
+                            try {
+                              const res = await fetch("/api/portal/members", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "remove_unit_head", memberUid: m.uid, keepInUnit: true }),
+                              });
+                              if (res.ok) {
+                                setMsg(`${m.displayName} removed as head ✓`);
+                                setSelectedUnit(null);
+                                await fetchData();
+                              }
+                            } catch { /* noop */ } finally {
+                              setRemovingHeadUid(null);
+                              setTimeout(() => setMsg(""), 4000);
+                            }
+                          }}
+                          disabled={removingHeadUid === m.uid}
+                          style={{
+                            background: "none",
+                            border: "1px solid #FCA5A5",
+                            borderRadius: "6px",
+                            padding: "3px 8px",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            color: "#9B1C1C",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {removingHeadUid === m.uid ? "Removing…" : "Remove as Head"}
+                        </button>
+                      )}
+
+                      {/* If plain member, offer "Make Head" shortcut */}
+                      {m.role !== "unit_head" && (
+                        <button
+                          onClick={() => {
+                            setSelectedUnit(null);
+                            setAssigningHeadUnit(selectedUnit);
+                            setSelectedHeadId(m.uid);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "1px solid #A5B4FC",
+                            borderRadius: "6px",
+                            padding: "3px 8px",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            color: "#1F46C8",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Make Head
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
