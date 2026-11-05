@@ -54,8 +54,9 @@ export async function POST() {
       const ft = docSnap.data();
       const normalizedPhone = (ft.phone || "").replace(/\s/g, "");
 
-      // Skip if phone already in visitors
+      // Skip if phone already in visitors or already processed in this batch
       if (normalizedPhone && existingPhones.has(normalizedPhone)) continue;
+      if (normalizedPhone) existingPhones.add(normalizedPhone);
 
       const newVisitorRef = db.collection("visitors").doc();
       batch.set(newVisitorRef, {

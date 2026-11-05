@@ -109,3 +109,46 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await requirePortalUser();
+    const isAdmin = user && (
+      user.role === "admin" ||
+      user.role === "super_admin" ||
+      user.role === "portal_manager" ||
+      user.email === "joshuaagunbiade@gmail.com" ||
+      user.email === "thepublishershouse007@gmail.com"
+    );
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Visitor ID is required" }, { status: 400 });
+    }
+
+    const db = getAdminDb();
+    const docSnap = await db.collection("visitors").doc(id).get();
+    const visitorName = docSnap.exists ? docSnap.data()?.name || id : id;
+
+    await db.collection("visitors").doc(id).delete();
+
+    // Audit log
+    try {
+      await db.collection("audit_logs").add({
+        action: `Pastoral visitor removed: ${visitorName} (id: ${id})`,
+        actor: user.email || user.displayName,
+        category: "pastoral",
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
+
+    return NextResponse.json({ ok: true, message: "Visitor deleted." });
+  } catch (err: any) {
+    console.error("Error deleting pastoral visitor:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

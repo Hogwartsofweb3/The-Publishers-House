@@ -184,6 +184,26 @@ export default function PastoralCarePage() {
     setTimeout(() => setMsg(""), 3000);
   };
 
+  const handleDeleteVisitor = async (visitor: Visitor) => {
+    if (!confirm(`Remove "${visitor.name}" from the pastoral care pipeline?`)) return;
+    try {
+      const res = await fetch(`/api/portal/visitors?id=${visitor.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setVisitors((prev) => prev.filter((v) => v.id !== visitor.id));
+        if (selectedVisitor?.id === visitor.id) setSelectedVisitor(null);
+        setMsg(`${visitor.name} removed from pipeline ✓`);
+        setTimeout(() => setMsg(""), 3500);
+      } else {
+        const data = await res.json();
+        setMsg(`✗ ${data.error || "Failed to remove visitor"}`);
+      }
+    } catch {
+      setMsg("✗ Network error deleting visitor");
+    }
+  };
+
   const handleAddVisitor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone) return;
@@ -470,19 +490,42 @@ export default function PastoralCarePage() {
                         </div>
                       </div>
 
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          backgroundColor: "#E8EDFB",
-                          color: "#1F46C8",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {v.assignedTo}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            backgroundColor: "#E8EDFB",
+                            color: "#1F46C8",
+                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {v.assignedTo}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteVisitor(v);
+                          }}
+                          title={`Remove ${v.name} from pipeline`}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#94A3B8",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            padding: "2px 4px",
+                            borderRadius: "4px",
+                            lineHeight: 1,
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "#DC2626")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "#94A3B8")}
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
 
                     {/* Phone & Direct Links */}
@@ -865,7 +908,23 @@ export default function PastoralCarePage() {
               style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical" }}
             />
 
-            <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button
+                onClick={() => selectedVisitor && handleDeleteVisitor(selectedVisitor)}
+                style={{
+                  padding: "10px 14px",
+                  backgroundColor: "#FEE2E2",
+                  color: "#B91C1C",
+                  border: "1px solid #FECACA",
+                  borderRadius: "8px",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Delete Contact
+              </button>
               <button
                 onClick={handleSaveNotes}
                 style={{
