@@ -435,11 +435,13 @@ const VERIFIED_FALLBACK_MEMBERS: PortalUser[] = [
     lastLogin: "",
   },
   {
-    uid: "uhSGbEVxysXrmgVBjLIUv1lnx0E3",
+    uid: "04UP7em9IeOnUT7DcEsFCCY7Yeb2",
     email: "odehngbes@gmail.com",
     displayName: "Pastor Ngbede Odeh",
     phone: "+234 8186335861",
     role: "admin",
+    isUnitHead: true,
+    roles: ["admin", "unit_head"],
     assignedUnitId: "editorial",
     activityTier: "leader",
     campus: "jos",
@@ -465,7 +467,9 @@ const VERIFIED_FALLBACK_MEMBERS: PortalUser[] = [
     email: "tmakind@gmail.com",
     displayName: "Pastor Theophilus Makinde",
     phone: "+234 8162264549",
-    role: "unit_head",
+    role: "admin",
+    isUnitHead: true,
+    roles: ["admin", "unit_head"],
     assignedUnitId: "media_technical",
     activityTier: "leader",
     campus: "jos",
@@ -491,7 +495,9 @@ const VERIFIED_FALLBACK_MEMBERS: PortalUser[] = [
     email: "Ayodeledare86@gmail.com",
     displayName: "Pastor Ayodele Oluwadamilare",
     phone: "",
-    role: "unit_head",
+    role: "admin",
+    isUnitHead: true,
+    roles: ["admin", "unit_head"],
     assignedUnitId: "prayer",
     activityTier: "leader",
     campus: "jos",
@@ -640,18 +646,32 @@ export async function GET(req: NextRequest) {
 
     usersSnap.forEach((doc) => {
       const d = doc.data();
+      const role = (d.role as UserRole) || "member";
+      const isUnitHead = Boolean(
+        d.isUnitHead ||
+        role === "unit_head" ||
+        (Array.isArray(d.roles) && d.roles.includes("unit_head"))
+      );
+      const roles: UserRole[] = Array.isArray(d.roles) && d.roles.length > 0
+        ? d.roles
+        : isUnitHead && role !== "unit_head"
+        ? [role, "unit_head"]
+        : [role];
+
       members.push({
         uid: doc.id,
         email: d.email || "",
         displayName: d.displayName || "Member",
         phone: d.phone || "",
-        role: (d.role as UserRole) || "member",
+        role,
+        isUnitHead,
+        roles,
         assignedUnitId: d.assignedUnitId || "",
         activityTier: d.activityTier || "regular",
         campus: d.campus || "jos",
         mustChangePassword: Boolean(d.mustChangePassword),
         tempPassword: d.tempPassword || undefined,
-        hasAccount: Boolean(d.hasAccount || d.role === "admin" || d.role === "super_admin" || d.role === "portal_manager"),
+        hasAccount: Boolean(d.hasAccount || role === "admin" || role === "super_admin" || role === "portal_manager"),
         createdAt: d.createdAt || new Date().toISOString(),
         lastLogin: d.lastLogin || "",
         photoURL: d.photoURL || undefined,

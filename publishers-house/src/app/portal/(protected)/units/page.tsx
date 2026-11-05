@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { db } from "@/lib/firebase";
-import { UNITS, PortalUser, normalizeUnitId } from "@/lib/portalAuth";
+import { UNITS, PortalUser, normalizeUnitId, isUserUnitHead } from "@/lib/portalAuth";
 import {
   collection,
   getDocs,
@@ -95,7 +95,7 @@ export default function UnitsPage() {
           const uUnit = normalizeUnitId(u.assignedUnitId);
           return uUnit === unit.id;
         });
-        const unitHead = members.find((u) => u.isUnitHead || u.role === "unit_head" || u.roles?.includes("unit_head")) ?? null;
+        const unitHead = members.find((u) => isUserUnitHead(u, unit.id)) ?? null;
         return {
           id: unit.id,
           name: unit.name,
@@ -130,7 +130,7 @@ export default function UnitsPage() {
     setSavingHead(true);
     try {
       // 1. Call server API (uses admin SDK & resilient cache)
-      await fetch("/api/portal/members", {
+      const res = await fetch("/api/portal/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,19 +141,9 @@ export default function UnitsPage() {
         }),
       });
 
-      // 2. Also attempt client SDK update
-      try {
-        if (assigningHeadUnit.unitHead && assigningHeadUnit.unitHead.uid !== selectedHeadId) {
-          await updateDoc(doc(db, "users", assigningHeadUnit.unitHead.uid), {
-            role: "member",
-          });
-        }
-        await updateDoc(doc(db, "users", selectedHeadId), {
-          role: "unit_head",
-          assignedUnitId: assigningHeadUnit.id,
-        });
-      } catch {
-        // Silently caught if client Firestore has quota restrictions
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to assign unit head");
       }
 
       setMsg(`Unit head assigned for ${assigningHeadUnit.name} ✓`);
@@ -161,7 +151,7 @@ export default function UnitsPage() {
       setSelectedHeadId("");
       await fetchData();
     } catch (err: any) {
-      setMsg("Assigned head updated locally ✓");
+      setMsg("Failed to assign unit head: " + (err.message || "Network error"));
       setAssigningHeadUnit(null);
     } finally {
       setSavingHead(false);
