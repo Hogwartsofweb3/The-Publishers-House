@@ -260,9 +260,9 @@ export default function FloatingAttendance() {
       return;
     }
 
-    // Require service code for all worshippers (both in-person and online) when active
-    if (isCodeRequired && !enteredCode.trim()) {
-      setError("Please enter the Service Check-In Code announced during the service.");
+    // Service code is always compulsory — attendance cannot be confirmed without it
+    if (!enteredCode.trim()) {
+      setError("Please enter the Service Check-In Code announced during the service. Attendance cannot be confirmed without it.");
       return;
     }
 
@@ -806,42 +806,40 @@ export default function FloatingAttendance() {
                 </div>
               )}
 
-              {/* Service Validation Code (Required for both In-Person & Online worshippers when active) */}
-              {isCodeRequired ? (
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                    <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: AmberWarm }}>
-                      Service Check-In Code *
-                    </label>
-                    <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(32,144,255,0.15)", border: "1px solid rgba(32,144,255,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                      CODE REQUIRED
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter code announced during service"
-                    value={enteredCode}
-                    onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "6px",
-                      border: `1px solid ${AmberWarm}`,
-                      background: "rgba(32,144,255,0.08)",
-                      color: White,
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                  <p style={{ fontSize: "10.5px", color: Slate400, margin: "4px 0 0" }}>
-                    Required for all attendees (both in-person and online). Enter the code announced in service.
-                  </p>
+              {/* Service Validation Code — always required */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <label style={{ display: "block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: AmberWarm }}>
+                    Service Check-In Code *
+                  </label>
+                  <span style={{ fontSize: "9px", color: AmberWarm, background: "rgba(32,144,255,0.15)", border: "1px solid rgba(32,144,255,0.3)", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                    REQUIRED
+                  </span>
                 </div>
-              ) : null}
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter the service code (e.g. LIGHT-2026)"
+                  value={enteredCode}
+                  onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    border: enteredCode.trim() ? `1px solid ${AmberWarm}` : "1px solid rgba(251,191,36,0.4)",
+                    background: "rgba(32,144,255,0.08)",
+                    color: White,
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <p style={{ fontSize: "10.5px", color: Slate400, margin: "4px 0 0" }}>
+                  Enter the code announced during the service. Attendance cannot be confirmed without it.
+                </p>
+              </div>
 
               {/* ── MULTI-GUEST / FAMILY SECTION ── */}
               <div style={{ marginTop: "4px" }}>
