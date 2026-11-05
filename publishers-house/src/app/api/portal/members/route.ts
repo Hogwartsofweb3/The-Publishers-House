@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
-import { normalizeUnitId, type PortalUser, type UserRole } from "@/lib/portalAuth";
+import { normalizeUnitId, type PortalUser, type UserRole, type Campus } from "@/lib/portalAuth";
 import { Resend } from "resend";
 
 export const runtime = "nodejs";
@@ -1162,6 +1162,207 @@ export async function POST(req: NextRequest) {
         );
       }
       return NextResponse.json({ ok: true, message: "Password updated successfully" });
+    }
+
+    // 7. BATCH CREATE ACCOUNTS (From Attendance list)
+    if (action === "batch_create_accounts") {
+      const {
+        attendees,
+        role = "member",
+        assignedUnitId = "",
+        campus = "jos",
+        sendEmail = true,
+      } = body;
+
+      if (!Array.isArray(attendees) || attendees.length === 0) {
+        return NextResponse.json({ error: "attendees array is required" }, { status: 400 });
+      }
+
+      const results: Array<{
+        attendanceId?: string;
+        fullName: string;
+        email: string;
+        phone?: string;
+        tempPassword?: string;
+        status: "created" | "already_existed" | "skipped_no_email" | "error";
+        message?: string;
+      }> = [];
+
+      let createdCount = 0;
+      let alreadyExistedCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+
+      for (const att of attendees) {
+        const rawEmail = (att.email || "").toLowerCase().trim();
+        const fullName = (att.fullName || "").trim() || "Member";
+        const phone = att.phone || "";
+        const attendanceId = att.attendanceId;
+
+        // Skip if no email provided
+        if (!rawEmail || !rawEmail.includes("@")) {
+          results.push({
+            attendanceId,
+            fullName,
+            email: rawEmail,
+            phone,
+            status: "skipped_no_email",
+            message: "Missing or invalid email address",
+          });
+          skippedCount++;
+          continue;
+        }
+
+        const tempPassword = generateTempPassword();
+        let authUid = "";
+        let isExisting = false;
+
+        try {
+          // Check if user already exists in Firebase Auth
+          try {
+            const existingAuth = await adminAuth.getUserByEmail(rawEmail);
+            authUid = existingAuth.uid;
+            isExisting = true;
+            // Update password so the newly shared tempPassword works
+            await adminAuth.updateUser(authUid, {
+              password: tempPassword,
+              displayName: fullName,
+            });
+          } catch (findErr: any) {
+            if (findErr.code === "auth/user-not-found") {
+              const cleanPhone = phone ? phone.replace(/[^\d+]/g, "") : "";
+              const validE164 = cleanPhone && cleanPhone.startsWith("+") && cleanPhone.length >= 10 ? cleanPhone : undefined;
+              let newAuth;
+              try {
+                newAuth = await adminAuth.createUser({
+                  email: rawEmail,
+                  password: tempPassword,
+                  displayName: fullName,
+                  phoneNumber: validE164,
+                });
+              } catch {
+                newAuth = await adminAuth.createUser({
+                  email: rawEmail,
+                  password: tempPassword,
+                  displayName: fullName,
+                });
+              }
+              authUid = newAuth.uid;
+            } else {
+              throw findErr;
+            }
+          }
+
+          // Save / update in Firestore
+          const userDocData: PortalUser = {
+            uid: authUid,
+            email: rawEmail,
+            displayName: fullName,
+            phone: phone || "",
+            role: (role as UserRole) || "member",
+            assignedUnitId: assignedUnitId || "",
+            activityTier: "active",
+            campus: (campus as Campus) || "jos",
+            mustChangePassword: true,
+            tempPassword,
+            hasAccount: true,
+            createdAt: new Date().toISOString(),
+            lastLogin: "",
+          };
+
+          await adminDb.collection("users").doc(authUid).set(userDocData, { merge: true });
+          addCacheMember(userDocData);
+
+          // Update attendance record if provided
+          if (attendanceId) {
+            try {
+              await adminDb.collection("attendance").doc(attendanceId).update({
+                userId: authUid,
+                updatedAt: new Date().toISOString(),
+              });
+            } catch (attErr) {
+              console.warn("Could not link attendance record:", attErr);
+            }
+          }
+
+          // Send email invitation if requested
+          if (sendEmail) {
+            try {
+              const roleLabel =
+                role === "unit_head" ? "Unit Head" :
+                role === "admin" ? "Administrator" :
+                role === "portal_manager" ? "Portal Manager" :
+                role === "super_admin" ? "Senior Pastor" :
+                "Member";
+
+              await sendInvitationEmail({
+                displayName: fullName,
+                email: rawEmail,
+                tempPassword,
+                role: roleLabel,
+                siteUrl,
+              });
+            } catch (emailErr) {
+              console.warn("Batch email dispatch warning:", emailErr);
+            }
+          }
+
+          if (isExisting) {
+            alreadyExistedCount++;
+            results.push({
+              attendanceId,
+              fullName,
+              email: rawEmail,
+              phone,
+              tempPassword,
+              status: "already_existed",
+              message: "Account already existed; password refreshed & invitation re-sent",
+            });
+          } else {
+            createdCount++;
+            results.push({
+              attendanceId,
+              fullName,
+              email: rawEmail,
+              phone,
+              tempPassword,
+              status: "created",
+              message: "Account created successfully",
+            });
+          }
+        } catch (itemErr: any) {
+          console.error(`Error creating account for ${rawEmail}:`, itemErr);
+          errorCount++;
+          results.push({
+            attendanceId,
+            fullName,
+            email: rawEmail,
+            phone,
+            status: "error",
+            message: itemErr.message || "Failed to create account",
+          });
+        }
+      }
+
+      // Add audit log
+      try {
+        await adminDb.collection("audit_logs").add({
+          action: `Batch created ${createdCount} account(s) from attendance (${alreadyExistedCount} refreshed, ${skippedCount} skipped)`,
+          actor: body.actorEmail || "admin",
+          category: "members",
+          timestamp: new Date().toISOString(),
+        });
+      } catch {}
+
+      return NextResponse.json({
+        ok: true,
+        total: attendees.length,
+        createdCount,
+        alreadyExistedCount,
+        skippedCount,
+        errorCount,
+        results,
+      });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
