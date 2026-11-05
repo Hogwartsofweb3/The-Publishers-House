@@ -1,3 +1,4 @@
+// The Publishers House Portal Authentication & Multi-Role Architecture
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged, User } from "firebase/auth";
