@@ -38,34 +38,63 @@ async function getRequester(req?: Request) {
       if (snap.exists) role = String(snap.data()?.role || "");
     } catch {}
   }
-  const ADMIN_EMAILS = ["joshuaagunbiade@gmail.com", "thepublishershouse007@gmail.com"];
+  const ADMIN_EMAILS = [
+    "joshuaagunbiade@gmail.com",
+    "thepublishershouse007@gmail.com",
+    "odehngbes@gmail.com",
+    "tmakind@gmail.com",
+    "ayodeledare86@gmail.com",
+    "onahboniface9@gmail.com",
+  ];
   const ADMIN_ROLES = ["admin", "super_admin", "portal_manager"];
   const isAdmin = ADMIN_ROLES.includes(role) || ADMIN_EMAILS.includes(email);
   return { uid, email, role, isAdmin };
 }
+
+// In-memory resilient cache by date to survive daily Firestore quota exhaustion on Spark plan
+const attendanceCacheByDate = new Map<string, { records: any[]; timestamp: number }>();
 
 /**
  * GET /api/attendance?date=YYYY-MM-DD
  * Admin-only: returns all attendance records for a given date.
  */
 export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const date = url.searchParams.get("date") || new Date().toISOString().split("T")[0];
+
   try {
     const requester = await getRequester(req);
     if (!requester.uid || !requester.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const url = new URL(req.url);
-    const date = url.searchParams.get("date") || new Date().toISOString().split("T")[0];
+
     const db = getAdminDb();
-    const snap = await db.collection("attendance").where("date", "==", date).get();
-    const records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    // Sort newest first (by timestamp)
-    records.sort((a: any, b: any) => {
-      const ta = a.timestamp?._seconds ?? a.timestamp?.seconds ?? 0;
-      const tb = b.timestamp?._seconds ?? b.timestamp?.seconds ?? 0;
-      return tb - ta;
-    });
-    return NextResponse.json({ records });
+    try {
+      const snap = await db.collection("attendance").where("date", "==", date).get();
+      const records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // Sort newest first (by timestamp)
+      records.sort((a: any, b: any) => {
+        const ta = a.timestamp?._seconds ?? a.timestamp?.seconds ?? 0;
+        const tb = b.timestamp?._seconds ?? b.timestamp?.seconds ?? 0;
+        return tb - ta;
+      });
+      attendanceCacheByDate.set(date, { records, timestamp: Date.now() });
+      return NextResponse.json({ records, quotaBlocked: false });
+    } catch (dbErr: any) {
+      console.warn("Firestore attendance read error:", dbErr?.message);
+      const isQuota = dbErr?.code === 8 || String(dbErr?.message || "").includes("RESOURCE_EXHAUSTED") || String(dbErr?.message || "").includes("Quota exceeded");
+      const cached = attendanceCacheByDate.get(date);
+      if (cached && cached.records.length > 0) {
+        return NextResponse.json({ records: cached.records, quotaBlocked: isQuota });
+      }
+      return NextResponse.json({
+        records: [],
+        quotaBlocked: isQuota,
+        error: isQuota
+          ? "Daily database read quota (50,000 reads) reached on Firebase Spark free plan. Your attendance records are safely stored. Please upgrade project to Blaze (Pay-as-you-go) in Firebase Console to remove this limit."
+          : "Failed to fetch records"
+      }, { status: 200 });
+    }
   } catch (err: any) {
     console.error("GET /api/attendance error:", err);
     return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 });
@@ -110,6 +139,12 @@ export async function DELETE(req: Request) {
       batch.delete(db.collection("attendance").doc(id));
     }
     await batch.commit();
+
+    // Invalidate / update in-memory cache
+    const idSet = new Set(idsToDelete);
+    for (const [, entry] of attendanceCacheByDate.entries()) {
+      entry.records = entry.records.filter((r) => !idSet.has(r.id));
+    }
 
     // Audit log
     try {

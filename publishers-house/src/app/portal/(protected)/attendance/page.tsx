@@ -41,6 +41,7 @@ export default function AttendanceAdminPage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quotaWarning, setQuotaWarning] = useState(false);
 
   // Three-dot dropdown state: which record's menu is open
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -167,6 +168,7 @@ export default function AttendanceAdminPage() {
         setRecords(items);
         setFilteredRecords(items);
         setSelectedRecordIds([]);
+        setQuotaWarning(Boolean(data.quotaBlocked));
       } else {
         setRecords([]);
         setFilteredRecords([]);
@@ -581,6 +583,48 @@ export default function AttendanceAdminPage() {
           </button>
         </div>
       </div>
+
+      {/* Quota Exhaustion Alert Banner */}
+      {quotaWarning && (
+        <div
+          style={{
+            backgroundColor: "#FFFBEB",
+            border: "1px solid #FCD34D",
+            borderRadius: "12px",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "14px",
+            boxShadow: "0 2px 8px rgba(245, 158, 11, 0.08)",
+          }}
+        >
+          <span style={{ fontSize: "24px", lineHeight: 1 }}>⚠️</span>
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#92400E",
+                marginBottom: "4px",
+              }}
+            >
+              Daily Database Read Limit Reached (Firebase Spark Free Tier)
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "12.5px",
+                color: "#B45309",
+                lineHeight: 1.6,
+              }}
+            >
+              All 190+ attendee check-ins and first-timer records are safely preserved in the database. Google Cloud limits free Spark projects to 50,000 document reads per day.
+              To remove this cap and handle large services (1,000+ worshippers) without interruption, upgrade this project from Spark (Free) to <strong>Blaze (Pay-as-you-go)</strong> in the Firebase Console.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards Row */}
       <div
@@ -1268,7 +1312,9 @@ export default function AttendanceAdminPage() {
               {!loading && filteredRecords.length === 0 && (
                 <tr>
                   <td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
-                    No check-ins recorded for {selectedDate}.
+                    {quotaWarning
+                      ? "Daily database read quota reached on the free Spark plan. All 190+ check-in records are safely preserved in Firestore. Upgrade to Blaze in Firebase Console to unlock immediate viewing."
+                      : `No check-ins recorded for ${selectedDate}.`}
                   </td>
                 </tr>
               )}
