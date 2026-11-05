@@ -12,6 +12,15 @@ export default function MemberPrayersAndTestimoniesPage() {
   const [user, setUser] = useState<PortalUser | null>(null);
   const [activeTab, setActiveTab] = useState<"prayers" | "testimonies">("prayers");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "testimonies") {
+        setActiveTab("testimonies");
+      }
+    }
+  }, []);
+
   // Prayers state
   const [prayers, setPrayers] = useState<any[]>([]);
   const [prayerText, setPrayerText] = useState("");

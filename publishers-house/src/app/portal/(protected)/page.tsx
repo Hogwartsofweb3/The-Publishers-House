@@ -113,24 +113,43 @@ export default function AdminDashboard() {
           setActivities([]);
         }
 
-        // Transactions — best-effort via client SDK
+        // Transactions — via quota-safe server API first, fallback to client SDK
         let weeklyG = 0;
         let monthlyG = 0;
         try {
-          const { getDocs, collection } = await import("firebase/firestore");
-          const { db } = await import("@/lib/firebase");
-          const txSnap = await getDocs(collection(db, "transactions"));
-          const now = new Date();
-          const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
-          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          txSnap.forEach((d) => {
-            const data = d.data();
-            const amt = Number(data.amountNGN) || 0;
-            const txDate = data.timestamp ? new Date(data.timestamp) : null;
-            if (txDate && txDate >= monthStart2) monthlyG += amt;
-            if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
-          });
-        } catch {}
+          const fRes = await fetch("/api/portal/finance");
+          if (fRes.ok) {
+            const fData = await fRes.json();
+            const txList: any[] = fData.transactions || [];
+            const now = new Date();
+            const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            txList.forEach((data) => {
+              const amt = Number(data.amountNGN) || 0;
+              const txDate = data.timestamp ? new Date(data.timestamp) : null;
+              if (txDate && txDate >= monthStart2) monthlyG += amt;
+              if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
+            });
+          } else {
+            throw new Error("fallback");
+          }
+        } catch {
+          try {
+            const { getDocs, collection } = await import("firebase/firestore");
+            const { db } = await import("@/lib/firebase");
+            const txSnap = await getDocs(collection(db, "transactions"));
+            const now = new Date();
+            const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            txSnap.forEach((d) => {
+              const data = d.data();
+              const amt = Number(data.amountNGN) || 0;
+              const txDate = data.timestamp ? new Date(data.timestamp) : null;
+              if (txDate && txDate >= monthStart2) monthlyG += amt;
+              if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
+            });
+          } catch {}
+        }
 
         // Attendance last week — best-effort
         let attLastWeek = 0;

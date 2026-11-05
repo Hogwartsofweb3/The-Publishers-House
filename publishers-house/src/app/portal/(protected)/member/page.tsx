@@ -112,12 +112,12 @@ export default function FashionableMemberDashboard() {
         }
       } catch {}
 
-      // Load next upcoming duty from unit_roster
+      // Load next upcoming duty from unit_rosters
       try {
         const today = new Date().toISOString().split("T")[0];
-        const rosterSnap = await getDocs(
+        let dSnap = await getDocs(
           query(
-            collection(db, "unit_roster"),
+            collection(db, "unit_rosters"),
             where("unitId", "==", rawUnitId),
             where("memberUid", "==", user.uid),
             where("serviceDate", ">=", today),
@@ -125,8 +125,21 @@ export default function FashionableMemberDashboard() {
             limit(1)
           )
         );
-        if (!rosterSnap.empty) {
-          const d = rosterSnap.docs[0].data();
+        if (dSnap.empty && user.displayName) {
+          // Fallback query by memberName
+          dSnap = await getDocs(
+            query(
+              collection(db, "unit_rosters"),
+              where("unitId", "==", rawUnitId),
+              where("memberName", "==", user.displayName),
+              where("serviceDate", ">=", today),
+              orderBy("serviceDate", "asc"),
+              limit(1)
+            )
+          );
+        }
+        if (!dSnap.empty) {
+          const d = dSnap.docs[0].data();
           setNextDuty({ date: d.serviceDate, role: d.dutyRole || "Team Member" });
         }
       } catch {}
@@ -838,6 +851,34 @@ export default function FashionableMemberDashboard() {
               </div>
             )}
           </div>
+
+          {/* Unit Actions Footer */}
+          <div
+            style={{
+              backgroundColor: "#F8FAFD",
+              borderTop: "1px solid #E8EDFB",
+              padding: "10px 20px",
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <Link
+              href="/portal/unit/swaps"
+              style={{
+                fontSize: "11.5px",
+                fontWeight: 600,
+                color: "#1F46C8",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              🔄 Request Duty Swap
+            </Link>
+          </div>
         </div>
       )}
 
@@ -1179,7 +1220,7 @@ export default function FashionableMemberDashboard() {
 
         {/* Share a Testimony */}
         <Link
-          href="/portal/member/inquire"
+          href="/portal/member/prayers?tab=testimonies"
           style={{
             backgroundColor: "#FFFBEB",
             borderRadius: "14px",
