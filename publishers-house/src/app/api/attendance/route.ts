@@ -73,8 +73,10 @@ export async function GET(req: Request) {
 }
 
 /**
- * DELETE /api/attendance?id=<docId>
- * Admin-only: delete a single attendance record.
+ * DELETE /api/attendance
+ * Single: DELETE /api/attendance?id=<docId>
+ * Mass:   DELETE /api/attendance with JSON { ids: string[] }
+ * Admin-only: deletes attendance record(s).
  */
 export async function DELETE(req: Request) {
   try {
@@ -82,25 +84,47 @@ export async function DELETE(req: Request) {
     if (!requester.uid || !requester.isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Record ID required" }, { status: 400 });
-    await getAdminDb().collection("attendance").doc(id).delete();
+    const singleId = url.searchParams.get("id");
+    let idsToDelete: string[] = [];
+
+    if (singleId) {
+      idsToDelete = [singleId];
+    } else {
+      try {
+        const body = await req.json();
+        if (Array.isArray(body?.ids)) {
+          idsToDelete = body.ids.filter(Boolean);
+        }
+      } catch {}
+    }
+
+    if (idsToDelete.length === 0) {
+      return NextResponse.json({ error: "Record ID(s) required" }, { status: 400 });
+    }
+
+    const db = getAdminDb();
+    const batch = db.batch();
+    for (const id of idsToDelete) {
+      batch.delete(db.collection("attendance").doc(id));
+    }
+    await batch.commit();
 
     // Audit log
     try {
-      await getAdminDb().collection("audit_logs").add({
-        action: `Attendance record deleted: id=${id}`,
-        actor: requester.uid,
+      await db.collection("audit_logs").add({
+        action: `Attendance records deleted: count=${idsToDelete.length} (ids: ${idsToDelete.slice(0, 5).join(", ")}${idsToDelete.length > 5 ? "..." : ""})`,
+        actor: requester.email || requester.uid,
         category: "attendance",
         timestamp: new Date().toISOString(),
       });
     } catch {}
 
-    return NextResponse.json({ ok: true, message: "Record deleted." });
+    return NextResponse.json({ ok: true, deletedCount: idsToDelete.length, message: `${idsToDelete.length} record(s) deleted.` });
   } catch (err: any) {
     console.error("DELETE /api/attendance error:", err);
-    return NextResponse.json({ error: "Failed to delete record" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete record(s)" }, { status: 500 });
   }
 }
 

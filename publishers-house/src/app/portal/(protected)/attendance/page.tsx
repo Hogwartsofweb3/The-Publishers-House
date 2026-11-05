@@ -50,6 +50,10 @@ export default function AttendanceAdminPage() {
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState("all");
 
+  // Mass Selection & Bulk Deletion
+  const [selectedRecordIds, setSelectedRecordIds] = useState<string[]>([]);
+  const [massDeleting, setMassDeleting] = useState(false);
+
   // Service Code & Automatic Timer Management
   const [streamCode, setStreamCode] = useState("");
   const [streamCodeActive, setStreamCodeActive] = useState(false);
@@ -162,9 +166,11 @@ export default function AttendanceAdminPage() {
         }));
         setRecords(items);
         setFilteredRecords(items);
+        setSelectedRecordIds([]);
       } else {
         setRecords([]);
         setFilteredRecords([]);
+        setSelectedRecordIds([]);
       }
     } catch (err) {
       console.error("Error fetching attendance records:", err);
@@ -202,6 +208,7 @@ export default function AttendanceAdminPage() {
       if (res.ok) {
         setRecords((prev) => prev.filter((r) => r.id !== id));
         setFilteredRecords((prev) => prev.filter((r) => r.id !== id));
+        setSelectedRecordIds((prev) => prev.filter((itemId) => itemId !== id));
         setOpenMenuId(null);
       } else {
         const data = await res.json().catch(() => ({}));
@@ -209,6 +216,57 @@ export default function AttendanceAdminPage() {
       }
     } catch (err: any) {
       alert("Error: " + err.message);
+    }
+  };
+
+  /** Toggle Select All visible filtered records */
+  const handleToggleSelectAll = () => {
+    if (selectedRecordIds.length === filteredRecords.length && filteredRecords.length > 0) {
+      setSelectedRecordIds([]);
+    } else {
+      setSelectedRecordIds(filteredRecords.map((r) => r.id));
+    }
+  };
+
+  /** Toggle Select a single record row */
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedRecordIds((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+    );
+  };
+
+  /** Bulk delete selected records */
+  const handleMassDelete = async () => {
+    if (selectedRecordIds.length === 0) return;
+    const count = selectedRecordIds.length;
+    if (!confirm(`Delete ${count} selected attendance record${count !== 1 ? "s" : ""}? This cannot be undone.`)) return;
+
+    setMassDeleting(true);
+    try {
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const res = await fetch("/api/attendance", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ ids: selectedRecordIds }),
+      });
+
+      if (res.ok) {
+        const toDeleteSet = new Set(selectedRecordIds);
+        setRecords((prev) => prev.filter((r) => !toDeleteSet.has(r.id)));
+        setFilteredRecords((prev) => prev.filter((r) => !toDeleteSet.has(r.id)));
+        setSelectedRecordIds([]);
+        setOpenMenuId(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert("Error: " + (data.error || "Failed to delete selected records."));
+      }
+    } catch (err: any) {
+      alert("Network error: " + err.message);
+    } finally {
+      setMassDeleting(false);
     }
   };
 
@@ -1105,11 +1163,90 @@ export default function AttendanceAdminPage() {
           </div>
         </div>
 
+        {/* ── Mass Action Selection Toolbar ── */}
+        {selectedRecordIds.length > 0 && (
+          <div
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#EEF2FB",
+              borderBottom: "1px solid #D5DCF2",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  color: "#0E1556",
+                }}
+              >
+                ✓ {selectedRecordIds.length} of {filteredRecords.length} record{selectedRecordIds.length !== 1 ? "s" : ""} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedRecordIds([])}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#1F46C8",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Deselect all
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleMassDelete}
+              disabled={massDeleting}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#DC2626",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "6px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: massDeleting ? "not-allowed" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: "0 2px 6px rgba(220, 38, 38, 0.25)",
+              }}
+            >
+              🗑️ {massDeleting ? "Deleting..." : `Delete Selected (${selectedRecordIds.length})`}
+            </button>
+          </div>
+        )}
+
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
-                <th style={{ padding: "14px 24px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Attendee</th>
+                <th style={{ padding: "14px 16px 14px 24px", width: "40px" }}>
+                  <input
+                    type="checkbox"
+                    aria-label="Select all"
+                    checked={
+                      filteredRecords.length > 0 &&
+                      selectedRecordIds.length === filteredRecords.length
+                    }
+                    onChange={handleToggleSelectAll}
+                    style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#1F46C8" }}
+                  />
+                </th>
+                <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Attendee</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Email</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Phone</th>
                 <th style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", whiteSpace: "nowrap" }}>Mode</th>
@@ -1123,14 +1260,14 @@ export default function AttendanceAdminPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     Loading attendance records...
                   </td>
                 </tr>
               )}
               {!loading && filteredRecords.length === 0 && (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
+                  <td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "#4A5490", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)" }}>
                     No check-ins recorded for {selectedDate}.
                   </td>
                 </tr>
@@ -1140,16 +1277,29 @@ export default function AttendanceAdminPage() {
                   ? r.timestamp.toDate().toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })
                   : "—";
                 const isMenuOpen = openMenuId === r.id;
+                const isRowSelected = selectedRecordIds.includes(r.id);
                 return (
                   <tr
                     key={r.id}
                     style={{
                       borderBottom: "1px solid #E8EDFB",
+                      backgroundColor: isRowSelected ? "#F3F6FD" : "transparent",
                       transition: "background-color 0.15s",
                     }}
                   >
+                    {/* Row Select Checkbox */}
+                    <td style={{ padding: "14px 16px 14px 24px", width: "40px" }}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${r.fullName}`}
+                        checked={isRowSelected}
+                        onChange={() => handleToggleSelectRow(r.id)}
+                        style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#1F46C8" }}
+                      />
+                    </td>
+
                     {/* Attendee Name */}
-                    <td style={{ padding: "14px 24px", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "14px 20px", whiteSpace: "nowrap" }}>
                       <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13.5px", fontWeight: 700, color: "#141C6E" }}>
                         {r.fullName}
                       </div>

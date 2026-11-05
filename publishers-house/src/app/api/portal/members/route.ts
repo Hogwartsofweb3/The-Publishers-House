@@ -815,12 +815,24 @@ export async function POST(req: NextRequest) {
         });
       } catch (authErr: any) {
         if (authErr.code === "auth/user-not-found") {
-          const newAuth = await adminAuth.createUser({
-            email,
-            password: tempPassword,
-            displayName: displayName || "Member",
-            phoneNumber: phone && phone.startsWith("+") ? phone : undefined,
-          });
+          const cleanPhone = phone ? phone.replace(/[^\d+]/g, "") : "";
+          const validE164 = cleanPhone && cleanPhone.startsWith("+") && cleanPhone.length >= 10 ? cleanPhone : undefined;
+          let newAuth;
+          try {
+            newAuth = await adminAuth.createUser({
+              email,
+              password: tempPassword,
+              displayName: displayName || "Member",
+              phoneNumber: validE164,
+            });
+          } catch {
+            // If phone number fails E.164 validation, create without phone number to ensure account creation succeeds
+            newAuth = await adminAuth.createUser({
+              email,
+              password: tempPassword,
+              displayName: displayName || "Member",
+            });
+          }
           authUid = newAuth.uid;
         } else {
           throw authErr;
