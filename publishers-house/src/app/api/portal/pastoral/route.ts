@@ -45,6 +45,17 @@ export async function POST(req: NextRequest) {
         },
         { merge: true }
       );
+
+      // Audit log
+      try {
+        await db.collection("audit_logs").add({
+          action: `${colName === "testimonies" ? "Testimony" : "Prayer"} ${id} marked as "${status}"`,
+          actor: user.email,
+          category: colName,
+          timestamp: new Date().toISOString(),
+        });
+      } catch {}
+
       return NextResponse.json({ ok: true });
     }
 

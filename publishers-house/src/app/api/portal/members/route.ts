@@ -1011,6 +1011,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Audit log
+      try {
+        await adminDb.collection("audit_logs").add({
+          action: `Member updated: ${displayName || uid}${role ? ` → role: ${role}` : ""}`,
+          actor: body.actorEmail || "admin",
+          category: "members",
+          timestamp: new Date().toISOString(),
+        });
+      } catch {}
+
       return NextResponse.json({ ok: true, updates });
     }
 
@@ -1039,6 +1049,17 @@ export async function POST(req: NextRequest) {
         // user may not be in Auth
       }
       removeCacheMember(uid);
+
+      // Audit log
+      try {
+        await adminDb.collection("audit_logs").add({
+          action: `Member deleted: uid=${uid}`,
+          actor: body.actorEmail || "admin",
+          category: "members",
+          timestamp: new Date().toISOString(),
+        });
+      } catch {}
+
       return NextResponse.json({ ok: true, deleted: uid });
     }
 

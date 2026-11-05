@@ -23,6 +23,12 @@ export default function UnitCommandCenter() {
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [attendanceMessage, setAttendanceMessage] = useState("");
 
+  // Announcement Form State
+  const [announceSubject, setAnnounceSubject] = useState("");
+  const [announceMessage, setAnnounceMessage] = useState("");
+  const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
+  const [announcementResult, setAnnouncementResult] = useState("");
+
   useEffect(() => {
     setDate(new Date().toISOString().split("T")[0]);
   }, []);
@@ -116,6 +122,37 @@ export default function UnitCommandCenter() {
     } finally {
       setSavingAttendance(false);
       setTimeout(() => setAttendanceMessage(""), 4000);
+    }
+  };
+
+  const handleSendAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announceSubject.trim() || !announceMessage.trim() || !user?.assignedUnitId) return;
+    setSendingAnnouncement(true);
+    setAnnouncementResult("");
+    try {
+      const res = await fetch("/api/portal/announce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: announceSubject.trim(),
+          message: announceMessage.trim(),
+          unitId: user.assignedUnitId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAnnouncementResult(`✓ Announcement sent to ${data.sent ?? "your"} unit member(s).`);
+        setAnnounceSubject("");
+        setAnnounceMessage("");
+      } else {
+        setAnnouncementResult(`✗ ${data.error || "Failed to send announcement."}`);
+      }
+    } catch {
+      setAnnouncementResult("✗ Network error. Please try again.");
+    } finally {
+      setSendingAnnouncement(false);
+      setTimeout(() => setAnnouncementResult(""), 6000);
     }
   };
 
@@ -320,6 +357,99 @@ export default function UnitCommandCenter() {
               }}
             >
               {savingAttendance ? "Submitting..." : "Submit Unit Attendance"}
+            </button>
+          </form>
+        </div>
+
+        {/* ── UNIT ANNOUNCEMENT TOOL ── */}
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "24px",
+            boxShadow: "0 2px 8px rgba(14,21,86,0.04)",
+          }}
+        >
+          <div style={{ marginBottom: "18px" }}>
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "15px",
+                fontWeight: 800,
+                color: "#0E1556",
+                marginBottom: "4px",
+              }}
+            >
+              📣 Send Unit Announcement
+            </div>
+            <div style={{ fontSize: "12px", color: "#64748B" }}>
+              Send an email announcement to all members of <strong>{activeUnit?.name || "your unit"}</strong>.
+            </div>
+          </div>
+
+          <form onSubmit={handleSendAnnouncement} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
+                Subject *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Reminder: Ushering duty this Sunday 7:30 AM"
+                value={announceSubject}
+                onChange={(e) => setAnnounceSubject(e.target.value)}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
+                Message *
+              </label>
+              <textarea
+                required
+                rows={4}
+                placeholder="Type your message here..."
+                value={announceMessage}
+                onChange={(e) => setAnnounceMessage(e.target.value)}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+              />
+            </div>
+
+            {announcementResult && (
+              <div
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: announcementResult.startsWith("✓") ? "#0F6B38" : "#B91C1C",
+                  backgroundColor: announcementResult.startsWith("✓") ? "#DCFCE7" : "#FEE2E2",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                }}
+              >
+                {announcementResult}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={sendingAnnouncement}
+              style={{
+                padding: "12px",
+                backgroundColor: "#0E1556",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "8px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontWeight: 700,
+                fontSize: "13px",
+                cursor: sendingAnnouncement ? "not-allowed" : "pointer",
+                opacity: sendingAnnouncement ? 0.7 : 1,
+              }}
+            >
+              {sendingAnnouncement ? "Sending..." : "📨 Send to All Unit Members"}
             </button>
           </form>
         </div>

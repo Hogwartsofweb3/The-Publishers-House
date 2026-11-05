@@ -242,44 +242,16 @@ export default function PastoralCarePage() {
     setImportingFirstTimers(true);
     setMsg("");
     try {
-      // Fetch first_timers with status "new"
-      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
-      if (snap.empty) {
-        setMsg("No new first-timers to import from attendance.");
-        setImportingFirstTimers(false);
-        setTimeout(() => setMsg(""), 3000);
-        return;
+      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
+      const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Import failed");
       }
-
-      let importCount = 0;
-      for (const docSnap of snap.docs) {
-        const ft = docSnap.data();
-        // Check if already in visitors by phone
-        const alreadyExists = visitors.some(
-          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
-        );
-        if (alreadyExists) continue;
-
-        // Add to visitors
-        await addDoc(collection(db, "visitors"), {
-          name: ft.fullName || ft.name || "Unknown",
-          phone: ft.phone || "",
-          email: ft.email || "",
-          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
-          assignedTo: "Pastoral Team",
-          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
-          status: "new",
-          createdAt: new Date().toISOString(),
-        });
-
-        // Mark as imported so it won't be pulled again
-        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
-        importCount++;
+      setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
+      if (data.imported > 0) {
+        fetchVisitors();
       }
-
-      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
-      // Refresh visitors list
-      fetchVisitors();
       setTimeout(() => setMsg(""), 5000);
     } catch (err: any) {
       setMsg("Import failed: " + (err.message || "unknown error"));
@@ -667,44 +639,16 @@ export default function PastoralCarePage() {
     setImportingFirstTimers(true);
     setMsg("");
     try {
-      // Fetch first_timers with status "new"
-      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
-      if (snap.empty) {
-        setMsg("No new first-timers to import from attendance.");
-        setImportingFirstTimers(false);
-        setTimeout(() => setMsg(""), 3000);
-        return;
+      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
+      const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Import failed");
       }
-
-      let importCount = 0;
-      for (const docSnap of snap.docs) {
-        const ft = docSnap.data();
-        // Check if already in visitors by phone
-        const alreadyExists = visitors.some(
-          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
-        );
-        if (alreadyExists) continue;
-
-        // Add to visitors
-        await addDoc(collection(db, "visitors"), {
-          name: ft.fullName || ft.name || "Unknown",
-          phone: ft.phone || "",
-          email: ft.email || "",
-          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
-          assignedTo: "Pastoral Team",
-          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
-          status: "new",
-          createdAt: new Date().toISOString(),
-        });
-
-        // Mark as imported so it won't be pulled again
-        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
-        importCount++;
+      setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
+      if (data.imported > 0) {
+        fetchVisitors();
       }
-
-      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
-      // Refresh visitors list
-      fetchVisitors();
       setTimeout(() => setMsg(""), 5000);
     } catch (err: any) {
       setMsg("Import failed: " + (err.message || "unknown error"));
@@ -733,44 +677,16 @@ export default function PastoralCarePage() {
     setImportingFirstTimers(true);
     setMsg("");
     try {
-      // Fetch first_timers with status "new"
-      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
-      if (snap.empty) {
-        setMsg("No new first-timers to import from attendance.");
-        setImportingFirstTimers(false);
-        setTimeout(() => setMsg(""), 3000);
-        return;
+      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
+      const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Import failed");
       }
-
-      let importCount = 0;
-      for (const docSnap of snap.docs) {
-        const ft = docSnap.data();
-        // Check if already in visitors by phone
-        const alreadyExists = visitors.some(
-          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
-        );
-        if (alreadyExists) continue;
-
-        // Add to visitors
-        await addDoc(collection(db, "visitors"), {
-          name: ft.fullName || ft.name || "Unknown",
-          phone: ft.phone || "",
-          email: ft.email || "",
-          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
-          assignedTo: "Pastoral Team",
-          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
-          status: "new",
-          createdAt: new Date().toISOString(),
-        });
-
-        // Mark as imported so it won't be pulled again
-        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
-        importCount++;
+      setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
+      if (data.imported > 0) {
+        fetchVisitors();
       }
-
-      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
-      // Refresh visitors list
-      fetchVisitors();
       setTimeout(() => setMsg(""), 5000);
     } catch (err: any) {
       setMsg("Import failed: " + (err.message || "unknown error"));

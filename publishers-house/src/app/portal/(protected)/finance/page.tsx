@@ -38,6 +38,16 @@ export default function FinancePage() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
+      // Use Admin-SDK-backed API to avoid Firestore quota exhaustion
+      const res = await fetch("/api/portal/finance");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+          return;
+        }
+      }
+      // Best-effort fallback to client SDK
       const snap = await getDocs(query(collection(db, "transactions"), orderBy("timestamp", "desc")));
       if (!snap.empty) {
         setTransactions(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction)));
@@ -45,7 +55,7 @@ export default function FinancePage() {
         setTransactions([]);
       }
     } catch (err) {
-      console.warn("Could not load transactions from Firestore:", err);
+      console.warn("Could not load transactions:", err);
       setTransactions([]);
     } finally {
       setLoading(false);

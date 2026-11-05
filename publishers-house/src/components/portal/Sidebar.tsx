@@ -20,6 +20,7 @@ export const adminNav = [
   { href: "/portal/testimonies", label: "Testimonies", icon: "✧" },
   { href: "/portal/courses", label: "Courses", icon: "📖" },
   { href: "/portal/facility", label: "Facility", icon: "🏛️" },
+  { href: "/portal/communications", label: "Communications", icon: "📣" },
   { href: "/portal/audit", label: "Audit Log", icon: "📋" },
   { href: "/portal/settings", label: "Settings", icon: "⚙️" },
 ];

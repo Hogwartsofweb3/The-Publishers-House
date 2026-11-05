@@ -52,12 +52,23 @@ export default function UnitSwapsPage() {
 
   const fetchUnitData = async (unitId: string) => {
     try {
-      // Members
-      const mq = query(collection(db, "users"), where("assignedUnitId", "==", unitId));
-      const msnap = await getDocs(mq);
-      setMembers(msnap.docs.map((d) => d.data() as PortalUser));
+      // Members — via Admin SDK API (quota-safe; avoids direct Firestore client reads)
+      let mList: PortalUser[] = [];
+      try {
+        const res = await fetch("/api/portal/members");
+        if (res.ok) {
+          const data = await res.json();
+          const all: PortalUser[] = data.members || [];
+          mList = all.filter(
+            (u) => (u.assignedUnitId || "").trim().toLowerCase() === unitId.trim().toLowerCase()
+          );
+        }
+      } catch {
+        // silent fallback — leave members empty
+      }
+      setMembers(mList);
 
-      // Swaps
+      // Swaps — low-volume collection, client SDK is fine here
       const sq = query(collection(db, "unit_swaps"), where("unitId", "==", unitId));
       const ssnap = await getDocs(sq);
       const list = ssnap.docs.map((d) => ({ id: d.id, ...d.data() } as SwapRequest));

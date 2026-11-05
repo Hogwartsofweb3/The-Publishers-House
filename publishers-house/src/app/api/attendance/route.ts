@@ -86,6 +86,17 @@ export async function DELETE(req: Request) {
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Record ID required" }, { status: 400 });
     await getAdminDb().collection("attendance").doc(id).delete();
+
+    // Audit log
+    try {
+      await getAdminDb().collection("audit_logs").add({
+        action: `Attendance record deleted: id=${id}`,
+        actor: requester.uid,
+        category: "attendance",
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
+
     return NextResponse.json({ ok: true, message: "Record deleted." });
   } catch (err: any) {
     console.error("DELETE /api/attendance error:", err);

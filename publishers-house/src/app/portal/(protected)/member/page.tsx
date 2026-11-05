@@ -458,258 +458,6 @@ export default function FashionableMemberDashboard() {
         </div>
       </div>
 
-      {/* ── 1b. MY UNIT CARD (shows only if member is assigned to a unit) ── */}
-      {unitName && (
-        <div
-          style={{
-            borderRadius: "16px",
-            overflow: "hidden",
-            border: "1px solid #D5DCF2",
-            boxShadow: "0 4px 14px rgba(14, 21, 86, 0.08)",
-          }}
-        >
-          {/* Dark header */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #0E1556 0%, #1F46C8 100%)",
-              padding: "16px 20px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "22px" }}>🏛️</span>
-              <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.14em",
-                    color: "rgba(255,255,255,0.65)",
-                    textTransform: "uppercase",
-                    marginBottom: "2px",
-                  }}
-                >
-                  My Unit
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "17px",
-                    fontWeight: 800,
-                    color: "#FFFFFF",
-                    lineHeight: "1.2em",
-                  }}
-                >
-                  {unitName}
-                </div>
-              </div>
-            </div>
-            {nextDuty && (
-              <div
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.12)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: "8px",
-                  padding: "6px 12px",
-                  textAlign: "right",
-                }}
-              >
-                <div style={{ fontSize: "9px", fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Next Duty</div>
-                <div style={{ fontSize: "12px", fontWeight: 700, color: "#F59E0B" }}>{nextDuty.date}</div>
-                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.75)" }}>{nextDuty.role}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Body */}
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              padding: "16px 20px",
-              display: "flex",
-              gap: "24px",
-              flexWrap: "wrap",
-              alignItems: "flex-start",
-            }}
-          >
-            {/* Meeting Schedule */}
-            <div style={{ flex: 1, minWidth: "160px" }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  color: "#1F46C8",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  marginBottom: "6px",
-                }}
-              >
-                📅 Meeting Schedule
-              </div>
-              <div style={{ fontSize: "12.5px", color: "#334155", fontWeight: 500 }}>Sundays — before & after service</div>
-              <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>Check with your unit head for specific time</div>
-            </div>
-
-            {/* Unit Head Contact */}
-            {unitHead && (
-              <div style={{ flex: 1, minWidth: "160px" }}>
-                <div
-                  style={{
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "#1F46C8",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    marginBottom: "6px",
-                  }}
-                >
-                  👤 Unit Head
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0E1556" }}>{unitHead.name}</div>
-                {unitHead.phone && (
-                  <a
-                    href={`tel:${unitHead.phone}`}
-                    style={{ fontSize: "11.5px", color: "#1F46C8", textDecoration: "none", display: "block", marginTop: "2px" }}
-                  >
-                    📞 {unitHead.phone}
-                  </a>
-                )}
-                {unitHead.email && (
-                  <a
-                    href={`mailto:${unitHead.email}`}
-                    style={{ fontSize: "11px", color: "#64748B", textDecoration: "none", display: "block", marginTop: "2px" }}
-                  >
-                    ✉️ {unitHead.email}
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* No unit head found fallback */}
-            {!unitHead && (
-              <div style={{ flex: 1, minWidth: "160px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "#1F46C8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
-                  👤 Unit Head
-                </div>
-                <div style={{ fontSize: "12px", color: "#94A3B8" }}>Contact the pastoral team</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── 1c. MY RECENT ATTENDANCE ── */}
-      {myAttendance.length > 0 && (
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D5DCF2",
-            borderRadius: "14px",
-            padding: "18px 20px",
-            boxShadow: "0 2px 8px rgba(14, 21, 86, 0.04)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "14px",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#0E1556",
-              }}
-            >
-              ✅ My Recent Attendance
-            </div>
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#0F6B38",
-                backgroundColor: "#E4F5EA",
-                padding: "2px 8px",
-                borderRadius: "99px",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              Last {myAttendance.slice(0, 3).length} services
-            </span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {myAttendance.slice(0, 3).map((rec, idx) => {
-              const modeEmoji = rec.mode === "online" ? "🌐" : "🏛️";
-              const modeLabel = rec.mode === "online" ? "Online Stream" : "In-Person";
-              const displayDate = rec.date
-                ? new Date(rec.date + "T00:00:00").toLocaleDateString("en-GB", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
-                : "—";
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    backgroundColor: "#F8FAFD",
-                    borderRadius: "8px",
-                    border: "1px solid #E8EDFB",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontSize: "18px" }}>{modeEmoji}</span>
-                    <div>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "12.5px",
-                          fontWeight: 700,
-                          color: "#0E1556",
-                        }}
-                      >
-                        {displayDate}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#64748B" }}>{modeLabel}</div>
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      color: "#0F6B38",
-                      backgroundColor: "#DCFCE7",
-                      padding: "3px 10px",
-                      borderRadius: "99px",
-                    }}
-                  >
-                    ✓ Signed
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* ── 2. UPCOMING EVENTS CAROUSEL (SLEEK APP BANNER) ─────────────── */}
       <div>
         <div
@@ -947,6 +695,258 @@ export default function FashionableMemberDashboard() {
         </div>
       </div>
 
+      {/* ── 2b. MY UNIT CARD (shows only if member is assigned to a unit) ── */}
+      {unitName && (
+        <div
+          style={{
+            borderRadius: "16px",
+            overflow: "hidden",
+            border: "1px solid #D5DCF2",
+            boxShadow: "0 4px 14px rgba(14, 21, 86, 0.08)",
+          }}
+        >
+          {/* Dark header */}
+          <div
+            style={{
+              background: "linear-gradient(135deg, #0E1556 0%, #1F46C8 100%)",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "22px" }}>🏛️</span>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    color: "rgba(255,255,255,0.65)",
+                    textTransform: "uppercase",
+                    marginBottom: "2px",
+                  }}
+                >
+                  My Unit
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "17px",
+                    fontWeight: 800,
+                    color: "#FFFFFF",
+                    lineHeight: "1.2em",
+                  }}
+                >
+                  {unitName}
+                </div>
+              </div>
+            </div>
+            {nextDuty && (
+              <div
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: "8px",
+                  padding: "6px 12px",
+                  textAlign: "right",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Next Duty</div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "#F59E0B" }}>{nextDuty.date}</div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.75)" }}>{nextDuty.role}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Body */}
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              padding: "16px 20px",
+              display: "flex",
+              gap: "24px",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+            }}
+          >
+            {/* Meeting Schedule */}
+            <div style={{ flex: 1, minWidth: "160px" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#1F46C8",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  marginBottom: "6px",
+                }}
+              >
+                📅 Meeting Schedule
+              </div>
+              <div style={{ fontSize: "12.5px", color: "#334155", fontWeight: 500 }}>Sundays — before &amp; after service</div>
+              <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>Check with your unit head for specific time</div>
+            </div>
+
+            {/* Unit Head Contact */}
+            {unitHead && (
+              <div style={{ flex: 1, minWidth: "160px" }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#1F46C8",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    marginBottom: "6px",
+                  }}
+                >
+                  👤 Unit Head
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0E1556" }}>{unitHead.name}</div>
+                {unitHead.phone && (
+                  <a
+                    href={`tel:${unitHead.phone}`}
+                    style={{ fontSize: "11.5px", color: "#1F46C8", textDecoration: "none", display: "block", marginTop: "2px" }}
+                  >
+                    📞 {unitHead.phone}
+                  </a>
+                )}
+                {unitHead.email && (
+                  <a
+                    href={`mailto:${unitHead.email}`}
+                    style={{ fontSize: "11px", color: "#64748B", textDecoration: "none", display: "block", marginTop: "2px" }}
+                  >
+                    ✉️ {unitHead.email}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* No unit head found fallback */}
+            {!unitHead && (
+              <div style={{ flex: 1, minWidth: "160px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#1F46C8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
+                  👤 Unit Head
+                </div>
+                <div style={{ fontSize: "12px", color: "#94A3B8" }}>Contact the pastoral team</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── 2c. MY RECENT ATTENDANCE ── */}
+      {myAttendance.length > 0 && (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "18px 20px",
+            boxShadow: "0 2px 8px rgba(14, 21, 86, 0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "14px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#0E1556",
+              }}
+            >
+              ✅ My Recent Attendance
+            </div>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "#0F6B38",
+                backgroundColor: "#E4F5EA",
+                padding: "2px 8px",
+                borderRadius: "99px",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Last {myAttendance.slice(0, 3).length} services
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {myAttendance.slice(0, 3).map((rec, idx) => {
+              const modeEmoji = rec.mode === "online" ? "🌐" : "🏛️";
+              const modeLabel = rec.mode === "online" ? "Online Stream" : "In-Person";
+              const displayDate = rec.date
+                ? new Date(rec.date + "T00:00:00").toLocaleDateString("en-GB", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "—";
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    backgroundColor: "#F8FAFD",
+                    borderRadius: "8px",
+                    border: "1px solid #E8EDFB",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "18px" }}>{modeEmoji}</span>
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "12.5px",
+                          fontWeight: 700,
+                          color: "#0E1556",
+                        }}
+                      >
+                        {displayDate}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#64748B" }}>{modeLabel}</div>
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#0F6B38",
+                      backgroundColor: "#DCFCE7",
+                      padding: "3px 10px",
+                      borderRadius: "99px",
+                    }}
+                  >
+                    ✓ Signed
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── 3. MEMBER SERVICES & QUICK ACTIONS (PIGGYVEST-STYLE 2X2 APP GRID) ── */}
       <div className="portal-action-grid">
         {/* Growth Track */}
@@ -1169,6 +1169,178 @@ export default function FashionableMemberDashboard() {
             </div>
             <div style={{ fontSize: "11px", color: "#64748B", lineHeight: "1.35em" }}>
               Watch &amp; Audio Expositions
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* ── 3b. SECONDARY QUICK ACTIONS (Testimony, Attendance History, Giving History) ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
+
+        {/* Share a Testimony */}
+        <Link
+          href="/portal/member/inquire"
+          style={{
+            backgroundColor: "#FFFBEB",
+            borderRadius: "14px",
+            padding: "16px",
+            border: "1.5px solid #FDE68A",
+            boxShadow: "0 2px 6px rgba(245,158,11,0.08)",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#FEF3C7",
+              color: "#D97706",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              flexShrink: 0,
+            }}
+          >
+            🌟
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#78350F" }}>
+              Share a Testimony
+            </div>
+            <div style={{ fontSize: "11px", color: "#92400E", marginTop: "2px" }}>
+              Glorify God with your testimony
+            </div>
+          </div>
+        </Link>
+
+        {/* My Attendance History */}
+        <Link
+          href="/portal/member/attendance"
+          style={{
+            backgroundColor: "#EEF2FB",
+            borderRadius: "14px",
+            padding: "16px",
+            border: "1.5px solid #C4D7FE",
+            boxShadow: "0 2px 6px rgba(31,70,200,0.06)",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#DBEAFE",
+              color: "#1D4ED8",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              flexShrink: 0,
+            }}
+          >
+            📋
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#1E3A8A" }}>
+              My Attendance
+            </div>
+            <div style={{ fontSize: "11px", color: "#1D4ED8", marginTop: "2px" }}>
+              View your service history
+            </div>
+          </div>
+        </Link>
+
+        {/* My Giving History */}
+        <Link
+          href="/portal/member/giving"
+          style={{
+            backgroundColor: "#F0FDF4",
+            borderRadius: "14px",
+            padding: "16px",
+            border: "1.5px solid #BBF7D0",
+            boxShadow: "0 2px 6px rgba(16,185,129,0.06)",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#DCFCE7",
+              color: "#16A34A",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              flexShrink: 0,
+            }}
+          >
+            💚
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#14532D" }}>
+              My Giving History
+            </div>
+            <div style={{ fontSize: "11px", color: "#16A34A", marginTop: "2px" }}>
+              Tithes, offerings & records
+            </div>
+          </div>
+        </Link>
+
+        {/* Connect with Pastorate */}
+        <Link
+          href="/portal/member/inquire"
+          style={{
+            backgroundColor: "#F5F3FF",
+            borderRadius: "14px",
+            padding: "16px",
+            border: "1.5px solid #DDD6FE",
+            boxShadow: "0 2px 6px rgba(124,58,237,0.06)",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#EDE9FE",
+              color: "#7C3AED",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              flexShrink: 0,
+            }}
+          >
+            💬
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#4C1D95" }}>
+              Connect with Pastorate
+            </div>
+            <div style={{ fontSize: "11px", color: "#7C3AED", marginTop: "2px" }}>
+              Counsel, questions & service
             </div>
           </div>
         </Link>

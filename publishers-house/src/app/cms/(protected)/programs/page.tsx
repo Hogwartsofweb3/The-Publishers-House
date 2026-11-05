@@ -698,6 +698,10 @@ export default function ProgramsCmsPage() {
     }
   };
 
+  // ── Local draft text for speakers fields (keyed by edition index)
+  // We store raw comma-separated text while editing to avoid cursor-jump bug
+  const [speakersDraft, setSpeakersDraft] = useState<Record<string, string>>({});
+
   // Attach from Church Sermon Catalog
   const handleAttachFromCatalog = (sermon: any) => {
     if (!activeSermonModal) return;
@@ -1613,13 +1617,26 @@ export default function ProgramsCmsPage() {
                       </div>
                       <input
                         type="text"
-                        value={(ed.speakers || []).join(", ")}
+                        value={speakersDraft[`${currentProgram.slug}-${edIdx}`] ?? (ed.speakers || []).join(", ")}
                         onChange={(e) => {
+                          // Keep raw string in local draft while typing — no array conversion
+                          const draftKey = `${currentProgram.slug}-${edIdx}`;
+                          setSpeakersDraft((prev) => ({ ...prev, [draftKey]: e.target.value }));
+                        }}
+                        onBlur={(e) => {
+                          // Commit to speakers array only on blur (when user finishes typing)
+                          const draftKey = `${currentProgram.slug}-${edIdx}`;
                           const sps = e.target.value
                             .split(",")
                             .map((s) => s.trim())
                             .filter(Boolean);
-                          updateEdition(edIdx, "speakers", sps);
+                          updateEdition(edIdx, "speakers", sps.length > 0 ? sps : []);
+                          // Clear draft so value reverts to canonical array form
+                          setSpeakersDraft((prev) => {
+                            const next = { ...prev };
+                            delete next[draftKey];
+                            return next;
+                          });
                         }}
                         placeholder="e.g. Dr. Joshua Agunbiade, Apostle Gideon Odoma, Rev. Rasine Irem, Min. Sharon Amana"
                         style={{ ...S.input, borderColor: "#0140C1" }}
