@@ -79,12 +79,105 @@ export default function FashionableMemberDashboard() {
     return () => clearInterval(timer);
   }, [carouselPaused, eventsList.length]);
 
+  // Unit & attendance card state
+  const [unitHead, setUnitHead] = useState<{ name: string; email?: string; phone?: string } | null>(null);
+  const [nextDuty, setNextDuty] = useState<{ date: string; role: string } | null>(null);
+  const [myAttendance, setMyAttendance] = useState<{ date: string; mode: string; type: string; timestamp: string }[]>([]);
+
   // Fast action states
   const [prayerContent, setPrayerContent] = useState("");
   const [prayerSubmitting, setPrayerSubmitting] = useState(false);
   const [prayerSuccess, setPrayerSuccess] = useState(false);
 
   const { playVideo, playAudio } = useAudio();
+
+  // Load unit head contact & next duty when user is known
+  useEffect(() => {
+    if (!user?.assignedUnitId) return;
+    const rawUnitId = user.assignedUnitId;
+
+    const loadUnitData = async () => {
+      try {
+        // Find unit head from members list
+        const res = await fetch("/api/portal/members");
+        if (res.ok) {
+          const data = await res.json();
+          const members: any[] = data.members || [];
+          const head = members.find(
+            (m) => m.role === "unit_head" && (m.assignedUnitId === rawUnitId)
+          );
+          if (head) {
+            setUnitHead({ name: head.displayName, email: head.email, phone: head.phone });
+          }
+        }
+      } catch {}
+
+      // Load next upcoming duty from unit_roster
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const rosterSnap = await getDocs(
+          query(
+            collection(db, "unit_roster"),
+            where("unitId", "==", rawUnitId),
+            where("memberUid", "==", user.uid),
+            where("serviceDate", ">=", today),
+            orderBy("serviceDate", "asc"),
+            limit(1)
+          )
+        );
+        if (!rosterSnap.empty) {
+          const d = rosterSnap.docs[0].data();
+          setNextDuty({ date: d.serviceDate, role: d.dutyRole || "Team Member" });
+        }
+      } catch {}
+    };
+
+    loadUnitData();
+  }, [user]);
+
+  // Load recent attendance records
+  useEffect(() => {
+    if (!user) return;
+    const loadAttendance = async () => {
+      try {
+        let snap;
+        // Try by userId first, fallback by email
+        try {
+          snap = await getDocs(
+            query(
+              collection(db, "attendance"),
+              where("userId", "==", user.uid),
+              orderBy("timestamp", "desc"),
+              limit(5)
+            )
+          );
+        } catch {
+          snap = await getDocs(
+            query(
+              collection(db, "attendance"),
+              where("email", "==", user.email),
+              orderBy("timestamp", "desc"),
+              limit(5)
+            )
+          );
+        }
+        if (snap && !snap.empty) {
+          setMyAttendance(
+            snap.docs.map((d) => {
+              const data = d.data();
+              return {
+                date: data.date || data.timestamp?.toDate?.()?.toISOString().split("T")[0] || "",
+                mode: data.mode || "in-person",
+                type: data.type || "regular",
+                timestamp: data.timestamp?.toDate?.()?.toISOString() || data.createdAt || "",
+              };
+            })
+          );
+        }
+      } catch {}
+    };
+    loadAttendance();
+  }, [user]);
 
   // Load user & church feeds
   useEffect(() => {
@@ -364,6 +457,258 @@ export default function FashionableMemberDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── 1b. MY UNIT CARD (shows only if member is assigned to a unit) ── */}
+      {unitName && (
+        <div
+          style={{
+            borderRadius: "16px",
+            overflow: "hidden",
+            border: "1px solid #D5DCF2",
+            boxShadow: "0 4px 14px rgba(14, 21, 86, 0.08)",
+          }}
+        >
+          {/* Dark header */}
+          <div
+            style={{
+              background: "linear-gradient(135deg, #0E1556 0%, #1F46C8 100%)",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "22px" }}>🏛️</span>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    color: "rgba(255,255,255,0.65)",
+                    textTransform: "uppercase",
+                    marginBottom: "2px",
+                  }}
+                >
+                  My Unit
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "17px",
+                    fontWeight: 800,
+                    color: "#FFFFFF",
+                    lineHeight: "1.2em",
+                  }}
+                >
+                  {unitName}
+                </div>
+              </div>
+            </div>
+            {nextDuty && (
+              <div
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: "8px",
+                  padding: "6px 12px",
+                  textAlign: "right",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Next Duty</div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: "#F59E0B" }}>{nextDuty.date}</div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.75)" }}>{nextDuty.role}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Body */}
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              padding: "16px 20px",
+              display: "flex",
+              gap: "24px",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+            }}
+          >
+            {/* Meeting Schedule */}
+            <div style={{ flex: 1, minWidth: "160px" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#1F46C8",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  marginBottom: "6px",
+                }}
+              >
+                📅 Meeting Schedule
+              </div>
+              <div style={{ fontSize: "12.5px", color: "#334155", fontWeight: 500 }}>Sundays — before & after service</div>
+              <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>Check with your unit head for specific time</div>
+            </div>
+
+            {/* Unit Head Contact */}
+            {unitHead && (
+              <div style={{ flex: 1, minWidth: "160px" }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#1F46C8",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    marginBottom: "6px",
+                  }}
+                >
+                  👤 Unit Head
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0E1556" }}>{unitHead.name}</div>
+                {unitHead.phone && (
+                  <a
+                    href={`tel:${unitHead.phone}`}
+                    style={{ fontSize: "11.5px", color: "#1F46C8", textDecoration: "none", display: "block", marginTop: "2px" }}
+                  >
+                    📞 {unitHead.phone}
+                  </a>
+                )}
+                {unitHead.email && (
+                  <a
+                    href={`mailto:${unitHead.email}`}
+                    style={{ fontSize: "11px", color: "#64748B", textDecoration: "none", display: "block", marginTop: "2px" }}
+                  >
+                    ✉️ {unitHead.email}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* No unit head found fallback */}
+            {!unitHead && (
+              <div style={{ flex: 1, minWidth: "160px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#1F46C8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
+                  👤 Unit Head
+                </div>
+                <div style={{ fontSize: "12px", color: "#94A3B8" }}>Contact the pastoral team</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── 1c. MY RECENT ATTENDANCE ── */}
+      {myAttendance.length > 0 && (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "18px 20px",
+            boxShadow: "0 2px 8px rgba(14, 21, 86, 0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "14px",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#0E1556",
+              }}
+            >
+              ✅ My Recent Attendance
+            </div>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "#0F6B38",
+                backgroundColor: "#E4F5EA",
+                padding: "2px 8px",
+                borderRadius: "99px",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Last {myAttendance.slice(0, 3).length} services
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {myAttendance.slice(0, 3).map((rec, idx) => {
+              const modeEmoji = rec.mode === "online" ? "🌐" : "🏛️";
+              const modeLabel = rec.mode === "online" ? "Online Stream" : "In-Person";
+              const displayDate = rec.date
+                ? new Date(rec.date + "T00:00:00").toLocaleDateString("en-GB", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "—";
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    backgroundColor: "#F8FAFD",
+                    borderRadius: "8px",
+                    border: "1px solid #E8EDFB",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "18px" }}>{modeEmoji}</span>
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          fontSize: "12.5px",
+                          fontWeight: 700,
+                          color: "#0E1556",
+                        }}
+                      >
+                        {displayDate}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#64748B" }}>{modeLabel}</div>
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#0F6B38",
+                      backgroundColor: "#DCFCE7",
+                      padding: "3px 10px",
+                      borderRadius: "99px",
+                    }}
+                  >
+                    ✓ Signed
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── 2. UPCOMING EVENTS CAROUSEL (SLEEK APP BANNER) ─────────────── */}
       <div>

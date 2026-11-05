@@ -10,6 +10,7 @@ import {
   doc,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 
 type VisitorStatus = "new" | "followup" | "established";
@@ -18,6 +19,7 @@ interface Visitor {
   id: string;
   name: string;
   phone: string;
+  email?: string;
   firstVisitDate: string;
   assignedTo: string;
   notes: string;
@@ -69,6 +71,7 @@ export default function PastoralCarePage() {
   const [inquiryNotes, setInquiryNotes] = useState("");
   const [inquiryStatusFilter, setInquiryStatusFilter] = useState("all");
   const [inquirySearch, setInquirySearch] = useState("");
+  const [importingFirstTimers, setImportingFirstTimers] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -235,6 +238,57 @@ export default function PastoralCarePage() {
     setTimeout(() => setMsg(""), 3500);
   };
 
+  const handleImportFirstTimers = async () => {
+    setImportingFirstTimers(true);
+    setMsg("");
+    try {
+      // Fetch first_timers with status "new"
+      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
+      if (snap.empty) {
+        setMsg("No new first-timers to import from attendance.");
+        setImportingFirstTimers(false);
+        setTimeout(() => setMsg(""), 3000);
+        return;
+      }
+
+      let importCount = 0;
+      for (const docSnap of snap.docs) {
+        const ft = docSnap.data();
+        // Check if already in visitors by phone
+        const alreadyExists = visitors.some(
+          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
+        );
+        if (alreadyExists) continue;
+
+        // Add to visitors
+        await addDoc(collection(db, "visitors"), {
+          name: ft.fullName || ft.name || "Unknown",
+          phone: ft.phone || "",
+          email: ft.email || "",
+          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
+          assignedTo: "Pastoral Team",
+          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
+          status: "new",
+          createdAt: new Date().toISOString(),
+        });
+
+        // Mark as imported so it won't be pulled again
+        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
+        importCount++;
+      }
+
+      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
+      // Refresh visitors list
+      fetchVisitors();
+      setTimeout(() => setMsg(""), 5000);
+    } catch (err: any) {
+      setMsg("Import failed: " + (err.message || "unknown error"));
+      setTimeout(() => setMsg(""), 4000);
+    } finally {
+      setImportingFirstTimers(false);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Header */}
@@ -290,7 +344,7 @@ export default function PastoralCarePage() {
             </span>
           )}
 
-          <button
+            <button
             onClick={() => setShowAddModal(true)}
             style={{
               backgroundColor: "#1F46C8",
@@ -306,6 +360,30 @@ export default function PastoralCarePage() {
             }}
           >
             + Add First-Time Visitor
+          </button>
+
+          {/* Import from Attendance Button */}
+          <button
+            onClick={handleImportFirstTimers}
+            disabled={importingFirstTimers}
+            style={{
+              backgroundColor: importingFirstTimers ? "#E8EDFB" : "#FFFFFF",
+              border: "1.5px solid #1F46C8",
+              borderRadius: "10px",
+              padding: "10px 18px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 600,
+              fontSize: "13px",
+              color: "#1F46C8",
+              cursor: importingFirstTimers ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: importingFirstTimers ? 0.7 : 1,
+            }}
+          >
+            <span>⬇️</span>
+            {importingFirstTimers ? "Importing..." : "Import from Attendance"}
           </button>
         </div>
       </div>
@@ -585,7 +663,58 @@ export default function PastoralCarePage() {
                   if (inquiryStatusFilter !== "all" && inq.status !== inquiryStatusFilter) return false;
                   if (inquirySearch.trim()) {
                     const q = inquirySearch.toLowerCase();
-                    return (
+                    const handleImportFirstTimers = async () => {
+    setImportingFirstTimers(true);
+    setMsg("");
+    try {
+      // Fetch first_timers with status "new"
+      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
+      if (snap.empty) {
+        setMsg("No new first-timers to import from attendance.");
+        setImportingFirstTimers(false);
+        setTimeout(() => setMsg(""), 3000);
+        return;
+      }
+
+      let importCount = 0;
+      for (const docSnap of snap.docs) {
+        const ft = docSnap.data();
+        // Check if already in visitors by phone
+        const alreadyExists = visitors.some(
+          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
+        );
+        if (alreadyExists) continue;
+
+        // Add to visitors
+        await addDoc(collection(db, "visitors"), {
+          name: ft.fullName || ft.name || "Unknown",
+          phone: ft.phone || "",
+          email: ft.email || "",
+          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
+          assignedTo: "Pastoral Team",
+          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
+          status: "new",
+          createdAt: new Date().toISOString(),
+        });
+
+        // Mark as imported so it won't be pulled again
+        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
+        importCount++;
+      }
+
+      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
+      // Refresh visitors list
+      fetchVisitors();
+      setTimeout(() => setMsg(""), 5000);
+    } catch (err: any) {
+      setMsg("Import failed: " + (err.message || "unknown error"));
+      setTimeout(() => setMsg(""), 4000);
+    } finally {
+      setImportingFirstTimers(false);
+    }
+  };
+
+  return (
                       inq.memberName?.toLowerCase().includes(q) ||
                       inq.memberEmail?.toLowerCase().includes(q) ||
                       inq.memberPhone?.includes(q) ||
@@ -600,7 +729,58 @@ export default function PastoralCarePage() {
                   const isContacted = inq.status === "contacted";
                   const dateStr = inq.createdAt ? new Date(inq.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
-                  return (
+                  const handleImportFirstTimers = async () => {
+    setImportingFirstTimers(true);
+    setMsg("");
+    try {
+      // Fetch first_timers with status "new"
+      const snap = await getDocs(query(collection(db, "first_timers"), where("status", "==", "new")));
+      if (snap.empty) {
+        setMsg("No new first-timers to import from attendance.");
+        setImportingFirstTimers(false);
+        setTimeout(() => setMsg(""), 3000);
+        return;
+      }
+
+      let importCount = 0;
+      for (const docSnap of snap.docs) {
+        const ft = docSnap.data();
+        // Check if already in visitors by phone
+        const alreadyExists = visitors.some(
+          (v) => v.phone && ft.phone && v.phone.replace(/\s/g, "") === ft.phone.replace(/\s/g, "")
+        );
+        if (alreadyExists) continue;
+
+        // Add to visitors
+        await addDoc(collection(db, "visitors"), {
+          name: ft.fullName || ft.name || "Unknown",
+          phone: ft.phone || "",
+          email: ft.email || "",
+          firstVisitDate: ft.date || new Date().toISOString().split("T")[0],
+          assignedTo: "Pastoral Team",
+          notes: `Imported from attendance sign-in. Mode: ${ft.mode || "in-person"}. ${ft.hearAboutUs ? "Heard about us: " + ft.hearAboutUs : ""}`.trim(),
+          status: "new",
+          createdAt: new Date().toISOString(),
+        });
+
+        // Mark as imported so it won't be pulled again
+        await updateDoc(doc(db, "first_timers", docSnap.id), { status: "imported" });
+        importCount++;
+      }
+
+      setMsg(`${importCount} first-timer${importCount !== 1 ? "s" : ""} imported into the pastoral pipeline ✓`);
+      // Refresh visitors list
+      fetchVisitors();
+      setTimeout(() => setMsg(""), 5000);
+    } catch (err: any) {
+      setMsg("Import failed: " + (err.message || "unknown error"));
+      setTimeout(() => setMsg(""), 4000);
+    } finally {
+      setImportingFirstTimers(false);
+    }
+  };
+
+  return (
                     <div
                       key={inq.id}
                       style={{

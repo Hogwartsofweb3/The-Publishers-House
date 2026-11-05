@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import Link from "next/link";
 import { usePortal } from "@/lib/portalContext";
 
@@ -56,37 +54,42 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const usersSnap = await getDocs(collection(db, "users"));
-        const realMembers = usersSnap.size;
+        // Members via server API (admin SDK — no quota)
+        let totalMembers = 0;
+        let newThisMonth = 0;
+        let activeVolunteers = 0;
+        try {
+          const res = await fetch("/api/portal/members");
+          if (res.ok) {
+            const data = await res.json();
+            const members: any[] = data.members || [];
+            totalMembers = members.length;
+            const monthStart = new Date();
+            monthStart.setDate(1);
+            monthStart.setHours(0, 0, 0, 0);
+            members.forEach((m) => {
+              if (m.createdAt && new Date(m.createdAt) >= monthStart) newThisMonth++;
+              if (m.assignedUnitId) activeVolunteers++;
+            });
+          }
+        } catch {}
 
-        const monthStart = new Date();
-        monthStart.setDate(1);
-        monthStart.setHours(0, 0, 0, 0);
-
-        let newCount = 0;
-        let volunteersCount = 0;
-        usersSnap.docs.forEach((d) => {
-          const uData = d.data();
-          const created = uData.createdAt;
-          if (created && new Date(created) >= monthStart) newCount++;
-          if (uData.assignedUnitId) volunteersCount++;
-        });
-
-        // Testimonies & Prayers
+        // Testimonies & Prayers pending count via fetch
         let pendingT = 0;
         let pendingP = 0;
         try {
-          const tSnap = await getDocs(query(collection(db, "testimonies"), where("status", "==", "pending")));
-          pendingT = tSnap.size;
+          const tRes = await fetch("/api/portal/testimonies?status=pending&countOnly=true");
+          if (tRes.ok) { const d = await tRes.json(); pendingT = d.count ?? 0; }
+        } catch {}
+        try {
+          const pRes = await fetch("/api/portal/prayers?status=pending&countOnly=true");
+          if (pRes.ok) { const d = await pRes.json(); pendingP = d.count ?? 0; }
         } catch {}
 
+        // Audit logs (these are usually low-volume, client SDK is fine here as a best-effort)
         try {
-          const pSnap = await getDocs(query(collection(db, "prayers"), where("status", "==", "pending")));
-          pendingP = pSnap.size;
-        } catch {}
-
-        // Audit logs
-        try {
+          const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
           const auditSnap = await getDocs(query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(4)));
           if (!auditSnap.empty) {
             setActivities(
@@ -96,7 +99,9 @@ export default function AdminDashboard() {
                   id: d.id,
                   action: data.action || "System action",
                   actor: data.actor || "Admin",
-                  timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Recently",
+                  timestamp: data.timestamp?.toDate
+                    ? data.timestamp.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                    : "Recently",
                   category: data.category || "General",
                 };
               })
@@ -108,34 +113,38 @@ export default function AdminDashboard() {
           setActivities([]);
         }
 
-        // Transactions (Weekly & Monthly Giving)
+        // Transactions — best-effort via client SDK
         let weeklyG = 0;
         let monthlyG = 0;
         try {
+          const { getDocs, collection } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
           const txSnap = await getDocs(collection(db, "transactions"));
           const now = new Date();
+          const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
           const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           txSnap.forEach((d) => {
             const data = d.data();
             const amt = Number(data.amountNGN) || 0;
             const txDate = data.timestamp ? new Date(data.timestamp) : null;
-            if (txDate && txDate >= monthStart) monthlyG += amt;
+            if (txDate && txDate >= monthStart2) monthlyG += amt;
             if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
           });
         } catch {}
 
-        // Attendance Last Week
+        // Attendance last week — best-effort
         let attLastWeek = 0;
         try {
+          const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
           const hcSnap = await getDocs(query(collection(db, "attendance_headcounts"), orderBy("date", "desc"), limit(1)));
-          if (!hcSnap.empty) {
-            attLastWeek = hcSnap.docs[0].data().total || 0;
-          }
+          if (!hcSnap.empty) attLastWeek = hcSnap.docs[0].data().total || 0;
         } catch {}
 
-        // Events
-        let upEventsCount = 0;
+        // Events via client SDK best-effort
         try {
+          const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
           const evSnap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc"), limit(4)));
           if (!evSnap.empty) {
             const list = evSnap.docs.map((d) => {
@@ -153,7 +162,6 @@ export default function AdminDashboard() {
               } as EventItem;
             });
             setEvents(list);
-            upEventsCount = list.filter((e) => e.status === "published").length;
           } else {
             setEvents([]);
           }
@@ -162,18 +170,18 @@ export default function AdminDashboard() {
         }
 
         setKpi({
-          totalMembers: realMembers,
-          newThisMonth: newCount,
+          totalMembers,
+          newThisMonth,
           weeklyGiving: weeklyG,
           monthlyGiving: monthlyG,
           attendanceLastWeek: attLastWeek,
-          upcomingEventsCount: upEventsCount,
-          activeVolunteers: volunteersCount,
+          upcomingEventsCount: events.length,
+          activeVolunteers,
           pendingTestimonies: pendingT,
           pendingPrayers: pendingP,
         });
       } catch (err) {
-        console.warn("Could not load all Firestore data:", err);
+        console.warn("Could not load dashboard stats:", err);
       } finally {
         setLoading(false);
       }
