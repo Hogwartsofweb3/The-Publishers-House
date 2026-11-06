@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { requirePortalUser } from "@/lib/serverAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const user = await requirePortalUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!["super_admin", "admin", "portal_manager"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    }
+
     const snap = await getAdminDb()
       .collection("transactions")
       .orderBy("timestamp", "desc")
@@ -21,6 +30,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requirePortalUser();
+    if (!user || !["super_admin", "admin", "portal_manager"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    }
+
     const body = await req.json();
     const { action, id, transaction } = body;
     const db = getAdminDb();
@@ -32,7 +46,7 @@ export async function POST(req: NextRequest) {
       }
       const docId = id || `tx-${Date.now()}`;
       await db.collection("transactions").doc(docId).set(
-        { ...transaction, loggedAt: now },
+        { ...transaction, recordedBy: user.email, loggedAt: now },
         { merge: true }
       );
       return NextResponse.json({ ok: true, id: docId });

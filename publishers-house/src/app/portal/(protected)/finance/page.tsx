@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, query, orderBy, onSnapshot, limit } from "firebase/firestore";
 
 interface Transaction {
   id: string;
@@ -20,6 +20,7 @@ interface Transaction {
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastSync, setLastSync] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "reports">("overview");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -35,8 +36,8 @@ export default function FinancePage() {
     notes: "",
   });
 
-  const fetchTransactions = async () => {
-    setLoading(true);
+  const fetchTransactions = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       // Use Admin-SDK-backed API to avoid Firestore quota exhaustion
       const res = await fetch("/api/portal/finance");
@@ -44,27 +45,73 @@ export default function FinancePage() {
         const data = await res.json();
         if (Array.isArray(data.transactions)) {
           setTransactions(data.transactions);
+          setLastSync(new Date());
           return;
         }
       }
       // Best-effort fallback to client SDK
-      const snap = await getDocs(query(collection(db, "transactions"), orderBy("timestamp", "desc")));
+      const snap = await getDocs(query(collection(db, "transactions"), orderBy("timestamp", "desc"), limit(200)));
       if (!snap.empty) {
         setTransactions(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction)));
+        setLastSync(new Date());
       } else {
         setTransactions([]);
       }
     } catch (err) {
       console.warn("Could not load transactions:", err);
-      setTransactions([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    // 1. Initial fetch
+    fetchTransactions(false);
+
+    // 2. Real-time Firestore onSnapshot listener (<1s update on new donation)
+    let unsubscribeSnapshot: (() => void) | null = null;
+    try {
+      const q = query(collection(db, "transactions"), orderBy("timestamp", "desc"), limit(200));
+      unsubscribeSnapshot = onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            setTransactions(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction)));
+            setLastSync(new Date());
+            setLoading(false);
+          }
+        },
+        () => {
+          // Fallback to polling
+        }
+      );
+    } catch {
+      // Fallback to polling
+    }
+
+    // 3. Fast 5-second polling interval (runs only when tab is active/visible)
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchTransactions(true);
+      }
+    }, 5000);
+
+    // 4. Instant re-fetch when returning to the tab
+    const onFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchTransactions(true);
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    return () => {
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [fetchTransactions]);
 
   const handleSaveTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,12 +132,17 @@ export default function FinancePage() {
     };
 
     try {
-      await fetch("/api/cms/transactions", {
+      const res = await fetch("/api/portal/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "log", id, transaction: newTx }),
+        body: JSON.stringify(newTx),
       });
-    } catch {}
+      if (res.ok) {
+        fetchTransactions(true);
+      }
+    } catch (err) {
+      console.error("Save manual transaction error:", err);
+    }
 
     setTransactions((prev) => [newTx, ...prev]);
     setShowModal(false);
@@ -255,7 +307,7 @@ export default function FinancePage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
           {msg && (
             <span
               style={{
@@ -271,6 +323,60 @@ export default function FinancePage() {
               {msg}
             </span>
           )}
+
+          {/* Live Sync Pill */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              backgroundColor: "#E6F4EA",
+              border: "1px solid #CEEAD6",
+              borderRadius: "20px",
+              padding: "6px 12px",
+            }}
+          >
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#137333",
+                boxShadow: "0 0 0 2px rgba(19, 115, 51, 0.2)",
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#137333",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Live Sync
+            </span>
+            <span style={{ fontSize: "10.5px", color: "#5F6368" }}>
+              {lastSync.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+            <button
+              onClick={() => fetchTransactions(false)}
+              title="Refresh now"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "12px",
+                color: "#137333",
+                padding: "0 2px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              ↻
+            </button>
+          </div>
 
           <button
             onClick={exportCSV}
@@ -658,7 +764,35 @@ export default function FinancePage() {
                     </td>
 
                     <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#141C6E" }}>
-                      {t.method}
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                          backgroundColor:
+                            (t.method || "").toLowerCase() === "paystack"
+                              ? "#E8EDFB"
+                              : (t.method || "").toLowerCase() === "crypto"
+                              ? "#F3E8FF"
+                              : "#F4F6FB",
+                          color:
+                            (t.method || "").toLowerCase() === "paystack"
+                              ? "#1F46C8"
+                              : (t.method || "").toLowerCase() === "crypto"
+                              ? "#6B21A8"
+                              : "#141C6E",
+                          fontWeight: 600,
+                          fontSize: "11px",
+                        }}
+                      >
+                        {(t.method || "").toLowerCase() === "paystack"
+                          ? "💳 Paystack"
+                          : (t.method || "").toLowerCase() === "crypto"
+                          ? "⚡ Crypto"
+                          : t.method || "Direct Transfer"}
+                      </span>
                     </td>
 
                     <td style={{ padding: "14px 20px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 800, color: "#141C6E" }}>
