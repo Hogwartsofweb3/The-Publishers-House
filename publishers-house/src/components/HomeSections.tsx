@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, doc, getDoc } from "firebase/firestore";
+import { formatEventTime } from "@/lib/eventTimingUtils";
 
 /* ── Tokens ── */
 const Navy   = "#151A54";
@@ -188,7 +189,7 @@ export default function HomeSections({ photoStrip = ["event-1.jpg", "event-2.jpg
                       <span style={{ ...T.colophon, color: Blue700 }}>{ev.scripture}</span>
                       <span style={{ ...T.colophon, color: Paper400 }}>·</span>
                     </>}
-                    <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
+                    <span style={{ ...T.colophon, color: Slate500 }}>{formatEventTime(ev, true)}</span>
                     <span style={{ ...T.colophon, color: Paper400 }}>·</span>
                     <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
                   </div>

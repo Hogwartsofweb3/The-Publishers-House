@@ -24,6 +24,12 @@ const MONTH_MAP: Record<string, number> = {
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
 
+/**
+ * All church gatherings in Jos / Abuja are in West Africa Time (WAT = UTC+1).
+ * Nigeria does not observe Daylight Saving Time (always UTC+1).
+ * This function guarantees start and end timestamps are anchored to WAT,
+ * regardless of the visitor's local device timezone or clock setting.
+ */
 export function parseStartAndEnd(item: any): {
   start: Date;
   end: Date;
@@ -33,16 +39,40 @@ export function parseStartAndEnd(item: any): {
   let start: Date | null = null;
   let end: Date | null = null;
 
-  // 1. Try explicit startAt field
+  // 1. Try explicit startAt field (ISO string)
   if (item?.startAt) {
-    const d = new Date(item.startAt);
+    let str = String(item.startAt).trim();
+    if (str.includes("T") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      // Missing timezone offset: anchor to West Africa Time (WAT = UTC+1)
+      str = `${str}+01:00`;
+    }
+    const d = new Date(str);
     if (!isNaN(d.getTime())) start = d;
   }
 
-  // 2. Try date field (ISO string like "2026-10-28")
+  // 2. Try date field (e.g. "2026-11-05") combined with time field
   if (!start && item?.date && String(item.date).includes("-")) {
-    const d = new Date(item.date);
-    if (!isNaN(d.getTime())) start = d;
+    const parts = String(item.date).split("-").map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const year = parts[0];
+      const month = parts[1] - 1; // 0-indexed
+      const day = parts[2];
+
+      let hours = 16;
+      let minutes = 30;
+      if (item?.time) {
+        const match = String(item.time).match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+        if (match) {
+          hours = parseInt(match[1], 10);
+          minutes = match[2] ? parseInt(match[2], 10) : 0;
+          const meridian = (match[3] || "").toUpperCase();
+          if (meridian === "PM" && hours < 12) hours += 12;
+          if (meridian === "AM" && hours === 12) hours = 0;
+        }
+      }
+      // WAT is UTC+1 -> UTC hour is (hours - 1)
+      start = new Date(Date.UTC(year, month, day, hours - 1, minutes, 0, 0));
+    }
   }
 
   // 3. Fallback: parse from day/date/month/year/time fields
@@ -52,8 +82,8 @@ export function parseStartAndEnd(item: any): {
     const month = MONTH_MAP[mStr] !== undefined ? MONTH_MAP[mStr] : new Date().getMonth();
     const day = parseInt(String(item?.date || "1").replace(/\D/g, ""), 10) || 1;
 
-    let hours = 16; // default 4 PM
-    let minutes = 0;
+    let hours = 16;
+    let minutes = 30;
     if (item?.time) {
       const match = String(item.time).match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
       if (match) {
@@ -64,12 +94,17 @@ export function parseStartAndEnd(item: any): {
         if (meridian === "AM" && hours === 12) hours = 0;
       }
     }
-    start = new Date(year, month, day, hours, minutes, 0, 0);
+    // WAT is UTC+1 -> UTC hour is (hours - 1)
+    start = new Date(Date.UTC(year, month, day, hours - 1, minutes, 0, 0));
   }
 
   // Try endAt
   if (item?.endAt) {
-    const ed = new Date(item.endAt);
+    let str = String(item.endAt).trim();
+    if (str.includes("T") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      str = `${str}+01:00`;
+    }
+    const ed = new Date(str);
     if (!isNaN(ed.getTime())) end = ed;
   }
 
@@ -86,27 +121,89 @@ export function parseStartAndEnd(item: any): {
   };
 }
 
+/**
+ * Formats event time with WAT timestamp, and dynamically adds the visitor's local
+ * time when they are viewing from another timezone (e.g. UK, USA, Europe).
+ * Example: "16:30 WAT (11:30 AM your time)"
+ */
+export function formatEventTime(item: any, allowLocal: boolean = false): string {
+  const rawTime = String(item?.time || "").trim();
+
+  // Normalize base Nigerian WAT time string
+  let watTime = rawTime;
+  if (!watTime) {
+    const { start } = parseStartAndEnd(item);
+    // Format in WAT (UTC+1)
+    const watDate = new Date(start.getTime() + 60 * 60 * 1000);
+    const h = watDate.getUTCHours();
+    const m = watDate.getUTCMinutes();
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    watTime = `${h12}:${m.toString().padStart(2, "0")} ${ampm} WAT`;
+  } else if (!watTime.toUpperCase().includes("WAT") && !watTime.toUpperCase().includes("GMT")) {
+    watTime = `${watTime} WAT`;
+  }
+
+  // If client-side local timezone detection is enabled
+  if (allowLocal && typeof window !== "undefined") {
+    try {
+      // in minutes (WAT is UTC+1 = -60 minutes in JS getTimezoneOffset)
+      const localOffset = new Date().getTimezoneOffset();
+      if (localOffset !== -60) {
+        const { start } = parseStartAndEnd(item);
+        const localFormatted = start.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+        // Determine short timezone abbreviation if available
+        let tzName = "";
+        try {
+          const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(start);
+          const tzPart = parts.find((p) => p.type === "timeZoneName");
+          if (tzPart && tzPart.value && !tzPart.value.includes("GMT+1")) {
+            tzName = ` ${tzPart.value}`;
+          }
+        } catch {}
+
+        return `${watTime} (${localFormatted}${tzName || " your time"})`;
+      }
+    } catch {
+      // Fallback to watTime
+    }
+  }
+
+  return watTime;
+}
+
 export function getEventTiming(item: any, now: Date = new Date()): EventTimingInfo {
   const { start, end, startMs, endMs } = parseStartAndEnd(item);
   const nowMs = now.getTime();
   const diffMs = startMs - nowMs;
 
+  // Convert to WAT calendar dates (UTC+1) so "Today" and "Tomorrow" represent church calendar days
+  const WAT_OFFSET_MS = 60 * 60 * 1000;
+  const startWat = new Date(startMs + WAT_OFFSET_MS);
+  const nowWat = new Date(nowMs + WAT_OFFSET_MS);
+
   const isSameCalendarDay =
-    start.getFullYear() === now.getFullYear() &&
-    start.getMonth() === now.getMonth() &&
-    start.getDate() === now.getDate();
+    startWat.getUTCFullYear() === nowWat.getUTCFullYear() &&
+    startWat.getUTCMonth() === nowWat.getUTCMonth() &&
+    startWat.getUTCDate() === nowWat.getUTCDate();
 
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowWat = new Date(nowWat);
+  tomorrowWat.setUTCDate(nowWat.getUTCDate() + 1);
   const isTomorrow =
-    start.getFullYear() === tomorrow.getFullYear() &&
-    start.getMonth() === tomorrow.getMonth() &&
-    start.getDate() === tomorrow.getDate();
+    startWat.getUTCFullYear() === tomorrowWat.getUTCFullYear() &&
+    startWat.getUTCMonth() === tomorrowWat.getUTCMonth() &&
+    startWat.getUTCDate() === tomorrowWat.getUTCDate();
 
-  const formattedRange = start.toLocaleDateString("en-US", {
+  const formattedRange = startWat.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   // 1. Concluded: after end time
@@ -160,7 +257,7 @@ export function getEventTiming(item: any, now: Date = new Date()): EventTimingIn
     };
   }
 
-  // 4. Today: same calendar day, but more than 5h away
+  // 4. Today: same calendar day in WAT, but more than 5h away
   if (isSameCalendarDay) {
     const timeFormatted = item.time ? ` · ${String(item.time).replace("WAT", "").trim()}` : "";
     return {

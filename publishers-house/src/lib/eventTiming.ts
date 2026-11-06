@@ -7,10 +7,15 @@
  */
 
 import { useState, useEffect } from "react";
-import { getEventTiming, parseStartAndEnd, type EventTimingInfo } from "@/lib/eventTimingUtils";
+import {
+  getEventTiming,
+  parseStartAndEnd,
+  formatEventTime,
+  type EventTimingInfo,
+} from "@/lib/eventTimingUtils";
 
 export type { EventTimingInfo };
-export { getEventTiming, parseStartAndEnd };
+export { getEventTiming, parseStartAndEnd, formatEventTime };
 
 export function useEventTiming(item: any): EventTimingInfo {
   const [timing, setTiming] = useState<EventTimingInfo>(() => getEventTiming(item));
@@ -23,7 +28,6 @@ export function useEventTiming(item: any): EventTimingInfo {
     const tick = () => {
       const t = getEventTiming(item);
       setTiming(t);
-      // Adjust interval dynamically
       timer = setTimeout(tick, t.status === "countdown" ? 1000 : 30000);
     };
 
@@ -33,4 +37,19 @@ export function useEventTiming(item: any): EventTimingInfo {
   }, [JSON.stringify(item)]);
 
   return timing;
+}
+
+/**
+ * Hook to dynamically render the event time:
+ * - Shows Nigerian time with timezone: e.g. "16:30 WAT"
+ * - If visitor is outside Nigeria, seamlessly appends: "(11:30 AM your time)"
+ */
+export function useFormattedEventTime(item: any): string {
+  const [display, setDisplay] = useState<string>(() => formatEventTime(item, false));
+
+  useEffect(() => {
+    setDisplay(formatEventTime(item, true));
+  }, [item?.time, item?.startAt, item?.date]);
+
+  return display;
 }

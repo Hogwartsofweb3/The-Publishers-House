@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import LatestTeachingCarousel from "@/components/LatestTeachingCarousel";
-import { useEventTiming, parseStartAndEnd } from "@/lib/eventTiming";
+import { useEventTiming, useFormattedEventTime, parseStartAndEnd } from "@/lib/eventTiming";
 
 const ArticleCarousel = dynamic(() => import("@/components/ArticleCarousel"), {
   ssr: false,
@@ -123,6 +123,7 @@ const FALLBACK_GATHERINGS = [
 /* ── Single Event Executive Feature Card (When exactly 1 event is in Next Gatherings) ── */
 function HomeGatheringSingleFeature({ ev }: { ev: any }) {
   const timing = useEventTiming(ev);
+  const formattedTime = useFormattedEventTime(ev);
   const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
   const isLogo =
     flierImg.toLowerCase().includes("logo") ||
@@ -325,7 +326,7 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
                 <span style={{ ...T.colophon, color: Paper400 }}>·</span>
               </>
             )}
-            <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>{formattedTime}</span>
             <span style={{ ...T.colophon, color: Paper400 }}>·</span>
             <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
           </div>
@@ -397,6 +398,7 @@ function HomeGatheringSingleFeature({ ev }: { ev: any }) {
 /* ── Standard Gathering Card (Dynamic Width, Sleek 170px Header, Live Countdown Tag) ── */
 function HomeGatheringCard({ ev }: { ev: any }) {
   const timing = useEventTiming(ev);
+  const formattedTime = useFormattedEventTime(ev);
   const flierImg = (ev.flierUrl || ev.imageUrl || "").trim();
   const isLogo =
     flierImg.toLowerCase().includes("logo") ||
@@ -604,7 +606,7 @@ function HomeGatheringCard({ ev }: { ev: any }) {
                 <span style={{ ...T.colophon, color: Paper400 }}>·</span>
               </>
             )}
-            <span style={{ ...T.colophon, color: Slate500 }}>{ev.time}</span>
+            <span style={{ ...T.colophon, color: Slate500 }}>{formattedTime}</span>
             <span style={{ ...T.colophon, color: Paper400 }}>·</span>
             <span style={{ ...T.colophon, color: Slate500 }}>{ev.city}</span>
           </div>
