@@ -71,7 +71,57 @@ export async function GET(req: Request) {
     const db = getAdminDb();
     try {
       const snap = await db.collection("attendance").where("date", "==", date).get();
-      const records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      let records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      // Auto-cross reference against registered members in users collection
+      try {
+        const usersSnap = await db.collection("users").get();
+        const emailToUid = new Map<string, string>();
+        const phoneToUid = new Map<string, string>();
+
+        usersSnap.docs.forEach((u) => {
+          const uData = u.data();
+          if (uData.email) {
+            emailToUid.set(String(uData.email).toLowerCase().trim(), u.id);
+          }
+          if (uData.phone) {
+            const clean = String(uData.phone).replace(/[^0-9]/g, "");
+            if (clean) {
+              phoneToUid.set(clean, u.id);
+              if (clean.startsWith("0") && clean.length === 11) {
+                phoneToUid.set("234" + clean.slice(1), u.id);
+              }
+              if (clean.startsWith("234") && clean.length === 13) {
+                phoneToUid.set("0" + clean.slice(3), u.id);
+              }
+            }
+          }
+        });
+
+        records = records.map((r: any) => {
+          let matchedUserId = r.userId;
+          if (!matchedUserId && r.email) {
+            matchedUserId = emailToUid.get(String(r.email).toLowerCase().trim());
+          }
+          if (!matchedUserId && r.phone) {
+            const clean = String(r.phone).replace(/[^0-9]/g, "");
+            matchedUserId = phoneToUid.get(clean);
+          }
+
+          if (matchedUserId) {
+            return {
+              ...r,
+              userId: matchedUserId,
+              isRegisteredMember: true,
+              isGuest: false,
+            };
+          }
+          return r;
+        });
+      } catch (lookupErr) {
+        console.warn("Could not cross-reference users for attendance:", lookupErr);
+      }
+
       // Sort newest first (by timestamp)
       records.sort((a: any, b: any) => {
         const ta = a.timestamp?._seconds ?? a.timestamp?.seconds ?? 0;
@@ -267,6 +317,34 @@ export async function POST(req: Request) {
     const createdIds: string[] = [];
 
     for (const att of validAttendees) {
+      // Check if attendee email/phone matches a registered member if not logged in
+      let matchedUserId = userId;
+      if (!matchedUserId && att.email) {
+        try {
+          const emailSnap = await db.collection("users").where("email", "==", att.email.toLowerCase().trim()).limit(1).get();
+          if (!emailSnap.empty) {
+            matchedUserId = emailSnap.docs[0].id;
+          }
+        } catch {}
+      }
+      if (!matchedUserId && att.phone) {
+        const clean = att.phone.replace(/[^0-9]/g, "");
+        const variants = [clean];
+        if (clean.startsWith("0") && clean.length === 11) variants.push("234" + clean.slice(1));
+        if (clean.startsWith("234") && clean.length === 13) variants.push("0" + clean.slice(3));
+        for (const p of variants) {
+          try {
+            const pSnap = await db.collection("users").where("phone", "==", p).limit(1).get();
+            if (!pSnap.empty) {
+              matchedUserId = pSnap.docs[0].id;
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      const isRecognizedMember = Boolean(matchedUserId);
+
       const record: Record<string, any> = {
         fullName: att.fullName,
         phone: att.phone || "Not Provided",
@@ -278,7 +356,8 @@ export async function POST(req: Request) {
         type: "weekend_service",
         date: todayDate,
         timestamp: new Date(),
-        isGuest: !userId || Boolean(att.checkedInBy) || Boolean(att.isFirstTimer),
+        isGuest: !isRecognizedMember || Boolean(att.checkedInBy) || Boolean(att.isFirstTimer),
+        isRegisteredMember: isRecognizedMember,
       };
 
       if (att.isFirstTimer) {
@@ -300,8 +379,8 @@ export async function POST(req: Request) {
         }).catch(() => {});
       }
 
-      if (userId && !att.checkedInBy) {
-        record.userId = userId;
+      if (matchedUserId && !att.checkedInBy) {
+        record.userId = matchedUserId;
       }
 
       if (att.checkedInBy) {

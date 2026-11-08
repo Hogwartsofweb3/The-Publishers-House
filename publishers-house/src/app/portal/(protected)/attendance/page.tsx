@@ -17,6 +17,7 @@ interface AttendanceRecord {
   isFirstTimer?: boolean;
   hearAboutUs?: string;
   userId?: string;
+  isRegisteredMember?: boolean;
   checkedInBy?: string;
   date: string;
   timestamp?: any; // Firestore server timestamp — arrives as { _seconds, _nanoseconds } via Admin SDK JSON
@@ -646,7 +647,7 @@ export default function AttendanceAdminPage() {
         `"${r.mode || "in_person"}"`,
         `"${r.location || r.streamChannel || ""}"`,
         `"${r.serviceCode || ""}"`,
-        `"${r.userId ? "Member" : "Guest"}"`,
+        `"${(r.userId || r.isRegisteredMember) ? "Member" : "Guest"}"`,
         `"${r.isFirstTimer ? "Yes" : "No"}"`,
         `"${r.hearAboutUs || ""}"`,
         `"${r.date || ""}"`,
@@ -665,7 +666,7 @@ export default function AttendanceAdminPage() {
 
   const inPersonRecords = records.filter((r) => r.mode === "in_person");
   const onlineRecords = records.filter((r) => r.mode === "online");
-  const guestCount = records.filter((r) => r.isGuest || !r.userId).length;
+  const guestCount = records.filter((r) => !r.userId && !r.isRegisteredMember).length;
 
   const selectedAttendees = records.filter((r) => selectedRecordIds.includes(r.id));
   const withEmailCount = selectedAttendees.filter((r) => r.email && r.email.trim().length > 0).length;
@@ -1595,9 +1596,30 @@ export default function AttendanceAdminPage() {
 
                     {/* Member Type */}
                     <td style={{ padding: "14px 20px", whiteSpace: "nowrap" }}>
-                      <span style={{ display: "inline-block", padding: "3px 8px", borderRadius: "6px", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "10.5px", fontWeight: 700, backgroundColor: r.userId ? "#E4F5EA" : "#FFF2D6", color: r.userId ? "#0F6B38" : "#7A5200" }}>
-                        {r.checkedInBy ? `Guest (via ${r.checkedInBy.split(" ")[0]})` : r.userId ? "Member" : "Walk-in"}
-                      </span>
+                      {(() => {
+                        const isMember = Boolean(r.userId || r.isRegisteredMember);
+                        const isGuestVia = Boolean(r.checkedInBy);
+                        return (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              fontSize: "10.5px",
+                              fontWeight: 700,
+                              backgroundColor: isGuestVia ? "#EFF6FF" : isMember ? "#E4F5EA" : "#FFF2D6",
+                              color: isGuestVia ? "#1D4ED8" : isMember ? "#0F6B38" : "#7A5200",
+                            }}
+                          >
+                            {isGuestVia
+                              ? `Guest (via ${r.checkedInBy!.split(" ")[0]})`
+                              : isMember
+                              ? "Member"
+                              : "Walk-in"}
+                          </span>
+                        );
+                      })()}
                     </td>
 
                     {/* Time */}
