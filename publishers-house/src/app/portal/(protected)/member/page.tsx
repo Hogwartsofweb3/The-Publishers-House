@@ -207,7 +207,7 @@ export default function FashionableMemberDashboard() {
     const loadChurchData = async () => {
       try {
         const [sermonsData, articlesData] = await Promise.all([
-          getSermons(3),
+          getSermons(3, true),
           getArticles(3),
         ]);
         setRecentSermons(sermonsData);

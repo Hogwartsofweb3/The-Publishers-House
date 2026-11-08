@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, query, where, limit as firestoreLimit, doc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, query, where, orderBy, limit as firestoreLimit, doc, getDoc } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -232,12 +232,25 @@ export async function getSermons(limitCount = 1000, bypassCache = false): Promis
   }
 
   try {
-    const q = query(
-      collection(db, "sermons"),
-      where("published", "==", true),
-      firestoreLimit(limitCount)
-    );
-    const snap = await getDocs(q);
+    let snap;
+    try {
+      const q = query(
+        collection(db, "sermons"),
+        where("published", "==", true),
+        orderBy("date", "desc"),
+        firestoreLimit(1000)
+      );
+      snap = await getDocs(q);
+    } catch {
+      // Fallback if index on published + date is missing
+      const qFallback = query(
+        collection(db, "sermons"),
+        where("published", "==", true),
+        firestoreLimit(1000)
+      );
+      snap = await getDocs(qFallback);
+    }
+
     const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
     const deduped = deduplicateSermons(results);
     // Sort from newest to oldest by default (newest messages first)
@@ -248,7 +261,7 @@ export async function getSermons(limitCount = 1000, bypassCache = false): Promis
       expires: now + 5 * 60 * 1000, // 5 minutes in-memory cache
     };
 
-    return sorted;
+    return sorted.slice(0, limitCount);
   } catch (err) {
     console.warn("Firestore getSermons error (using cache fallback if available):", err);
     if (sermonsMemoryCache && sermonsMemoryCache.data.length > 0) {

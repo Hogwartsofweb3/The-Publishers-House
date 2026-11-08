@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import type { AtRiskMember, AttendanceRecordItem } from "@/app/api/portal/pastoral/at-risk/route";
+import AttendanceCompareTab from "@/components/portal/AttendanceCompareTab";
 
 type VisitorStatus = "fading" | "new" | "followup" | "established";
 
@@ -86,7 +87,18 @@ export default function PastoralCarePage() {
   const [atRiskLoading, setAtRiskLoading] = useState(true);
   const [campusFilter, setCampusFilter] = useState<"all" | "jos" | "abuja" | "online">("all");
 
-  const [activeTab, setActiveTab] = useState<"pipeline" | "at_risk_list" | "inquiries">("pipeline");
+  const [activeTab, setActiveTab] = useState<"pipeline" | "compare" | "at_risk_list" | "inquiries">("pipeline");
+
+  // Read tab parameter from URL on load (e.g. /portal/pastoral?tab=compare)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get("tab");
+      if (tabParam === "compare" || tabParam === "inquiries" || tabParam === "pipeline" || tabParam === "at_risk_list") {
+        setActiveTab(tabParam as any);
+      }
+    }
+  }, []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDrawerMember, setSelectedDrawerMember] = useState<SelectedMemberProfile | null>(null);
   const [notesEdit, setNotesEdit] = useState("");
@@ -644,6 +656,26 @@ export default function PastoralCarePage() {
           </button>
 
           <button
+            onClick={() => setActiveTab("compare")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: activeTab === "compare" ? "#1F46C8" : "transparent",
+              color: activeTab === "compare" ? "#FFFFFF" : "#4A5490",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <span>📈 3-Date Compare & Member Promotion</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("inquiries")}
             style={{
               padding: "8px 16px",
@@ -1111,6 +1143,11 @@ export default function PastoralCarePage() {
             );
           })}
         </div>
+      )}
+
+      {/* 3-Date Historical Attendance Comparison & Member Promotion Tab */}
+      {activeTab === "compare" && (
+        <AttendanceCompareTab initialCampus={campusFilter} />
       )}
 
       {/* Member Inquiries & Unit Applications Tab */}

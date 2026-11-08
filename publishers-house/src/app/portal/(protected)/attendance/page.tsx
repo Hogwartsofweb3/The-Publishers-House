@@ -741,6 +741,29 @@ export default function AttendanceAdminPage() {
             />
           </div>
 
+          <a
+            href="/portal/pastoral?tab=compare"
+            style={{
+              backgroundColor: "#1F46C8",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px 16px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 600,
+              fontSize: "13px",
+              color: "#FFFFFF",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 6px rgba(31, 70, 200, 0.25)",
+              cursor: "pointer",
+            }}
+          >
+            <span>📈</span>
+            Compare 3 Dates (Pastoral Tool)
+          </a>
+
           <button
             onClick={handleExportCSV}
             style={{
