@@ -73,13 +73,15 @@ export async function GET(req: Request) {
       const snap = await db.collection("attendance").where("date", "==", date).get();
       let records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-      // Auto-cross reference against registered members in users collection
+      // Strictly validate member status against official accounts in users collection
       try {
         const usersSnap = await db.collection("users").get();
+        const validMemberUids = new Set<string>();
         const emailToUid = new Map<string, string>();
         const phoneToUid = new Map<string, string>();
 
         usersSnap.docs.forEach((u) => {
+          validMemberUids.add(u.id);
           const uData = u.data();
           if (uData.email) {
             emailToUid.set(String(uData.email).toLowerCase().trim(), u.id);
@@ -99,24 +101,28 @@ export async function GET(req: Request) {
         });
 
         records = records.map((r: any) => {
-          let matchedUserId = r.userId;
-          if (!matchedUserId && r.email) {
-            matchedUserId = emailToUid.get(String(r.email).toLowerCase().trim());
-          }
-          if (!matchedUserId && r.phone) {
+          // An attendee is ONLY a Member if their account actually exists in the Members Directory
+          let memberUid: string | null = null;
+          if (r.userId && validMemberUids.has(r.userId)) {
+            memberUid = r.userId;
+          } else if (r.email && emailToUid.has(String(r.email).toLowerCase().trim())) {
+            memberUid = emailToUid.get(String(r.email).toLowerCase().trim())!;
+          } else if (r.phone) {
             const clean = String(r.phone).replace(/[^0-9]/g, "");
-            matchedUserId = phoneToUid.get(clean);
+            if (phoneToUid.has(clean)) {
+              memberUid = phoneToUid.get(clean)!;
+            }
           }
 
-          if (matchedUserId) {
-            return {
-              ...r,
-              userId: matchedUserId,
-              isRegisteredMember: true,
-              isGuest: false,
-            };
-          }
-          return r;
+          const isOfficialMember = Boolean(memberUid);
+
+          return {
+            ...r,
+            userId: memberUid || undefined,
+            isMember: isOfficialMember,
+            isRegisteredMember: isOfficialMember,
+            isGuest: !isOfficialMember || Boolean(r.checkedInBy) || Boolean(r.isFirstTimer),
+          };
         });
       } catch (lookupErr) {
         console.warn("Could not cross-reference users for attendance:", lookupErr);
@@ -317,8 +323,16 @@ export async function POST(req: Request) {
     const createdIds: string[] = [];
 
     for (const att of validAttendees) {
-      // Check if attendee email/phone matches a registered member if not logged in
-      let matchedUserId = userId;
+      // Check if attendee email/phone matches an official account in users directory
+      let matchedUserId: string | null = null;
+      if (userId) {
+        try {
+          const userDoc = await db.collection("users").doc(userId).get();
+          if (userDoc.exists) {
+            matchedUserId = userId;
+          }
+        } catch {}
+      }
       if (!matchedUserId && att.email) {
         try {
           const emailSnap = await db.collection("users").where("email", "==", att.email.toLowerCase().trim()).limit(1).get();
