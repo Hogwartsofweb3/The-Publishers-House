@@ -5,6 +5,13 @@ import { requirePortalUser } from "@/lib/serverAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Baseline date for official multi-day church attendance tracking.
+ * November 5th, 2026 marks the first official church gathering (Festival of Light).
+ * All test entries prior to this baseline are excluded from failing/at-risk analytics.
+ */
+export const ATTENDANCE_BASELINE_DATE = "2026-11-05";
+
 export interface AttendanceRecordItem {
   id: string;
   date: string;
@@ -65,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const campusFilter = (searchParams.get("campus") || "all").toLowerCase();
-    const minMissed = parseInt(searchParams.get("minMissed") || "2", 10);
+    const minMissed = parseInt(searchParams.get("minMissed") || "3", 10);
 
     const db = getAdminDb();
 
@@ -94,14 +101,18 @@ export async function GET(req: NextRequest) {
       if (vData.name) visitorByName.set(vData.name.trim().toLowerCase(), vData);
     });
 
-    // 3. Extract unique service dates sorted descending (newest to oldest)
-    const rawAttendanceDocs = attendanceSnap.docs.map((d) => ({ id: d.id, ...d.data() } as any));
+    // 3. Extract unique service dates starting from the November 5, 2026 baseline
+    // All dates prior to this baseline are excluded from failing/at-risk attendance calculation.
+    const rawAttendanceDocs = attendanceSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as any))
+      .filter((r) => (r.date || "") >= ATTENDANCE_BASELINE_DATE);
+
     const allDates = Array.from(
       new Set(rawAttendanceDocs.map((r) => r.date).filter(Boolean))
     ).sort((a: any, b: any) => (a < b ? 1 : -1));
 
-    // Focus on the top 6 most recent service dates for analysis
-    const trackedDates = allDates.slice(0, 6);
+    // Focus on recent service dates since the baseline for analysis
+    const trackedDates = allDates.slice(0, 8);
 
     // 4. Group attendance by individual
     const peopleMap = new Map<

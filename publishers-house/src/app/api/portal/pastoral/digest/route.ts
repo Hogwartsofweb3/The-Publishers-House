@@ -5,6 +5,13 @@ import { requirePortalUser } from "@/lib/serverAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Baseline date for official multi-day church attendance tracking.
+ * November 5th, 2026 marks the first official church gathering (Festival of Light).
+ * All test entries prior to this baseline are excluded from failing/at-risk analytics.
+ */
+export const ATTENDANCE_BASELINE_DATE = "2026-11-05";
+
 function normalizePhone(phone?: string): string {
   if (!phone) return "";
   const digits = phone.replace(/[^0-9]/g, "");
@@ -117,12 +124,16 @@ export async function compileWeeklyDigest(triggeredBy: string) {
     attendanceSnap = await db.collection("attendance").limit(1500).get();
   }
 
-  const rawAttendanceDocs = attendanceSnap.docs.map((d) => ({ id: d.id, ...d.data() } as any));
+  // Filter attendance records to those on or after the baseline date (November 5, 2026)
+  const rawAttendanceDocs = attendanceSnap.docs
+    .map((d) => ({ id: d.id, ...d.data() } as any))
+    .filter((r) => (r.date || "") >= ATTENDANCE_BASELINE_DATE);
+
   const allDates = Array.from(
     new Set(rawAttendanceDocs.map((r) => r.date).filter(Boolean))
   ).sort((a: any, b: any) => (a < b ? 1 : -1));
 
-  const trackedDates = allDates.slice(0, 6);
+  const trackedDates = allDates.slice(0, 8);
   const peopleMap = new Map<string, any>();
 
   for (const r of rawAttendanceDocs) {

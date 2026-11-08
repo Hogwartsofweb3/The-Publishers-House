@@ -51,7 +51,7 @@ const COLUMNS: {
     badgeBg: "#FFE4E6",
     badgeColor: "#9F1239",
     accentColor: "#E11D48",
-    desc: "Active attendees with 2+ consecutive missed services",
+    desc: "Active attendees with 3+ consecutive missed services since Nov 5th",
   },
   {
     key: "new",
