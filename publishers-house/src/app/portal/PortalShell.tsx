@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { signOut, updatePassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
@@ -12,23 +11,7 @@ import { getRoleLabel } from "@/lib/portalAuth";
 import { PortalProvider, usePortal } from "@/lib/portalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
 import PwaInstallPrompt from "@/components/portal/PwaInstallPrompt";
-
-// Lazy-load Sidebar — it imports firebase/auth & portalContext, deferring that
-// parse cost until after first paint. SSR=false avoids a hydration mismatch on
-// the collapsed/open state which is entirely client-driven.
-const Sidebar = dynamic(() => import("@/components/portal/Sidebar"), {
-  ssr: false,
-  loading: () => (
-    <div
-      style={{
-        width: "264px",
-        minHeight: "100vh",
-        backgroundColor: "#0E1556",
-        flexShrink: 0,
-      }}
-    />
-  ),
-});
+import Sidebar from "@/components/portal/Sidebar";
 
 function PortalHeaderAndContent({
   user,
