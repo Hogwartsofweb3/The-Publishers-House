@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ALLOWED_COLLECTIONS = ["testimonies", "prayers"];
-const ALLOWED_STATUSES = ["pending", "approved", "rejected", "responded"];
+const ALLOWED_STATUSES = ["pending", "approved", "rejected", "responded", "prayed"];
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,7 +36,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Missing document id" }, { status: 400 });
       }
 
-      await db.collection(colName).doc(id).set(
+      const docRef = db.collection(colName).doc(id);
+      const docSnap = await docRef.get();
+      const docData = docSnap.exists ? docSnap.data() || {} : {};
+
+      await docRef.set(
         {
           status,
           updatedAt: new Date().toISOString(),
@@ -45,6 +49,42 @@ export async function POST(req: NextRequest) {
         },
         { merge: true }
       );
+
+      // Create member in-portal notification if prayer was prayed or testimony approved
+      try {
+        const targetEmail = docData.email || "";
+        const targetUserId = docData.userId || docData.uid || "";
+
+        if (targetEmail || targetUserId) {
+          if (colName === "prayers" && status === "prayed") {
+            const previewText = (docData.content || docData.request || "Your prayer request").substring(0, 50);
+            await db.collection("portal_notifications").add({
+              userId: targetUserId,
+              userEmail: targetEmail ? targetEmail.toLowerCase().trim() : "",
+              title: "Prayer Request Lifted Up 🙏",
+              message: `The pastorate has prayed over your petition: "${previewText}..."`,
+              type: "prayer_prayed",
+              link: "/portal/member/prayers",
+              read: false,
+              createdAt: new Date().toISOString(),
+            });
+          } else if (colName === "testimonies" && status === "approved") {
+            const previewText = (docData.title || docData.content || "Your testimony").substring(0, 50);
+            await db.collection("portal_notifications").add({
+              userId: targetUserId,
+              userEmail: targetEmail ? targetEmail.toLowerCase().trim() : "",
+              title: "Testimony Approved ✨",
+              message: `Your testimony "${previewText}..." has been approved and published to encourage the brethren.`,
+              type: "testimony_approved",
+              link: "/portal/testimonies",
+              read: false,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.warn("Could not dispatch member notification:", notifErr);
+      }
 
       // Audit log
       try {

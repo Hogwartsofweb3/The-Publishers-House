@@ -10,6 +10,7 @@ import { getSermons, getArticles, Sermon, Article } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAudio } from "@/components/GlobalAudioPlayer";
 import type { PlaybackRecord } from "@/app/api/portal/playback/route";
+import AddToCalendarButton from "@/components/portal/AddToCalendarButton";
 
 function formatSeconds(secs: number): string {
   if (isNaN(secs) || secs < 0) return "00:00";
@@ -584,8 +585,8 @@ export default function FashionableMemberDashboard() {
               </div>
             </div>
 
-            {/* Bottom CTA Pill */}
-            <div>
+            {/* Bottom CTA Pill & Calendar Sync */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <Link
                 href={currEvent.href}
                 style={{
@@ -617,6 +618,18 @@ export default function FashionableMemberDashboard() {
                 <span>{currEvent.actionText}</span>
                 <span>→</span>
               </Link>
+
+              <AddToCalendarButton
+                title={currEvent.title}
+                startDate={
+                  currEvent.date.match(/202\d-\d{2}-\d{2}/)?.[0] ||
+                  new Date().toISOString().split("T")[0]
+                }
+                location={currEvent.venue || "The House of Bread, Jos"}
+                time={currEvent.date}
+                variant="banner"
+                buttonText="Add to Calendar"
+              />
             </div>
           </div>
 

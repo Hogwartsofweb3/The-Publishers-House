@@ -10,6 +10,8 @@ import { clearSession } from "@/lib/clientSession";
 import type { PortalUser, UserRole, Campus } from "@/lib/portalAuth";
 import { getRoleLabel } from "@/lib/portalAuth";
 import { PortalProvider, usePortal } from "@/lib/portalContext";
+import NotificationBell from "@/components/portal/NotificationBell";
+import PwaInstallPrompt from "@/components/portal/PwaInstallPrompt";
 
 // Lazy-load Sidebar — it imports firebase/auth & portalContext, deferring that
 // parse cost until after first paint. SSR=false avoids a hydration mismatch on
@@ -329,6 +331,12 @@ function PortalHeaderAndContent({
                 </div>
               </div>
             )}
+
+            {/* PWA App Install Button */}
+            <PwaInstallPrompt />
+
+            {/* Notification Center */}
+            <NotificationBell />
 
             {/* User Name Badge (Desktop only) */}
             <span

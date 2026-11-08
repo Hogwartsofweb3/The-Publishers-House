@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getEvents, EventItem } from "@/lib/firebase";
+import AddToCalendarButton from "@/components/portal/AddToCalendarButton";
+
+function getNextDayOfWeek(dayOfWeek: number): string {
+  const d = new Date();
+  const diff = (dayOfWeek - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+}
 
 export default function MemberEventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -52,6 +60,17 @@ export default function MemberEventsPage() {
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
             A deep encounter in the prophetic scriptures, apostolic teaching, and corporate worship.
           </p>
+          <div style={{ marginTop: "14px" }}>
+            <AddToCalendarButton
+              title="TPH Sunday Word & Worship Celebration"
+              description="Corporate fellowship, prophetic scriptures, apostolic teaching, and corporate worship at The Publishers House."
+              location="Main Sanctuary Jos & Abuja Center"
+              startDate={getNextDayOfWeek(0)}
+              time="9:00 AM WAT"
+              variant="banner"
+              buttonText="Sync Sunday"
+            />
+          </div>
         </div>
 
         <div style={{ padding: "22px", borderRadius: "12px", backgroundColor: "#1F46C8", color: "#FFFFFF" }}>
@@ -67,6 +86,17 @@ export default function MemberEventsPage() {
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
             Verse-by-verse scriptural exposition, prayer intercession, and personal edification.
           </p>
+          <div style={{ marginTop: "14px" }}>
+            <AddToCalendarButton
+              title="TPH Believers Bible Study & Prayer"
+              description="Verse-by-verse scriptural exposition and corporate prayer at The Publishers House."
+              location="Main Sanctuary Jos & Online Stream"
+              startDate={getNextDayOfWeek(3)}
+              time="5:30 PM WAT"
+              variant="banner"
+              buttonText="Sync Wednesday"
+            />
+          </div>
         </div>
 
         <div style={{ padding: "22px", borderRadius: "12px", backgroundColor: "#0F6B38", color: "#FFFFFF" }}>
@@ -82,6 +112,17 @@ export default function MemberEventsPage() {
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
             Prevailing prayer for revival, territorial transformation, and the glory of God.
           </p>
+          <div style={{ marginTop: "14px" }}>
+            <AddToCalendarButton
+              title="TPH Prophetic Prayer Conclave"
+              description="Prevailing all-night prayer for revival and spiritual transformation at The Publishers House."
+              location="Main Sanctuary Jos & Online Stream"
+              startDate={getNextDayOfWeek(5)}
+              time="10:00 PM WAT"
+              variant="banner"
+              buttonText="Sync Conclave"
+            />
+          </div>
         </div>
       </div>
 
@@ -152,7 +193,7 @@ export default function MemberEventsPage() {
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: "10px", borderTop: "1px solid #E8EDFB", paddingTop: "12px" }}>
+                <div style={{ display: "flex", gap: "10px", borderTop: "1px solid #E8EDFB", paddingTop: "12px", alignItems: "center" }}>
                   <Link
                     href={`/schedule/${event.id}`}
                     style={{
@@ -169,6 +210,14 @@ export default function MemberEventsPage() {
                   >
                     Event Details
                   </Link>
+                  <AddToCalendarButton
+                    title={event.title}
+                    description={event.summary || event.description}
+                    location={event.location || "The House of Bread, Jos"}
+                    startDate={event.startAt || new Date().toISOString().split("T")[0]}
+                    endDate={event.endAt}
+                    variant="secondary"
+                  />
                 </div>
               </div>
             ))}
