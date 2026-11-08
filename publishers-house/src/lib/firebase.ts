@@ -240,8 +240,8 @@ export async function getSermons(limitCount = 1000, bypassCache = false): Promis
     const snap = await getDocs(q);
     const results = snap.docs.map((d) => normalizeSermon({ id: d.id, ...d.data() } as Sermon));
     const deduped = deduplicateSermons(results);
-    // Sort from oldest to newest by default
-    const sorted = deduped.sort((a, b) => (a.date < b.date ? -1 : 1));
+    // Sort from newest to oldest by default (newest messages first)
+    const sorted = deduped.sort((a, b) => (new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()));
 
     sermonsMemoryCache = {
       data: sorted,

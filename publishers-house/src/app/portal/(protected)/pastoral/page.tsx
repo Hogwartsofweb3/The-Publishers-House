@@ -1,19 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  doc,
-  query,
-  orderBy,
-  where,
-} from "firebase/firestore";
+import { useEffect, useState, useMemo } from "react";
+import type { AtRiskMember, AttendanceRecordItem } from "@/app/api/portal/pastoral/at-risk/route";
 
-type VisitorStatus = "new" | "followup" | "established";
+type VisitorStatus = "fading" | "new" | "followup" | "established";
 
 interface Visitor {
   id: string;
@@ -23,8 +13,28 @@ interface Visitor {
   firstVisitDate: string;
   assignedTo: string;
   notes: string;
-  status: VisitorStatus;
+  status: "new" | "followup" | "established";
+  campus?: string;
   createdAt: string;
+}
+
+interface SelectedMemberProfile {
+  name: string;
+  phone: string;
+  email?: string;
+  campus?: string;
+  status?: string;
+  assignedTo?: string;
+  notes?: string;
+  totalAttended?: number;
+  lastAttendedDate?: string;
+  consecutiveMissed?: number;
+  riskLevel?: "high" | "moderate";
+  primaryMode?: "in_person" | "online";
+  attendanceHistory?: AttendanceRecordItem[];
+  recentServiceDates?: { date: string; attended: boolean }[];
+  visitorId?: string;
+  isAtRiskAttendee?: boolean;
 }
 
 const COLUMNS: {
@@ -32,13 +42,23 @@ const COLUMNS: {
   label: string;
   badgeBg: string;
   badgeColor: string;
+  accentColor: string;
   desc: string;
 }[] = [
+  {
+    key: "fading",
+    label: "Fading Attendance / At-Risk",
+    badgeBg: "#FFE4E6",
+    badgeColor: "#9F1239",
+    accentColor: "#E11D48",
+    desc: "Active attendees with 2+ consecutive missed services",
+  },
   {
     key: "new",
     label: "First-Time Visitors",
     badgeBg: "#FFF2D6",
     badgeColor: "#7A5200",
+    accentColor: "#F59E0B",
     desc: "Awaiting initial welcome call and hospitality connection",
   },
   {
@@ -46,6 +66,7 @@ const COLUMNS: {
     label: "In Shepherding Follow-Up",
     badgeBg: "#E8EDFB",
     badgeColor: "#1F46C8",
+    accentColor: "#2563EB",
     desc: "Contacted, praying together, and invited to discipleship",
   },
   {
@@ -53,18 +74,27 @@ const COLUMNS: {
     label: "Established & Integrated",
     badgeBg: "#E4F5EA",
     badgeColor: "#0F6B38",
+    accentColor: "#10B981",
     desc: "Committed members, rostered in church units or cell groups",
   },
 ];
 
 export default function PastoralCarePage() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [atRiskMembers, setAtRiskMembers] = useState<AtRiskMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [atRiskLoading, setAtRiskLoading] = useState(true);
+  const [campusFilter, setCampusFilter] = useState<"all" | "jos" | "abuja" | "online">("all");
+
+  const [activeTab, setActiveTab] = useState<"pipeline" | "at_risk_list" | "inquiries">("pipeline");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
+  const [selectedDrawerMember, setSelectedDrawerMember] = useState<SelectedMemberProfile | null>(null);
   const [notesEdit, setNotesEdit] = useState("");
+  const [assignedPastorInput, setAssignedPastorInput] = useState("");
   const [msg, setMsg] = useState("");
-  const [activeTab, setActiveTab] = useState<"pipeline" | "inquiries">("pipeline");
+  const [actionInProgress, setActionInProgress] = useState(false);
+
+  // Inquiries State
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
@@ -73,9 +103,16 @@ export default function PastoralCarePage() {
   const [inquirySearch, setInquirySearch] = useState("");
   const [importingFirstTimers, setImportingFirstTimers] = useState(false);
 
+  // Weekly Digest State
+  const [showDigestModal, setShowDigestModal] = useState(false);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [latestDigest, setLatestDigest] = useState<any | null>(null);
+
+  // Add Visitor Form
   const [form, setForm] = useState({
     name: "",
     phone: "",
+    campus: "Jos Headquarters",
     firstVisitDate: new Date().toISOString().split("T")[0],
     assignedTo: "Pastoral Team",
     notes: "",
@@ -101,6 +138,23 @@ export default function PastoralCarePage() {
     }
   };
 
+  const fetchAtRiskMembers = async () => {
+    setAtRiskLoading(true);
+    try {
+      const res = await fetch(`/api/portal/pastoral/at-risk?campus=${campusFilter}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.members && Array.isArray(data.members)) {
+          setAtRiskMembers(data.members);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load at-risk members:", err);
+    } finally {
+      setAtRiskLoading(false);
+    }
+  };
+
   const fetchInquiries = async () => {
     setInquiriesLoading(true);
     try {
@@ -118,6 +172,23 @@ export default function PastoralCarePage() {
     }
   };
 
+  const loadWeeklyDigest = async () => {
+    setDigestLoading(true);
+    try {
+      const res = await fetch("/api/portal/pastoral/digest");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.digest) {
+          setLatestDigest(data.digest);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load weekly digest:", err);
+    } finally {
+      setDigestLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchVisitors();
     fetchInquiries();
@@ -126,30 +197,32 @@ export default function PastoralCarePage() {
     }
   }, []);
 
-  const handleUpdateInquiryStatus = async (id: string, status: string, notes?: string) => {
-    try {
-      await fetch("/api/portal/inquiries", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status, pastoralNotes: notes }),
-      });
-      setInquiries((prev) =>
-        prev.map((inq) =>
-          inq.id === id ? { ...inq, status, ...(notes !== undefined ? { pastoralNotes: notes } : {}) } : inq
-        )
-      );
-      setMsg(`Inquiry marked as ${status} ✓`);
-      setTimeout(() => setMsg(""), 3000);
-      if (selectedInquiry?.id === id) {
-        setSelectedInquiry(null);
-      }
-    } catch (err) {
-      alert("Failed to update inquiry status");
-    }
+  useEffect(() => {
+    fetchAtRiskMembers();
+  }, [campusFilter]);
+
+  // Filter visitors by campus
+  const filteredVisitors = useMemo(() => {
+    if (campusFilter === "all") return visitors;
+    return visitors.filter((v) => {
+      const c = (v.campus || "").toLowerCase();
+      if (campusFilter === "jos") return c.includes("jos") || !c;
+      if (campusFilter === "abuja") return c.includes("abuja");
+      if (campusFilter === "online") return c.includes("online");
+      return true;
+    });
+  }, [visitors, campusFilter]);
+
+  // Open Drawer for a Visitor or AtRisk member
+  const handleOpenDrawer = (member: SelectedMemberProfile) => {
+    setSelectedDrawerMember(member);
+    setNotesEdit(member.notes || "");
+    setAssignedPastorInput(member.assignedTo || "Pastoral Team");
   };
 
-  const handleAdvance = async (visitor: Visitor) => {
-    const nextStatus: VisitorStatus =
+  // Move visitor stage
+  const handleAdvanceVisitor = async (visitor: Visitor) => {
+    const nextStatus: "followup" | "established" =
       visitor.status === "new" ? "followup" : "established";
 
     try {
@@ -163,25 +236,96 @@ export default function PastoralCarePage() {
     setVisitors((prev) =>
       prev.map((v) => (v.id === visitor.id ? { ...v, status: nextStatus } : v))
     );
-    setMsg(`${visitor.name} moved to ${nextStatus === "followup" ? "In Follow-up" : "Established"} ✓`);
-    setTimeout(() => setMsg(""), 3000);
+    setMsg(`${visitor.name} moved to ${nextStatus === "followup" ? "In Shepherding Follow-Up" : "Established & Integrated"} ✓`);
+    setTimeout(() => setMsg(""), 3500);
+
+    if (selectedDrawerMember?.visitorId === visitor.id) {
+      setSelectedDrawerMember((prev) => prev ? { ...prev, status: nextStatus } : null);
+    }
   };
 
-  const handleSaveNotes = async () => {
-    if (!selectedVisitor) return;
+  // Move At-Risk member to Shepherding Follow-Up
+  const handleMoveAtRiskToFollowup = async (member: AtRiskMember) => {
+    setActionInProgress(true);
     try {
-      await fetch("/api/portal/visitors", {
-        method: "PATCH",
+      const res = await fetch("/api/portal/pastoral/at-risk", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedVisitor.id, notes: notesEdit }),
+        body: JSON.stringify({
+          action: "move_to_followup",
+          member,
+          assignedTo: assignedPastorInput || member.assignedTo || "Pastoral Team",
+          notes: notesEdit || undefined,
+        }),
       });
-    } catch {}
-    setVisitors((prev) =>
-      prev.map((v) => (v.id === selectedVisitor.id ? { ...v, notes: notesEdit } : v))
-    );
-    setSelectedVisitor(null);
-    setMsg("Shepherding notes updated ✓");
-    setTimeout(() => setMsg(""), 3000);
+      const data = await res.json();
+      if (res.ok) {
+        setMsg(`${member.name} moved into Shepherding Follow-Up ✓`);
+        await fetchVisitors();
+        await fetchAtRiskMembers();
+        if (selectedDrawerMember?.phone === member.phone) {
+          setSelectedDrawerMember((prev) => prev ? { ...prev, status: "followup", inPipeline: true } : null);
+        }
+      } else {
+        setMsg(`✗ ${data.error || "Failed to update pipeline"}`);
+      }
+    } catch (err: any) {
+      setMsg(`✗ Network error: ${err.message}`);
+    } finally {
+      setActionInProgress(false);
+      setTimeout(() => setMsg(""), 4000);
+    }
+  };
+
+  // Save Pastoral Notes from Drawer
+  const handleSaveDrawerNotes = async () => {
+    if (!selectedDrawerMember) return;
+    setActionInProgress(true);
+    try {
+      if (selectedDrawerMember.visitorId) {
+        // Update visitor record
+        await fetch("/api/portal/visitors", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedDrawerMember.visitorId,
+            notes: notesEdit,
+            assignedTo: assignedPastorInput,
+          }),
+        });
+        setVisitors((prev) =>
+          prev.map((v) =>
+            v.id === selectedDrawerMember.visitorId
+              ? { ...v, notes: notesEdit, assignedTo: assignedPastorInput }
+              : v
+          )
+        );
+      } else {
+        // Add note via at-risk API
+        await fetch("/api/portal/pastoral/at-risk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "add_note",
+            member: selectedDrawerMember,
+            notes: notesEdit,
+            assignedTo: assignedPastorInput,
+          }),
+        });
+        await fetchVisitors();
+        await fetchAtRiskMembers();
+      }
+
+      setMsg("Pastoral shepherding notes updated ✓");
+      setSelectedDrawerMember((prev) =>
+        prev ? { ...prev, notes: notesEdit, assignedTo: assignedPastorInput } : null
+      );
+    } catch (err: any) {
+      setMsg(`✗ Failed to save notes: ${err.message}`);
+    } finally {
+      setActionInProgress(false);
+      setTimeout(() => setMsg(""), 3500);
+    }
   };
 
   const handleDeleteVisitor = async (visitor: Visitor) => {
@@ -192,7 +336,7 @@ export default function PastoralCarePage() {
       });
       if (res.ok) {
         setVisitors((prev) => prev.filter((v) => v.id !== visitor.id));
-        if (selectedVisitor?.id === visitor.id) setSelectedVisitor(null);
+        if (selectedDrawerMember?.visitorId === visitor.id) setSelectedDrawerMember(null);
         setMsg(`${visitor.name} removed from pipeline ✓`);
         setTimeout(() => setMsg(""), 3500);
       } else {
@@ -218,38 +362,17 @@ export default function PastoralCarePage() {
       if (res.ok && data.visitor) {
         setVisitors((prev) => [data.visitor, ...prev]);
       } else {
-        const fallbackId = `vis-${Date.now()}`;
-        const newVisitor: Visitor = {
-          id: fallbackId,
-          name: form.name,
-          phone: form.phone,
-          firstVisitDate: form.firstVisitDate,
-          assignedTo: form.assignedTo || "Pastoral Team",
-          notes: form.notes,
-          status: "new",
-          createdAt: new Date().toISOString(),
-        };
-        setVisitors((prev) => [newVisitor, ...prev]);
+        fetchVisitors();
       }
     } catch {
-      const fallbackId = `vis-${Date.now()}`;
-      const newVisitor: Visitor = {
-        id: fallbackId,
-        name: form.name,
-        phone: form.phone,
-        firstVisitDate: form.firstVisitDate,
-        assignedTo: form.assignedTo || "Pastoral Team",
-        notes: form.notes,
-        status: "new",
-        createdAt: new Date().toISOString(),
-      };
-      setVisitors((prev) => [newVisitor, ...prev]);
+      fetchVisitors();
     }
 
     setShowAddModal(false);
     setForm({
       name: "",
       phone: "",
+      campus: "Jos Headquarters",
       firstVisitDate: new Date().toISOString().split("T")[0],
       assignedTo: "Pastoral Team",
       notes: "",
@@ -262,16 +385,11 @@ export default function PastoralCarePage() {
     setImportingFirstTimers(true);
     setMsg("");
     try {
-      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
       const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Import failed");
-      }
+      if (!res.ok) throw new Error(data.error || "Import failed");
       setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
-      if (data.imported > 0) {
-        fetchVisitors();
-      }
+      if (data.imported > 0) fetchVisitors();
       setTimeout(() => setMsg(""), 5000);
     } catch (err: any) {
       setMsg("Import failed: " + (err.message || "unknown error"));
@@ -281,9 +399,54 @@ export default function PastoralCarePage() {
     }
   };
 
+  const handleTriggerDigest = async () => {
+    setDigestLoading(true);
+    try {
+      const res = await fetch("/api/portal/pastoral/digest", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.digest) {
+        setLatestDigest(data.digest);
+        setShowDigestModal(true);
+        setMsg("Weekly shepherding digest generated successfully ✓");
+      } else {
+        setMsg(`✗ ${data.error || "Failed to generate digest"}`);
+      }
+    } catch (err: any) {
+      setMsg(`✗ Error: ${err.message}`);
+    } finally {
+      setDigestLoading(false);
+      setTimeout(() => setMsg(""), 4000);
+    }
+  };
+
+  const handleUpdateInquiryStatus = async (id: string, status: string, notes?: string) => {
+    try {
+      await fetch("/api/portal/inquiries", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, pastoralNotes: notes }),
+      });
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === id ? { ...inq, status, ...(notes !== undefined ? { pastoralNotes: notes } : {}) } : inq
+        )
+      );
+      setMsg(`Inquiry marked as ${status} ✓`);
+      setTimeout(() => setMsg(""), 3000);
+      if (selectedInquiry?.id === id) setSelectedInquiry(null);
+    } catch {
+      alert("Failed to update inquiry status");
+    }
+  };
+
+  // High-risk count calculation for quick alert banner
+  const highRiskMembersCount = useMemo(() => {
+    return atRiskMembers.filter((m) => m.riskLevel === "high").length;
+  }, [atRiskMembers]);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-      {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: "var(--font-poppins-family, 'Poppins', sans-serif)" }}>
+      {/* Header Bar */}
       <div
         style={{
           display: "flex",
@@ -296,10 +459,9 @@ export default function PastoralCarePage() {
         <div>
           <h1
             style={{
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
               fontWeight: 800,
-              fontSize: "28px",
-              lineHeight: "34px",
+              fontSize: "26px",
+              lineHeight: "32px",
               color: "#141C6E",
               margin: 0,
             }}
@@ -308,44 +470,88 @@ export default function PastoralCarePage() {
           </h1>
           <p
             style={{
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
               fontWeight: 500,
               fontSize: "13px",
               color: "#4A5490",
               margin: "6px 0 0",
             }}
           >
-            Visitor assimilation pipeline · First-timers to integrated kingdom disciples
+            Multi-day attendance analytics, automated fading member alerts, & assimilation pipeline
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
           {msg && (
             <span
               style={{
-                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 fontSize: "12px",
                 fontWeight: 600,
                 color: "#0F6B38",
                 backgroundColor: "#E4F5EA",
                 padding: "6px 12px",
                 borderRadius: "6px",
+                border: "1px solid #C4EED0",
               }}
             >
               {msg}
             </span>
           )}
 
-            <button
+          {/* Generate Weekly Digest Button */}
+          <button
+            onClick={handleTriggerDigest}
+            disabled={digestLoading}
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1.5px solid #1F46C8",
+              borderRadius: "10px",
+              padding: "9px 15px",
+              fontWeight: 600,
+              fontSize: "12.5px",
+              color: "#1F46C8",
+              cursor: digestLoading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 1px 3px rgba(31,70,200,0.08)",
+            }}
+          >
+            <span>📊</span>
+            {digestLoading ? "Compiling..." : "Weekly Shepherding Digest"}
+          </button>
+
+          {/* Import First Timers */}
+          <button
+            onClick={handleImportFirstTimers}
+            disabled={importingFirstTimers}
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1.5px solid #D5DCF2",
+              borderRadius: "10px",
+              padding: "9px 15px",
+              fontWeight: 600,
+              fontSize: "12.5px",
+              color: "#141C6E",
+              cursor: importingFirstTimers ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>⬇️</span>
+            {importingFirstTimers ? "Importing..." : "Import First-Timers"}
+          </button>
+
+          {/* Add Visitor Button */}
+          <button
             onClick={() => setShowAddModal(true)}
             style={{
               backgroundColor: "#1F46C8",
               border: "none",
               borderRadius: "10px",
-              padding: "10px 18px",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              padding: "9px 16px",
               fontWeight: 600,
-              fontSize: "13px",
+              fontSize: "12.5px",
               color: "#FFFFFF",
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(31, 70, 200, 0.25)",
@@ -353,290 +559,565 @@ export default function PastoralCarePage() {
           >
             + Add First-Time Visitor
           </button>
-
-          {/* Import from Attendance Button */}
-          <button
-            onClick={handleImportFirstTimers}
-            disabled={importingFirstTimers}
-            style={{
-              backgroundColor: importingFirstTimers ? "#E8EDFB" : "#FFFFFF",
-              border: "1.5px solid #1F46C8",
-              borderRadius: "10px",
-              padding: "10px 18px",
-              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-              fontWeight: 600,
-              fontSize: "13px",
-              color: "#1F46C8",
-              cursor: importingFirstTimers ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              opacity: importingFirstTimers ? 0.7 : 1,
-            }}
-          >
-            <span>⬇️</span>
-            {importingFirstTimers ? "Importing..." : "Import from Attendance"}
-          </button>
         </div>
       </div>
 
-      {/* 3-Column Kanban Board (Rendered only on Visitor Pipeline tab) */}
-      {activeTab === "pipeline" ? (
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "24px",
-          alignItems: "start",
-        }}
-      >
-        {COLUMNS.map((col) => {
-          const colVisitors = visitors.filter((v) => v.status === col.key);
-          return (
-            <div
-              key={col.key}
-              style={{
-                backgroundColor: "#FFFFFF",
-                border: "1px solid #D5DCF2",
-                borderRadius: "14px",
-                padding: "20px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                minHeight: "560px",
-              }}
-            >
-              {/* Column Header */}
-              <div style={{ borderBottom: "1px solid #E8EDFB", paddingBottom: "14px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h2
-                    style={{
-                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      color: "#141C6E",
-                      margin: 0,
-                    }}
-                  >
-                    {col.label}
-                  </h2>
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: "99px",
-                      backgroundColor: col.badgeBg,
-                      color: col.badgeColor,
-                      fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                      fontSize: "12px",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {colVisitors.length}
-                  </span>
-                </div>
-                <p style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490", margin: "4px 0 0" }}>
-                  {col.desc}
-                </p>
+      {/* High-Risk Pastoral Alert Banner (when members missed 3+ consecutive services) */}
+      {highRiskMembersCount > 0 && (
+        <div
+          style={{
+            backgroundColor: "#FFF1F2",
+            border: "1px solid #FECDD3",
+            borderRadius: "12px",
+            padding: "14px 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "22px" }}>⚠️</span>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 700, color: "#9F1239" }}>
+                {highRiskMembersCount} Congregation Member{highRiskMembersCount > 1 ? "s" : ""} Flagged for Fading Attendance (Missed 3+ Services)
               </div>
-
-              {/* Cards List */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-                {loading && (
-                  <div style={{ padding: "30px", textAlign: "center", color: "#747CA1", fontSize: "12px" }}>
-                    Loading pastoral records...
-                  </div>
-                )}
-                {!loading && colVisitors.length === 0 && (
-                  <div style={{ padding: "40px 20px", textAlign: "center", color: "#747CA1", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12.5px" }}>
-                    No contacts currently in this stage.
-                  </div>
-                )}
-                {colVisitors.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      backgroundColor: "#F8FAFD",
-                      border: "1px solid #E8EDFB",
-                      borderRadius: "10px",
-                      padding: "16px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                      boxShadow: "0 1px 2px rgba(14, 21, 86, 0.04)",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "14px",
-                            fontWeight: 700,
-                            color: "#141C6E",
-                          }}
-                        >
-                          {v.name}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "11.5px",
-                            color: "#4A5490",
-                            marginTop: "2px",
-                          }}
-                        >
-                          Vis: {v.firstVisitDate}
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span
-                          style={{
-                            padding: "2px 8px",
-                            borderRadius: "4px",
-                            backgroundColor: "#E8EDFB",
-                            color: "#1F46C8",
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "10px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {v.assignedTo}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteVisitor(v);
-                          }}
-                          title={`Remove ${v.name} from pipeline`}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "#94A3B8",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            padding: "2px 4px",
-                            borderRadius: "4px",
-                            lineHeight: 1,
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = "#DC2626")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "#94A3B8")}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Phone & Direct Links */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <a
-                        href={`tel:${v.phone}`}
-                        style={{
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: "#1F46C8",
-                          textDecoration: "none",
-                        }}
-                      >
-                        📞 {v.phone}
-                      </a>
-                      <a
-                        href={`https://wa.me/${v.phone.replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "#0F6B38",
-                          textDecoration: "none",
-                        }}
-                      >
-                        💬 WhatsApp
-                      </a>
-                    </div>
-
-                    {/* Notes Snippet */}
-                    {v.notes && (
-                      <div
-                        onClick={() => {
-                          setSelectedVisitor(v);
-                          setNotesEdit(v.notes);
-                        }}
-                        title="Click to edit notes"
-                        style={{
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11.5px",
-                          color: "#4A5490",
-                          backgroundColor: "#FFFFFF",
-                          padding: "8px 10px",
-                          borderRadius: "6px",
-                          border: "1px solid #E8EDFB",
-                          cursor: "pointer",
-                          lineHeight: "16px",
-                        }}
-                      >
-                        &ldquo;{v.notes}&rdquo;
-                      </div>
-                    )}
-
-                    {/* Card Actions */}
-                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                      <button
-                        onClick={() => {
-                          setSelectedVisitor(v);
-                          setNotesEdit(v.notes);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "6px 10px",
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid #D5DCF2",
-                          borderRadius: "6px",
-                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "#141C6E",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Notes
-                      </button>
-
-                      {col.key !== "established" && (
-                        <button
-                          onClick={() => handleAdvance(v)}
-                          style={{
-                            flex: 1.2,
-                            padding: "6px 10px",
-                            backgroundColor: col.key === "new" ? "#1F46C8" : "#0F6B38",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            color: "#FFFFFF",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {col.key === "new" ? "To Follow-Up →" : "Establish ✓"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ fontSize: "12px", color: "#BE123C", marginTop: "2px" }}>
+                Our attendance analytics detected members who were active in past services but have missed 3 or more consecutive gatherings. Pastors should initiate a caring check-in.
               </div>
             </div>
-          );
-        })}
+          </div>
+          <button
+            onClick={() => {
+              setActiveTab("pipeline");
+              const el = document.getElementById("col-fading");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            }}
+            style={{
+              backgroundColor: "#9F1239",
+              border: "none",
+              borderRadius: "8px",
+              color: "#FFFFFF",
+              padding: "7px 14px",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Review At-Risk Members →
+          </button>
+        </div>
+      )}
+
+      {/* Control Strip: Tabs & Campus Filter */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "14px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8EDFB",
+          borderRadius: "12px",
+          padding: "10px 16px",
+        }}
+      >
+        {/* Navigation Tabs */}
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() => setActiveTab("pipeline")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: activeTab === "pipeline" ? "#1F46C8" : "transparent",
+              color: activeTab === "pipeline" ? "#FFFFFF" : "#4A5490",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            🛡️ Shepherding & Visitor Pipeline
+          </button>
+
+          <button
+            onClick={() => setActiveTab("inquiries")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "none",
+              backgroundColor: activeTab === "inquiries" ? "#1F46C8" : "transparent",
+              color: activeTab === "inquiries" ? "#FFFFFF" : "#4A5490",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <span>📬 Member Inquiries & Units</span>
+            {inquiries.filter((i) => i.status === "pending").length > 0 && (
+              <span
+                style={{
+                  backgroundColor: "#F59E0B",
+                  color: "#FFFFFF",
+                  fontSize: "10px",
+                  padding: "1px 6px",
+                  borderRadius: "99px",
+                  fontWeight: 700,
+                }}
+              >
+                {inquiries.filter((i) => i.status === "pending").length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Campus Filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#4A5490" }}>Campus Filter:</span>
+          <select
+            value={campusFilter}
+            onChange={(e) => setCampusFilter(e.target.value as any)}
+            style={{
+              padding: "7px 12px",
+              borderRadius: "8px",
+              border: "1px solid #D5DCF2",
+              fontSize: "12.5px",
+              color: "#141C6E",
+              fontWeight: 600,
+              backgroundColor: "#F8FAFD",
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value="all">🌐 All Campuses & Online</option>
+            <option value="jos">📍 Jos Headquarters (House of Bread)</option>
+            <option value="abuja">🏛️ Abuja Campus</option>
+            <option value="online">📡 Online Stream Community</option>
+          </select>
+        </div>
       </div>
-      ) : (
-        /* Member Inquiries & Unit Applications View */
+
+      {/* Main View: Kanban Pipeline */}
+      {activeTab === "pipeline" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(280px, 1fr))",
+            gap: "20px",
+            alignItems: "start",
+            overflowX: "auto",
+            paddingBottom: "16px",
+          }}
+        >
+          {COLUMNS.map((col) => {
+            const isFadingCol = col.key === "fading";
+            const colVisitors = filteredVisitors.filter((v) => v.status === col.key);
+            const count = isFadingCol ? atRiskMembers.length : colVisitors.length;
+
+            return (
+              <div
+                key={col.key}
+                id={`col-${col.key}`}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: isFadingCol ? "1.5px solid #FECDD3" : "1px solid #D5DCF2",
+                  borderRadius: "14px",
+                  padding: "18px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                  minHeight: "580px",
+                  boxShadow: isFadingCol ? "0 4px 16px rgba(225, 29, 72, 0.05)" : "0 2px 8px rgba(14,21,86,0.03)",
+                }}
+              >
+                {/* Column Header */}
+                <div style={{ borderBottom: "1px solid #E8EDFB", paddingBottom: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h2
+                      style={{
+                        fontSize: "14.5px",
+                        fontWeight: 700,
+                        color: isFadingCol ? "#9F1239" : "#141C6E",
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      {isFadingCol && <span>⚠️</span>}
+                      {col.label}
+                    </h2>
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        borderRadius: "99px",
+                        backgroundColor: col.badgeBg,
+                        color: col.badgeColor,
+                        fontSize: "12px",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {count}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "11px", color: "#4A5490", margin: "4px 0 0", lineHeight: 1.4 }}>
+                    {col.desc}
+                  </p>
+                </div>
+
+                {/* Cards List */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+                  {/* Fading Attendance Column */}
+                  {isFadingCol && (
+                    <>
+                      {atRiskLoading && (
+                        <div style={{ padding: "30px", textAlign: "center", color: "#747CA1", fontSize: "12px" }}>
+                          Scanning historical attendance records...
+                        </div>
+                      )}
+                      {!atRiskLoading && atRiskMembers.length === 0 && (
+                        <div style={{ padding: "40px 16px", textAlign: "center", color: "#0F6B38", backgroundColor: "#F0FDF4", borderRadius: "10px", fontSize: "12.5px" }}>
+                          ✓ No members currently at risk of fading attendance!
+                        </div>
+                      )}
+                      {atRiskMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          onClick={() =>
+                            handleOpenDrawer({
+                              name: member.name,
+                              phone: member.phone,
+                              email: member.email,
+                              campus: member.primaryCampus,
+                              status: member.pipelineStatus || "fading",
+                              assignedTo: member.assignedTo || "Pastoral Team",
+                              notes: member.notes,
+                              totalAttended: member.totalAttended,
+                              lastAttendedDate: member.lastAttendedDate,
+                              consecutiveMissed: member.consecutiveMissed,
+                              riskLevel: member.riskLevel,
+                              primaryMode: member.primaryMode,
+                              attendanceHistory: member.attendanceHistory,
+                              recentServiceDates: member.recentServiceDates,
+                              visitorId: member.visitorId,
+                              isAtRiskAttendee: true,
+                            })
+                          }
+                          style={{
+                            backgroundColor: "#FFF8F8",
+                            border: member.riskLevel === "high" ? "1.5px solid #FCA5A5" : "1px solid #FECDD3",
+                            borderRadius: "10px",
+                            padding: "14px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 3px rgba(159, 18, 57, 0.06)",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div>
+                              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#141C6E" }}>
+                                {member.name}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
+                                Last seen: <strong>{member.lastAttendedDate}</strong>
+                              </div>
+                            </div>
+                            <span
+                              style={{
+                                padding: "3px 8px",
+                                borderRadius: "6px",
+                                backgroundColor: member.riskLevel === "high" ? "#FEE2E2" : "#FEF3C7",
+                                color: member.riskLevel === "high" ? "#991B1B" : "#92400E",
+                                fontSize: "10.5px",
+                                fontWeight: 700,
+                              }}
+                            >
+                              Missed {member.consecutiveMissed} Services
+                            </span>
+                          </div>
+
+                          {/* Campus & Mode Indicator */}
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", backgroundColor: "#E8EDFB", color: "#1F46C8", fontWeight: 600 }}>
+                              {member.primaryCampus}
+                            </span>
+                            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", backgroundColor: "#F1F5F9", color: "#475569", fontWeight: 600 }}>
+                              {member.primaryMode === "online" ? "📡 Online" : "🏛️ In-Person"}
+                            </span>
+                            <span style={{ fontSize: "10px", color: "#64748B" }}>
+                              • {member.totalAttended} total service{member.totalAttended !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+
+                          {/* Quick Contact & Action Buttons */}
+                          <div style={{ display: "flex", gap: "8px", marginTop: "6px", alignItems: "center" }}>
+                            <a
+                              href={`tel:${member.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#1F46C8",
+                                textDecoration: "none",
+                                padding: "4px 8px",
+                                backgroundColor: "#FFFFFF",
+                                borderRadius: "6px",
+                                border: "1px solid #D5DCF2",
+                              }}
+                            >
+                              📞 Call
+                            </a>
+                            <a
+                              href={`https://wa.me/${member.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                                `Hello ${member.name}, we missed you in church at The Publishers House! Hope you are doing well and having a blessed week. We are praying for you and look forward to fellowshipping together soon. — Pastoral Care Team`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#0F6B38",
+                                textDecoration: "none",
+                                padding: "4px 8px",
+                                backgroundColor: "#FFFFFF",
+                                borderRadius: "6px",
+                                border: "1px solid #C4EED0",
+                              }}
+                            >
+                              💬 WhatsApp
+                            </a>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveAtRiskToFollowup(member);
+                              }}
+                              style={{
+                                marginLeft: "auto",
+                                padding: "4px 10px",
+                                backgroundColor: "#1F46C8",
+                                border: "none",
+                                borderRadius: "6px",
+                                color: "#FFFFFF",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                              }}
+                            >
+                              To Follow-Up →
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Standard Visitor Pipeline Columns: new, followup, established */}
+                  {!isFadingCol && (
+                    <>
+                      {loading && (
+                        <div style={{ padding: "30px", textAlign: "center", color: "#747CA1", fontSize: "12px" }}>
+                          Loading contacts...
+                        </div>
+                      )}
+                      {!loading && colVisitors.length === 0 && (
+                        <div style={{ padding: "40px 16px", textAlign: "center", color: "#747CA1", fontSize: "12.5px" }}>
+                          No contacts currently in this stage.
+                        </div>
+                      )}
+                      {colVisitors.map((v) => (
+                        <div
+                          key={v.id}
+                          onClick={() =>
+                            handleOpenDrawer({
+                              name: v.name,
+                              phone: v.phone,
+                              email: v.email,
+                              campus: v.campus || "Jos Headquarters",
+                              status: v.status,
+                              assignedTo: v.assignedTo,
+                              notes: v.notes,
+                              lastAttendedDate: v.firstVisitDate,
+                              visitorId: v.id,
+                              isAtRiskAttendee: false,
+                            })
+                          }
+                          style={{
+                            backgroundColor: "#F8FAFD",
+                            border: "1px solid #E8EDFB",
+                            borderRadius: "10px",
+                            padding: "14px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px",
+                            boxShadow: "0 1px 2px rgba(14, 21, 86, 0.04)",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div>
+                              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#141C6E" }}>
+                                {v.name}
+                              </div>
+                              <div style={{ fontSize: "11px", color: "#4A5490", marginTop: "2px" }}>
+                                Visited: {v.firstVisitDate}
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <span
+                                style={{
+                                  padding: "2px 8px",
+                                  borderRadius: "4px",
+                                  backgroundColor: "#E8EDFB",
+                                  color: "#1F46C8",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {v.assignedTo || "Pastoral Team"}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteVisitor(v);
+                                }}
+                                title={`Remove ${v.name} from pipeline`}
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "#94A3B8",
+                                  cursor: "pointer",
+                                  fontSize: "12px",
+                                  padding: "2px 4px",
+                                  borderRadius: "4px",
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Direct Links */}
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <a
+                              href={`tel:${v.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ fontSize: "11.5px", fontWeight: 600, color: "#1F46C8", textDecoration: "none" }}
+                            >
+                              📞 {v.phone}
+                            </a>
+                            <a
+                              href={`https://wa.me/${v.phone.replace(/[^0-9]/g, "")}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ fontSize: "11px", fontWeight: 600, color: "#0F6B38", textDecoration: "none" }}
+                            >
+                              💬 WhatsApp
+                            </a>
+                          </div>
+
+                          {/* Notes Snippet */}
+                          {v.notes && (
+                            <div
+                              style={{
+                                fontSize: "11.5px",
+                                color: "#4A5490",
+                                backgroundColor: "#FFFFFF",
+                                padding: "6px 8px",
+                                borderRadius: "6px",
+                                border: "1px solid #E8EDFB",
+                                lineHeight: "15px",
+                              }}
+                            >
+                              &ldquo;{v.notes.length > 70 ? v.notes.slice(0, 70) + "..." : v.notes}&rdquo;
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDrawer({
+                                  name: v.name,
+                                  phone: v.phone,
+                                  email: v.email,
+                                  campus: v.campus || "Jos Headquarters",
+                                  status: v.status,
+                                  assignedTo: v.assignedTo,
+                                  notes: v.notes,
+                                  lastAttendedDate: v.firstVisitDate,
+                                  visitorId: v.id,
+                                  isAtRiskAttendee: false,
+                                });
+                              }}
+                              style={{
+                                flex: 1,
+                                padding: "6px 10px",
+                                backgroundColor: "#FFFFFF",
+                                border: "1px solid #D5DCF2",
+                                borderRadius: "6px",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                color: "#141C6E",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Timeline & Notes
+                            </button>
+
+                            {col.key !== "established" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAdvanceVisitor(v);
+                                }}
+                                style={{
+                                  flex: 1.2,
+                                  padding: "6px 10px",
+                                  backgroundColor: col.key === "new" ? "#1F46C8" : "#0F6B38",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  color: "#FFFFFF",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {col.key === "new" ? "To Follow-Up →" : "Establish ✓"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Member Inquiries & Unit Applications Tab */}
+      {activeTab === "inquiries" && (
         <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D5DCF2", borderRadius: "14px", padding: "24px", boxShadow: "0 2px 10px rgba(14,21,86,0.03)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
               <input
                 type="text"
                 placeholder="Search member, unit, or phone..."
@@ -659,7 +1140,7 @@ export default function PastoralCarePage() {
               onClick={fetchInquiries}
               style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", backgroundColor: "#F4F6FB", color: "#141C6E", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}
             >
-              ↻ Refresh
+              ↻ Refresh Inquiries
             </button>
           </div>
 
@@ -678,30 +1159,7 @@ export default function PastoralCarePage() {
                   if (inquiryStatusFilter !== "all" && inq.status !== inquiryStatusFilter) return false;
                   if (inquirySearch.trim()) {
                     const q = inquirySearch.toLowerCase();
-                    const handleImportFirstTimers = async () => {
-    setImportingFirstTimers(true);
-    setMsg("");
-    try {
-      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
-      const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Import failed");
-      }
-      setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
-      if (data.imported > 0) {
-        fetchVisitors();
-      }
-      setTimeout(() => setMsg(""), 5000);
-    } catch (err: any) {
-      setMsg("Import failed: " + (err.message || "unknown error"));
-      setTimeout(() => setMsg(""), 4000);
-    } finally {
-      setImportingFirstTimers(false);
-    }
-  };
-
-  return (
+                    return (
                       inq.memberName?.toLowerCase().includes(q) ||
                       inq.memberEmail?.toLowerCase().includes(q) ||
                       inq.memberPhone?.includes(q) ||
@@ -716,36 +1174,13 @@ export default function PastoralCarePage() {
                   const isContacted = inq.status === "contacted";
                   const dateStr = inq.createdAt ? new Date(inq.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
-                  const handleImportFirstTimers = async () => {
-    setImportingFirstTimers(true);
-    setMsg("");
-    try {
-      // Use Admin-SDK-backed API — Firestore client SDK lacks write permissions for first_timers/visitors
-      const res = await fetch("/api/portal/pastoral/import-first-timers", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Import failed");
-      }
-      setMsg(data.message || `${data.imported} first-timer${data.imported !== 1 ? "s" : ""} imported ✓`);
-      if (data.imported > 0) {
-        fetchVisitors();
-      }
-      setTimeout(() => setMsg(""), 5000);
-    } catch (err: any) {
-      setMsg("Import failed: " + (err.message || "unknown error"));
-      setTimeout(() => setMsg(""), 4000);
-    } finally {
-      setImportingFirstTimers(false);
-    }
-  };
-
-  return (
+                  return (
                     <div
                       key={inq.id}
                       style={{
                         border: isPending ? "2px solid #F59E0B" : "1px solid #D5DCF2",
                         borderRadius: "10px",
-                        padding: "20px",
+                        padding: "18px",
                         backgroundColor: isPending ? "#FFFDF7" : "#FFFFFF",
                         display: "flex",
                         flexDirection: "column",
@@ -782,16 +1217,16 @@ export default function PastoralCarePage() {
                         </div>
                       </div>
 
-                      {/* Member Info Strip */}
+                      {/* Member Strip */}
                       <div style={{ display: "flex", gap: "16px", fontSize: "12px", color: "#4A5490", flexWrap: "wrap", backgroundColor: "#F8FAFD", padding: "8px 12px", borderRadius: "6px" }}>
                         <div><strong>Member:</strong> {inq.memberName}</div>
                         {inq.memberEmail && <div><strong>Email:</strong> {inq.memberEmail}</div>}
                         {inq.memberPhone && <div><strong>Phone / WhatsApp:</strong> {inq.memberPhone}</div>}
                         <div><strong>Preferred Channel:</strong> {inq.preferredContact || "WhatsApp"}</div>
-                        <div><strong>Campus:</strong> {inq.campus || "jos"}</div>
+                        <div><strong>Campus:</strong> {inq.campus || "Jos"}</div>
                       </div>
 
-                      <p style={{ fontSize: "13.5px", color: "#334155", margin: "4px 0", lineHeight: 1.6 }}>
+                      <p style={{ fontSize: "13px", color: "#334155", margin: "4px 0", lineHeight: 1.6 }}>
                         {inq.message}
                       </p>
 
@@ -801,7 +1236,6 @@ export default function PastoralCarePage() {
                         </div>
                       )}
 
-                      {/* Action Bar */}
                       <div style={{ display: "flex", gap: "10px", marginTop: "6px", flexWrap: "wrap" }}>
                         {isPending && (
                           <button
@@ -837,7 +1271,535 @@ export default function PastoralCarePage() {
         </div>
       )}
 
-      {/* Pastoral Note Edit Modal */}
+      {/* MEMBER SHEPHERDING DRAWER & MULTI-DAY TIMELINE (SLIDE-OVER) */}
+      {selectedDrawerMember && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+          onClick={() => setSelectedDrawerMember(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "#FFFFFF",
+              width: "100%",
+              maxWidth: "540px",
+              height: "100%",
+              boxShadow: "-8px 0 32px rgba(14, 21, 86, 0.2)",
+              display: "flex",
+              flexDirection: "column",
+              animation: "slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              overflowY: "auto",
+            }}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                padding: "24px",
+                borderBottom: "1px solid #E8EDFB",
+                backgroundColor: "#F8FAFD",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      backgroundColor: "#1F46C8",
+                      color: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "18px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedDrawerMember.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#141C6E", margin: 0 }}>
+                      {selectedDrawerMember.name}
+                    </h2>
+                    <div style={{ fontSize: "12px", color: "#4A5490", marginTop: "2px" }}>
+                      {selectedDrawerMember.phone || "No phone provided"}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedDrawerMember(null)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: "22px",
+                    color: "#94A3B8",
+                    cursor: "pointer",
+                    padding: "4px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Status & Risk Badges */}
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                <span
+                  style={{
+                    padding: "3px 10px",
+                    borderRadius: "6px",
+                    backgroundColor: "#E8EDFB",
+                    color: "#1F46C8",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {selectedDrawerMember.campus || "Jos Headquarters"}
+                </span>
+
+                {selectedDrawerMember.consecutiveMissed !== undefined && selectedDrawerMember.consecutiveMissed >= 2 && (
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      borderRadius: "6px",
+                      backgroundColor: selectedDrawerMember.riskLevel === "high" ? "#FEE2E2" : "#FEF3C7",
+                      color: selectedDrawerMember.riskLevel === "high" ? "#991B1B" : "#92400E",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ⚠️ {selectedDrawerMember.consecutiveMissed} Services Missed ({selectedDrawerMember.riskLevel === "high" ? "High Risk" : "Moderate Risk"})
+                  </span>
+                )}
+
+                <span
+                  style={{
+                    padding: "3px 10px",
+                    borderRadius: "6px",
+                    backgroundColor: "#F1F5F9",
+                    color: "#475569",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Stage: {selectedDrawerMember.status || "Visitor"}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Action Contact Bar */}
+            <div
+              style={{
+                padding: "14px 24px",
+                borderBottom: "1px solid #E8EDFB",
+                display: "flex",
+                gap: "10px",
+                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <a
+                href={`https://wa.me/${selectedDrawerMember.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                  `Hello ${selectedDrawerMember.name}, greetings from The Publishers House! Hope you are having a blessed week. We missed you at our recent services and wanted to check in on you. Please let us know if there is anything we can stand with you in prayer for! — Pastoral Care Team`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "9px 14px",
+                  backgroundColor: "#E4F5EA",
+                  color: "#0F6B38",
+                  border: "1px solid #C4EED0",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                <span>💬</span> WhatsApp Message
+              </a>
+
+              <a
+                href={`tel:${selectedDrawerMember.phone}`}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "9px 14px",
+                  backgroundColor: "#EEF2FB",
+                  color: "#1F46C8",
+                  border: "1px solid #D5DCF2",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                <span>📞</span> Call Member
+              </a>
+            </div>
+
+            {/* Drawer Content */}
+            <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "24px", flex: 1 }}>
+              {/* Multi-Day Attendance Analytics Summary */}
+              <div>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 12px" }}>
+                  Multi-Day Attendance Metrics
+                </h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                  <div style={{ backgroundColor: "#F8FAFD", border: "1px solid #E8EDFB", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: "#1F46C8" }}>
+                      {selectedDrawerMember.totalAttended ?? (selectedDrawerMember.isAtRiskAttendee ? "1+" : "1")}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>Total Attended</div>
+                  </div>
+
+                  <div style={{ backgroundColor: "#F8FAFD", border: "1px solid #E8EDFB", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#141C6E" }}>
+                      {selectedDrawerMember.lastAttendedDate || "N/A"}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>Last Service</div>
+                  </div>
+
+                  <div style={{ backgroundColor: "#F8FAFD", border: "1px solid #E8EDFB", borderRadius: "8px", padding: "12px", textAlign: "center" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#0F6B38" }}>
+                      {selectedDrawerMember.primaryMode === "online" ? "📡 Online" : "🏛️ In-Person"}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>Primary Mode</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Multi-Day Timeline Breakdown */}
+              <div>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 12px" }}>
+                  Multi-Day Attendance Timeline
+                </h3>
+                {selectedDrawerMember.attendanceHistory && selectedDrawerMember.attendanceHistory.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {selectedDrawerMember.attendanceHistory.map((rec, idx) => (
+                      <div
+                        key={rec.id || idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          backgroundColor: "#F8FAFD",
+                          border: "1px solid #E8EDFB",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span style={{ fontSize: "16px" }}>
+                            {rec.mode === "online" ? "📡" : "🏛️"}
+                          </span>
+                          <div>
+                            <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#141C6E" }}>
+                              {rec.date}
+                            </div>
+                            <div style={{ fontSize: "11px", color: "#64748B" }}>
+                              {rec.location} {rec.streamChannel !== "none" ? `(${rec.streamChannel})` : ""}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "10.5px",
+                            fontWeight: 700,
+                            backgroundColor: "#E4F5EA",
+                            color: "#0F6B38",
+                          }}
+                        >
+                          ✓ Present
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: "16px", backgroundColor: "#F8FAFD", borderRadius: "8px", fontSize: "12px", color: "#64748B", textAlign: "center" }}>
+                    Initial visit recorded on {selectedDrawerMember.lastAttendedDate || "recent gathering"}. Check-in verification code confirmed.
+                  </div>
+                )}
+              </div>
+
+              {/* Pastoral Follow-up & Shepherding Assignment */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", letterSpacing: "0.5px", margin: 0 }}>
+                  Assigned Minister / Pastor
+                </h3>
+                <input
+                  type="text"
+                  value={assignedPastorInput}
+                  onChange={(e) => setAssignedPastorInput(e.target.value)}
+                  placeholder="e.g. Pastor Damilare, Minister Sharon"
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #D5DCF2",
+                    fontSize: "13px",
+                    color: "#141C6E",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              {/* Pastoral Counseling & Follow-Up Notes */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", letterSpacing: "0.5px", margin: 0 }}>
+                  Pastoral Care Notes & Action History
+                </h3>
+                <textarea
+                  rows={5}
+                  value={notesEdit}
+                  onChange={(e) => setNotesEdit(e.target.value)}
+                  placeholder="Log pastoral calls, prayer items, spiritual state, or visit summaries..."
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #D5DCF2",
+                    fontSize: "12.5px",
+                    color: "#141C6E",
+                    outline: "none",
+                    resize: "vertical",
+                    lineHeight: 1.5,
+                  }}
+                />
+              </div>
+
+              {/* Quick Pipeline Transition Actions */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "auto" }}>
+                <button
+                  onClick={handleSaveDrawerNotes}
+                  disabled={actionInProgress}
+                  style={{
+                    padding: "11px",
+                    backgroundColor: "#1F46C8",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: actionInProgress ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {actionInProgress ? "Saving..." : "Save Shepherding Notes & Minister"}
+                </button>
+
+                {selectedDrawerMember.status !== "followup" && (
+                  <button
+                    onClick={() => {
+                      if (selectedDrawerMember.visitorId) {
+                        const v = visitors.find((vis) => vis.id === selectedDrawerMember.visitorId);
+                        if (v) handleAdvanceVisitor(v);
+                      } else {
+                        handleMoveAtRiskToFollowup(selectedDrawerMember as any);
+                      }
+                    }}
+                    style={{
+                      padding: "11px",
+                      backgroundColor: "#EEF2FB",
+                      color: "#1F46C8",
+                      border: "1px solid #D5DCF2",
+                      borderRadius: "8px",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Move to &ldquo;In Shepherding Follow-Up&rdquo;
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WEEKLY SHEPHERDING DIGEST MODAL */}
+      {showDigestModal && latestDigest && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(14, 21, 86, 0.5)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowDigestModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              padding: "28px",
+              maxWidth: "680px",
+              width: "100%",
+              boxShadow: "0 12px 40px rgba(14,21,86,0.2)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#1F46C8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Automated Weekly Digest
+                </span>
+                <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#141C6E", margin: "4px 0 0" }}>
+                  Weekly Shepherding & Attendance Digest
+                </h2>
+                <div style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>
+                  Period: <strong>{latestDigest.period}</strong> · Generated {new Date(latestDigest.generatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowDigestModal(false)}
+                style={{ background: "none", border: "none", fontSize: "22px", color: "#94A3B8", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Digest Stats Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+              <div style={{ backgroundColor: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "10px", padding: "14px", textAlign: "center" }}>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: "#9F1239" }}>
+                  {latestDigest.highRiskCount}
+                </div>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#9F1239", marginTop: "2px" }}>
+                  High Risk (Missed 3+ Services)
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "10px", padding: "14px", textAlign: "center" }}>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: "#B45309" }}>
+                  {latestDigest.moderateRiskCount}
+                </div>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#B45309", marginTop: "2px" }}>
+                  Moderate Risk (Missed 2 Services)
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "10px", padding: "14px", textAlign: "center" }}>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: "#15803D" }}>
+                  {latestDigest.totalTrackedAttendees}
+                </div>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#15803D", marginTop: "2px" }}>
+                  Attendees Tracked
+                </div>
+              </div>
+            </div>
+
+            {/* High-Risk Members List */}
+            <div>
+              <h3 style={{ fontSize: "13.5px", fontWeight: 700, color: "#141C6E", marginBottom: "10px" }}>
+                Members Requiring Immediate Pastoral Outreach ({latestDigest.highRiskMembers?.length || 0})
+              </h3>
+              {latestDigest.highRiskMembers && latestDigest.highRiskMembers.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
+                  {latestDigest.highRiskMembers.map((m: any, i: number) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: "10px 14px",
+                        backgroundColor: "#FFF8F8",
+                        border: "1px solid #FEE2E2",
+                        borderRadius: "8px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#141C6E" }}>{m.name}</div>
+                        <div style={{ fontSize: "11px", color: "#64748B" }}>
+                          {m.phone} · {m.campus} · Last seen: {m.lastAttendedDate}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#991B1B", backgroundColor: "#FEE2E2", padding: "3px 8px", borderRadius: "6px" }}>
+                        Missed {m.consecutiveMissed}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: "20px", textAlign: "center", color: "#0F6B38", backgroundColor: "#F0FDF4", borderRadius: "8px", fontSize: "12px" }}>
+                  ✓ All members have maintained regular attendance!
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+              <button
+                onClick={() => {
+                  const summaryText = `The Publishers House — Weekly Pastoral Shepherding Digest\nPeriod: ${latestDigest.period}\nHigh-Risk Members (Missed 3+ Services): ${latestDigest.highRiskCount}\nModerate-Risk (Missed 2 Services): ${latestDigest.moderateRiskCount}\n\nHigh-Risk Outreach List:\n${latestDigest.highRiskMembers?.map((m: any) => `- ${m.name} (${m.phone}, ${m.campus}) — Missed ${m.consecutiveMissed} services`).join("\n")}`;
+                  navigator.clipboard.writeText(summaryText);
+                  setMsg("Digest copied to clipboard ✓");
+                  setTimeout(() => setMsg(""), 3000);
+                }}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #D5DCF2",
+                  backgroundColor: "#FFFFFF",
+                  color: "#141C6E",
+                  fontSize: "12.5px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                📋 Copy Summary for Pastoral Meeting
+              </button>
+              <button
+                onClick={() => setShowDigestModal(false)}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#1F46C8",
+                  color: "#FFFFFF",
+                  fontSize: "12.5px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pastoral Note Edit Modal for Inquiries */}
       {selectedInquiry && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(14,21,86,0.6)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
           <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", padding: "28px", maxWidth: "520px", width: "100%", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
@@ -847,7 +1809,7 @@ export default function PastoralCarePage() {
               rows={4}
               value={inquiryNotes}
               onChange={(e) => setInquiryNotes(e.target.value)}
-              placeholder="e.g. Spoke with brother Michael on WhatsApp. He has 3 years of audio mixing experience. Assigned to Media Head for orientation..."
+              placeholder="e.g. Spoke with brother Michael on WhatsApp. Assigned to Media Head for orientation..."
               style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", boxSizing: "border-box", fontFamily: "inherit" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
@@ -862,102 +1824,6 @@ export default function PastoralCarePage() {
                 style={{ padding: "8px 18px", borderRadius: "8px", border: "none", backgroundColor: "#1F46C8", color: "#FFFFFF", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}
               >
                 Save Note
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notes Modal */}
-      {selectedVisitor && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
-            backdropFilter: "blur(4px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #D5DCF2",
-              borderRadius: "16px",
-              padding: "32px",
-              width: "100%",
-              maxWidth: "480px",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-            }}
-          >
-            <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 800, fontSize: "18px", color: "#141C6E", margin: "0 0 6px" }}>
-              Shepherding Notes for {selectedVisitor.name}
-            </h2>
-            <p style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490", margin: "0 0 20px" }}>
-              Update prayer points, call outcomes, or ministry unit interests
-            </p>
-
-            <textarea
-              rows={5}
-              value={notesEdit}
-              onChange={(e) => setNotesEdit(e.target.value)}
-              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical" }}
-            />
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-              <button
-                onClick={() => selectedVisitor && handleDeleteVisitor(selectedVisitor)}
-                style={{
-                  padding: "10px 14px",
-                  backgroundColor: "#FEE2E2",
-                  color: "#B91C1C",
-                  border: "1px solid #FECACA",
-                  borderRadius: "8px",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontWeight: 600,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                Delete Contact
-              </button>
-              <button
-                onClick={handleSaveNotes}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#1F46C8",
-                  color: "#FFFFFF",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontWeight: 600,
-                  fontSize: "12.5px",
-                  cursor: "pointer",
-                }}
-              >
-                Save Notes
-              </button>
-              <button
-                onClick={() => setSelectedVisitor(null)}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #D5DCF2",
-                  color: "#4A5490",
-                  borderRadius: "8px",
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontWeight: 600,
-                  fontSize: "12.5px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
               </button>
             </div>
           </div>
@@ -990,70 +1856,83 @@ export default function PastoralCarePage() {
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
             }}
           >
-            <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 800, fontSize: "20px", color: "#141C6E", margin: "0 0 6px" }}>
+            <h2 style={{ fontWeight: 800, fontSize: "20px", color: "#141C6E", margin: "0 0 6px" }}>
               Register First-Time Visitor
             </h2>
-            <p style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "12px", color: "#4A5490", margin: "0 0 24px" }}>
+            <p style={{ fontSize: "12px", color: "#4A5490", margin: "0 0 24px" }}>
               Capture guest slip info from Sunday or Midweek service
             </p>
 
             <form onSubmit={handleAddVisitor} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name *</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Full Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Tobiloba Alabi"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none" }}
                 />
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone *</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Phone *</label>
                   <input
                     type="text"
                     required
                     placeholder="+234 800 000 0000"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none" }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>First Visit Date</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>First Visit Date</label>
                   <input
                     type="date"
                     required
                     value={form.firstVisitDate}
                     onChange={(e) => setForm({ ...form, firstVisitDate: e.target.value })}
-                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none" }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Assigned Pastor / Follow-Up Minister</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Campus</label>
+                <select
+                  value={form.campus}
+                  onChange={(e) => setForm({ ...form, campus: e.target.value })}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none", backgroundColor: "#FFFFFF" }}
+                >
+                  <option value="Jos Headquarters">Jos Headquarters (House of Bread)</option>
+                  <option value="Abuja Campus">Abuja Campus</option>
+                  <option value="Online Community">Online Stream Community</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Assigned Pastor / Follow-Up Minister</label>
                 <input
                   type="text"
                   placeholder="e.g. Pastor Damilare, Sister Ibidun"
                   value={form.assignedTo}
                   onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none" }}
                 />
               </div>
 
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Initial Notes / How they heard about TPH</label>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>Initial Notes / How they heard about TPH</label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. Invited by neighbour; interested in Choir; requested prayer for relocation."
+                  placeholder="e.g. Invited by neighbour; interested in Choir; requested prayer for family."
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical" }}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none", resize: "vertical" }}
                 />
               </div>
 
@@ -1067,7 +1946,6 @@ export default function PastoralCarePage() {
                     color: "#FFFFFF",
                     border: "none",
                     borderRadius: "10px",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                     fontWeight: 600,
                     fontSize: "13px",
                     cursor: "pointer",
@@ -1085,7 +1963,6 @@ export default function PastoralCarePage() {
                     border: "1px solid #D5DCF2",
                     color: "#4A5490",
                     borderRadius: "10px",
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                     fontWeight: 600,
                     fontSize: "13px",
                     cursor: "pointer",

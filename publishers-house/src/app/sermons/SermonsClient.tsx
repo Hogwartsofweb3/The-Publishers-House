@@ -327,7 +327,7 @@ const PAGE_SIZE = 24;
 /* ─── Main component ─── */
 export default function SermonsClient({ initialSermons }: { initialSermons: Sermon[] }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("oldest");
+  const [sort, setSort] = useState("newest");
   const [yearFilter, setYearFilter] = useState("All");
   const [speakerFilter, setSpeakerFilter] = useState("All");
   const [seriesFilter, setSeriesFilter] = useState("All");
