@@ -42,7 +42,61 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
-    optimizeCss: true,
+    // Tree-shake heavy firebase & resend sub-packages — avoids full barrel import
+    optimizePackageImports: [
+      "firebase/app",
+      "firebase/auth",
+      "firebase/firestore",
+      "firebase/storage",
+      "firebase/analytics",
+      "resend",
+    ],
+  },
+  async headers() {
+    return [
+      {
+        // Security + HSTS headers for all portal routes
+        source: "/portal/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasestorage.googleapis.com",
+              "img-src 'self' data: https://*.googleapis.com https://*.googleusercontent.com blob:",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "frame-src https://*.firebaseapp.com",
+            ].join("; "),
+          },
+          {
+            // allow-popups required for Firebase Google Sign-In popup flow
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+        ],
+      },
+      {
+        // No caching for portal API routes — always fresh data
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+    ];
   },
   turbopack: {
     resolveAlias: {

@@ -1,8 +1,31 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import type { AtRiskMember, AttendanceRecordItem } from "@/app/api/portal/pastoral/at-risk/route";
-import AttendanceCompareTab from "@/components/portal/AttendanceCompareTab";
+
+// Dynamically import heavy comparison tab — only needed when "compare" tab is active
+const AttendanceCompareTab = dynamic(
+  () => import("@/components/portal/AttendanceCompareTab"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D5DCF2",
+          borderRadius: "14px",
+          padding: "48px 24px",
+          textAlign: "center",
+          color: "#64748B",
+          fontSize: "13px",
+        }}
+      >
+        Loading attendance comparison...
+      </div>
+    ),
+  }
+);
 
 type VisitorStatus = "fading" | "new" | "followup" | "established";
 

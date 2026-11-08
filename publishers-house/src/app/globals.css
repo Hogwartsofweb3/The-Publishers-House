@@ -966,3 +966,148 @@ html, body {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.35); opacity: 0.55; }
 }
+
+/* ============================================================
+   TPH PORTAL — RESPONSIVE LAYOUT OVERRIDES
+   Mobile-first supplementary stylesheet.
+   ============================================================ */
+
+/* Ensure all box-sizing is border-box inside the portal */
+.portal-layout *,
+.portal-layout *::before,
+.portal-layout *::after {
+  box-sizing: border-box;
+}
+
+/* ── Tables: horizontal scroll on small screens ──────────── */
+.portal-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+
+/* ── Generic auto-grids collapse to 1 col on mobile ──────── */
+.portal-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* ── Form grids ───────────────────────────────────────────── */
+.portal-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+/* ── Header action bars ───────────────────────────────────── */
+.portal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Kanban board ─────────────────────────────────────────── */
+.portal-kanban {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* ── Modal full-screen slide-up on mobile ─────────────────── */
+@media (max-width: 640px) {
+  .portal-modal {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Tables always scroll horizontally */
+  .portal-table-scroll {
+    width: 100%;
+  }
+
+  /* Auto-grids: single column */
+  .portal-grid-auto {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form grids: single column */
+  .portal-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Header action bars: stack vertically */
+  .portal-header-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* KPI cards: 2-column grid */
+  .portal-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* Kanban: horizontal scroll */
+  .portal-kanban {
+    grid-template-columns: repeat(4, minmax(240px, 1fr)) !important;
+    overflow-x: auto !important;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Single-column KPI cards on very small screens */
+  .portal-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Slide-in animation for drawers ──────────────────────── */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ── Lazy-loaded section skeleton shimmer ─────────────────── */
+@keyframes portalShimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.portal-skeleton {
+  background: linear-gradient(90deg, #f0f4ff 25%, #e0e8ff 50%, #f0f4ff 75%);
+  background-size: 800px 100%;
+  animation: portalShimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}

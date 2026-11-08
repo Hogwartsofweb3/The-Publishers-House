@@ -54,44 +54,82 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Members via server API (admin SDK — no quota)
+        // Fetch all primary dashboard metrics in parallel (eliminates serial request waterfalls)
+        const [membersRes, testimoniesRes, prayersRes, financeRes, eventsRes] = await Promise.allSettled([
+          fetch("/api/portal/members").then((r) => (r.ok ? r.json() : null)),
+          fetch("/api/portal/testimonies?status=pending&countOnly=true").then((r) => (r.ok ? r.json() : null)),
+          fetch("/api/portal/prayers?status=pending&countOnly=true").then((r) => (r.ok ? r.json() : null)),
+          fetch("/api/portal/finance").then((r) => (r.ok ? r.json() : null)),
+          fetch("/api/cms/events").then((r) => (r.ok ? r.json() : null)),
+        ]);
+
         let totalMembers = 0;
         let newThisMonth = 0;
         let activeVolunteers = 0;
-        try {
-          const res = await fetch("/api/portal/members");
-          if (res.ok) {
-            const data = await res.json();
-            const members: any[] = data.members || [];
-            totalMembers = members.length;
-            const monthStart = new Date();
-            monthStart.setDate(1);
-            monthStart.setHours(0, 0, 0, 0);
-            members.forEach((m) => {
-              if (m.createdAt && new Date(m.createdAt) >= monthStart) newThisMonth++;
-              if (m.assignedUnitId) activeVolunteers++;
-            });
-          }
-        } catch {}
 
-        // Testimonies & Prayers pending count via fetch
-        let pendingT = 0;
-        let pendingP = 0;
-        try {
-          const tRes = await fetch("/api/portal/testimonies?status=pending&countOnly=true");
-          if (tRes.ok) { const d = await tRes.json(); pendingT = d.count ?? 0; }
-        } catch {}
-        try {
-          const pRes = await fetch("/api/portal/prayers?status=pending&countOnly=true");
-          if (pRes.ok) { const d = await pRes.json(); pendingP = d.count ?? 0; }
-        } catch {}
+        if (membersRes.status === "fulfilled" && membersRes.value?.members) {
+          const members: any[] = membersRes.value.members || [];
+          totalMembers = members.length;
+          const monthStart = new Date();
+          monthStart.setDate(1);
+          monthStart.setHours(0, 0, 0, 0);
+          members.forEach((m) => {
+            if (m.createdAt && new Date(m.createdAt) >= monthStart) newThisMonth++;
+            if (m.assignedUnitId) activeVolunteers++;
+          });
+        }
 
-        // Audit logs (these are usually low-volume, client SDK is fine here as a best-effort)
+        const pendingT = testimoniesRes.status === "fulfilled" ? testimoniesRes.value?.count ?? 0 : 0;
+        const pendingP = prayersRes.status === "fulfilled" ? prayersRes.value?.count ?? 0 : 0;
+
+        let weeklyG = 0;
+        let monthlyG = 0;
+
+        if (financeRes.status === "fulfilled" && financeRes.value?.transactions) {
+          const txList: any[] = financeRes.value.transactions || [];
+          const now = new Date();
+          const monthStart2 = new Date();
+          monthStart2.setDate(1);
+          monthStart2.setHours(0, 0, 0, 0);
+          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          txList.forEach((data) => {
+            const amt = Number(data.amountNGN) || 0;
+            const txDate = data.timestamp ? new Date(data.timestamp) : null;
+            if (txDate && txDate >= monthStart2) monthlyG += amt;
+            if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
+          });
+        }
+
+        let loadedEvents: EventItem[] = [];
+        if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value?.events)) {
+          loadedEvents = eventsRes.value.events.slice(0, 4).map((item: any) => {
+            const startAt = item.startAt || "";
+            const [dPart, tPart] = startAt.includes("T") ? startAt.split("T") : [startAt, ""];
+            return {
+              id: item.id,
+              title: item.title || "Special Service",
+              date: dPart || item.date || "Upcoming",
+              time: tPart || item.time || "8:00 AM",
+              venue: item.location || item.venue || "Sanctuary",
+              status: item.published === false || item.status === "draft" ? "draft" : "published",
+              attendeesCount: item.attendeesCount || 0,
+            };
+          });
+          setEvents(loadedEvents);
+        }
+
+        // Audit logs & Headcount via parallel fetch or quick load
+        let attLastWeek = 0;
         try {
           const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
           const { db } = await import("@/lib/firebase");
-          const auditSnap = await getDocs(query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(4)));
-          if (!auditSnap.empty) {
+          
+          const [auditSnap, hcSnap] = await Promise.all([
+            getDocs(query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(4))).catch(() => null),
+            getDocs(query(collection(db, "attendance_headcounts"), orderBy("date", "desc"), limit(1))).catch(() => null),
+          ]);
+
+          if (auditSnap && !auditSnap.empty) {
             setActivities(
               auditSnap.docs.map((d) => {
                 const data = d.data();
@@ -106,87 +144,12 @@ export default function AdminDashboard() {
                 };
               })
             );
-          } else {
-            setActivities([]);
           }
-        } catch {
-          setActivities([]);
-        }
 
-        // Transactions — via quota-safe server API first, fallback to client SDK
-        let weeklyG = 0;
-        let monthlyG = 0;
-        try {
-          const fRes = await fetch("/api/portal/finance");
-          if (fRes.ok) {
-            const fData = await fRes.json();
-            const txList: any[] = fData.transactions || [];
-            const now = new Date();
-            const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
-            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            txList.forEach((data) => {
-              const amt = Number(data.amountNGN) || 0;
-              const txDate = data.timestamp ? new Date(data.timestamp) : null;
-              if (txDate && txDate >= monthStart2) monthlyG += amt;
-              if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
-            });
-          } else {
-            throw new Error("fallback");
+          if (hcSnap && !hcSnap.empty) {
+            attLastWeek = hcSnap.docs[0].data().total || 0;
           }
-        } catch {
-          try {
-            const { getDocs, collection } = await import("firebase/firestore");
-            const { db } = await import("@/lib/firebase");
-            const txSnap = await getDocs(collection(db, "transactions"));
-            const now = new Date();
-            const monthStart2 = new Date(); monthStart2.setDate(1); monthStart2.setHours(0,0,0,0);
-            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            txSnap.forEach((d) => {
-              const data = d.data();
-              const amt = Number(data.amountNGN) || 0;
-              const txDate = data.timestamp ? new Date(data.timestamp) : null;
-              if (txDate && txDate >= monthStart2) monthlyG += amt;
-              if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
-            });
-          } catch {}
-        }
-
-        // Attendance last week — best-effort
-        let attLastWeek = 0;
-        try {
-          const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
-          const { db } = await import("@/lib/firebase");
-          const hcSnap = await getDocs(query(collection(db, "attendance_headcounts"), orderBy("date", "desc"), limit(1)));
-          if (!hcSnap.empty) attLastWeek = hcSnap.docs[0].data().total || 0;
         } catch {}
-
-        // Events via client SDK best-effort
-        try {
-          const { getDocs, query, collection, orderBy, limit } = await import("firebase/firestore");
-          const { db } = await import("@/lib/firebase");
-          const evSnap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc"), limit(4)));
-          if (!evSnap.empty) {
-            const list = evSnap.docs.map((d) => {
-              const data = d.data();
-              const startAt = data.startAt || "";
-              const [dPart, tPart] = startAt.includes("T") ? startAt.split("T") : [startAt, ""];
-              return {
-                id: d.id,
-                title: data.title || "Special Service",
-                date: dPart || data.date || "Upcoming",
-                time: tPart || data.time || "8:00 AM",
-                venue: data.location || data.venue || "Sanctuary",
-                status: (data.published === false || data.status === "draft") ? "draft" : "published",
-                attendeesCount: data.attendeesCount || 0,
-              } as EventItem;
-            });
-            setEvents(list);
-          } else {
-            setEvents([]);
-          }
-        } catch {
-          setEvents([]);
-        }
 
         setKpi({
           totalMembers,
@@ -194,7 +157,7 @@ export default function AdminDashboard() {
           weeklyGiving: weeklyG,
           monthlyGiving: monthlyG,
           attendanceLastWeek: attLastWeek,
-          upcomingEventsCount: events.length,
+          upcomingEventsCount: loadedEvents.length,
           activeVolunteers,
           pendingTestimonies: pendingT,
           pendingPrayers: pendingP,

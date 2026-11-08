@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { auth } from "@/lib/firebaseAuth";
 import { UNITS } from "@/lib/portalAuth";
+import dynamic from "next/dynamic";
+
+const BatchCreateAccountsModal = dynamic(() => import("@/components/portal/BatchCreateAccountsModal"), { ssr: false });
 
 interface AttendanceRecord {
   id: string;
@@ -107,7 +110,7 @@ export default function AttendanceAdminPage() {
   const [batchCreating, setBatchCreating] = useState<boolean>(false);
   // Quick bulk apply options
   const [quickRole, setQuickRole] = useState<string>("keep");
-  const [quickCampus, setQuickCampus] = useState<string>("keep");
+  const [quickCampus, setQuickCampus] = useState<"keep" | "jos" | "abuja">("keep");
   const [quickUnit, setQuickUnit] = useState<string>("keep");
   const [batchResults, setBatchResults] = useState<{
     total: number;
@@ -343,6 +346,10 @@ export default function AttendanceAdminPage() {
     setAttendeesConfigs((prev) =>
       prev.map((c) => (c.attendanceId === attendanceId ? { ...c, ...patch } : c))
     );
+  };
+
+  const handleUpdateAttendeeConfig = (id: string, field: keyof AttendeeAccountConfig, value: string) => {
+    updateAttendeeConfig(id, { [field]: value } as Partial<AttendeeAccountConfig>);
   };
 
   /** Bulk apply quick settings to all attendees in the modal */
@@ -1937,498 +1944,31 @@ export default function AttendanceAdminPage() {
         </div>
       )}
 
-      {/* Batch Create Accounts Modal */}
-      {showBatchModal && (() => {
-        const activeWithEmailCount = attendeesConfigs.filter(
-          (c) => c.email && c.email.trim().length > 0 && c.email.includes("@")
-        ).length;
-        const activeWithoutEmailCount = attendeesConfigs.length - activeWithEmailCount;
-
-        return (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              backgroundColor: "rgba(14, 21, 86, 0.6)",
-              backdropFilter: "blur(4px)",
-              zIndex: 100,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "20px",
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: "16px",
-                padding: "28px 32px",
-                maxWidth: "700px",
-                width: "100%",
-                maxHeight: "92vh",
-                overflowY: "auto",
-                boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
-                border: "1px solid #D5DCF2",
-              }}
-            >
-              {/* Modal Title */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                <h2
-                  style={{
-                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                    fontSize: "19px",
-                    fontWeight: 800,
-                    color: "#141C6E",
-                    margin: 0,
-                  }}
-                >
-                  Create Accounts for Selected Attendees
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowBatchModal(false)}
-                  style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#747CA1" }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <p
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "12.5px",
-                  color: "#4A5490",
-                  margin: "0 0 16px",
-                }}
-              >
-                Configure individual member roles, units, and campus locations for each of the <strong>{attendeesConfigs.length}</strong> selected attendee{attendeesConfigs.length !== 1 ? "s" : ""}.
-              </p>
-
-              {/* Email readiness summary badges */}
-              <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
-                <div style={{ flex: 1, backgroundColor: "#EAF6ED", border: "1px solid #C4E9CE", borderRadius: "8px", padding: "8px 14px" }}>
-                  <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F6B38", textTransform: "uppercase" }}>Ready to Create</div>
-                  <div style={{ fontSize: "17px", fontWeight: 800, color: "#0F6B38", marginTop: "1px" }}>{activeWithEmailCount} Attendee{activeWithEmailCount !== 1 ? "s" : ""}</div>
-                </div>
-                {activeWithoutEmailCount > 0 && (
-                  <div style={{ flex: 1, backgroundColor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "8px", padding: "8px 14px" }}>
-                    <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#C2410C", textTransform: "uppercase" }}>Needs Email Address</div>
-                    <div style={{ fontSize: "17px", fontWeight: 800, color: "#C2410C", marginTop: "1px" }}>{activeWithoutEmailCount} Attendee{activeWithoutEmailCount !== 1 ? "s" : ""}</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Bulk Set Toolbar (when 2+ attendees selected) */}
-              {attendeesConfigs.length > 1 && (
-                <div
-                  style={{
-                    backgroundColor: "#F4F7FD",
-                    border: "1px solid #D5DCF2",
-                    borderRadius: "10px",
-                    padding: "12px 14px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#141C6E", textTransform: "uppercase", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span>⚡</span> Quick Set (Apply to All Selected):
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr auto", gap: "8px", alignItems: "center" }}>
-                    <select
-                      value={quickRole}
-                      onChange={(e) => setQuickRole(e.target.value)}
-                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                    >
-                      <option value="keep">Role (Keep current)</option>
-                      <option value="member">Set all to Member</option>
-                      <option value="unit_head">Set all to Unit Head</option>
-                      <option value="admin">Set all to Administrator</option>
-                    </select>
-
-                    <select
-                      value={quickCampus}
-                      onChange={(e) => setQuickCampus(e.target.value)}
-                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                    >
-                      <option value="keep">Campus (Keep current)</option>
-                      <option value="jos">Set all to Jos</option>
-                      <option value="abuja">Set all to Abuja</option>
-                    </select>
-
-                    <select
-                      value={quickUnit}
-                      onChange={(e) => setQuickUnit(e.target.value)}
-                      style={{ padding: "6px 8px", borderRadius: "6px", border: "1px solid #C5D1F0", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                    >
-                      <option value="keep">Unit (Keep current)</option>
-                      <option value="">Unassigned</option>
-                      {UNITS.map((u) => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={handleApplyToAll}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#1F46C8",
-                        color: "#FFFFFF",
-                        border: "none",
-                        borderRadius: "6px",
-                        fontSize: "11.5px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Per-Attendee Cards List */}
-              <div style={{ marginBottom: "16px" }}>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "8px" }}>
-                  Attendee Details & Assignments ({attendeesConfigs.length}):
-                </div>
-
-                <div style={{ maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px", paddingRight: "4px" }}>
-                  {attendeesConfigs.map((att) => {
-                    const hasValidEmail = Boolean(att.email && att.email.trim().length > 0 && att.email.includes("@"));
-
-                    return (
-                      <div
-                        key={att.attendanceId}
-                        style={{
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid " + (hasValidEmail ? "#DCE4F8" : "#FCD34D"),
-                          borderRadius: "10px",
-                          padding: "12px 14px",
-                          boxShadow: "0 2px 6px rgba(14, 21, 86, 0.04)",
-                        }}
-                      >
-                        {/* Attendee Name Header */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13.5px", color: "#141C6E" }}>
-                              {att.fullName}
-                            </span>
-                            {att.phone && (
-                              <span style={{ fontSize: "11px", color: "#747CA1" }}>({att.phone})</span>
-                            )}
-                          </div>
-                          <div>
-                            {hasValidEmail ? (
-                              <span style={{ fontSize: "10px", backgroundColor: "#E4F5EA", color: "#0F6B38", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
-                                ✓ Eligible
-                              </span>
-                            ) : (
-                              <span style={{ fontSize: "10px", backgroundColor: "#FEF3C7", color: "#92400E", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
-                                ⚠️ Needs Email
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Email row / input if missing */}
-                        <div style={{ marginBottom: "10px" }}>
-                          {hasValidEmail ? (
-                            <div style={{ fontSize: "11.5px", color: "#1F46C8", display: "flex", alignItems: "center", gap: "5px" }}>
-                              <span>✉️</span> {att.email}
-                            </div>
-                          ) : (
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <input
-                                type="email"
-                                placeholder="Enter email to enable portal login for this attendee..."
-                                value={att.email}
-                                onChange={(e) => updateAttendeeConfig(att.attendanceId, { email: e.target.value })}
-                                style={{
-                                  flex: 1,
-                                  padding: "6px 10px",
-                                  borderRadius: "6px",
-                                  border: "1px solid #FCD34D",
-                                  backgroundColor: "#FFFBEB",
-                                  fontSize: "12px",
-                                  color: "#141C6E",
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Individual Role, Campus, Unit Selection */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr", gap: "8px" }}>
-                          <div>
-                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
-                              Role
-                            </label>
-                            <select
-                              value={att.role}
-                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { role: e.target.value })}
-                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                            >
-                              <option value="member">Member</option>
-                              <option value="unit_head">Unit Head</option>
-                              <option value="admin">Administrator</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
-                              Campus
-                            </label>
-                            <select
-                              value={att.campus}
-                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { campus: e.target.value as "jos" | "abuja" })}
-                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                            >
-                              <option value="jos">Jos Campus</option>
-                              <option value="abuja">Abuja Campus</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label style={{ display: "block", fontSize: "10px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "3px" }}>
-                              Church Unit
-                            </label>
-                            <select
-                              value={att.assignedUnitId}
-                              onChange={(e) => updateAttendeeConfig(att.attendanceId, { assignedUnitId: e.target.value })}
-                              style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #D5DCF2", fontSize: "12px", backgroundColor: "#FFFFFF" }}
-                            >
-                              <option value="">-- Unassigned --</option>
-                              {UNITS.map((u) => (
-                                <option key={u.id} value={u.id}>{u.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Email dispatch toggle */}
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#141C6E", cursor: "pointer", marginBottom: "16px" }}>
-                <input
-                  type="checkbox"
-                  checked={batchSendEmail}
-                  onChange={(e) => setBatchSendEmail(e.target.checked)}
-                  style={{ accentColor: "#1F46C8", width: "16px", height: "16px" }}
-                />
-                Dispatch branded invitation emails with temporary passwords automatically
-              </label>
-
-              {/* Action Buttons */}
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  type="button"
-                  onClick={handleConfirmBatchCreate}
-                  disabled={batchCreating || activeWithEmailCount === 0}
-                  style={{
-                    flex: 1,
-                    padding: "11px",
-                    backgroundColor: activeWithEmailCount === 0 ? "#CBD5E1" : "#1F46C8",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontWeight: 700,
-                    fontSize: "13px",
-                    cursor: batchCreating || activeWithEmailCount === 0 ? "not-allowed" : "pointer",
-                    boxShadow: activeWithEmailCount > 0 ? "0 4px 12px rgba(31, 70, 200, 0.25)" : "none",
-                  }}
-                >
-                  {batchCreating
-                    ? "Creating Accounts..."
-                    : activeWithEmailCount === 0
-                    ? "Enter Email for Attendees"
-                    : `Confirm & Create ${activeWithEmailCount} Account${activeWithEmailCount !== 1 ? "s" : ""}`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBatchModal(false)}
-                  disabled={batchCreating}
-                  style={{
-                    padding: "11px 20px",
-                    backgroundColor: "#F4F6FB",
-                    color: "#141C6E",
-                    border: "1px solid #D5DCF2",
-                    borderRadius: "8px",
-                    fontWeight: 600,
-                    fontSize: "12.5px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Batch Results & Credentials Sheet Modal */}
-      {batchResults && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.6)",
-            backdropFilter: "blur(4px)",
-            zIndex: 110,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
+      {/* Batch Create Accounts & Results Modals (Dynamically Imported) */}
+      {(showBatchModal || batchResults) && (
+        <BatchCreateAccountsModal
+          showBatchModal={showBatchModal}
+          onCloseBatchModal={() => setShowBatchModal(false)}
+          attendeesConfigs={attendeesConfigs}
+          setAttendeesConfigs={setAttendeesConfigs}
+          batchSendEmail={batchSendEmail}
+          setBatchSendEmail={setBatchSendEmail}
+          batchCreating={batchCreating}
+          onConfirmBatchCreate={handleConfirmBatchCreate}
+          quickRole={quickRole}
+          setQuickRole={setQuickRole}
+          quickCampus={quickCampus}
+          setQuickCampus={setQuickCampus}
+          quickUnit={quickUnit}
+          setQuickUnit={setQuickUnit}
+          onApplyQuickConfig={handleApplyToAll}
+          onUpdateAttendeeConfig={handleUpdateAttendeeConfig}
+          batchResults={batchResults}
+          onCloseResults={() => {
+            setBatchResults(null);
+            setSelectedRecordIds([]);
           }}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "600px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
-              border: "1px solid #D5DCF2",
-            }}
-          >
-            <div style={{ textAlign: "center", marginBottom: "16px" }}>
-              <div style={{ fontSize: "40px", lineHeight: 1, marginBottom: "8px" }}>🎉</div>
-              <h2
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "20px",
-                  fontWeight: 800,
-                  color: "#141C6E",
-                  margin: "0 0 6px",
-                }}
-              >
-                Accounts Provisioned Successfully!
-              </h2>
-              <p
-                style={{
-                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                  fontSize: "13px",
-                  color: "#4A5490",
-                  margin: 0,
-                }}
-              >
-                {batchResults.createdCount} new account(s) created · {batchResults.alreadyExistedCount} refreshed · {batchResults.skippedCount} skipped
-              </p>
-            </div>
-
-            {/* Copy All Button */}
-            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "center" }}>
-              <button
-                type="button"
-                onClick={handleCopyAllCredentials}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: copiedAll ? "#0F6B38" : "#0E1556",
-                  color: "#FFFFFF",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontWeight: 700,
-                  fontSize: "12.5px",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  boxShadow: "0 4px 12px rgba(14, 21, 86, 0.2)",
-                  transition: "background-color 0.2s",
-                }}
-              >
-                {copiedAll ? "✓ Copied to Clipboard!" : "📋 Copy All Credentials (for WhatsApp/SMS)"}
-              </button>
-            </div>
-
-            {/* Table of accounts */}
-            <div style={{ maxHeight: "240px", overflowY: "auto", border: "1px solid #E8EDFB", borderRadius: "8px", marginBottom: "20px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#F8FAFD", borderBottom: "1px solid #E8EDFB" }}>
-                    <th style={{ padding: "8px 12px", color: "#4A5490", fontWeight: 600 }}>Name</th>
-                    <th style={{ padding: "8px 12px", color: "#4A5490", fontWeight: 600 }}>Email</th>
-                    <th style={{ padding: "8px 12px", color: "#4A5490", fontWeight: 600 }}>Temp Password</th>
-                    <th style={{ padding: "8px 12px", color: "#4A5490", fontWeight: 600 }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {batchResults.results.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: "1px solid #EEF2FB" }}>
-                      <td style={{ padding: "8px 12px", fontWeight: 700, color: "#141C6E" }}>{item.fullName}</td>
-                      <td style={{ padding: "8px 12px", color: "#1F46C8" }}>{item.email || "—"}</td>
-                      <td style={{ padding: "8px 12px", fontFamily: "monospace", fontWeight: 700, color: "#0140C1" }}>
-                        {item.tempPassword || "—"}
-                      </td>
-                      <td style={{ padding: "8px 12px" }}>
-                        <span
-                          style={{
-                            fontSize: "10.5px",
-                            fontWeight: 700,
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            backgroundColor:
-                              item.status === "created"
-                                ? "#E4F5EA"
-                                : item.status === "already_existed"
-                                ? "#E0F2FE"
-                                : item.status === "skipped_no_email"
-                                ? "#FFF7ED"
-                                : "#FEE2E2",
-                            color:
-                              item.status === "created"
-                                ? "#0F6B38"
-                                : item.status === "already_existed"
-                                ? "#0284C7"
-                                : item.status === "skipped_no_email"
-                                ? "#C2410C"
-                                : "#991B1B",
-                          }}
-                        >
-                          {item.status === "created"
-                            ? "Created"
-                            : item.status === "already_existed"
-                            ? "Updated"
-                            : item.status === "skipped_no_email"
-                            ? "Skipped"
-                            : "Error"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setBatchResults(null);
-                setSelectedRecordIds([]);
-              }}
-              style={{
-                width: "100%",
-                padding: "12px",
-                backgroundColor: "#1F46C8",
-                color: "#FFFFFF",
-                border: "none",
-                borderRadius: "8px",
-                fontWeight: 700,
-                fontSize: "13px",
-                cursor: "pointer",
-              }}
-            >
-              Done & Close
-            </button>
-          </div>
-        </div>
+        />
       )}
     </div>
   );

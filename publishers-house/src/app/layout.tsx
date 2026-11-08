@@ -69,9 +69,14 @@ export default function RootLayout({
         {/* Preload critical LCP Hero image for instant discovery by browser HTML parser */}
         <link rel="preload" as="image" href="/images/hero-v2.webp" type="image/webp" fetchPriority="high" />
         <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
-        {/* Google Fonts direct load - delivers full Poppins, Montserrat & Playfair Display typography suite */}
+        {/* Google Fonts direct load - preloaded to eliminate render-blocking */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&display=swap"
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&display=swap"
           rel="stylesheet"
