@@ -7,7 +7,8 @@ import Footer from "@/components/Footer";
 import { getSermons, type Sermon } from "@/lib/firebase";
 import SermonsClient from "./SermonsClient";
 
-export const revalidate = 600; // Cache page for 10 minutes (prevents burning Firestore read quota)
+export const dynamic = "force-dynamic";
+export const revalidate = 0; // Fresh live queries without caching
 
 export const metadata: Metadata = {
   title: "Sermons & Teachings | TPH",
@@ -36,7 +37,7 @@ export default async function SermonsPage() {
   // Fetch live sermons from Firestore
   let sermons: Sermon[] = [];
   try {
-    sermons = await getSermons(1000);
+    sermons = await getSermons(1000, true);
   } catch (e) {
     console.error("Failed to fetch sermons:", e);
   }

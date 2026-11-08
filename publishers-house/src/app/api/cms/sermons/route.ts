@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { revalidatePath } from "next/cache";
+import { clearSermonsCache } from "@/lib/firebase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,20 +62,58 @@ export async function POST(req: NextRequest) {
 
       if (id) {
         await db.collection("sermons").doc(id).set(cleanData, { merge: true });
+        clearSermonsCache();
+        try {
+          revalidatePath("/sermons");
+          revalidatePath("/");
+          revalidatePath("/resources");
+        } catch {}
         return NextResponse.json({ ok: true, id, message: "Sermon updated successfully ✓" });
       } else {
         const docRef = await db.collection("sermons").add({
           ...cleanData,
           createdAt: new Date().toISOString(),
         });
+        clearSermonsCache();
+        try {
+          revalidatePath("/sermons");
+          revalidatePath("/");
+          revalidatePath("/resources");
+        } catch {}
         return NextResponse.json({ ok: true, id: docRef.id, message: "Sermon added successfully ✓" });
       }
     }
 
-    if (action === "delete") {
-      if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-      await db.collection("sermons").doc(id).delete();
-      return NextResponse.json({ ok: true });
+    if (action === "delete" || action === "bulk_delete") {
+      const ids: string[] = Array.isArray(body.ids)
+        ? body.ids.filter(Boolean)
+        : id
+        ? [id]
+        : [];
+      if (!ids.length) return NextResponse.json({ error: "Missing sermon id(s)" }, { status: 400 });
+
+      // Firestore batch deletes up to 500 documents per batch
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += 400) {
+        chunks.push(ids.slice(i, i + 400));
+      }
+
+      for (const chunk of chunks) {
+        const batch = db.batch();
+        chunk.forEach((docId) => {
+          batch.delete(db.collection("sermons").doc(docId));
+        });
+        await batch.commit();
+      }
+
+      clearSermonsCache();
+      try {
+        revalidatePath("/sermons");
+        revalidatePath("/");
+        revalidatePath("/resources");
+      } catch {}
+
+      return NextResponse.json({ ok: true, count: ids.length, message: `Successfully deleted ${ids.length} sermon${ids.length > 1 ? "s" : ""} ✓` });
     }
 
     if (action === "toggle_publish") {
@@ -82,6 +122,12 @@ export async function POST(req: NextRequest) {
         { published: Boolean(published), updatedAt: new Date().toISOString() },
         { merge: true }
       );
+      clearSermonsCache();
+      try {
+        revalidatePath("/sermons");
+        revalidatePath("/");
+        revalidatePath("/resources");
+      } catch {}
       return NextResponse.json({ ok: true });
     }
 

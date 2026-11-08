@@ -221,9 +221,13 @@ export function deduplicateSermons(sermons: Sermon[]): Sermon[] {
 
 let sermonsMemoryCache: { data: Sermon[]; expires: number } | null = null;
 
-export async function getSermons(limitCount = 1000): Promise<Sermon[]> {
+export function clearSermonsCache() {
+  sermonsMemoryCache = null;
+}
+
+export async function getSermons(limitCount = 1000, bypassCache = false): Promise<Sermon[]> {
   const now = Date.now();
-  if (sermonsMemoryCache && sermonsMemoryCache.expires > now && sermonsMemoryCache.data.length > 0) {
+  if (!bypassCache && sermonsMemoryCache && sermonsMemoryCache.expires > now && sermonsMemoryCache.data.length > 0) {
     return sermonsMemoryCache.data.slice(0, limitCount);
   }
 

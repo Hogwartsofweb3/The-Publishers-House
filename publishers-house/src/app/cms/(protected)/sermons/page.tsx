@@ -119,6 +119,10 @@ export default function SermonsEditor() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number | "all">(50);
 
+  // Multi-selector state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const fetchSermons = async () => {
     try {
       const res = await fetch("/api/cms/sermons");
@@ -311,6 +315,16 @@ export default function SermonsEditor() {
     setIsDrawerOpen(true);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this sermon?")) return;
     try {
@@ -323,9 +337,44 @@ export default function SermonsEditor() {
         const data = await res.json();
         throw new Error(data.error || "Failed to delete sermon");
       }
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
       fetchSermons();
     } catch (err: any) {
       alert("Error deleting sermon: " + err.message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    const count = selectedIds.length;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ${count} selected sermon${
+          count > 1 ? "s" : ""
+        }? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setBulkDeleting(true);
+    try {
+      const res = await fetch("/api/cms/sermons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "bulk_delete", ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to delete sermons");
+      }
+      setSelectedIds([]);
+      setMsg(data.message || `✓ Deleted ${count} sermons`);
+      fetchSermons();
+    } catch (err: any) {
+      alert("Error deleting sermons: " + err.message);
+    } finally {
+      setBulkDeleting(false);
+      setTimeout(() => setMsg(""), 4000);
     }
   };
 
@@ -1223,26 +1272,154 @@ export default function SermonsEditor() {
       {/* Anchor for smooth scroll on page change */}
       <div id="sermons-list-anchor" style={{ scrollMarginTop: "24px" }} />
 
+      {/* ── Multi-Select Batch Actions Toolbar ── */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+          padding: "12px 18px",
+          backgroundColor: selectedIds.length > 0 ? "#EFF6FF" : S.Paper100,
+          border: `1px solid ${selectedIds.length > 0 ? "#93C5FD" : S.Paper300}`,
+          borderRadius: "8px",
+          marginBottom: "14px",
+          transition: "all 0.2s ease",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", userSelect: "none" }}>
+            <input
+              type="checkbox"
+              checked={paginatedSermons.length > 0 && paginatedSermons.every((s) => selectedIds.includes(s.id))}
+              onChange={() => {
+                const pageIds = paginatedSermons.map((s) => s.id);
+                const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+                if (allSelected) {
+                  setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+                } else {
+                  setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+                }
+              }}
+              style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: S.Blue700 }}
+            />
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "12px", fontWeight: 600, color: S.Navy }}>
+              Select All On Page ({paginatedSermons.length})
+            </span>
+          </label>
+
+          {filteredSermons.length > paginatedSermons.length && (
+            <button
+              type="button"
+              onClick={() => setSelectedIds(filteredSermons.map((s) => s.id))}
+              style={{
+                background: "none",
+                border: "none",
+                color: S.Blue700,
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+                textDecoration: "underline",
+                padding: 0,
+              }}
+            >
+              Select All {filteredSermons.length} Matching
+            </button>
+          )}
+
+          {selectedIds.length > 0 && (
+            <span
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "11px",
+                backgroundColor: S.Blue700,
+                color: S.White,
+                padding: "3px 10px",
+                borderRadius: "12px",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+              }}
+            >
+              {selectedIds.length} SELECTED
+            </span>
+          )}
+        </div>
+
+        {selectedIds.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={clearSelection}
+              style={{
+                ...S.btn(S.White, S.Slate600),
+                border: `1px solid ${S.Paper300}`,
+                padding: "6px 12px",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              style={{
+                ...S.btn("#DC2626", S.White),
+                padding: "6px 16px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                opacity: bulkDeleting ? 0.6 : 1,
+                boxShadow: "0 2px 8px rgba(220, 38, 38, 0.25)",
+              }}
+            >
+              {bulkDeleting ? "Deleting..." : `🗑 Delete Selected (${selectedIds.length})`}
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ── Sermons List ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {paginatedSermons.map((s) => {
           const isGeneric = isGenericOverview(s.summary);
+          const isSelected = selectedIds.includes(s.id);
           return (
             <div
               key={s.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: "20px",
+                gridTemplateColumns: "auto 1fr auto",
+                gap: "18px",
                 alignItems: "center",
-                backgroundColor: S.White,
-                border: `1px solid ${editingId === s.id ? S.Blue500 : S.Paper300}`,
+                backgroundColor: isSelected ? "#F0F7FF" : S.White,
+                border: `1px solid ${isSelected ? S.Blue500 : editingId === s.id ? S.Blue500 : S.Paper300}`,
                 borderRadius: "8px",
                 padding: "18px 24px",
-                boxShadow: editingId === s.id ? "0 0 0 2px rgba(32, 144, 255, 0.2)" : "none",
+                boxShadow: isSelected
+                  ? "0 0 0 2px rgba(32, 144, 255, 0.25)"
+                  : editingId === s.id
+                  ? "0 0 0 2px rgba(32, 144, 255, 0.2)"
+                  : "none",
                 transition: "all 0.15s ease",
               }}
             >
+              {/* Multi-Select Checkbox */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleSelect(s.id)}
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    cursor: "pointer",
+                    accentColor: S.Blue700,
+                  }}
+                  title="Select sermon"
+                />
+              </div>
               <div style={{ minWidth: 0 }}>
                 {/* Title and badges */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "4px" }}>
