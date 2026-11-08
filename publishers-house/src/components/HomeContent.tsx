@@ -31,7 +31,7 @@ const T = {
   displayS:  { fontFamily:"'Poppins', sans-serif", fontWeight:700, fontSize:"21px", lineHeight:"1.2em", letterSpacing:"-0.01em", textTransform:"uppercase" as const },
   epigraph:  { fontFamily:"'Playfair Display', serif", fontWeight:400, fontStyle:"italic" as const, fontSize:"clamp(24px,3vw,36px)", lineHeight:"1.3em" },
   readLede:  { fontFamily:"'Playfair Display', serif", fontWeight:400, fontSize:"20px", lineHeight:"1.55em" },
-  readBody:  { fontFamily:"var(--font-serif, 'Playfair Display', Georgia, serif)", fontWeight:400, fontSize:"17px", lineHeight:"1.68em" },
+  readBody:  { fontFamily:"var(--font-poppins, 'Poppins', sans-serif)", fontWeight:400, fontSize:"16px", lineHeight:"1.68em" },
   readSmall: { fontFamily:"'Poppins', sans-serif", fontWeight:400, fontSize:"14.5px", lineHeight:"1.5em" },
   eyebrow:   { fontFamily:"'Poppins', sans-serif", fontWeight:600, fontSize: "10px", lineHeight:"1.6em", letterSpacing:"0.2em", textTransform:"uppercase" as const },
   label:     { fontFamily:"'Poppins', sans-serif", fontWeight:600, fontSize: "11px", lineHeight:"1.6em", letterSpacing:"0.16em", textTransform:"uppercase" as const },
@@ -1041,13 +1041,13 @@ export default function HomeContent() {
                 boxSizing: "border-box",
               }}
             >
-              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+              <p style={{ fontFamily: "var(--font-poppins, 'Poppins', sans-serif)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 16.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
                 After five years in rented spaces, The Publishers House has acquired land for a permanent home! We are now building a multi-purpose center featuring an auditorium, lecture halls, offices, and a media studio to continue publishing the Gospel across the nations.
               </p>
-              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+              <p style={{ fontFamily: "var(--font-poppins, 'Poppins', sans-serif)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 16.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
                 We are at Phase 3 — Raising the walls, columns, and structural framework of the church and the administrative areas to the roofing level. The estimated cost of this is ₦142,000,000 (approx. $95,000).
               </p>
-              <p style={{ fontFamily: "var(--font-playfair)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 17.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
+              <p style={{ fontFamily: "var(--font-poppins, 'Poppins', sans-serif)", fontWeight: 400, fontStyle: "normal", fontSize: "clamp(14.5px, 1.25vw + 10px, 16.5px)", lineHeight: "1.65em", color: "rgba(255,255,255,0.90)", margin: 0, textAlign: "center" }}>
                 We prayerfully invite you to stand with us in this next phase to help bring this vision to life.
               </p>
             </div>

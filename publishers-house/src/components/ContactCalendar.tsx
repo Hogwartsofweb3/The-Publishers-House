@@ -449,7 +449,7 @@ export default function ContactCalendar() {
                       </div>
 
                       {ev.description && (
-                        <p style={{ fontFamily: "var(--font-playfair)", fontSize: "14px", lineHeight: "1.6em", color: S.Slate600, margin: 0 }}>
+                        <p style={{ fontFamily: "var(--font-poppins)", fontSize: "14px", lineHeight: "1.6em", color: S.Slate600, margin: 0 }}>
                           {ev.description}
                         </p>
                       )}
@@ -506,7 +506,7 @@ export default function ContactCalendar() {
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "16px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "15px", color: S.Slate600, margin: 0 }}>
+                  <p style={{ fontFamily: "var(--font-poppins)", fontSize: "15px", color: S.Slate600, margin: 0 }}>
                     No public gatherings on this date.
                   </p>
                   <p style={{ fontFamily: "var(--font-poppins)", fontSize: "13px", color: S.Navy, margin: 0 }}>

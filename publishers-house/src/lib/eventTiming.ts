@@ -18,15 +18,15 @@ export type { EventTimingInfo };
 export { getEventTiming, parseStartAndEnd, formatEventTime };
 
 export function useEventTiming(item: any): EventTimingInfo {
-  const [timing, setTiming] = useState<EventTimingInfo>(() => getEventTiming(item));
+  const [timing, setTiming] = useState<EventTimingInfo>(() => getEventTiming(item, new Date(), false));
 
   useEffect(() => {
-    // Recompute immediately in case of SSR/hydration time skew
-    setTiming(getEventTiming(item));
+    // Recompute immediately on client with allowLocal = true for local timezone detection
+    setTiming(getEventTiming(item, new Date(), true));
 
     // Tick every 1s in countdown mode, every 30s otherwise
     const tick = () => {
-      const t = getEventTiming(item);
+      const t = getEventTiming(item, new Date(), true);
       setTiming(t);
       timer = setTimeout(tick, t.status === "countdown" ? 1000 : 30000);
     };

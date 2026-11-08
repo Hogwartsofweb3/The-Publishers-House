@@ -177,7 +177,11 @@ export function formatEventTime(item: any, allowLocal: boolean = false): string 
   return watTime;
 }
 
-export function getEventTiming(item: any, now: Date = new Date()): EventTimingInfo {
+export function getEventTiming(
+  item: any,
+  now: Date = new Date(),
+  allowLocal: boolean = false
+): EventTimingInfo {
   const { start, end, startMs, endMs } = parseStartAndEnd(item);
   const nowMs = now.getTime();
   const diffMs = startMs - nowMs;
@@ -187,14 +191,14 @@ export function getEventTiming(item: any, now: Date = new Date()): EventTimingIn
   const startWat = new Date(startMs + WAT_OFFSET_MS);
   const nowWat = new Date(nowMs + WAT_OFFSET_MS);
 
-  const isSameCalendarDay =
+  const isSameCalendarDayWAT =
     startWat.getUTCFullYear() === nowWat.getUTCFullYear() &&
     startWat.getUTCMonth() === nowWat.getUTCMonth() &&
     startWat.getUTCDate() === nowWat.getUTCDate();
 
   const tomorrowWat = new Date(nowWat);
   tomorrowWat.setUTCDate(nowWat.getUTCDate() + 1);
-  const isTomorrow =
+  const isTomorrowWAT =
     startWat.getUTCFullYear() === tomorrowWat.getUTCFullYear() &&
     startWat.getUTCMonth() === tomorrowWat.getUTCMonth() &&
     startWat.getUTCDate() === tomorrowWat.getUTCDate();
@@ -232,7 +236,7 @@ export function getEventTiming(item: any, now: Date = new Date()): EventTimingIn
     };
   }
 
-  // 3. Countdown: within 5 hours before start
+  // 3. Countdown: within 5 hours before start (universal relative time across all timezones)
   const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
   if (diffMs > 0 && diffMs <= FIVE_HOURS_MS) {
     const hoursLeft = Math.floor(diffMs / (3600 * 1000));
@@ -257,13 +261,77 @@ export function getEventTiming(item: any, now: Date = new Date()): EventTimingIn
     };
   }
 
-  // 4. Today: same calendar day in WAT, but more than 5h away
-  if (isSameCalendarDay) {
-    const timeFormatted = item.time ? ` · ${String(item.time).replace("WAT", "").trim()}` : "";
+  // Format the time portion in WAT
+  let baseWatTime = item?.time ? String(item.time).replace(/WAT/i, "").trim() : "";
+  if (!baseWatTime) {
+    const h = startWat.getUTCHours();
+    const m = startWat.getUTCMinutes();
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    baseWatTime = `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  }
+
+  // Check visitor local timezone
+  let isLocalDifferent = false;
+  let localTimeStr = "";
+  let localDayLabel = "";
+  if (allowLocal && typeof window !== "undefined") {
+    try {
+      const localOffset = new Date().getTimezoneOffset();
+      if (localOffset !== -60) {
+        isLocalDifferent = true;
+        const localFormatted = start.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+        let tz = "";
+        try {
+          const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(start);
+          const p = parts.find((x) => x.type === "timeZoneName");
+          if (p && p.value && !p.value.includes("GMT+1")) tz = ` ${p.value}`;
+        } catch {}
+
+        localTimeStr = `${localFormatted}${tz || " your time"}`;
+
+        const isLocalSameDay =
+          start.getFullYear() === now.getFullYear() &&
+          start.getMonth() === now.getMonth() &&
+          start.getDate() === now.getDate();
+
+        const tomorrowLocal = new Date(now);
+        tomorrowLocal.setDate(now.getDate() + 1);
+        const isLocalTomorrow =
+          start.getFullYear() === tomorrowLocal.getFullYear() &&
+          start.getMonth() === tomorrowLocal.getMonth() &&
+          start.getDate() === tomorrowLocal.getDate();
+
+        if (isLocalSameDay) {
+          localDayLabel = "Today";
+        } else if (isLocalTomorrow) {
+          localDayLabel = "Tomorrow";
+        } else {
+          localDayLabel = start.toLocaleDateString([], { weekday: "short" });
+        }
+      }
+    } catch {}
+  }
+
+  // 4. Today
+  if (isSameCalendarDayWAT || (isLocalDifferent && localDayLabel === "Today")) {
+    let label = `Today · ${baseWatTime} WAT`;
+    if (isLocalDifferent && localTimeStr) {
+      if (localDayLabel === "Today") {
+        label = `Today · ${baseWatTime} WAT (${localTimeStr})`;
+      } else {
+        label = `Today WAT (${localDayLabel} ${localTimeStr})`;
+      }
+    }
     return {
       startMs, endMs,
       status: "today",
-      badgeLabel: `Today${timeFormatted}`,
+      badgeLabel: label,
       badgeBg: "#DCFCE7",
       badgeColor: "#15803D",
       badgeBorder: "1px solid #86EFAC",
@@ -272,11 +340,19 @@ export function getEventTiming(item: any, now: Date = new Date()): EventTimingIn
   }
 
   // 5. Tomorrow
-  if (isTomorrow) {
+  if (isTomorrowWAT || (isLocalDifferent && localDayLabel === "Tomorrow")) {
+    let label = `Tomorrow · ${baseWatTime} WAT`;
+    if (isLocalDifferent && localTimeStr) {
+      if (localDayLabel === "Tomorrow") {
+        label = `Tomorrow · ${baseWatTime} WAT (${localTimeStr})`;
+      } else {
+        label = `Tomorrow WAT (${localDayLabel} ${localTimeStr})`;
+      }
+    }
     return {
       startMs, endMs,
       status: "tomorrow",
-      badgeLabel: "Tomorrow",
+      badgeLabel: label,
       badgeBg: "#EBF2FF",
       badgeColor: "#0140C1",
       badgeBorder: "1px solid #BFDBFE",

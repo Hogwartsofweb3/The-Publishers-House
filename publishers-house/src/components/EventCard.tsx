@@ -20,7 +20,7 @@ const T = {
   displayS:  { fontFamily: "var(--font-poppins)", fontWeight: 700 as const, fontSize: "18px", lineHeight: "1.2em", letterSpacing: "-0.01em", textTransform: "uppercase" as const },
   eyebrow:   { fontFamily: "var(--font-poppins)", fontWeight: 600 as const, fontSize: "10px", lineHeight: "1.6em", letterSpacing: "0.2em", textTransform: "uppercase" as const },
   colophon:  { fontFamily: "var(--font-poppins)", fontWeight: 500 as const, fontSize: "10.5px", lineHeight: "1.6em", letterSpacing: "0.1em", textTransform: "uppercase" as const },
-  readSmall: { fontFamily: "var(--font-playfair)", fontWeight: 400 as const, fontSize: "14.5px", lineHeight: "1.5em" },
+  readSmall: { fontFamily: "var(--font-poppins)", fontWeight: 400 as const, fontSize: "14.5px", lineHeight: "1.5em" },
   button:    { fontFamily: "var(--font-poppins)", fontWeight: 600 as const, fontSize: "12px", lineHeight: "1em", letterSpacing: "0.14em", textTransform: "uppercase" as const },
 };
 
