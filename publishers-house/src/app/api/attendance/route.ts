@@ -84,11 +84,12 @@ export async function GET(req: Request) {
           validMemberUids.add(u.id);
           const uData = u.data();
           if (uData.email) {
-            emailToUid.set(String(uData.email).toLowerCase().trim(), u.id);
+            const em = String(uData.email).toLowerCase().trim();
+            if (em) emailToUid.set(em, u.id);
           }
           if (uData.phone) {
             const clean = String(uData.phone).replace(/[^0-9]/g, "");
-            if (clean) {
+            if (clean && clean.length >= 7) {
               phoneToUid.set(clean, u.id);
               if (clean.startsWith("0") && clean.length === 11) {
                 phoneToUid.set("234" + clean.slice(1), u.id);
@@ -103,15 +104,15 @@ export async function GET(req: Request) {
         records = records.map((r: any) => {
           // An attendee is ONLY a Member if their account actually exists in the Members Directory
           let memberUid: string | null = null;
+          const cleanEmail = (r.email || "").toLowerCase().trim();
+          const cleanPhone = (r.phone || "").replace(/[^0-9]/g, "");
+
           if (r.userId && validMemberUids.has(r.userId)) {
             memberUid = r.userId;
-          } else if (r.email && emailToUid.has(String(r.email).toLowerCase().trim())) {
-            memberUid = emailToUid.get(String(r.email).toLowerCase().trim())!;
-          } else if (r.phone) {
-            const clean = String(r.phone).replace(/[^0-9]/g, "");
-            if (phoneToUid.has(clean)) {
-              memberUid = phoneToUid.get(clean)!;
-            }
+          } else if (cleanEmail && emailToUid.has(cleanEmail)) {
+            memberUid = emailToUid.get(cleanEmail)!;
+          } else if (cleanPhone && cleanPhone.length >= 7 && phoneToUid.has(cleanPhone)) {
+            memberUid = phoneToUid.get(cleanPhone)!;
           }
 
           const isOfficialMember = Boolean(memberUid);
@@ -343,17 +344,19 @@ export async function POST(req: Request) {
       }
       if (!matchedUserId && att.phone) {
         const clean = att.phone.replace(/[^0-9]/g, "");
-        const variants = [clean];
-        if (clean.startsWith("0") && clean.length === 11) variants.push("234" + clean.slice(1));
-        if (clean.startsWith("234") && clean.length === 13) variants.push("0" + clean.slice(3));
-        for (const p of variants) {
-          try {
-            const pSnap = await db.collection("users").where("phone", "==", p).limit(1).get();
-            if (!pSnap.empty) {
-              matchedUserId = pSnap.docs[0].id;
-              break;
-            }
-          } catch {}
+        if (clean.length >= 7) {
+          const variants = [clean];
+          if (clean.startsWith("0") && clean.length === 11) variants.push("234" + clean.slice(1));
+          if (clean.startsWith("234") && clean.length === 13) variants.push("0" + clean.slice(3));
+          for (const p of variants) {
+            try {
+              const pSnap = await db.collection("users").where("phone", "==", p).limit(1).get();
+              if (!pSnap.empty) {
+                matchedUserId = pSnap.docs[0].id;
+                break;
+              }
+            } catch {}
+          }
         }
       }
 
