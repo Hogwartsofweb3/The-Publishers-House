@@ -1102,17 +1102,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, updates });
     }
 
-    // 4. ASSIGN OR REMOVE FROM UNIT
-    if (action === "assign_unit") {
-      const { uid, assignedUnitId } = body;
-      if (!uid) return NextResponse.json({ error: "UID required" }, { status: 400 });
+    // 4. ASSIGN OR REMOVE FROM UNIT / ADD MEMBER TO UNIT
+    if (action === "assign_unit" || action === "add_member_to_unit") {
+      const { uid, memberUid, assignedUnitId, unitId } = body;
+      const targetUid = uid || memberUid;
+      const targetUnitId = assignedUnitId !== undefined ? assignedUnitId : unitId;
+      if (!targetUid) return NextResponse.json({ error: "UID required" }, { status: 400 });
 
-      await adminDb.collection("users").doc(uid).update({
-        assignedUnitId: assignedUnitId || "",
+      await adminDb.collection("users").doc(targetUid).update({
+        assignedUnitId: targetUnitId || "",
         updatedAt: new Date().toISOString(),
       });
-      updateCacheMember(uid, { assignedUnitId: assignedUnitId || "" });
-      return NextResponse.json({ ok: true, assignedUnitId });
+      updateCacheMember(targetUid, { assignedUnitId: targetUnitId || "" });
+
+      // Audit log entry
+      try {
+        await adminDb.collection("audit_logs").add({
+          adminEmail: body.performedBy || "Unit Head",
+          action: `Member assigned to unit: uid=${targetUid}, unitId=${targetUnitId || "none"}`,
+          timestamp: new Date().toISOString(),
+        });
+      } catch {}
+
+      return NextResponse.json({ ok: true, uid: targetUid, assignedUnitId: targetUnitId || "" });
     }
 
     // 5. DELETE MEMBER

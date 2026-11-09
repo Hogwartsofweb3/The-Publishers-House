@@ -254,10 +254,28 @@ export default function CMSLoginPage() {
           type="button"
           onClick={handleGoogle}
           disabled={loading}
-          style={{ width: "100%", marginTop: "12px", padding: "13px", backgroundColor: "white", color: "#151A54", border: "1px solid #D3DAEC", borderRadius: "6px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "14px", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}
+          style={{ width: "100%", marginTop: "12px", padding: "13px", backgroundColor: "white", color: "#151A54", border: "1px solid #D3DAEC", borderRadius: "6px", fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "14px", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "gap", gap: "10px" }}
         >
           <span>Continue with Google</span>
         </button>
+
+        <div style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px solid #EDF1FA", textAlign: "center" }}>
+          <a
+            href="https://www.thepublishershouse.org"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              fontWeight: 600,
+              fontFamily: "'Poppins', sans-serif",
+              color: "#0140C1",
+              textDecoration: "none",
+            }}
+          >
+            <span>← Back to Website</span>
+          </a>
+        </div>
       </div>
 
       <div style={{ position: "relative", zIndex: 2, marginTop: "36px", textAlign: "center", display: "flex", flexDirection: "column", gap: "6px" }}>

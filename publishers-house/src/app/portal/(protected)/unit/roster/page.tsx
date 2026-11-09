@@ -36,6 +36,11 @@ export default function UnitRosterPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // Add Member to Unit Modal State
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [searchMemberTerm, setSearchMemberTerm] = useState("");
+  const [addingMemberUid, setAddingMemberUid] = useState<string | null>(null);
+
   const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId) || UNITS[0];
 
   useEffect(() => {
@@ -233,6 +238,45 @@ export default function UnitRosterPage() {
     }
   };
 
+  const handleAddMemberToUnit = async (targetMember: PortalUser) => {
+    if (!activeUnit?.id) return;
+    setAddingMemberUid(targetMember.uid);
+    try {
+      const res = await fetch("/api/portal/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_member_to_unit",
+          memberUid: targetMember.uid,
+          assignedUnitId: activeUnit.id,
+          performedBy: user?.displayName || user?.email || "Unit Head",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const updated = { ...targetMember, assignedUnitId: activeUnit.id };
+        setMembers((prev) => {
+          if (prev.some((m) => m.uid === targetMember.uid)) return prev;
+          return [...prev, updated];
+        });
+        setAllMembers((prev) =>
+          prev.map((m) => (m.uid === targetMember.uid ? updated : m))
+        );
+        setSelectedMember(targetMember.displayName || targetMember.email);
+        setShowAddMemberModal(false);
+        setMsg(`✓ ${targetMember.displayName || targetMember.email} added to ${activeUnit.name} and selected.`);
+        setTimeout(() => setMsg(""), 5000);
+      } else {
+        alert(data.error || "Failed to add member to unit");
+      }
+    } catch (err) {
+      console.error("Error adding member to unit:", err);
+      alert("Network error. Please try again.");
+    } finally {
+      setAddingMemberUid(null);
+    }
+  };
+
   if (loading) {
     return <div style={{ padding: "40px", color: "#1F46C8" }}>Loading duty roster...</div>;
   }
@@ -290,9 +334,30 @@ export default function UnitRosterPage() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
-                Assigned Unit Member
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>
+                  Assigned Unit Member
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMemberModal(true);
+                    setSearchMemberTerm("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#1F46C8",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    padding: 0,
+                    textDecoration: "underline",
+                  }}
+                >
+                  + Add from Directory
+                </button>
+              </div>
               <select
                 value={selectedMember}
                 onChange={(e) => setSelectedMember(e.target.value)}
@@ -306,7 +371,7 @@ export default function UnitRosterPage() {
                     </option>
                   ))
                 ) : (
-                  <option value="">No members found in this unit</option>
+                  <option value="">No members in this unit — click above to add</option>
                 )}
               </select>
             </div>
@@ -545,6 +610,301 @@ export default function UnitRosterPage() {
           </p>
         )}
       </div>
+
+      {/* ── Add Member from Church Directory Modal ── */}
+      {showAddMemberModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(10, 14, 46, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddMemberModal(false);
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "560px",
+              width: "100%",
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.22)",
+              border: "1px solid #D5DCF2",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              maxHeight: "85vh",
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid #E8EDFB",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                backgroundColor: "#F8FAFD",
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "17px",
+                    fontWeight: 800,
+                    color: "#141C6E",
+                    margin: 0,
+                  }}
+                >
+                  Add Member to {activeUnit?.name}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12.5px",
+                    color: "#4A5490",
+                    margin: "4px 0 0",
+                  }}
+                >
+                  Add a member from the church directory to assign them to this unit and duty.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "20px",
+                  color: "#64748B",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid #E8EDFB" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid #D5DCF2",
+                  backgroundColor: "#FFFFFF",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Search by name, email, or phone..."
+                  value={searchMemberTerm}
+                  onChange={(e) => setSearchMemberTerm(e.target.value)}
+                  style={{
+                    border: "none",
+                    outline: "none",
+                    width: "100%",
+                    fontSize: "13px",
+                    color: "#141C6E",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  }}
+                />
+                {searchMemberTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchMemberTerm("")}
+                    style={{ background: "transparent", border: "none", color: "#94A3B8", cursor: "pointer", fontSize: "12px" }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Member Candidates List */}
+            <div style={{ overflowY: "auto", flex: 1, padding: "12px 24px", maxHeight: "380px" }}>
+              {(() => {
+                const available = allMembers.filter((m) => {
+                  if (normalizeUnitId(m.assignedUnitId) === normalizeUnitId(activeUnit?.id)) return false;
+                  if (members.some((cur) => cur.uid === m.uid)) return false;
+                  if (!searchMemberTerm.trim()) return true;
+                  const q = searchMemberTerm.toLowerCase();
+                  return (
+                    (m.displayName || "").toLowerCase().includes(q) ||
+                    (m.email || "").toLowerCase().includes(q) ||
+                    (m.phone || "").toLowerCase().includes(q)
+                  );
+                });
+
+                if (available.length === 0) {
+                  return (
+                    <div style={{ padding: "36px 16px", textAlign: "center", color: "#64748B" }}>
+                      <p style={{ margin: 0, fontSize: "13.5px", fontWeight: 600 }}>
+                        {searchMemberTerm ? "No matching members found." : "All church members are already assigned to this unit."}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {available.slice(0, 30).map((m) => {
+                      const currentUnit = UNITS.find((u) => u.id === normalizeUnitId(m.assignedUnitId));
+                      const isAdding = addingMemberUid === m.uid;
+                      const initial = (m.displayName || m.email || "M").charAt(0).toUpperCase();
+
+                      return (
+                        <div
+                          key={m.uid}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            borderRadius: "10px",
+                            border: "1px solid #E8EDFB",
+                            backgroundColor: "#FAFBFE",
+                            gap: "12px",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                            <div
+                              style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "50%",
+                                backgroundColor: "#1F46C8",
+                                color: "#FFFFFF",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700,
+                                fontSize: "14px",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {initial}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontSize: "13px",
+                                  fontWeight: 700,
+                                  color: "#141C6E",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                                }}
+                              >
+                                {m.displayName || "Unnamed Member"}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "11.5px",
+                                  color: "#64748B",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {m.email}
+                              </div>
+                              <div style={{ marginTop: "2px" }}>
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    backgroundColor: currentUnit ? "#FEF3C7" : "#F1F5F9",
+                                    color: currentUnit ? "#92400E" : "#64748B",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {currentUnit ? `Currently: ${currentUnit.name}` : "Unassigned"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isAdding}
+                            onClick={() => handleAddMemberToUnit(m)}
+                            style={{
+                              padding: "6px 14px",
+                              backgroundColor: isAdding ? "#94A3B8" : "#1F46C8",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: isAdding ? "not-allowed" : "pointer",
+                              whiteSpace: "nowrap",
+                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                              transition: "background-color 0.15s ease",
+                            }}
+                          >
+                            {isAdding ? "Adding..." : "+ Add to Unit"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: "14px 24px",
+                borderTop: "1px solid #E8EDFB",
+                display: "flex",
+                justifyContent: "flex-end",
+                backgroundColor: "#F8FAFD",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(false)}
+                style={{
+                  padding: "8px 20px",
+                  backgroundColor: "#0E1556",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

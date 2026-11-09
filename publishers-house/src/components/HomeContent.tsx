@@ -111,7 +111,7 @@ const FALLBACK_GATHERINGS = [
     time: "4:45 PM WAT",
     city: "The House of Bread, Jos",
     theme: "Word & Power Conference",
-    flierUrl: "https://i.postimg.cc/NMWknRpc/image.png",
+    flierUrl: "/images/merismos-logo.png",
     startAt: "2026-12-10T16:45:00",
     endAt: "2026-12-13T23:40:00",
     registrationUrl: "",
@@ -992,34 +992,39 @@ export default function HomeContent() {
               overflow: "hidden",
             }}
           >
+          {/* Dark solid backdrop — NO background image so only the video shows */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              backgroundImage: "url('/images/building-render.webp')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundColor: "#0A0E2E",
               zIndex: 0,
             }}
           />
-          {heroSlide === 1 && (
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                zIndex: 0,
-              }}
-            >
-              <source src="/videos/building.mp4" type="video/mp4" />
-            </video>
-          )}
+          {/* Permanently mounted video with preload so it never flashes or delays on slide transition */}
+          <video
+            ref={(el) => {
+              if (el && el.paused) {
+                el.play().catch(() => {});
+              }
+            }}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 0,
+            }}
+          >
+            <source src="/videos/building.mp4" type="video/mp4" />
+            <source src="/images/Building%20video.mp4" type="video/mp4" />
+          </video>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,26,84,0.88) 0%, rgba(1,64,193,0.55) 100%)", zIndex: 1 }} />
           
           <div className="tph-hero" style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: "880px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "20px", padding: "40px 20px" }}>

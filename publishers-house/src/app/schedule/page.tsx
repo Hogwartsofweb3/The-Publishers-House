@@ -71,9 +71,15 @@ const T = {
 export default async function EventsPage() {
   let events: EventItem[] = [];
   try {
-    events = await getEvents(50);
+    // 1500ms timeout race to guarantee fast SSR response without hanging on cold Firestore connections
+    events = await Promise.race([
+      getEvents(50),
+      new Promise<EventItem[]>((_, reject) =>
+        setTimeout(() => reject(new Error("Events fetch timed out")), 1500)
+      ),
+    ]);
   } catch (e) {
-    console.error("Failed to fetch events:", e);
+    console.error("Failed to fetch events (using static fallback):", e);
   }
 
   // Fallback defaults if no events are returned
@@ -89,7 +95,7 @@ export default async function EventsPage() {
         startAt: "2026-10-28T16:00",
         endAt: "2026-11-01T23:00",
         location: "Jos, Nigeria",
-        imageUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
+        imageUrl: "/images/fol-2026-poster.jpg",
         registrationUrl: "https://bit.ly/Fol.2026",
         published: true,
         createdAt: null,
