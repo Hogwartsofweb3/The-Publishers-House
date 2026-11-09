@@ -70,7 +70,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         description: "Festival of Light brings together believers from across the world for a season of worship, sound teaching, Holy Ghost expressions, fellowship and divine encounters.\n\nIt is a celebration of God's faithfulness, of spiritual renewal, and of the shared mission of raising a great company of publishers.\n\nIf you are travelling in, register early. Registration closes when the hall is full rather than on a fixed date.",
         startAt: "2026-10-28T16:00", endAt: "2026-11-01T23:00",
         startDate: "2026-10-28", endDate: "2026-11-01",
-        location: "Jos, Nigeria", imageUrl: "https://i.postimg.cc/vTf49Wsz/FOL.-26.jpg",
+        location: "Jos, Nigeria", imageUrl: "/images/fol-2026-poster.jpg",
         registrationUrl: "https://bit.ly/Fol.2026",
         published: true, createdAt: null, updatedAt: null,
       } as any;

@@ -38,26 +38,43 @@ export default function MemberPrayersAndTestimoniesPage() {
 
   const fetchUserData = async (uid: string) => {
     try {
-      // Fetch prayers
-      const pq = query(
-        collection(db, "prayers"),
-        where("userId", "==", uid),
-        orderBy("timestamp", "desc")
-      );
-      const psnap = await getDocs(pq);
-      setPrayers(psnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Fetch prayers via Admin API route (bypasses client security restrictions)
+      const res = await fetch("/api/portal/prayers");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.prayers) {
+          setPrayers(data.prayers);
+        }
+      } else {
+        // Fallback to client query
+        const pq = query(
+          collection(db, "prayers"),
+          where("userId", "==", uid),
+          orderBy("createdAt", "desc")
+        );
+        const psnap = await getDocs(pq);
+        setPrayers(psnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }
     } catch (e) {
-      // index might be building
+      // fallback handled
     }
 
     try {
-      // Fetch testimonies
-      const tq = query(
-        collection(db, "testimonies"),
-        where("userId", "==", uid)
-      );
-      const tsnap = await getDocs(tq);
-      setTestimonies(tsnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Fetch testimonies via Admin API route
+      const res = await fetch("/api/portal/testimonies");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.testimonies) {
+          setTestimonies(data.testimonies);
+        }
+      } else {
+        const tq = query(
+          collection(db, "testimonies"),
+          where("userId", "==", uid)
+        );
+        const tsnap = await getDocs(tq);
+        setTestimonies(tsnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -84,21 +101,23 @@ export default function MemberPrayersAndTestimoniesPage() {
     setPrayerSubmitting(true);
     setPrayerMsg("");
     try {
-      await addDoc(collection(db, "prayers"), {
-        content: prayerText.trim(),
-        status: "pending",
-        userId: user.uid,
-        userName: user.displayName,
-        userEmail: user.email,
-        timestamp: serverTimestamp(),
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/portal/prayers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: prayerText.trim(),
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to submit prayer petition");
+      }
       setPrayerMsg("Your prayer request has been submitted to the pastoral team ✓");
       setPrayerText("");
       fetchUserData(user.uid);
       setTimeout(() => setPrayerMsg(""), 5000);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("Error submitting prayer: " + err.message);
     } finally {
       setPrayerSubmitting(false);
     }
@@ -110,23 +129,25 @@ export default function MemberPrayersAndTestimoniesPage() {
     setTestimonySubmitting(true);
     setTestimonyMsg("");
     try {
-      await addDoc(collection(db, "testimonies"), {
-        title: testimonyTitle.trim(),
-        content: testimonyText.trim(),
-        status: "pending",
-        userId: user.uid,
-        userName: user.displayName,
-        userEmail: user.email,
-        timestamp: serverTimestamp(),
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/portal/testimonies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: testimonyTitle.trim(),
+          content: testimonyText.trim(),
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to submit testimony");
+      }
       setTestimonyMsg("Testimony submitted! It will appear after pastoral review ✓");
       setTestimonyTitle("");
       setTestimonyText("");
       fetchUserData(user.uid);
       setTimeout(() => setTestimonyMsg(""), 5000);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      alert("Error submitting testimony: " + err.message);
     } finally {
       setTestimonySubmitting(false);
     }

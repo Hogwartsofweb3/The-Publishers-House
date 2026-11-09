@@ -30,7 +30,7 @@ function parseEventToGathering(ev: any) {
     const titleLower = (ev.title || "").toLowerCase();
     if (!flierUrl || titleLower.includes("merismos")) {
       if (titleLower.includes("merismos")) {
-        flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
+        flierUrl = "/images/merismos-logo.png";
       }
     }
 
@@ -117,7 +117,7 @@ export async function GET() {
   gatherings.forEach((g) => {
     if ((g.title || "").toLowerCase().includes("merismos")) {
       if (!g.flierUrl || g.flierUrl.includes("merismos-2024")) {
-        g.flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
+        g.flierUrl = "/images/merismos-logo.png";
       }
       if (!g.startAt) g.startAt = "2026-12-10T16:45:00";
       if (!g.endAt) g.endAt = "2026-12-13T23:40:00";

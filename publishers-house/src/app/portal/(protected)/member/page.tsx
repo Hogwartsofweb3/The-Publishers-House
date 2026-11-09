@@ -60,7 +60,7 @@ export default function FashionableMemberDashboard() {
       title: "Midweek Doctrine & Prayer",
       date: "Every Thursday • 4:30 PM WAT",
       venue: "The House of Bread, Jos",
-      imageUrl: "/images/Merismos black.png",
+      imageUrl: "/images/merismos-logo.png",
       href: "/schedule",
       actionText: "View Schedule",
       themeColor: "#38BDF8",
@@ -363,20 +363,22 @@ export default function FashionableMemberDashboard() {
     if (!prayerContent.trim() || !user) return;
     setPrayerSubmitting(true);
     try {
-      await addDoc(collection(db, "prayers"), {
-        content: prayerContent.trim(),
-        status: "pending",
-        userId: user.uid,
-        userName: user.displayName,
-        userEmail: user.email,
-        timestamp: serverTimestamp(),
-        createdAt: new Date().toISOString(),
+      const res = await fetch("/api/portal/prayers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: prayerContent.trim(),
+        }),
       });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to submit prayer petition");
+      }
       setPrayerSuccess(true);
       setPrayerContent("");
       setTimeout(() => setPrayerSuccess(false), 4500);
     } catch (e) {
-      console.error(e);
+      console.error("Prayer submission error:", e);
     } finally {
       setPrayerSubmitting(false);
     }
@@ -482,15 +484,14 @@ export default function FashionableMemberDashboard() {
             borderRadius: "16px",
             background: currEvent.bgGradient,
             color: "#FFFFFF",
-            overflow: "hidden",
             border: "1px solid rgba(255, 255, 255, 0.14)",
             boxShadow: "0 8px 24px rgba(14, 21, 86, 0.16)",
             display: "flex",
             flexDirection: "row",
             alignItems: "stretch",
             minHeight: "148px",
-            maxHeight: "170px",
             transition: "all 0.4s ease",
+            zIndex: 10,
           }}
         >
           {/* Subtle Ambient Radial Highlight */}
@@ -641,6 +642,7 @@ export default function FashionableMemberDashboard() {
               maxWidth: "190px",
               position: "relative",
               overflow: "hidden",
+              borderRadius: "0 16px 16px 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -663,6 +665,10 @@ export default function FashionableMemberDashboard() {
               <img
                 src={currEvent.imageUrl}
                 alt={currEvent.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/images/fol-2026-poster.jpg";
+                }}
                 style={{
                   width: "100%",
                   height: "100%",
@@ -1422,6 +1428,10 @@ export default function FashionableMemberDashboard() {
               <img
                 src={continueItem.thumbnailUrl}
                 alt={continueItem.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/images/sermon-v2.webp";
+                }}
                 style={{ width: "70px", height: "70px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
               />
             ) : (
@@ -1757,7 +1767,7 @@ export default function FashionableMemberDashboard() {
                   View Schedule
                 </Link>
                 <Link
-                  href="/portal/settings"
+                  href="/portal/member/unit"
                   style={{
                     padding: "9px 12px",
                     backgroundColor: "#F4F6FB",
@@ -1770,6 +1780,16 @@ export default function FashionableMemberDashboard() {
                   }}
                 >
                   My Unit Info
+                </Link>
+              </div>
+
+              <div style={{ borderTop: "1px solid #E8EDFB", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", color: "#64748B" }}>Need counsel or inquiry?</span>
+                <Link
+                  href="/portal/member/inquire"
+                  style={{ fontSize: "11.5px", color: "#1F46C8", fontWeight: 600, textDecoration: "none" }}
+                >
+                  Pastoral Inquiry →
                 </Link>
               </div>
             </div>

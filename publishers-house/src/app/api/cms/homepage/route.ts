@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       let flierUrl = event.imageUrl || event.flierUrl || "";
       if (!flierUrl || (event.title || "").toLowerCase().includes("merismos")) {
         if ((event.title || "").toLowerCase().includes("merismos")) {
-          flierUrl = "https://i.postimg.cc/NMWknRpc/image.png";
+          flierUrl = "/images/merismos-logo.png";
         }
       }
 

@@ -55,7 +55,7 @@ export default function MemberEventsPage() {
             Word &amp; Worship Celebration
           </div>
           <div style={{ fontSize: "12.5px", color: "#A9C2FF", marginTop: "6px" }}>
-            09:00 AM • Main Sanctuary Jos &amp; Abuja Center
+            09:00 AM WAT • The House of Bread, Jos
           </div>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
             A deep encounter in the prophetic scriptures, apostolic teaching, and corporate worship.
@@ -64,7 +64,7 @@ export default function MemberEventsPage() {
             <AddToCalendarButton
               title="TPH Sunday Word & Worship Celebration"
               description="Corporate fellowship, prophetic scriptures, apostolic teaching, and corporate worship at The Publishers House."
-              location="Main Sanctuary Jos & Abuja Center"
+              location="The House of Bread, Jos & Online Stream"
               startDate={getNextDayOfWeek(0)}
               time="9:00 AM WAT"
               variant="banner"
@@ -75,26 +75,26 @@ export default function MemberEventsPage() {
 
         <div style={{ padding: "22px", borderRadius: "12px", backgroundColor: "#1F46C8", color: "#FFFFFF" }}>
           <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#A9C2FF", textTransform: "uppercase", letterSpacing: "0.14em" }}>
-            Every Wednesday
+            Every Thursday
           </span>
           <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "4px" }}>
-            Believers Bible Study &amp; Prayer
+            Doctrine &amp; Prayer Encounter
           </div>
           <div style={{ fontSize: "12.5px", color: "#A9C2FF", marginTop: "6px" }}>
-            05:30 PM • Sanctuary &amp; Online Stream
+            04:30 PM WAT • Sanctuary &amp; Online Stream
           </div>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
-            Verse-by-verse scriptural exposition, prayer intercession, and personal edification.
+            Verse-by-verse scriptural exposition, believers Bible study, and corporate prayer intercession.
           </p>
           <div style={{ marginTop: "14px" }}>
             <AddToCalendarButton
-              title="TPH Believers Bible Study & Prayer"
+              title="TPH Doctrine & Prayer Encounter"
               description="Verse-by-verse scriptural exposition and corporate prayer at The Publishers House."
               location="Main Sanctuary Jos & Online Stream"
-              startDate={getNextDayOfWeek(3)}
-              time="5:30 PM WAT"
+              startDate={getNextDayOfWeek(4)}
+              time="4:30 PM WAT"
               variant="banner"
-              buttonText="Sync Wednesday"
+              buttonText="Sync Thursday"
             />
           </div>
         </div>
@@ -104,23 +104,23 @@ export default function MemberEventsPage() {
             Monthly Flagship
           </span>
           <div style={{ fontSize: "18px", fontWeight: 800, marginTop: "4px" }}>
-            Prophetic Prayer Conclave
+            The Forge
           </div>
           <div style={{ fontSize: "12.5px", color: "#86EFAC", marginTop: "6px" }}>
-            Last Friday of Month • 10:00 PM All-Night
+            Last Thursday (4:30 PM) &amp; Friday (10:00 PM Vigil)
           </div>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", margin: "10px 0 0", lineHeight: "1.5em" }}>
-            Prevailing prayer for revival, territorial transformation, and the glory of God.
+            Monthly consecration, apostolic prayer, and all-night vigil for revival and divine empowerment.
           </p>
           <div style={{ marginTop: "14px" }}>
             <AddToCalendarButton
-              title="TPH Prophetic Prayer Conclave"
-              description="Prevailing all-night prayer for revival and spiritual transformation at The Publishers House."
+              title="The Forge — TPH Monthly Encounter & Vigil"
+              description="Monthly flagship encounter: Thursday 4:30 PM and Friday 10:00 PM All-Night Vigil at The Publishers House."
               location="Main Sanctuary Jos & Online Stream"
-              startDate={getNextDayOfWeek(5)}
-              time="10:00 PM WAT"
+              startDate={getNextDayOfWeek(4)}
+              time="4:30 PM & 10:00 PM Vigil WAT"
               variant="banner"
-              buttonText="Sync Conclave"
+              buttonText="Sync The Forge"
             />
           </div>
         </div>

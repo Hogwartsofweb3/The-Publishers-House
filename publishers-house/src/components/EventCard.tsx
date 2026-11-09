@@ -26,10 +26,10 @@ const T = {
 
 function getLogoUrl(title: string) {
   const t = title.toLowerCase();
-  if (t.includes("festival of light") || t.includes("shout of a king")) return "/images/Festival of Light logo (white).png";
-  if (t.includes("merismos")) return "/images/Merismos black.png";
-  if (t.includes("jesus convention")) return "/images/Jesus Convention logo white.png";
-  if (t.includes("forge")) return "/images/THE FORGE 1.png";
+  if (t.includes("festival of light") || t.includes("shout of a king")) return "/images/fol-logo.png";
+  if (t.includes("merismos")) return "/images/merismos-logo.png";
+  if (t.includes("jesus convention")) return "/images/jc-logo.png";
+  if (t.includes("forge")) return "/images/forge-logo.png";
   return "/images/tph-main-logo.png";
 }
 

@@ -230,7 +230,7 @@ export default function HomepageEditor() {
           speaker: ev.speaker || "Rev. Joshua Agunbiade",
           scripture: ev.scripture || "",
           city: ev.location ? ev.location.split(",")[0].trim() : "Jos",
-          flierUrl: ev.imageUrl || ((ev.title || "").toLowerCase().includes("merismos") ? "https://i.postimg.cc/NMWknRpc/image.png" : ""),
+          flierUrl: ev.imageUrl || ((ev.title || "").toLowerCase().includes("merismos") ? "/images/merismos-logo.png" : ""),
           registrationUrl: ev.registrationUrl || "",
           day: !isNaN(d.getTime()) ? dayNames[d.getDay()] : "WED",
           date: !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "28",

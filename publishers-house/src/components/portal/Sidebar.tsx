@@ -262,6 +262,7 @@ export default function Sidebar({
           { href: "/portal/member/prayers", label: "Prayer & Testimony", icon: Icons.testimonies },
           { href: "/portal/member/events", label: "Church Events", icon: Icons.events },
           { href: "/portal/member/media", label: "Sermons & Media", icon: Icons.media },
+          { href: "/portal/member/inquire", label: "Pastoral Inquiry", icon: Icons.communications },
         ],
       });
       sections.push({
@@ -315,6 +316,7 @@ export default function Sidebar({
       title: unitTitle,
       items: [
         { href: "/portal/unit", label: "Unit Overview", icon: Icons.units },
+        { href: "/portal/member/unit", label: "My Unit Info", icon: Icons.members },
         { href: "/portal/unit/roster", label: "Duty Roster", icon: Icons.roster },
         { href: "/portal/unit/swaps", label: "Swap Requests", icon: Icons.swaps },
         { href: "/portal/unit/assets", label: "Assets", icon: Icons.assets },
@@ -329,6 +331,7 @@ export default function Sidebar({
         { href: "/portal/member/prayers", label: "Prayer & Testimony", icon: Icons.testimonies },
         { href: "/portal/member/events", label: "Church Events", icon: Icons.events },
         { href: "/portal/member/media", label: "Sermons & Media", icon: Icons.media },
+        { href: "/portal/member/inquire", label: "Pastoral Inquiry", icon: Icons.communications },
       ],
     });
     sections.push({
@@ -360,8 +363,7 @@ export default function Sidebar({
       title: "PERSONAL",
       items: [
         { href: "/portal/member", label: "My Member Profile", icon: Icons.user },
-        { href: "/portal/settings", label: "Settings", icon: Icons.settings },
-      ],
+        { href: "/portal/settings", label: "Settings", icon: Icons.settings }],
     });
   }
 
@@ -375,11 +377,13 @@ export default function Sidebar({
         { href: "/portal/member/prayers", label: "Prayer & Testimony", icon: Icons.testimonies },
         { href: "/portal/member/events", label: "Events", icon: Icons.events },
         { href: "/portal/member/media", label: "Sermons & Media", icon: Icons.media },
+        { href: "/portal/member/inquire", label: "Pastoral Inquiry", icon: Icons.communications },
       ],
     });
     sections.push({
       title: `MY UNIT: ${assignedUnit.name.toUpperCase()}`,
       items: [
+        { href: "/portal/member/unit", label: "My Unit Info", icon: Icons.units },
         { href: "/portal/unit/roster", label: "Duty Roster", icon: Icons.roster },
         { href: "/portal/unit/swaps", label: "Swap Requests", icon: Icons.swaps },
       ],
@@ -400,6 +404,7 @@ export default function Sidebar({
         { href: "/portal/member/prayers", label: "Prayer & Testimony", icon: Icons.testimonies },
         { href: "/portal/member/events", label: "Events", icon: Icons.events },
         { href: "/portal/member/media", label: "Sermons & Media", icon: Icons.media },
+        { href: "/portal/member/inquire", label: "Pastoral Inquiry", icon: Icons.communications },
         { href: "/portal/settings", label: "Settings", icon: Icons.settings },
       ],
     });
