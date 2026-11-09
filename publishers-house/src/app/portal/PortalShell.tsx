@@ -7,7 +7,7 @@ import { signOut, updatePassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser, UserRole, Campus } from "@/lib/portalAuth";
-import { getRoleLabel } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId, UNITS } from "@/lib/portalAuth";
 import { PortalProvider, usePortal } from "@/lib/portalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
 import PwaInstallPrompt from "@/components/portal/PwaInstallPrompt";
@@ -239,6 +239,115 @@ function PortalHeaderAndContent({
               <span style={{ color: "#D5DCF2", margin: "0 6px" }}>/</span>
               <span style={{ color: "#141C6E" }}>{getSectionTitle()}</span>
             </div>
+
+            {/* Quick Context Switcher for Dual-Role Admins & Unit Heads */}
+            {(() => {
+              const isUnitRoute = pathname.startsWith("/portal/unit");
+              const isMemberRoute = pathname.startsWith("/portal/member");
+              const isSuperOrAdmin =
+                effectiveUser.role === "super_admin" ||
+                effectiveUser.role === "admin" ||
+                effectiveUser.role === "portal_manager";
+              const userUnit = UNITS.find((u) => u.id === normalizeUnitId(effectiveUser.assignedUnitId));
+              const isUnitHead = Boolean(
+                effectiveUser.role === "unit_head" ||
+                effectiveUser.isUnitHead ||
+                effectiveUser.roles?.includes("unit_head")
+              );
+              const isDualAdmin = isSuperOrAdmin && isUnitHead && Boolean(userUnit);
+
+              if (isDualAdmin) {
+                return (
+                  <div className="portal-desktop-only" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "14px" }}>
+                    {isUnitRoute ? (
+                      <Link
+                        href="/portal"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          padding: "4px 10px",
+                          backgroundColor: "#EEF2FF",
+                          border: "1px solid #C7D2FE",
+                          borderRadius: "6px",
+                          color: "#3730A3",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        <span>← Admin Dashboard</span>
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/portal/unit"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          padding: "4px 10px",
+                          backgroundColor: "#EEF2FF",
+                          border: "1px solid #C7D2FE",
+                          borderRadius: "6px",
+                          color: "#3730A3",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        <span>🛡️ {userUnit?.name} Command →</span>
+                      </Link>
+                    )}
+                    <Link
+                      href={isMemberRoute ? "/portal" : "/portal/member"}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "4px 10px",
+                        backgroundColor: "#F1F5F9",
+                        border: "1px solid #E2E8F0",
+                        borderRadius: "6px",
+                        color: "#475569",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <span>{isMemberRoute ? "← Admin View" : "👤 Member Profile"}</span>
+                    </Link>
+                  </div>
+                );
+              }
+
+              if (isUnitHead) {
+                return (
+                  <div className="portal-desktop-only" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "14px" }}>
+                    <Link
+                      href={isUnitRoute ? "/portal/member" : "/portal/unit"}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "4px 12px",
+                        backgroundColor: "#EEF2FF",
+                        border: "1px solid #C7D2FE",
+                        borderRadius: "20px",
+                        color: "#3730A3",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                      }}
+                    >
+                      <span>{isUnitRoute ? "👤 Switch to Member Profile →" : `🛡️ Switch to ${userUnit?.name || "Unit"} Command →`}</span>
+                    </Link>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>

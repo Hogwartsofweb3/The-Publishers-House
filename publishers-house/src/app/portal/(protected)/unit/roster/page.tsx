@@ -281,6 +281,15 @@ export default function UnitRosterPage() {
     return <div style={{ padding: "40px", color: "#1F46C8" }}>Loading duty roster...</div>;
   }
 
+  const isLeader = Boolean(
+    user?.role === "unit_head" ||
+    user?.role === "admin" ||
+    user?.role === "super_admin" ||
+    user?.role === "portal_manager" ||
+    user?.isUnitHead ||
+    user?.roles?.includes("unit_head")
+  );
+
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "32px" }}>
       {/* Header */}
@@ -296,11 +305,53 @@ export default function UnitRosterPage() {
         </p>
       </div>
 
-      {/* Roster Assignment Form */}
-      <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", border: "1px solid #D5DCF2", padding: "28px", boxShadow: "0 2px 8px rgba(20, 28, 110, 0.04)" }}>
-        <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "17px", fontWeight: 700, color: "#141C6E", margin: "0 0 20px" }}>
-          Assign Service Duty
-        </h2>
+      {/* Roster Assignment Form (For Leaders) or Information Box (For Unit Members) */}
+      {!isLeader ? (
+        <div
+          style={{
+            backgroundColor: "#EFF6FF",
+            border: "1px solid #BFDBFE",
+            borderRadius: "14px",
+            padding: "20px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "14px",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: "14.5px", fontWeight: 700, color: "#1E40AF" }}>
+              📋 {activeUnit?.name} Volunteer Duty Schedule
+            </div>
+            <div style={{ fontSize: "12.5px", color: "#3B82F6", marginTop: "4px" }}>
+              Check your scheduled service duties below. If you cannot attend a scheduled service, you can easily request a swap with a teammate.
+            </div>
+          </div>
+          <a
+            href="/portal/unit/swaps"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "9px 18px",
+              backgroundColor: "#1F46C8",
+              color: "#FFFFFF",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              textDecoration: "none",
+              boxShadow: "0 2px 6px rgba(31, 70, 200, 0.2)",
+            }}
+          >
+            <span>⟳ Request Duty Swap</span>
+          </a>
+        </div>
+      ) : (
+        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", border: "1px solid #D5DCF2", padding: "28px", boxShadow: "0 2px 8px rgba(20, 28, 110, 0.04)" }}>
+          <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "17px", fontWeight: 700, color: "#141C6E", margin: "0 0 20px" }}>
+            Assign Service Duty
+          </h2>
 
         <form onSubmit={handleAddAssignment}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "18px", marginBottom: "18px" }}>
@@ -428,6 +479,7 @@ export default function UnitRosterPage() {
           </button>
         </form>
       </div>
+      )}
 
       {/* Roster Table */}
       <div style={{ backgroundColor: "#FFFFFF", borderRadius: "14px", border: "1px solid #D5DCF2", padding: "28px", boxShadow: "0 2px 8px rgba(20, 28, 110, 0.04)" }}>
@@ -563,39 +615,68 @@ export default function UnitRosterPage() {
                       </td>
                       <td style={{ padding: "14px", textAlign: "right" }}>
                         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSendWhatsAppReminder(row)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "5px",
-                              padding: "6px 12px",
-                              backgroundColor: "#25D366",
-                              color: "#FFFFFF",
-                              border: "none",
-                              borderRadius: "6px",
-                              fontSize: "11.5px",
-                              fontWeight: 700,
-                              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                              cursor: "pointer",
-                              boxShadow: "0 2px 4px rgba(37, 211, 102, 0.25)",
-                              whiteSpace: "nowrap",
-                            }}
-                            title="Send pre-filled WhatsApp reminder"
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.05 20.15C10.57 20.15 9.12 19.76 7.85 19.01L7.55 18.83L4.44 19.65L5.27 16.62L5.07 16.31C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.59 20.15 12.05 20.15ZM16.57 14.39C16.32 14.27 15.1 13.67 14.88 13.58C14.65 13.5 14.49 13.46 14.32 13.71C14.16 13.95 13.69 14.51 13.55 14.67C13.41 14.83 13.27 14.85 13.02 14.73C12.78 14.61 11.99 14.35 11.06 13.52C10.33 12.87 9.84 12.07 9.7 11.83C9.56 11.58 9.68 11.45 9.81 11.33C9.92 11.22 10.05 11.05 10.18 10.91C10.3 10.76 10.34 10.66 10.42 10.49C10.5 10.33 10.46 10.19 10.4 10.07C10.34 9.95 9.85 8.74 9.64 8.24C9.44 7.76 9.24 7.82 9.09 7.81C8.94 7.81 8.78 7.81 8.61 7.81C8.45 7.81 8.18 7.87 7.96 8.11C7.73 8.36 7.1 8.95 7.1 10.15C7.1 11.35 7.98 12.51 8.1 12.67C8.22 12.83 9.82 15.31 12.29 16.37C12.88 16.63 13.33 16.78 13.69 16.9C14.28 17.08 14.82 17.06 15.24 16.99C15.72 16.92 16.71 16.39 16.92 15.81C17.12 15.23 17.12 14.73 17.06 14.63C17 14.53 16.82 14.51 16.57 14.39Z"/>
-                            </svg>
-                            <span>Remind via WhatsApp</span>
-                          </button>
+                          {isLeader ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleSendWhatsAppReminder(row)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                  padding: "6px 12px",
+                                  backgroundColor: "#25D366",
+                                  color: "#FFFFFF",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  fontSize: "11.5px",
+                                  fontWeight: 700,
+                                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                                  cursor: "pointer",
+                                  boxShadow: "0 2px 4px rgba(37, 211, 102, 0.25)",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title="Send pre-filled WhatsApp reminder"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.05 20.15C10.57 20.15 9.12 19.76 7.85 19.01L7.55 18.83L4.44 19.65L5.27 16.62L5.07 16.31C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.68 12.05 3.68C14.25 3.68 16.31 4.54 17.87 6.1C19.42 7.66 20.28 9.72 20.28 11.92C20.28 16.46 16.59 20.15 12.05 20.15ZM16.57 14.39C16.32 14.27 15.1 13.67 14.88 13.58C14.65 13.5 14.49 13.46 14.32 13.71C14.16 13.95 13.69 14.51 13.55 14.67C13.41 14.83 13.27 14.85 13.02 14.73C12.78 14.61 11.99 14.35 11.06 13.52C10.33 12.87 9.84 12.07 9.7 11.83C9.56 11.58 9.68 11.45 9.81 11.33C9.92 11.22 10.05 11.05 10.18 10.91C10.3 10.76 10.34 10.66 10.42 10.49C10.5 10.33 10.46 10.19 10.4 10.07C10.34 9.95 9.85 8.74 9.64 8.24C9.44 7.76 9.24 7.82 9.09 7.81C8.94 7.81 8.78 7.81 8.61 7.81C8.45 7.81 8.18 7.87 7.96 8.11C7.73 8.36 7.1 8.95 7.1 10.15C7.1 11.35 7.98 12.51 8.1 12.67C8.22 12.83 9.82 15.31 12.29 16.37C12.88 16.63 13.33 16.78 13.69 16.9C14.28 17.08 14.82 17.06 15.24 16.99C15.72 16.92 16.71 16.39 16.92 15.81C17.12 15.23 17.12 14.73 17.06 14.63C17 14.53 16.82 14.51 16.57 14.39Z"/>
+                                </svg>
+                                <span>Remind via WhatsApp</span>
+                              </button>
 
-                          <button
-                            onClick={() => handleDelete(row.id)}
-                            style={{ padding: "6px 10px", backgroundColor: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}
-                          >
-                            Remove
-                          </button>
+                              <button
+                                onClick={() => handleDelete(row.id)}
+                                style={{ padding: "6px 10px", backgroundColor: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}
+                              >
+                                Remove
+                              </button>
+                            </>
+                          ) : (
+                            (row.memberUid === user?.uid ||
+                              row.memberName.toLowerCase() === user?.displayName?.toLowerCase() ||
+                              row.memberName.toLowerCase() === user?.email?.toLowerCase()) ? (
+                              <a
+                                href={`/portal/unit/swaps?date=${encodeURIComponent(row.serviceDate)}&role=${encodeURIComponent(row.dutyRole)}`}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                  padding: "6px 12px",
+                                  backgroundColor: "#EFF6FF",
+                                  border: "1px solid #BFDBFE",
+                                  borderRadius: "6px",
+                                  color: "#1E40AF",
+                                  fontSize: "11.5px",
+                                  fontWeight: 700,
+                                  textDecoration: "none",
+                                }}
+                              >
+                                ⟳ Request Swap
+                              </a>
+                            ) : (
+                              <span style={{ color: "#94A3B8", fontSize: "12px", fontWeight: 500 }}>—</span>
+                            )
+                          )}
                         </div>
                       </td>
                     </tr>

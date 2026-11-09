@@ -105,6 +105,10 @@ export function canAccessPortal(pathname: string, role: UserRole, assignedUnitId
   }
 
   if (pathname === "/portal/unit" || pathname.startsWith("/portal/unit/")) {
+    // Members assigned to a unit have access to view duty roster and request swaps
+    if (pathname.startsWith("/portal/unit/swaps") || pathname.startsWith("/portal/unit/roster")) {
+      if (Boolean(assignedUnitId)) return true;
+    }
     return role === "unit_head" || isSuperOrAdminOrManager;
   }
 
