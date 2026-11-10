@@ -130,6 +130,10 @@ export default function AttendanceAdminPage() {
   } | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
+  // Sync Attendance state
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
+
   // Close three-dot menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -626,6 +630,27 @@ export default function AttendanceAdminPage() {
     }
   };
 
+  /** Sync historical attendance records to member profiles */
+  const handleSyncAttendance = async () => {
+    if (!confirm("This will link historical attendance records to member accounts by matching email, phone, and name. Continue?")) return;
+    setSyncLoading(true);
+    setSyncMsg("");
+    try {
+      const res = await fetch("/api/portal/attendance?syncAttendance=true");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSyncMsg(data.message || "Sync complete ✓");
+      } else {
+        setSyncMsg(data.error || "Sync failed.");
+      }
+    } catch (err: any) {
+      setSyncMsg("Network error: " + err.message);
+    } finally {
+      setSyncLoading(false);
+      setTimeout(() => setSyncMsg(""), 5000);
+    }
+  };
+
   const handleExportCSV = () => {
     if (filteredRecords.length === 0) {
       alert("No attendance records to export for this date.");
@@ -772,6 +797,29 @@ export default function AttendanceAdminPage() {
           </a>
 
           <button
+            onClick={handleSyncAttendance}
+            disabled={syncLoading}
+            title="Links historical attendance records to member accounts by matching email, phone, and name"
+            style={{
+              backgroundColor: syncLoading ? "#E8ECF9" : "#F0F3FF",
+              border: "1px solid #A8B4E8",
+              borderRadius: "10px",
+              padding: "10px 16px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 600,
+              fontSize: "13px",
+              color: "#1F46C8",
+              cursor: syncLoading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>🔗</span>
+            {syncLoading ? "Syncing…" : "Sync Member Attendance"}
+          </button>
+
+          <button
             onClick={handleExportCSV}
             style={{
               backgroundColor: "#FFFFFF",
@@ -789,6 +837,24 @@ export default function AttendanceAdminPage() {
           </button>
         </div>
       </div>
+
+      {/* Sync Attendance Status Message */}
+      {syncMsg && (
+        <div
+          style={{
+            backgroundColor: syncMsg.toLowerCase().includes("error") || syncMsg.toLowerCase().includes("failed") ? "#FEF2F2" : "#F0FDF4",
+            border: `1px solid ${syncMsg.toLowerCase().includes("error") || syncMsg.toLowerCase().includes("failed") ? "#FECACA" : "#BBF7D0"}`,
+            borderRadius: "10px",
+            padding: "12px 16px",
+            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+            fontSize: "13px",
+            color: syncMsg.toLowerCase().includes("error") || syncMsg.toLowerCase().includes("failed") ? "#991B1B" : "#166534",
+            fontWeight: 500,
+          }}
+        >
+          {syncMsg}
+        </div>
+      )}
 
       {/* Quota Exhaustion Alert Banner */}
       {quotaWarning && (
