@@ -42,6 +42,7 @@ export default function MembersPage() {
   // Modals State
   const [editUser, setEditUser] = useState<PortalUser | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+
   const [activeMenuUid, setActiveMenuUid] = useState<string | null>(null);
   const [unitAssignUser, setUnitAssignUser] = useState<PortalUser | null>(null);
   const [invitationModal, setInvitationModal] = useState<{
@@ -67,6 +68,19 @@ export default function MembersPage() {
     campus: "jos" as Campus,
     createAuthImmediately: true,
   });
+
+  // Lock body scroll whenever any modal is open
+  useEffect(() => {
+    const anyOpen = Boolean(editUser) || showAddModal || Boolean(unitAssignUser);
+    if (anyOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [editUser, showAddModal, unitAssignUser]);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -969,9 +983,10 @@ export default function MembersPage() {
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "20px",
+            padding: "24px 20px",
+            overflowY: "auto",
           }}
         >
           <div
@@ -983,6 +998,7 @@ export default function MembersPage() {
               width: "100%",
               maxWidth: "520px",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+              margin: "auto",
             }}
           >
             <h2
@@ -1189,9 +1205,10 @@ export default function MembersPage() {
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "20px",
+            padding: "24px 20px",
+            overflowY: "auto",
           }}
         >
           <div
@@ -1203,6 +1220,7 @@ export default function MembersPage() {
               width: "100%",
               maxWidth: "520px",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+              margin: "auto",
             }}
           >
             <h2
@@ -1640,9 +1658,10 @@ export default function MembersPage() {
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "20px",
+            padding: "24px 20px",
+            overflowY: "auto",
           }}
         >
           <div
@@ -1654,6 +1673,7 @@ export default function MembersPage() {
               width: "100%",
               maxWidth: "460px",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+              margin: "auto",
             }}
           >
             <h2

@@ -58,6 +58,19 @@ export default function UnitsPage() {
   const [assigningHeadUnit, setAssigningHeadUnit] = useState<UnitSummary | null>(null);
   const [selectedHeadId, setSelectedHeadId] = useState<string>("");
   const [savingHead, setSavingHead] = useState(false);
+
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    const anyOpen = Boolean(selectedUnit) || Boolean(assigningHeadUnit);
+    if (anyOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedUnit, assigningHeadUnit]);
   const [removingHeadUid, setRemovingHeadUid] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
@@ -576,9 +589,10 @@ export default function UnitsPage() {
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "20px",
+            padding: "24px 20px",
+            overflowY: "auto",
           }}
         >
           <div
@@ -590,6 +604,7 @@ export default function UnitsPage() {
               width: "100%",
               maxWidth: "480px",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+              margin: "auto",
             }}
           >
             <h2
@@ -700,9 +715,10 @@ export default function UnitsPage() {
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "20px",
+            padding: "24px 20px",
+            overflowY: "auto",
           }}
         >
           <div
@@ -716,6 +732,7 @@ export default function UnitsPage() {
               maxHeight: "85vh",
               overflowY: "auto",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
+              margin: "auto",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
