@@ -134,6 +134,21 @@ export default function AttendanceAdminPage() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
 
+  // Lock page scroll when any modal is open
+  useEffect(() => {
+    const anyOpen = Boolean(enrollAttendee) || showBatchModal;
+    if (anyOpen) {
+      const origHtml = document.documentElement.style.overflow;
+      const origBody = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.documentElement.style.overflow = origHtml;
+        document.body.style.overflow = origBody;
+      };
+    }
+  }, [enrollAttendee, showBatchModal]);
+
   // Close three-dot menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1852,6 +1867,7 @@ export default function AttendanceAdminPage() {
       {/* Enroll Attendee as Member Modal */}
       {enrollAttendee && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
@@ -1862,15 +1878,21 @@ export default function AttendanceAdminPage() {
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               borderRadius: "16px",
               padding: "32px",
               maxWidth: "500px",
               width: "100%",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
               border: "1px solid #D5DCF2",
             }}

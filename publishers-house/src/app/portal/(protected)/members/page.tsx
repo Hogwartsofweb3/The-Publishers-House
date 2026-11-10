@@ -69,18 +69,20 @@ export default function MembersPage() {
     createAuthImmediately: true,
   });
 
-  // Lock body scroll whenever any modal is open
+  // Lock page scroll whenever any modal is open
   useEffect(() => {
-    const anyOpen = Boolean(editUser) || showAddModal || Boolean(unitAssignUser);
+    const anyOpen = Boolean(editUser) || showAddModal || Boolean(unitAssignUser) || Boolean(invitationModal);
     if (anyOpen) {
+      const origHtml = document.documentElement.style.overflow;
+      const origBody = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      return () => {
+        document.documentElement.style.overflow = origHtml;
+        document.body.style.overflow = origBody;
+      };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [editUser, showAddModal, unitAssignUser]);
+  }, [editUser, showAddModal, unitAssignUser, invitationModal]);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -976,20 +978,23 @@ export default function MembersPage() {
       {/* Edit Member Modal (With Editable Email!) */}
       {editUser && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backgroundColor: "rgba(14, 21, 86, 0.55)",
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
-            padding: "24px 20px",
-            overflowY: "auto",
+            padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -997,8 +1002,10 @@ export default function MembersPage() {
               padding: "32px",
               width: "100%",
               maxWidth: "520px",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-              margin: "auto",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.25)",
             }}
           >
             <h2
@@ -1198,20 +1205,23 @@ export default function MembersPage() {
       {/* Add New Member Modal */}
       {showAddModal && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backgroundColor: "rgba(14, 21, 86, 0.55)",
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
-            padding: "24px 20px",
-            overflowY: "auto",
+            padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -1219,8 +1229,10 @@ export default function MembersPage() {
               padding: "32px",
               width: "100%",
               maxWidth: "520px",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-              margin: "auto",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.25)",
             }}
           >
             <h2
@@ -1398,6 +1410,7 @@ export default function MembersPage() {
       {/* Account Invitation & Temp Password Modal */}
       {invitationModal && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
@@ -1408,9 +1421,12 @@ export default function MembersPage() {
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -1419,8 +1435,9 @@ export default function MembersPage() {
               width: "100%",
               maxWidth: "600px",
               boxShadow: "0 20px 40px rgba(14, 21, 86, 0.25)",
-              maxHeight: "90vh",
+              maxHeight: "calc(100vh - 40px)",
               overflowY: "auto",
+              overscrollBehavior: "contain",
             }}
           >
             <div style={{ textAlign: "center", marginBottom: "20px" }}>
@@ -1651,20 +1668,23 @@ export default function MembersPage() {
       {/* Unit Assignment Modal */}
       {unitAssignUser && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backgroundColor: "rgba(14, 21, 86, 0.55)",
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
-            padding: "24px 20px",
-            overflowY: "auto",
+            padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -1672,8 +1692,10 @@ export default function MembersPage() {
               padding: "32px",
               width: "100%",
               maxWidth: "460px",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-              margin: "auto",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.25)",
             }}
           >
             <h2

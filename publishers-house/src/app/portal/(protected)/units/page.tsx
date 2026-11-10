@@ -59,17 +59,19 @@ export default function UnitsPage() {
   const [selectedHeadId, setSelectedHeadId] = useState<string>("");
   const [savingHead, setSavingHead] = useState(false);
 
-  // Lock body scroll when any modal is open
+  // Lock page scroll when any modal is open
   useEffect(() => {
     const anyOpen = Boolean(selectedUnit) || Boolean(assigningHeadUnit);
     if (anyOpen) {
+      const origHtml = document.documentElement.style.overflow;
+      const origBody = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      return () => {
+        document.documentElement.style.overflow = origHtml;
+        document.body.style.overflow = origBody;
+      };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [selectedUnit, assigningHeadUnit]);
   const [removingHeadUid, setRemovingHeadUid] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
@@ -582,20 +584,23 @@ export default function UnitsPage() {
       {/* Assign Unit Head Modal */}
       {assigningHeadUnit && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backgroundColor: "rgba(14, 21, 86, 0.55)",
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
-            padding: "24px 20px",
-            overflowY: "auto",
+            padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -603,8 +608,10 @@ export default function UnitsPage() {
               padding: "32px",
               width: "100%",
               maxWidth: "480px",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-              margin: "auto",
+              maxHeight: "calc(100vh - 40px)",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.25)",
             }}
           >
             <h2
@@ -708,20 +715,23 @@ export default function UnitsPage() {
       {/* Unit Members Drawer / Modal */}
       {selectedUnit && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(14, 21, 86, 0.45)",
+            backgroundColor: "rgba(14, 21, 86, 0.55)",
             backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
-            padding: "24px 20px",
-            overflowY: "auto",
+            padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
+            className="portal-modal"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #D5DCF2",
@@ -729,10 +739,10 @@ export default function UnitsPage() {
               padding: "32px",
               width: "100%",
               maxWidth: "600px",
-              maxHeight: "85vh",
+              maxHeight: "calc(100vh - 40px)",
               overflowY: "auto",
-              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.15)",
-              margin: "auto",
+              overscrollBehavior: "contain",
+              boxShadow: "0 10px 30px rgba(14, 21, 86, 0.25)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>

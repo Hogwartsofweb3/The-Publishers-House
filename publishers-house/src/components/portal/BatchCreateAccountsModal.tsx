@@ -80,6 +80,7 @@ export default function BatchCreateAccountsModal({
 
         return (
           <div
+            onWheel={(e) => e.stopPropagation()}
             style={{
               position: "fixed",
               inset: 0,
@@ -90,6 +91,8 @@ export default function BatchCreateAccountsModal({
               alignItems: "center",
               justifyContent: "center",
               padding: "20px",
+              overflow: "hidden",
+              overscrollBehavior: "contain",
             }}
           >
             <div
@@ -100,8 +103,9 @@ export default function BatchCreateAccountsModal({
                 padding: "28px 32px",
                 maxWidth: "700px",
                 width: "100%",
-                maxHeight: "92vh",
+                maxHeight: "calc(100vh - 40px)",
                 overflowY: "auto",
+                overscrollBehavior: "contain",
                 boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
                 border: "1px solid #D5DCF2",
               }}
@@ -396,6 +400,7 @@ export default function BatchCreateAccountsModal({
       {/* Batch Results Credentials Modal */}
       {batchResults && (
         <div
+          onWheel={(e) => e.stopPropagation()}
           style={{
             position: "fixed",
             inset: 0,
@@ -406,6 +411,8 @@ export default function BatchCreateAccountsModal({
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
+            overflow: "hidden",
+            overscrollBehavior: "contain",
           }}
         >
           <div
@@ -416,8 +423,9 @@ export default function BatchCreateAccountsModal({
               padding: "28px 32px",
               maxWidth: "680px",
               width: "100%",
-              maxHeight: "90vh",
+              maxHeight: "calc(100vh - 40px)",
               overflowY: "auto",
+              overscrollBehavior: "contain",
               boxShadow: "0 10px 30px rgba(14, 21, 86, 0.2)",
               border: "1px solid #D5DCF2",
             }}
