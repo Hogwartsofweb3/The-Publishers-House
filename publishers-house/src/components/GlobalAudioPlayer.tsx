@@ -616,7 +616,7 @@ function FloatingDockedPlayer({
                   key={`${videoId}-${startSeconds}`}
                   width="100%"
                   height="100%"
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1&origin=${typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : ""}${startParam}`}
+                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1${startParam}`}
                   title={sermon.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

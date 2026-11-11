@@ -73,12 +73,13 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com",
-              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasestorage.googleapis.com",
-              "img-src 'self' data: https://*.googleapis.com https://*.googleusercontent.com blob:",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com https://www.youtube.com https://s.ytimg.com",
+              "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasestorage.googleapis.com https://*.youtube.com https://*.googlevideo.com",
+              "img-src 'self' data: https://*.googleapis.com https://*.googleusercontent.com https://img.youtube.com https://i.ytimg.com https://i.postimg.cc https://i.scdn.co https://*.spotifycdn.com blob:",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "frame-src https://*.firebaseapp.com",
+              "media-src 'self' https://*.googleapis.com https://*.firebasestorage.googleapis.com blob: data:",
+              "frame-src 'self' https://*.firebaseapp.com https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://open.spotify.com",
             ].join("; "),
           },
           {
