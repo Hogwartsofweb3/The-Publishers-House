@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS } from "@/lib/portalAuth";
+import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 interface UnitAsset {
@@ -19,7 +18,8 @@ interface UnitAsset {
 }
 
 export default function UnitAssetsPage() {
-  const [user, setUser] = useState<PortalUser | null>(null);
+  const { effectiveUser } = usePortal();
+  const user = effectiveUser;
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<UnitAsset[]>([]);
 
@@ -29,25 +29,20 @@ export default function UnitAssetsPage() {
   const [serialNumber, setSerialNumber] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [condition, setCondition] = useState<"operational" | "maintenance" | "missing">("operational");
-  const [storageLocation, setStorageLocation] = useState("Media Control Booth");
+  const [storageLocation, setStorageLocation] = useState("Sanctuary / Media Booth");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId) || UNITS[0];
+  const normUnitId = (effectiveUser?.assignedUnitId || "").toLowerCase();
+  const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        const pUser = await getPortalUser(fbUser.uid);
-        setUser(pUser);
-        if (pUser?.assignedUnitId) {
-          fetchAssets(pUser.assignedUnitId);
-        }
-      }
+    if (!normUnitId) {
       setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+      return;
+    }
+    fetchAssets(normUnitId);
+  }, [normUnitId]);
 
   const fetchAssets = async (unitId: string) => {
     try {
@@ -61,12 +56,12 @@ export default function UnitAssetsPage() {
 
   const handleAddAsset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.assignedUnitId || !name.trim()) return;
+    if (!normUnitId || !name.trim()) return;
     setSaving(true);
     setMsg("");
     try {
       const newAsset: UnitAsset = {
-        unitId: user.assignedUnitId,
+        unitId: normUnitId,
         name: name.trim(),
         category,
         serialNumber: serialNumber.trim() || undefined,
@@ -78,7 +73,7 @@ export default function UnitAssetsPage() {
       setMsg("Equipment asset logged successfully ✓");
       setName("");
       setSerialNumber("");
-      fetchAssets(user.assignedUnitId);
+      fetchAssets(normUnitId);
       setTimeout(() => setMsg(""), 4000);
     } catch (err: any) {
       alert("Error: " + err.message);

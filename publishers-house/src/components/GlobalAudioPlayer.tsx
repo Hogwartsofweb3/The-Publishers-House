@@ -53,8 +53,47 @@ export const useGlobalPlayer = () => useContext(GlobalPlayerContext);
 
 export function getYouTubeVideoId(url?: string): string | null {
   if (!url) return null;
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-  return match ? match[1] : null;
+  const trimmed = String(url).trim();
+  if (!trimmed || trimmed === "undefined" || trimmed === "null") return null;
+
+  // Direct 11-char ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Matches youtu.be, youtube.com/embed, /v/, /live/, /shorts/, watch?v=
+  const match = trimmed.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|live\/|shorts\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/
+  );
+  if (match && match[1]) return match[1];
+
+  // Param check (?v= or &v=)
+  const vParam = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (vParam && vParam[1]) return vParam[1];
+
+  return null;
+}
+
+export function resolveMediaThumbnail(item?: {
+  thumbnailUrl?: string;
+  coverImageUrl?: string;
+  videoUrl?: string;
+  id?: string;
+}): string {
+  if (!item) return "/images/sermon-hero-bg.jpg";
+  const t = (item.thumbnailUrl || "").trim();
+  if (t && t !== "undefined" && !t.includes("/undefined/") && !t.includes("img.youtube.com/vi/undefined")) {
+    return t;
+  }
+  const c = (item.coverImageUrl || "").trim();
+  if (c && c !== "undefined" && !c.includes("/undefined/")) {
+    return c;
+  }
+  const vid = getYouTubeVideoId(item.videoUrl);
+  if (vid) {
+    return `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+  }
+  return "/images/sermon-hero-bg.jpg";
 }
 
 function parseDurationToSeconds(durationStr?: string): number {
@@ -170,7 +209,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playSermon = useCallback((media: PlayableMedia, startSec = 0) => {
-    if (media.videoUrl) {
+    const vId = getYouTubeVideoId(media.videoUrl);
+    if (vId) {
       playVideo(media, startSec);
     } else {
       playAudio(media, startSec);
@@ -198,8 +238,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
     // Save final progress on close
     if (currentSermon && currentPosRef.current > 5) {
-      const vid = getYouTubeVideoId(currentSermon.videoUrl);
-      const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
+      const thumb = resolveMediaThumbnail(currentSermon);
       const dur = durationPosRef.current || 2400;
       const pct = Math.min(100, Math.round((currentPosRef.current / dur) * 100));
       persistPlayback(
@@ -263,8 +302,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       currentPosRef.current += 3;
       const dur = durationPosRef.current || 2400;
       const pct = Math.min(100, Math.round((currentPosRef.current / dur) * 100));
-      const vid = getYouTubeVideoId(currentSermon.videoUrl);
-      const thumb = vid ? `https://img.youtube.com/vi/${vid}/hqdefault.jpg` : undefined;
+      const thumb = resolveMediaThumbnail(currentSermon);
 
       // Persist to localStorage and backend
       persistPlayback(
@@ -319,6 +357,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
           onTogglePlay={togglePlay}
           onToggleMinimize={toggleMinimize}
           onClose={closePlayer}
+          onSwitchMode={(newMode) => setMode(newMode)}
         />
       )}
     </GlobalPlayerContext.Provider>
@@ -335,6 +374,7 @@ interface PlayerProps {
   onTogglePlay: () => void;
   onToggleMinimize: () => void;
   onClose: () => void;
+  onSwitchMode?: (newMode: "video" | "audio") => void;
 }
 
 function FloatingDockedPlayer({
@@ -347,6 +387,7 @@ function FloatingDockedPlayer({
   onTogglePlay,
   onToggleMinimize,
   onClose,
+  onSwitchMode,
 }: PlayerProps) {
   const videoId = getYouTubeVideoId(sermon.videoUrl);
   const [progress, setProgress] = useState(0);
@@ -368,10 +409,8 @@ function FloatingDockedPlayer({
     (sermon.audioUrl && sermon.audioUrl.match(/episode\/([a-zA-Z0-9]+)/)?.[1]) ||
     null;
 
-  // Only use YouTube thumbnail if there's no spotifyEpId; for audio-only Spotify sermons, use coverImageUrl or fallback
-  const thumbnailUrl = videoId
-    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-    : (sermon.coverImageUrl || sermon.thumbnailUrl || "/images/sermon-hero-bg.jpg");
+  // Resolved thumbnail with fallback
+  const thumbnailUrl = resolveMediaThumbnail(sermon);
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "00:00";
@@ -460,6 +499,34 @@ function FloatingDockedPlayer({
           >
             {mode === "video" ? "VIDEO" : spotifyEpId ? "SPOTIFY" : "AUDIO"}
           </span>
+
+          {/* Quick mode switcher in header */}
+          {onSwitchMode && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwitchMode(mode === "video" ? "audio" : "video");
+              }}
+              style={{
+                background: "rgba(255, 255, 255, 0.12)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: "#FFFFFF",
+                borderRadius: "4px",
+                fontSize: "9px",
+                fontWeight: 600,
+                padding: "2px 6px",
+                cursor: "pointer",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                flexShrink: 0,
+              }}
+              title={mode === "video" ? "Switch to Audio stream" : "Switch to Video stream"}
+            >
+              {mode === "video" ? "🎙️ Audio" : "🎬 Video"}
+            </button>
+          )}
+
           <span
             style={{
               fontSize: "12px",
@@ -542,20 +609,88 @@ function FloatingDockedPlayer({
       {!isMinimized && (
         <div style={{ display: "flex", flexDirection: "column" }}>
           {/* VIDEO MODE */}
-          {mode === "video" && videoId && (
-            <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#000" }}>
-              <iframe
-                key={`${videoId}-${startSeconds}`}
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1${startParam}`}
-                title={sermon.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          {mode === "video" && videoId ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#000", position: "relative" }}>
+                <iframe
+                  key={`${videoId}-${startSeconds}`}
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1&origin=${typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : ""}${startParam}`}
+                  title={sermon.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+                />
+              </div>
+              {/* Helper strip below video */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 12px",
+                  backgroundColor: "#0B0E2B",
+                  fontSize: "10px",
+                  color: "rgba(255,255,255,0.6)",
+                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <span>Cannot play video here?</span>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  {onSwitchMode && (
+                    <button
+                      type="button"
+                      onClick={() => onSwitchMode("audio")}
+                      style={{ background: "none", border: "none", color: "#38BDF8", cursor: "pointer", fontSize: "10px", fontWeight: 600, padding: 0 }}
+                    >
+                      🎙️ Switch to Audio
+                    </button>
+                  )}
+                  <a
+                    href={sermon.videoUrl || `https://www.youtube.com/watch?v=${videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#F59E0B", textDecoration: "none", fontWeight: 600 }}
+                  >
+                    Open on YouTube ↗
+                  </a>
+                </div>
+              </div>
             </div>
-          )}
+          ) : mode === "video" ? (
+            <div style={{ padding: "24px 16px", backgroundColor: "#0D1238", textAlign: "center", display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
+              <div style={{ fontSize: "28px" }}>🎬</div>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#FFFFFF" }}>
+                Video Stream Not Available In Mini-Player
+              </div>
+              <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.7)", margin: 0, maxWidth: "300px", lineHeight: "1.5em" }}>
+                This sermon is available in audio format or can be opened directly on the church media channel.
+              </p>
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                {onSwitchMode && (
+                  <button
+                    type="button"
+                    onClick={() => onSwitchMode("audio")}
+                    style={{ padding: "7px 14px", backgroundColor: "#2090FF", color: "#FFF", border: "none", borderRadius: "6px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}
+                  >
+                    Switch to Audio 🎙️
+                  </button>
+                )}
+                {sermon.videoUrl && (
+                  <a
+                    href={sermon.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ padding: "7px 14px", backgroundColor: "rgba(255,255,255,0.12)", color: "#FFF", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "6px", fontSize: "11px", fontWeight: 600, textDecoration: "none" }}
+                  >
+                    Open on YouTube ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           {/* AUDIO MODE — Spotify embed (preferred) or artwork + native audio fallback */}
           {mode === "audio" && (
@@ -581,6 +716,10 @@ function FloatingDockedPlayer({
                     <img
                       src={thumbnailUrl}
                       alt={sermon.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/images/sermon-hero-bg.jpg";
+                      }}
                       style={{ width: "56px", height: "56px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
                     />
                     <div style={{ minWidth: 0, flex: 1 }}>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAudio } from "@/components/GlobalAudioPlayer";
+import { useAudio, resolveMediaThumbnail, getYouTubeVideoId } from "@/components/GlobalAudioPlayer";
 import type { PlaybackRecord } from "@/app/api/portal/playback/route";
 
 function formatSeconds(secs: number): string {
@@ -51,74 +51,50 @@ export default function MemberMediaPage() {
   }, []);
 
   const handleResume = (item: PlaybackRecord) => {
-    if (item.videoUrl && !item.spotifyEpisodeId) {
-      playVideo(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          spotifyEpisodeId: item.spotifyEpisodeId,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        item.progressSeconds
-      );
+    const hasVid = Boolean(getYouTubeVideoId(item.videoUrl));
+    const mediaPayload = {
+      id: item.id,
+      title: item.title,
+      speaker: item.speaker,
+      series: item.series,
+      scripture: item.scripture,
+      videoUrl: item.videoUrl,
+      audioUrl: item.audioUrl,
+      spotifyEpisodeId: item.spotifyEpisodeId,
+      thumbnailUrl: resolveMediaThumbnail(item),
+      coverImageUrl: item.thumbnailUrl,
+      type: item.type,
+      resourceSlug: item.resourceSlug,
+    };
+
+    if (hasVid && !item.spotifyEpisodeId) {
+      playVideo(mediaPayload, item.progressSeconds);
     } else {
-      playAudio(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          spotifyEpisodeId: item.spotifyEpisodeId,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        item.progressSeconds
-      );
+      playAudio(mediaPayload, item.progressSeconds);
     }
   };
 
   const handlePlayFromStart = (item: PlaybackRecord) => {
-    if (item.videoUrl && !item.spotifyEpisodeId) {
-      playVideo(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          spotifyEpisodeId: item.spotifyEpisodeId,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        0
-      );
+    const hasVid = Boolean(getYouTubeVideoId(item.videoUrl));
+    const mediaPayload = {
+      id: item.id,
+      title: item.title,
+      speaker: item.speaker,
+      series: item.series,
+      scripture: item.scripture,
+      videoUrl: item.videoUrl,
+      audioUrl: item.audioUrl,
+      spotifyEpisodeId: item.spotifyEpisodeId,
+      thumbnailUrl: resolveMediaThumbnail(item),
+      coverImageUrl: item.thumbnailUrl,
+      type: item.type,
+      resourceSlug: item.resourceSlug,
+    };
+
+    if (hasVid && !item.spotifyEpisodeId) {
+      playVideo(mediaPayload, 0);
     } else {
-      playAudio(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          spotifyEpisodeId: item.spotifyEpisodeId,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        0
-      );
+      playAudio(mediaPayload, 0);
     }
   };
 
@@ -215,17 +191,15 @@ export default function MemberMediaPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: "260px", flex: 1 }}>
-                  {item.thumbnailUrl ? (
-                    <img
-                      src={item.thumbnailUrl}
-                      alt={item.title}
-                      style={{ width: "64px", height: "64px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div style={{ width: "64px", height: "64px", borderRadius: "8px", backgroundColor: "#0E1556", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>
-                      ▶
-                    </div>
-                  )}
+                  <img
+                    src={resolveMediaThumbnail(item)}
+                    alt={item.title}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/images/sermon-hero-bg.jpg";
+                    }}
+                    style={{ width: "64px", height: "64px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, backgroundColor: "#0E1556" }}
+                  />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0140C1", textTransform: "uppercase" }}>
                       {item.type === "resource" ? "Course Curriculum" : "Sermon Series"} {item.series ? `• ${item.series}` : ""}

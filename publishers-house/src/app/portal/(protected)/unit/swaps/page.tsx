@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS } from "@/lib/portalAuth";
+import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc } from "firebase/firestore";
 
 interface SwapRequest {
@@ -21,7 +20,7 @@ interface SwapRequest {
 }
 
 export default function UnitSwapsPage() {
-  const [user, setUser] = useState<PortalUser | null>(null);
+  const { effectiveUser } = usePortal();
   const [loading, setLoading] = useState(true);
   const [swaps, setSwaps] = useState<SwapRequest[]>([]);
   const [members, setMembers] = useState<PortalUser[]>([]);
@@ -34,28 +33,23 @@ export default function UnitSwapsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId) || UNITS[0];
+  const normUnitId = (effectiveUser?.assignedUnitId || "").toLowerCase();
+  const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        const pUser = await getPortalUser(fbUser.uid);
-        setUser(pUser);
-        if (pUser?.assignedUnitId) {
-          fetchUnitData(pUser.assignedUnitId);
-        }
-      }
+    if (!normUnitId) {
       setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+      return;
+    }
+    fetchUnitData(normUnitId);
+  }, [normUnitId]);
 
   const fetchUnitData = async (unitId: string) => {
     try {
       // Members — via Admin SDK API (quota-safe; avoids direct Firestore client reads)
       let mList: PortalUser[] = [];
       try {
-        const res = await fetch("/api/portal/members");
+        const res = await fetch(`/api/portal/members?unitId=${encodeURIComponent(unitId)}`);
         if (res.ok) {
           const data = await res.json();
           const all: PortalUser[] = data.members || [];
@@ -76,19 +70,21 @@ export default function UnitSwapsPage() {
       setSwaps(list);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateSwap = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.assignedUnitId || !serviceDate || !dutyRole || !proposedSwapMember || !reason) return;
+    if (!normUnitId || !serviceDate || !dutyRole || !proposedSwapMember || !reason) return;
     setSubmitting(true);
     setMsg("");
     try {
       const newSwap: SwapRequest = {
-        unitId: user.assignedUnitId,
-        requesterName: user.displayName || user.email,
-        requesterUid: user.uid,
+        unitId: normUnitId,
+        requesterName: effectiveUser?.displayName || effectiveUser?.email || "Unit Member",
+        requesterUid: effectiveUser?.uid || "anon",
         serviceDate,
         dutyRole,
         proposedSwapMember,
@@ -100,7 +96,7 @@ export default function UnitSwapsPage() {
       setMsg("Swap request submitted successfully ✓");
       setReason("");
       setDutyRole("");
-      fetchUnitData(user.assignedUnitId);
+      fetchUnitData(normUnitId);
       setTimeout(() => setMsg(""), 4000);
     } catch (err: any) {
       alert("Error: " + err.message);
@@ -113,7 +109,7 @@ export default function UnitSwapsPage() {
     if (!swapId || !newStatus) return;
     try {
       await updateDoc(doc(db, "unit_swaps", swapId), { status: newStatus });
-      if (user?.assignedUnitId) fetchUnitData(user.assignedUnitId);
+      if (normUnitId) fetchUnitData(normUnitId);
     } catch (e) {
       console.error(e);
     }

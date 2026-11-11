@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS } from "@/lib/portalAuth";
+import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
 interface UnitAttendanceRecord {
@@ -20,63 +19,96 @@ interface UnitAttendanceRecord {
   createdAt: string;
 }
 
+const CANONICAL_SERVICES = [
+  { value: "Sunday Word & Worship Celebration (9:00 AM WAT)", label: "Sunday Word & Worship Celebration (9:00 AM WAT)" },
+  { value: "Thursday Doctrine & Prayer Encounter (4:30 PM WAT)", label: "Thursday Doctrine & Prayer Encounter (4:30 PM WAT)" },
+  { value: "The Forge — Monthly Thursday Encounter (4:30 PM WAT)", label: "The Forge — Monthly Thursday Encounter (4:30 PM WAT)" },
+  { value: "The Forge — Monthly Friday Vigil (8:00 PM WAT)", label: "The Forge — Monthly Friday Vigil (8:00 PM WAT)" },
+  { value: "Festival of Light (FOL)", label: "Festival of Light (FOL)" },
+  { value: "Merismos Prophetic Conference", label: "Merismos Prophetic Conference" },
+  { value: "Unit Department Meeting / Rehearsal", label: "Unit Department Meeting / Rehearsal" },
+  { value: "custom", label: "Other / Custom Special Program..." },
+];
+
 export default function UnitAttendancePage() {
-  const [user, setUser] = useState<PortalUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { effectiveUser } = usePortal();
   const [members, setMembers] = useState<PortalUser[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [attendanceRecords, setAttendanceRecords] = useState<UnitAttendanceRecord[]>([]);
 
   // Form State
   const [serviceDate, setServiceDate] = useState("");
-  const [serviceName, setServiceName] = useState("Sunday Word Encounter");
+  const [serviceName, setServiceName] = useState("Sunday Word & Worship Celebration (9:00 AM WAT)");
+  const [customServiceName, setCustomServiceName] = useState("");
   const [checkedMembers, setCheckedMembers] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId) || UNITS[0];
+  const normUnitId = (effectiveUser?.assignedUnitId || "").toLowerCase();
+  const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   useEffect(() => {
     setServiceDate(new Date().toISOString().split("T")[0]);
-
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        const pUser = await getPortalUser(fbUser.uid);
-        setUser(pUser);
-        if (pUser?.assignedUnitId) {
-          fetchUnitData(pUser.assignedUnitId);
-        }
-      }
-      setLoading(false);
-    });
-    return () => unsub();
   }, []);
 
-  const fetchUnitData = async (unitId: string) => {
-    try {
-      // Unit Members
-      const mq = query(collection(db, "users"), where("assignedUnitId", "==", unitId));
-      const msnap = await getDocs(mq);
-      const mList = msnap.docs.map((d) => d.data() as PortalUser);
-      setMembers(mList);
-
-      // Default check all
-      const initialChecked: Record<string, boolean> = {};
-      mList.forEach((m) => {
-        initialChecked[m.displayName || m.email] = true;
-      });
-      setCheckedMembers(initialChecked);
-
-      // History
-      const aq = query(collection(db, "unit_attendance"), where("unitId", "==", unitId));
-      const asnap = await getDocs(aq);
-      const aList = asnap.docs.map((d) => ({ id: d.id, ...d.data() } as UnitAttendanceRecord));
-      aList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
-      setAttendanceRecords(aList);
-    } catch (e) {
-      console.error(e);
+  useEffect(() => {
+    if (!normUnitId) {
+      setLoadingMembers(false);
+      return;
     }
-  };
+
+    const fetchUnitData = async () => {
+      setLoadingMembers(true);
+      try {
+        // Fetch unit members from API directory (quota-safe)
+        let mList: PortalUser[] = [];
+        try {
+          const res = await fetch(`/api/portal/members?unitId=${encodeURIComponent(normUnitId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            mList = data.members || [];
+          }
+        } catch {}
+
+        // Fallback to Firestore users if API returned empty
+        if (mList.length === 0) {
+          try {
+            const mq = query(collection(db, "users"), where("assignedUnitId", "==", normUnitId));
+            const msnap = await getDocs(mq);
+            mList = msnap.docs.map((d) => d.data() as PortalUser);
+          } catch {}
+        }
+
+        setMembers(mList);
+
+        // Default check all members present
+        const initialChecked: Record<string, boolean> = {};
+        mList.forEach((m) => {
+          const key = m.displayName || m.email;
+          initialChecked[key] = true;
+        });
+        setCheckedMembers(initialChecked);
+
+        // Attendance history for this unit
+        try {
+          const aq = query(collection(db, "unit_attendance"), where("unitId", "==", normUnitId));
+          const asnap = await getDocs(aq);
+          const aList = asnap.docs.map((d) => ({ id: d.id, ...d.data() } as UnitAttendanceRecord));
+          aList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
+          setAttendanceRecords(aList);
+        } catch (e) {
+          console.warn("Could not load attendance history:", e);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetchUnitData();
+  }, [normUnitId]);
 
   const toggleMemberCheck = (name: string) => {
     setCheckedMembers((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -84,7 +116,12 @@ export default function UnitAttendancePage() {
 
   const handleSaveAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.assignedUnitId || !serviceDate) return;
+    if (!normUnitId || !serviceDate) return;
+
+    const resolvedService = serviceName === "custom"
+      ? (customServiceName.trim() || "Special Gathering")
+      : serviceName;
+
     setSaving(true);
     setMsg("");
     try {
@@ -93,21 +130,24 @@ export default function UnitAttendancePage() {
         .map(([name]) => name);
 
       const record: UnitAttendanceRecord = {
-        unitId: user.assignedUnitId,
+        unitId: normUnitId,
         serviceDate,
-        serviceName,
+        serviceName: resolvedService,
         presentCount: presentNames.length,
         totalMembers: members.length,
         presentMembers: presentNames,
         notes: notes.trim() || undefined,
-        recordedBy: user.displayName || user.email,
+        recordedBy: effectiveUser?.displayName || effectiveUser?.email || "Unit Leadership",
         createdAt: new Date().toISOString(),
       };
 
       await addDoc(collection(db, "unit_attendance"), record);
       setMsg("Unit service attendance recorded successfully ✓");
       setNotes("");
-      fetchUnitData(user.assignedUnitId);
+      if (serviceName === "custom") {
+        setCustomServiceName("");
+      }
+      setAttendanceRecords((prev) => [record, ...prev]);
       setTimeout(() => setMsg(""), 4000);
     } catch (err: any) {
       alert("Error: " + err.message);
@@ -115,10 +155,6 @@ export default function UnitAttendancePage() {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return <div style={{ padding: "40px", color: "#1F46C8" }}>Loading unit attendance...</div>;
-  }
 
   const presentCount = Object.values(checkedMembers).filter(Boolean).length;
 
@@ -167,13 +203,30 @@ export default function UnitAttendancePage() {
                 onChange={(e) => setServiceName(e.target.value)}
                 style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none", backgroundColor: "#FFFFFF" }}
               >
-                <option value="Sunday Word Encounter">Sunday Word Encounter</option>
-                <option value="Wednesday Bible Study">Wednesday Bible Study</option>
-                <option value="Friday All-Night Prayer">Friday All-Night Prayer</option>
-                <option value="Unit Department Meeting">Unit Department Meeting</option>
+                {CANONICAL_SERVICES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
+
+          {serviceName === "custom" && (
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", marginBottom: "6px" }}>
+                Custom Program / Gathering Title
+              </label>
+              <input
+                type="text"
+                value={customServiceName}
+                onChange={(e) => setCustomServiceName(e.target.value)}
+                placeholder="e.g. Festival of Light — Day 3 Evening Session"
+                required
+                style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #2090FF", fontSize: "13px", color: "#141C6E", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+          )}
 
           {/* Member Checkbox Grid */}
           <div style={{ marginBottom: "20px" }}>
@@ -183,7 +236,9 @@ export default function UnitAttendancePage() {
               </span>
             </div>
 
-            {members.length > 0 ? (
+            {loadingMembers ? (
+              <p style={{ color: "#747CA1", fontSize: "13px" }}>Loading unit roster...</p>
+            ) : members.length > 0 ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
                 {members.map((m) => {
                   const mName = m.displayName || m.email;
@@ -219,7 +274,7 @@ export default function UnitAttendancePage() {
               </div>
             ) : (
               <p style={{ color: "#747CA1", fontSize: "13px", fontStyle: "italic" }}>
-                No members registered under this unit yet.
+                No members registered under {activeUnit?.name} yet. Use the Unit Command Center to add workers from the directory.
               </p>
             )}
           </div>
@@ -254,7 +309,8 @@ export default function UnitAttendancePage() {
               borderRadius: "8px",
               fontSize: "13px",
               fontWeight: 600,
-              cursor: saving ? "not-allowed" : "pointer",
+              cursor: saving || members.length === 0 ? "not-allowed" : "pointer",
+              opacity: members.length === 0 ? 0.6 : 1,
             }}
           >
             {saving ? "Saving Record..." : "Submit Unit Attendance"}
@@ -270,9 +326,9 @@ export default function UnitAttendancePage() {
 
         {attendanceRecords.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {attendanceRecords.map((rec) => (
+            {attendanceRecords.map((rec, idx) => (
               <div
-                key={rec.id}
+                key={rec.id || idx}
                 style={{
                   padding: "16px 20px",
                   borderRadius: "8px",
@@ -309,7 +365,7 @@ export default function UnitAttendancePage() {
           </div>
         ) : (
           <p style={{ color: "#747CA1", fontSize: "13px", fontStyle: "italic", margin: 0 }}>
-            No attendance records submitted yet.
+            No attendance records submitted yet for {activeUnit?.name}.
           </p>
         )}
       </div>

@@ -45,20 +45,60 @@ export default function MemberUnitInfoPage() {
     }
 
     const fetchUnitTeam = async () => {
+      setLoadingMembers(true);
       try {
         const res = await fetch(`/api/portal/members?unitId=${encodeURIComponent(assignedUnitId)}`);
+        let membersList: any[] = [];
         if (res.ok) {
           const data = await res.json();
-          if (data.members && Array.isArray(data.members)) {
-            setUnitMembers(data.members);
-            const head = data.members.find((m: any) => m.role === "unit_head" || m.isUnitHead);
-            if (head) {
-              setUnitHead({
-                name: head.displayName || "Unit Head",
-                email: head.email,
-                phone: head.phone,
-              });
-            }
+          membersList = (data.members || []).filter(
+            (m: any) => (m.assignedUnitId || "").toLowerCase() === assignedUnitId
+          );
+        }
+
+        // Include effectiveUser if previewing or belonging to this unit
+        if (effectiveUser && (effectiveUser.assignedUnitId || "").toLowerCase() === assignedUnitId) {
+          const already = membersList.some(
+            (m: any) => (m.email && m.email.toLowerCase() === effectiveUser.email.toLowerCase()) || m.id === effectiveUser.uid
+          );
+          if (!already) {
+            membersList.unshift({
+              id: effectiveUser.uid,
+              displayName: effectiveUser.displayName || effectiveUser.email,
+              email: effectiveUser.email,
+              phone: effectiveUser.phone,
+              isUnitHead: effectiveUser.role === "unit_head",
+            });
+          }
+        }
+
+        setUnitMembers(membersList);
+
+        // Determine Unit Head
+        if (effectiveUser?.role === "unit_head" && (effectiveUser.assignedUnitId || "").toLowerCase() === assignedUnitId) {
+          setUnitHead({
+            name: effectiveUser.displayName || "Unit Head",
+            email: effectiveUser.email,
+            phone: effectiveUser.phone || "+234 813 906 3144",
+          });
+        } else {
+          // Look strictly within this unit's roster for a designated head
+          const head = membersList.find(
+            (m: any) => (m.role === "unit_head" || m.isUnitHead) && (m.assignedUnitId || "").toLowerCase() === assignedUnitId
+          );
+          if (head) {
+            setUnitHead({
+              name: head.displayName || "Unit Head",
+              email: head.email,
+              phone: head.phone,
+            });
+          } else {
+            // General pastoral administration oversight for units without a distinct head yet
+            setUnitHead({
+              name: "Pastoral Oversight · The Publishers House",
+              email: "thepublishershouse007@gmail.com",
+              phone: "+234 813 906 3144",
+            });
           }
         }
       } catch (err) {
@@ -69,7 +109,7 @@ export default function MemberUnitInfoPage() {
     };
 
     fetchUnitTeam();
-  }, [assignedUnitId]);
+  }, [assignedUnitId, effectiveUser?.role, effectiveUser?.assignedUnitId, effectiveUser?.email, effectiveUser?.displayName]);
 
   if (!unit) {
     return (
@@ -317,7 +357,7 @@ export default function MemberUnitInfoPage() {
           </div>
         ) : (
           <p style={{ fontSize: "13px", color: "#747CA1", fontStyle: "italic", margin: 0 }}>
-            Member directory is loading. Check back shortly.
+            No other workers registered under {unit.name} yet. Members added to this unit will appear here automatically.
           </p>
         )}
       </div>

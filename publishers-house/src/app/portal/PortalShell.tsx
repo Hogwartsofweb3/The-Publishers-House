@@ -380,20 +380,20 @@ function PortalHeaderAndContent({
                   </select>
                 </div>
 
-                {/* Role Preview Mode Impersonation Dropdown */}
+                {/* Role Preview Mode Impersonation Dropdown (All 12 Units Available) */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <select
-                    value={previewRole || ""}
+                    value={previewRole ? (previewUnitId ? `${previewRole}_${previewUnitId}` : previewRole) : ""}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (!val) {
                         exitPreview();
-                      } else if (val === "unit_head_ushering") {
-                        startPreview("unit_head", "ushering");
-                      } else if (val === "unit_head_media") {
-                        startPreview("unit_head", "media_technical");
-                      } else if (val === "unit_head_worship") {
-                        startPreview("unit_head", "worship");
+                      } else if (val.startsWith("unit_head_")) {
+                        const unitId = val.replace("unit_head_", "");
+                        startPreview("unit_head", unitId);
+                      } else if (val.startsWith("member_")) {
+                        const unitId = val.replace("member_", "");
+                        startPreview("member", unitId);
                       } else {
                         startPreview(val as UserRole);
                       }
@@ -409,16 +409,32 @@ function PortalHeaderAndContent({
                       fontWeight: 600,
                       outline: "none",
                       cursor: "pointer",
+                      maxWidth: "230px",
                     }}
                   >
                     <option value="">👁️ Role Preview: Normal</option>
-                    <option value="super_admin">Viewing as Super Admin</option>
-                    <option value="admin">Viewing as Administrator</option>
-                    <option value="portal_manager">Viewing as Portal Manager (007)</option>
-                    <option value="unit_head_ushering">Preview as Unit Head (Ushering)</option>
-                    <option value="unit_head_media">Preview as Unit Head (Media)</option>
-                    <option value="unit_head_worship">Preview as Unit Head (Worship)</option>
-                    <option value="member">Preview as Regular Member</option>
+                    <optgroup label="── LEADERSHIP ROLES ──">
+                      <option value="super_admin">Viewing as Super Admin</option>
+                      <option value="admin">Viewing as Administrator</option>
+                      <option value="portal_manager">Viewing as Portal Manager (007)</option>
+                    </optgroup>
+                    <optgroup label="── PREVIEW AS UNIT HEAD (12 UNITS) ──">
+                      {UNITS.map((u) => (
+                        <option key={`head_${u.id}`} value={`unit_head_${u.id}`}>
+                          Head of {u.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="── PREVIEW AS UNIT WORKER (12 UNITS) ──">
+                      {UNITS.map((u) => (
+                        <option key={`mem_${u.id}`} value={`member_${u.id}`}>
+                          Worker in {u.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="── GENERAL CONGREGATION ──">
+                      <option value="member">Regular Member (No Unit Assigned)</option>
+                    </optgroup>
                   </select>
                 </div>
               </div>

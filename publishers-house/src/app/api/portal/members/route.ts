@@ -739,12 +739,29 @@ export async function GET(req: NextRequest) {
 
     memoryMembersCache = uniqueMembers;
     memoryCacheTimestamp = Date.now();
-    return NextResponse.json({ ok: true, members: uniqueMembers, quotaBlocked: false });
+
+    // Optional query parameter filtering by unitId
+    const { searchParams } = new URL(req.url);
+    const filterUnitId = searchParams.get("unitId");
+    let resultList = uniqueMembers;
+    if (filterUnitId) {
+      const norm = normalizeUnitId(filterUnitId);
+      resultList = uniqueMembers.filter((m) => normalizeUnitId(m.assignedUnitId) === norm);
+    }
+
+    return NextResponse.json({ ok: true, members: resultList, quotaBlocked: false });
   } catch (err: any) {
     console.error("Error fetching members from Firestore (serving memory cache):", err?.message);
     const isQuota = err?.code === 8 || String(err?.message || "").includes("RESOURCE_EXHAUSTED") || String(err?.message || "").includes("Quota exceeded");
     const fallbackList = memoryMembersCache.length > 0 ? memoryMembersCache : VERIFIED_FALLBACK_MEMBERS;
-    return NextResponse.json({ ok: true, members: fallbackList, quotaBlocked: isQuota });
+    const { searchParams } = new URL(req.url);
+    const filterUnitId = searchParams.get("unitId");
+    let resultList = fallbackList;
+    if (filterUnitId) {
+      const norm = normalizeUnitId(filterUnitId);
+      resultList = fallbackList.filter((m) => normalizeUnitId(m.assignedUnitId) === norm);
+    }
+    return NextResponse.json({ ok: true, members: resultList, quotaBlocked: isQuota });
   }
 }
 

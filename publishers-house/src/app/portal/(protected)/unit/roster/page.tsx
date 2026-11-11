@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
+import { PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 interface RosterAssignment {
@@ -20,7 +19,11 @@ interface RosterAssignment {
 }
 
 export default function UnitRosterPage() {
-  const [user, setUser] = useState<PortalUser | null>(null);
+  const { effectiveUser } = usePortal();
+  const user = effectiveUser;
+  const normUnitId = normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering";
+  const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
+
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [allMembers, setAllMembers] = useState<PortalUser[]>([]);
@@ -28,7 +31,8 @@ export default function UnitRosterPage() {
   const [allRosters, setAllRosters] = useState<RosterAssignment[]>([]);
 
   // Form
-  const [serviceName, setServiceName] = useState("Sunday Word Encounter");
+  const [serviceName, setServiceName] = useState("Sunday Word & Worship Celebration (9:00 AM WAT)");
+  const [customServiceName, setCustomServiceName] = useState("");
   const [serviceDate, setServiceDate] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
   const [dutyRole, setDutyRole] = useState("");
@@ -41,30 +45,10 @@ export default function UnitRosterPage() {
   const [searchMemberTerm, setSearchMemberTerm] = useState("");
   const [addingMemberUid, setAddingMemberUid] = useState<string | null>(null);
 
-  const activeUnit = UNITS.find((u) => u.id === user?.assignedUnitId) || UNITS[0];
-
-  useEffect(() => {
-    // Next Sunday default
-    const d = new Date();
-    d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
-    setServiceDate(d.toISOString().split("T")[0]);
-
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        const pUser = await getPortalUser(fbUser.uid);
-        setUser(pUser);
-        if (pUser?.assignedUnitId) {
-          fetchUnitData(pUser.assignedUnitId);
-        }
-      }
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
-
-  const fetchUnitData = async (unitId: string) => {
+  const fetchUnitData = useCallback(async (unitId: string) => {
+    setLoading(true);
     try {
-      const normUnitId = normalizeUnitId(unitId);
+      const targetUnitId = normalizeUnitId(unitId);
       let mList: PortalUser[] = [];
       try {
         const res = await fetch("/api/portal/members");
@@ -72,7 +56,7 @@ export default function UnitRosterPage() {
           const data = await res.json();
           const memberArr: PortalUser[] = data.members || [];
           setAllMembers(memberArr);
-          mList = memberArr.filter((u) => normalizeUnitId(u.assignedUnitId) === normUnitId);
+          mList = memberArr.filter((u) => normalizeUnitId(u.assignedUnitId) === targetUnitId);
         }
       } catch {
         // Fallback to client SDK
@@ -80,7 +64,7 @@ export default function UnitRosterPage() {
 
       if (mList.length === 0) {
         try {
-          const mq = query(collection(db, "users"), where("assignedUnitId", "==", unitId));
+          const mq = query(collection(db, "users"), where("assignedUnitId", "==", targetUnitId));
           const msnap = await getDocs(mq);
           mList = msnap.docs.map((d) => d.data() as PortalUser);
         } catch {
@@ -89,13 +73,15 @@ export default function UnitRosterPage() {
       }
 
       setMembers(mList);
-      if (mList.length > 0 && !selectedMember) {
+      if (mList.length > 0) {
         setSelectedMember(mList[0].displayName || mList[0].email);
+      } else {
+        setSelectedMember("");
       }
 
       // Fetch unit roster
       try {
-        const rq = query(collection(db, "unit_rosters"), where("unitId", "==", unitId));
+        const rq = query(collection(db, "unit_rosters"), where("unitId", "==", targetUnitId));
         const rsnap = await getDocs(rq);
         const rList = rsnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
         rList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
@@ -109,17 +95,28 @@ export default function UnitRosterPage() {
         const allSnap = await getDocs(collection(db, "unit_rosters"));
         const allList = allSnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
         setAllRosters(allList);
-      } catch (err) {
-        console.warn("Could not load all church rosters:", err);
+      } catch {
+        // Fallback
       }
-    } catch (e) {
-      console.error(e);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Next Sunday default
+    const d = new Date();
+    d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
+    setServiceDate(d.toISOString().split("T")[0]);
+
+    if (normUnitId) {
+      fetchUnitData(normUnitId);
+    }
+  }, [normUnitId, fetchUnitData]);
 
   const handleAddAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.assignedUnitId || !selectedMember || !dutyRole.trim() || !serviceDate) return;
+    if (!normUnitId || !selectedMember || !dutyRole.trim() || !serviceDate) return;
     setSaving(true);
     setMsg("");
     try {
@@ -129,7 +126,7 @@ export default function UnitRosterPage() {
       const existingCrossUnit = allRosters.find(
         (other) =>
           other.serviceDate === serviceDate &&
-          normalizeUnitId(other.unitId) !== normalizeUnitId(user.assignedUnitId) &&
+          normalizeUnitId(other.unitId) !== normalizeUnitId(normUnitId) &&
           ((other.memberUid && mem?.uid && other.memberUid === mem.uid) ||
             other.memberName.toLowerCase().trim() === selectedMember.toLowerCase().trim())
       );
@@ -145,9 +142,13 @@ export default function UnitRosterPage() {
         }
       }
 
+      const resolvedServiceName = serviceName === "custom"
+        ? (customServiceName.trim() || "Special Church Program")
+        : serviceName;
+
       const newEntry: RosterAssignment = {
-        unitId: user.assignedUnitId,
-        serviceName,
+        unitId: normUnitId,
+        serviceName: resolvedServiceName,
         serviceDate,
         memberName: selectedMember,
         memberUid: mem?.uid || "",
@@ -178,7 +179,7 @@ export default function UnitRosterPage() {
       setMsg("Duty assigned successfully ✓");
       setDutyRole("");
       setNotes("");
-      fetchUnitData(user.assignedUnitId);
+      fetchUnitData(normUnitId);
       setTimeout(() => setMsg(""), 4000);
     } catch (err: any) {
       alert("Error adding duty: " + err.message);
@@ -364,11 +365,25 @@ export default function UnitRosterPage() {
                 onChange={(e) => setServiceName(e.target.value)}
                 style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #D5DCF2", fontSize: "13px", color: "#141C6E", outline: "none", backgroundColor: "#FFFFFF" }}
               >
-                <option value="Sunday Word Encounter">Sunday Word Encounter (9:00 AM)</option>
-                <option value="Wednesday Bible Study">Wednesday Bible Study (5:30 PM)</option>
-                <option value="Friday All-Night Prayer">Friday All-Night Prayer (10:00 PM)</option>
-                <option value="Special Ministry Conference">Special Ministry Conference</option>
+                <option value="Sunday Word & Worship Celebration (9:00 AM WAT)">Sunday Word & Worship Celebration (9:00 AM WAT)</option>
+                <option value="Thursday Doctrine & Prayer Encounter (4:30 PM WAT)">Thursday Doctrine & Prayer Encounter (4:30 PM WAT)</option>
+                <option value="The Forge — Monthly Thursday Encounter (4:30 PM WAT)">The Forge — Monthly Thursday Encounter (4:30 PM WAT)</option>
+                <option value="The Forge — Monthly Friday Vigil (8:00 PM WAT)">The Forge — Monthly Friday Vigil (8:00 PM WAT)</option>
+                <option value="Festival of Light (FOL)">Festival of Light (FOL)</option>
+                <option value="Merismos Prophetic Conference">Merismos Prophetic Conference</option>
+                <option value="Unit Department Meeting / Rehearsal">Unit Department Meeting / Rehearsal</option>
+                <option value="custom">✏️ Other / Custom Event (type below)</option>
               </select>
+              {serviceName === "custom" && (
+                <input
+                  type="text"
+                  placeholder="e.g. Workers Retreat, Convocation..."
+                  value={customServiceName}
+                  onChange={(e) => setCustomServiceName(e.target.value)}
+                  required
+                  style={{ width: "100%", marginTop: "8px", padding: "9px 12px", borderRadius: "8px", border: "1px solid #1F46C8", fontSize: "12.5px", color: "#141C6E", outline: "none", boxSizing: "border-box" }}
+                />
+              )}
             </div>
 
             <div>

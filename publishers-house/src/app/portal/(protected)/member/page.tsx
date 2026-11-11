@@ -8,7 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel } from "@/lib/portalAuth";
 import { getSermons, getArticles, Sermon, Article } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
-import { useAudio } from "@/components/GlobalAudioPlayer";
+import { useAudio, resolveMediaThumbnail, getYouTubeVideoId } from "@/components/GlobalAudioPlayer";
 import type { PlaybackRecord } from "@/app/api/portal/playback/route";
 import AddToCalendarButton from "@/components/portal/AddToCalendarButton";
 
@@ -17,6 +17,24 @@ function formatSeconds(secs: number): string {
   const m = Math.floor(secs / 60);
   const s = Math.floor(secs % 60);
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+function resolveEventFlyer(title?: string, rawUrl?: string): string {
+  const t = (title || "").toLowerCase();
+  const url = (rawUrl || "").trim();
+  if (t.includes("merismos")) {
+    return "/images/merismos-flyer-2026.png";
+  }
+  if (t.includes("strangers") || t.includes("pilgrim") || t.includes("12 nov") || t.includes("doctrine & prayer") || t.includes("midweek")) {
+    return "/images/strangers-and-pilgrims-flyer.png";
+  }
+  if (url && !url.includes("fol-2026-poster.jpg") && !url.includes("Merismos black.png")) {
+    return url;
+  }
+  if (t.includes("festival of light") || t.includes("shout of a king")) {
+    return "/images/fol-2026-poster.jpg";
+  }
+  return url || "/images/strangers-and-pilgrims-flyer.png";
 }
 
 export default function FashionableMemberDashboard() {
@@ -43,28 +61,28 @@ export default function FashionableMemberDashboard() {
 
   const DEFAULT_UPCOMING_EVENTS: DashboardEvent[] = [
     {
-      id: "weekly-sunday",
-      badge: "Weekly Encounter",
-      title: "Sunday Word & Worship Celebration",
-      date: "Every Sunday • 9:00 AM WAT",
-      venue: "The House of Bread, Jos",
-      imageUrl: "/images/fol-2026-poster.jpg",
-      href: "/schedule",
-      actionText: "View Schedule",
-      themeColor: "#F59E0B",
-      bgGradient: "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",
-    },
-    {
       id: "weekly-thursday",
-      badge: "Midweek Service",
-      title: "Midweek Doctrine & Prayer",
-      date: "Every Thursday • 4:30 PM WAT",
+      badge: "Rev. Joshua Agunbiade",
+      title: "Strangers & Pilgrims",
+      date: "12 Nov · Main Sanctuary (Jos)",
       venue: "The House of Bread, Jos",
-      imageUrl: "/images/merismos-logo.png",
+      imageUrl: "/images/strangers-and-pilgrims-flyer.png",
       href: "/schedule",
-      actionText: "View Schedule",
+      actionText: "View Event",
       themeColor: "#38BDF8",
       bgGradient: "linear-gradient(135deg, #0E1556 0%, #0369A1 50%, #0B0E14 100%)",
+    },
+    {
+      id: "merismos-annual",
+      badge: "Prophetic Conference",
+      title: "Merismos",
+      date: "10 Dec · Jos",
+      venue: "The House of Bread, Jos",
+      imageUrl: "/images/merismos-flyer-2026.png",
+      href: "/schedule",
+      actionText: "View Event",
+      themeColor: "#F59E0B",
+      bgGradient: "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",
     },
   ];
 
@@ -214,43 +232,89 @@ export default function FashionableMemberDashboard() {
         setRecentSermons(sermonsData);
         setRecentArticles(articlesData);
 
-        // Fetch dynamic events from Firestore CMS if available
+        // 1. Fetch dynamic Next Gatherings from home-data API (synced with CMS Next Gatherings)
+        let loadedDynamic = false;
         try {
-          const eventsSnap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc"), limit(5)));
-          if (!eventsSnap.empty) {
-            const dynamicList: DashboardEvent[] = eventsSnap.docs
-              .map((docSnap, i) => {
-                const data = docSnap.data();
-                if (data.published === false) return null;
-                const dateLabel = data.startAt
-                  ? new Date(data.startAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-                  : "Coming Soon";
-                const gradients = [
-                  "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",
-                  "linear-gradient(135deg, #0E1556 0%, #0369A1 50%, #0B0E14 100%)",
-                  "linear-gradient(135deg, #0E1556 0%, #065F46 50%, #0B0E14 100%)",
-                ];
-                const themeColors = ["#F59E0B", "#38BDF8", "#34D399"];
+          const homeRes = await fetch("/api/home-data");
+          if (homeRes.ok) {
+            const homeData = await homeRes.json();
+            if (Array.isArray(homeData.gatherings) && homeData.gatherings.length > 0) {
+              const gradients = [
+                "linear-gradient(135deg, #0E1556 0%, #0369A1 50%, #0B0E14 100%)",
+                "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",
+                "linear-gradient(135deg, #0E1556 0%, #065F46 50%, #0B0E14 100%)",
+              ];
+              const themeColors = ["#38BDF8", "#F59E0B", "#34D399"];
+
+              const syncedList: DashboardEvent[] = homeData.gatherings.map((g: any, i: number) => {
+                const dateParts = [g.date, g.month].filter(Boolean).join(" ");
+                const dateLabel = dateParts
+                  ? `${g.day ? g.day + " • " : ""}${dateParts}${g.time ? " • " + g.time : ""}`
+                  : (g.time || "Upcoming Gathering");
+
                 return {
-                  id: docSnap.id,
-                  badge: data.speaker || "Upcoming Event",
-                  title: data.title || "Special Program",
+                  id: g.id || g.eventId || `gathering-${i}`,
+                  badge: g.speaker || g.theme || "Upcoming Gathering",
+                  title: g.title || "Special Program",
                   date: dateLabel,
-                  venue: data.location || "Jos Sanctuary",
-                  imageUrl: data.imageUrl || (i % 2 === 0 ? "/images/fol-2026-poster.jpg" : "/images/Merismos black.png"),
-                  href: data.registrationUrl || "/schedule",
+                  venue: g.city ? `${g.city} Sanctuary` : "The House of Bread, Jos",
+                  imageUrl: resolveEventFlyer(g.title, g.flierUrl || g.imageUrl),
+                  href: g.registrationUrl || "/schedule",
                   actionText: "View Event",
                   themeColor: themeColors[i % themeColors.length],
                   bgGradient: gradients[i % gradients.length],
                 };
-              })
-              .filter(Boolean) as DashboardEvent[];
-            if (dynamicList.length > 0) {
-              setEventsList(dynamicList);
+              });
+
+              if (syncedList.length > 0) {
+                setEventsList(syncedList);
+                loadedDynamic = true;
+              }
             }
           }
         } catch (e) {
-          console.warn("Could not load dynamic events, using defaults", e);
+          console.warn("Could not load from home-data API:", e);
+        }
+
+        // 2. Fallback to events collection if home-data didn't set events
+        if (!loadedDynamic) {
+          try {
+            const eventsSnap = await getDocs(query(collection(db, "events"), orderBy("startAt", "desc"), limit(5)));
+            if (!eventsSnap.empty) {
+              const dynamicList: DashboardEvent[] = eventsSnap.docs
+                .map((docSnap, i) => {
+                  const data = docSnap.data();
+                  if (data.published === false) return null;
+                  const dateLabel = data.startAt
+                    ? new Date(data.startAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+                    : "Coming Soon";
+                  const gradients = [
+                    "linear-gradient(135deg, #0E1556 0%, #0369A1 50%, #0B0E14 100%)",
+                    "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",
+                    "linear-gradient(135deg, #0E1556 0%, #065F46 50%, #0B0E14 100%)",
+                  ];
+                  const themeColors = ["#38BDF8", "#F59E0B", "#34D399"];
+                  return {
+                    id: docSnap.id,
+                    badge: data.speaker || "Upcoming Event",
+                    title: data.title || "Special Program",
+                    date: dateLabel,
+                    venue: data.location || "Jos Sanctuary",
+                    imageUrl: resolveEventFlyer(data.title, data.imageUrl),
+                    href: data.registrationUrl || "/schedule",
+                    actionText: "View Event",
+                    themeColor: themeColors[i % themeColors.length],
+                    bgGradient: gradients[i % gradients.length],
+                  };
+                })
+                .filter(Boolean) as DashboardEvent[];
+              if (dynamicList.length > 0) {
+                setEventsList(dynamicList);
+              }
+            }
+          } catch (e) {
+            console.warn("Could not load dynamic events, using defaults", e);
+          }
         }
       } catch (err) {
         console.error("Error loading dashboard feeds:", err);
@@ -302,36 +366,26 @@ export default function FashionableMemberDashboard() {
   }, []);
 
   const handleResume = (item: PlaybackRecord) => {
-    if (item.videoUrl) {
-      playVideo(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        item.progressSeconds
-      );
+    const hasVid = Boolean(getYouTubeVideoId(item.videoUrl));
+    const mediaPayload = {
+      id: item.id,
+      title: item.title,
+      speaker: item.speaker,
+      series: item.series,
+      scripture: item.scripture,
+      videoUrl: item.videoUrl,
+      audioUrl: item.audioUrl,
+      spotifyEpisodeId: item.spotifyEpisodeId,
+      thumbnailUrl: resolveMediaThumbnail(item),
+      coverImageUrl: item.thumbnailUrl,
+      type: item.type,
+      resourceSlug: item.resourceSlug,
+    };
+
+    if (hasVid && !item.spotifyEpisodeId) {
+      playVideo(mediaPayload, item.progressSeconds);
     } else {
-      playAudio(
-        {
-          id: item.id,
-          title: item.title,
-          speaker: item.speaker,
-          series: item.series,
-          scripture: item.scripture,
-          videoUrl: item.videoUrl,
-          audioUrl: item.audioUrl,
-          type: item.type,
-          resourceSlug: item.resourceSlug,
-        },
-        item.progressSeconds
-      );
+      playAudio(mediaPayload, item.progressSeconds);
     }
   };
 
@@ -667,7 +721,7 @@ export default function FashionableMemberDashboard() {
                 alt={currEvent.title}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/images/fol-2026-poster.jpg";
+                  e.currentTarget.src = resolveEventFlyer(currEvent.title);
                 }}
                 style={{
                   width: "100%",
@@ -1424,34 +1478,15 @@ export default function FashionableMemberDashboard() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "18px", minWidth: "280px", flex: 1 }}>
-            {continueItem.thumbnailUrl ? (
-              <img
-                src={continueItem.thumbnailUrl}
-                alt={continueItem.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/images/sermon-v2.webp";
-                }}
-                style={{ width: "70px", height: "70px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "70px",
-                  height: "70px",
-                  borderRadius: "8px",
-                  backgroundColor: "#0E1556",
-                  color: "#FFFFFF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "24px",
-                  flexShrink: 0,
-                }}
-              >
-                ▶
-              </div>
-            )}
+            <img
+              src={resolveMediaThumbnail(continueItem)}
+              alt={continueItem.title}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/images/sermon-hero-bg.jpg";
+              }}
+              style={{ width: "70px", height: "70px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, backgroundColor: "#0E1556" }}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                 <span
@@ -1617,7 +1652,14 @@ export default function FashionableMemberDashboard() {
 
                 <button
                   type="button"
-                  onClick={() => playVideo(sermon)}
+                  onClick={() => {
+                    const vid = getYouTubeVideoId(sermon.videoUrl);
+                    if (vid) {
+                      playVideo(sermon);
+                    } else {
+                      playAudio(sermon);
+                    }
+                  }}
                   style={{
                     padding: "8px 14px",
                     backgroundColor: "#1F46C8",

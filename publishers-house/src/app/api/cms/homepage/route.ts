@@ -85,9 +85,15 @@ export async function POST(req: NextRequest) {
       }
 
       let flierUrl = event.imageUrl || event.flierUrl || "";
-      if (!flierUrl || (event.title || "").toLowerCase().includes("merismos")) {
-        if ((event.title || "").toLowerCase().includes("merismos")) {
-          flierUrl = "/images/merismos-logo.png";
+      const evTitle = (event.title || "").toLowerCase();
+      if (!flierUrl || evTitle.includes("merismos") || flierUrl.includes("fol") || flierUrl.includes("shout")) {
+        if (evTitle.includes("merismos")) {
+          flierUrl = "/images/merismos-flyer-2026.png";
+        }
+      }
+      if (evTitle.includes("strangers") || evTitle.includes("pilgrim") || evTitle.includes("12 nov")) {
+        if (!flierUrl || flierUrl.includes("fol") || flierUrl.includes("shout")) {
+          flierUrl = "/images/strangers-and-pilgrims-flyer.png";
         }
       }
 

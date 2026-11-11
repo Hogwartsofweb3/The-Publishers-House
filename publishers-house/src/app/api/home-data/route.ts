@@ -28,9 +28,14 @@ function parseEventToGathering(ev: any) {
 
     let flierUrl = (ev.imageUrl || ev.coverImageUrl || ev.flierUrl || "").trim();
     const titleLower = (ev.title || "").toLowerCase();
-    if (!flierUrl || titleLower.includes("merismos")) {
+    if (!flierUrl || titleLower.includes("merismos") || flierUrl.includes("fol") || flierUrl.includes("shout")) {
       if (titleLower.includes("merismos")) {
-        flierUrl = "/images/merismos-logo.png";
+        flierUrl = "/images/merismos-flyer-2026.png";
+      }
+    }
+    if (titleLower.includes("strangers") || titleLower.includes("pilgrim") || titleLower.includes("12 nov")) {
+      if (!flierUrl || flierUrl.includes("fol") || flierUrl.includes("shout")) {
+        flierUrl = "/images/strangers-and-pilgrims-flyer.png";
       }
     }
 

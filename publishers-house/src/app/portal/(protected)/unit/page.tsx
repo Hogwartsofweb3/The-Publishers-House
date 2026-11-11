@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { auth } from "@/lib/firebaseAuth";
-import { getPortalUser, PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
-import { onAuthStateChanged } from "firebase/auth";
+import { PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
 export default function UnitCommandCenter() {
   const router = useRouter();
-  const [user, setUser] = useState<PortalUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { effectiveUser } = usePortal();
+  const user = effectiveUser;
+  const authLoading = false;
+
+  const normUnitId = normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering";
+  const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [allMembers, setAllMembers] = useState<PortalUser[]>([]);
@@ -40,40 +43,10 @@ export default function UnitCommandCenter() {
     setDate(new Date().toISOString().split("T")[0]);
   }, []);
 
-  const activeUnit = UNITS.find((u) => u.id === normalizeUnitId(user?.assignedUnitId));
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const portalUser = await getPortalUser(firebaseUser.uid);
-        if (
-          portalUser &&
-          (portalUser.role === "unit_head" ||
-           portalUser.role === "admin" ||
-           portalUser.role === "super_admin" ||
-           portalUser.role === "portal_manager" ||
-           portalUser.isUnitHead ||
-           portalUser.roles?.includes("unit_head"))
-        ) {
-          setUser(portalUser);
-        } else {
-          router.push("/portal/login");
-        }
-      } else {
-        router.push("/portal/login");
-      }
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, [router]);
-
-  useEffect(() => {
-    if (!user?.assignedUnitId) return;
-
     const fetchMembers = async () => {
       setLoadingMembers(true);
       try {
-        const normUnitId = normalizeUnitId(user.assignedUnitId);
         let mList: PortalUser[] = [];
         try {
           const res = await fetch("/api/portal/members");
@@ -91,7 +64,7 @@ export default function UnitCommandCenter() {
           try {
             const q = query(
               collection(db, "users"),
-              where("assignedUnitId", "==", user.assignedUnitId)
+              where("assignedUnitId", "==", normUnitId)
             );
             const snap = await getDocs(q);
             mList = snap.docs.map((doc) => doc.data() as PortalUser);
@@ -109,7 +82,7 @@ export default function UnitCommandCenter() {
     };
 
     fetchMembers();
-  }, [user]);
+  }, [normUnitId]);
 
   const handleAddMemberToUnit = async (targetMember: PortalUser) => {
     if (!activeUnit?.id) return;
@@ -804,6 +777,16 @@ export default function UnitCommandCenter() {
                     (m.phone || "").toLowerCase().includes(q)
                   );
                 });
+
+                if (loadingMembers && allMembers.length === 0) {
+                  return (
+                    <div style={{ padding: "36px 16px", textAlign: "center", color: "#64748B" }}>
+                      <p style={{ margin: 0, fontSize: "13.5px", fontWeight: 600 }}>
+                        Loading church member directory...
+                      </p>
+                    </div>
+                  );
+                }
 
                 if (available.length === 0) {
                   return (
