@@ -25,8 +25,8 @@ self.addEventListener('push', (event) => {
   const {
     title = 'The Publishers House',
     body = 'You have a new update.',
-    icon = '/android-chrome-192x192.png',
-    badge = '/android-chrome-192x192.png',
+    icon = '/icon-192x192.png',
+    badge = '/icon-192x192.png',
     link = '/portal/member',
     tag = 'tph-notification',
   } = payload;

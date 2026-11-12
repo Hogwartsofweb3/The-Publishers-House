@@ -39,8 +39,12 @@ function PortalHeaderAndContent({
     Boolean(user.mustChangePassword)
   );
 
-  // Register push notification subscription for this user silently in background
-  usePushNotifications({ uid: user.uid, email: user.email, enabled: true });
+  // Push notification subscription — exposes permissionState and manual enable trigger
+  const { permissionState, requestPermissionAndSubscribe } = usePushNotifications({
+    uid: user.uid,
+    email: user.email,
+    enabled: true,
+  });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showModalPassword, setShowModalPassword] = useState(false);
@@ -471,6 +475,31 @@ function PortalHeaderAndContent({
                   </select>
                 </div>
               </div>
+            )}
+
+            {/* Enable Push Notifications Button — only shown when permission not yet granted */}
+            {permissionState !== "granted" && permissionState !== "denied" && permissionState !== "unsupported" && (
+              <button
+                onClick={requestPermissionAndSubscribe}
+                title="Enable push notifications so you get alerts on your phone"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "6px 12px",
+                  backgroundColor: "#1F46C8",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "11.5px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🔔 Enable Notifications
+              </button>
             )}
 
             {/* PWA App Install Button */}

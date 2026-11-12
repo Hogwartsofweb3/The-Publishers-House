@@ -1,0 +1,43 @@
+{
+  "name": "The Publishers House",
+  "short_name": "TPH Portal",
+  "description": "The Publishers House Church Member Portal",
+  "start_url": "/portal/member",
+  "display": "standalone",
+  "background_color": "#0E1556",
+  "theme_color": "#1F46C8",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social"],
+  "shortcuts": [
+    {
+      "name": "My Dashboard",
+      "url": "/portal/member",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Church Events",
+      "url": "/schedule",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
