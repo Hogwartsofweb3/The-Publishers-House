@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     "gaxios",
     "https-proxy-agent",
     "agent-base",
+    "web-push",
   ],
   async redirects() {
     return [
@@ -119,9 +120,9 @@ const nextConfig: NextConfig = {
       "@solana-program/memo": false,
       "@solana/kit": false,
       "@solana/web3.js": false,
-      "web-push": false,
+      // web-push is a real installed server package — do NOT alias to false
+      // It is listed in serverExternalPackages so webpack never tries to bundle it client-side
     };
-
     // On the client bundle, stub out Node.js built-ins that firebase-admin
     // and its deps (gaxios, https-proxy-agent) try to require.
     if (!isServer) {
