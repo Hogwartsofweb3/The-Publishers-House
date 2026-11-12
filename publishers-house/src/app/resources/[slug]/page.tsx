@@ -9,8 +9,6 @@ import ResourcesCurriculumClient from "./ResourcesCurriculumClient";
 
 export const revalidate = 0;
 
-export { TRACK_DETAILS };
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   let track = TRACK_DETAILS[slug];
