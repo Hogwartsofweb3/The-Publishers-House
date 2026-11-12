@@ -194,9 +194,9 @@ export default function AttendanceCompareTab({ initialCampus = "all" }: Attendan
       a.date2Detail.attended ? `Attended (${a.date2Detail.mode})` : "Absent",
       a.date3Detail.attended ? `Attended (${a.date3Detail.mode})` : "Absent",
       a.totalAttendedOutOf3,
-      `${a.consistencyRate}%`,
+      `${a.consistencyRate ?? 0}%`,
       a.isCandidateForMembership ? "YES" : "NO",
-      `"${a.recommendationNote.replace(/"/g, '""')}"`,
+      `"${(a.recommendationNote ?? "").replace(/"/g, '""')}"`,
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");

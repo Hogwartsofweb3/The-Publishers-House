@@ -23,9 +23,9 @@ export interface ComparedAttendee {
   date2Detail: AttendanceDetail;
   date3Detail: AttendanceDetail;
   totalAttendedOutOf3: number;
-  consistencyRate?: number;
-  isCandidateForMembership?: boolean;
-  recommendationNote?: string;
+  consistencyRate: number;
+  isCandidateForMembership: boolean;
+  recommendationNote: string;
 }
 
 export interface PortalNotification {
