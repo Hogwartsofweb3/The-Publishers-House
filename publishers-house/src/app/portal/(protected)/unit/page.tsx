@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
-import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import FollowUpPipelineCard from "@/components/portal/FollowUpPipelineCard";
+import DiscipleshipCohortCard from "@/components/portal/DiscipleshipCohortCard";
 
 export default function UnitCommandCenter() {
   const router = useRouter();
@@ -155,22 +157,29 @@ export default function UnitCommandCenter() {
     setAttendanceMessage("");
 
     try {
-      await addDoc(collection(db, "unit_attendance"), {
-        unitId: user.assignedUnitId,
-        unitName: activeUnit?.name || "Unknown Unit",
-        date,
-        headcount: parseInt(headcount, 10),
-        notes,
-        recordedBy: user.displayName,
-        recordedAt: new Date().toISOString(),
+      const res = await fetch("/api/portal/unit/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: user.assignedUnitId,
+          unitName: activeUnit?.name || "Unknown Unit",
+          serviceDate: date,
+          serviceName: "Sunday Service",
+          headcount: parseInt(headcount, 10),
+          notes: notes.trim() || "",
+          recordedBy: user.displayName || user.email || "Unit Leadership",
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to record unit attendance");
 
       setAttendanceMessage("Unit attendance recorded successfully ✓");
       setHeadcount("");
       setNotes("");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving attendance:", err);
-      setAttendanceMessage("Failed to record attendance. Please try again.");
+      setAttendanceMessage(err.message || "Failed to record attendance. Please try again.");
     } finally {
       setSavingAttendance(false);
       setTimeout(() => setAttendanceMessage(""), 4000);
@@ -271,6 +280,15 @@ export default function UnitCommandCenter() {
           Welcome back, {user.displayName}. Unit leadership and Sunday duty management.
         </p>
       </div>
+
+      {/* ── Specialized Unit Workspaces: Follow-Up & Discipleship Integration ── */}
+      {normUnitId === "followup_hospitality" && (
+        <FollowUpPipelineCard currentUser={user} />
+      )}
+
+      {normUnitId === "discipleship_evangelism" && (
+        <DiscipleshipCohortCard currentUser={user} />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "24px", alignItems: "start" }}>
         {/* Left Column: Unit Roster */}

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { db } from "@/lib/firebase";
 import { PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface RosterAssignment {
   id?: string;
@@ -79,24 +79,28 @@ export default function UnitRosterPage() {
         setSelectedMember("");
       }
 
-      // Fetch unit roster
+      // Fetch unit roster — via Admin SDK API (bypasses Firestore permission restrictions)
       try {
-        const rq = query(collection(db, "unit_rosters"), where("unitId", "==", targetUnitId));
-        const rsnap = await getDocs(rq);
-        const rList = rsnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
-        rList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
-        setRoster(rList);
+        const rRes = await fetch(`/api/portal/unit/roster?unitId=${encodeURIComponent(targetUnitId)}`);
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          const rList = (rData.roster || []) as RosterAssignment[];
+          rList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
+          setRoster(rList);
+        }
       } catch (err) {
         console.warn("Could not load unit roster:", err);
       }
 
-      // Fetch all assignments across all units to detect cross-unit conflicts on same Sunday
+      // Fetch all assignments for cross-unit conflict detection
       try {
-        const allSnap = await getDocs(collection(db, "unit_rosters"));
-        const allList = allSnap.docs.map((d) => ({ id: d.id, ...d.data() } as RosterAssignment));
-        setAllRosters(allList);
+        const allRes = await fetch("/api/portal/unit/roster?all=true");
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          setAllRosters((allData.roster || []) as RosterAssignment[]);
+        }
       } catch {
-        // Fallback
+        // non-critical fallback
       }
     } finally {
       setLoading(false);
@@ -146,18 +150,21 @@ export default function UnitRosterPage() {
         ? (customServiceName.trim() || "Special Church Program")
         : serviceName;
 
-      const newEntry: RosterAssignment = {
-        unitId: normUnitId,
-        serviceName: resolvedServiceName,
-        serviceDate,
-        memberName: selectedMember,
-        memberUid: mem?.uid || "",
-        dutyRole: dutyRole.trim(),
-        status: "scheduled",
-        notes: notes.trim() || undefined,
-      };
-
-      await addDoc(collection(db, "unit_rosters"), newEntry);
+      const res = await fetch("/api/portal/unit/roster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: normUnitId,
+          serviceName: resolvedServiceName,
+          serviceDate,
+          memberName: selectedMember,
+          memberUid: mem?.uid || "",
+          dutyRole: dutyRole.trim(),
+          notes: notes.trim() || "",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to assign duty");
 
       // Dispatch in-portal notification to the scheduled member
       if (mem?.uid || mem?.email) {
@@ -232,7 +239,7 @@ export default function UnitRosterPage() {
   const handleDelete = async (id?: string) => {
     if (!id || !confirm("Delete this duty assignment?")) return;
     try {
-      await deleteDoc(doc(db, "unit_rosters", id));
+      await fetch(`/api/portal/unit/roster?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (user?.assignedUnitId) fetchUnitData(user.assignedUnitId);
     } catch (e) {
       console.error(e);

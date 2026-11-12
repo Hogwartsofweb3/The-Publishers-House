@@ -7,11 +7,12 @@ import { signOut, updatePassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser, UserRole, Campus } from "@/lib/portalAuth";
-import { getRoleLabel, normalizeUnitId, UNITS } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId, UNITS, DUAL_ROLE_PASTORS } from "@/lib/portalAuth";
 import { PortalProvider, usePortal } from "@/lib/portalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
 import PwaInstallPrompt from "@/components/portal/PwaInstallPrompt";
 import Sidebar from "@/components/portal/Sidebar";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 function PortalHeaderAndContent({
   user,
@@ -37,6 +38,9 @@ function PortalHeaderAndContent({
   const [showPasswordModal, setShowPasswordModal] = useState(
     Boolean(user.mustChangePassword)
   );
+
+  // Register push notification subscription for this user silently in background
+  usePushNotifications({ uid: user.uid, email: user.email, enabled: true });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showModalPassword, setShowModalPassword] = useState(false);
@@ -240,87 +244,116 @@ function PortalHeaderAndContent({
               <span style={{ color: "#141C6E" }}>{getSectionTitle()}</span>
             </div>
 
-            {/* Quick Context Switcher for Dual-Role Admins & Unit Heads */}
+            {/* Quick Context Switcher for Dual-Role Admins & Unit Heads (3-Way Seamless Switcher) */}
             {(() => {
-              const isUnitRoute = pathname.startsWith("/portal/unit");
-              const isMemberRoute = pathname.startsWith("/portal/member");
+              const emailClean = (effectiveUser.email || "").trim().toLowerCase();
+              const dualMatch = DUAL_ROLE_PASTORS[emailClean];
+              const resolvedUnitId = dualMatch ? dualMatch.unitId : normalizeUnitId(effectiveUser.assignedUnitId);
+              const userUnit = UNITS.find((u) => u.id === resolvedUnitId);
+
               const isSuperOrAdmin =
                 effectiveUser.role === "super_admin" ||
                 effectiveUser.role === "admin" ||
                 effectiveUser.role === "portal_manager";
-              const userUnit = UNITS.find((u) => u.id === normalizeUnitId(effectiveUser.assignedUnitId));
+
               const isUnitHead = Boolean(
                 effectiveUser.role === "unit_head" ||
                 effectiveUser.isUnitHead ||
-                effectiveUser.roles?.includes("unit_head")
+                effectiveUser.roles?.includes("unit_head") ||
+                dualMatch
               );
-              const isDualAdmin = isSuperOrAdmin && isUnitHead && Boolean(userUnit);
 
-              if (isDualAdmin) {
+              const isDualAdmin = (isSuperOrAdmin && isUnitHead && Boolean(userUnit)) || Boolean(dualMatch);
+
+              const isUnitRoute = pathname.startsWith("/portal/unit");
+              const isMemberRoute = pathname.startsWith("/portal/member");
+              const isAdminRoute = !isUnitRoute && !isMemberRoute && pathname.startsWith("/portal");
+
+              if (isDualAdmin && userUnit) {
                 return (
-                  <div className="portal-desktop-only" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "14px" }}>
-                    {isUnitRoute ? (
-                      <Link
-                        href="/portal"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          padding: "4px 10px",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
-                          borderRadius: "6px",
-                          color: "#3730A3",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
-                        <span>← Admin Dashboard</span>
-                      </Link>
-                    ) : (
-                      <Link
-                        href="/portal/unit"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          padding: "4px 10px",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
-                          borderRadius: "6px",
-                          color: "#3730A3",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                        }}
-                      >
-                        <span>🛡️ {userUnit?.name} Command →</span>
-                      </Link>
-                    )}
+                  <div
+                    className="portal-desktop-only"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      backgroundColor: "#EEF2FF",
+                      borderRadius: "10px",
+                      padding: "3px",
+                      border: "1px solid #C7D2FE",
+                      marginLeft: "14px",
+                      gap: "2px",
+                    }}
+                  >
+                    {/* 1. Admin Dashboard */}
                     <Link
-                      href={isMemberRoute ? "/portal" : "/portal/member"}
+                      href="/portal"
+                      title="Church Administration Dashboard"
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "5px",
-                        padding: "4px 10px",
-                        backgroundColor: "#F1F5F9",
-                        border: "1px solid #E2E8F0",
-                        borderRadius: "6px",
-                        color: "#475569",
+                        padding: "5px 12px",
+                        borderRadius: "7px",
+                        backgroundColor: isAdminRoute ? "#1F46C8" : "transparent",
+                        color: isAdminRoute ? "#FFFFFF" : "#3730A3",
                         fontSize: "11px",
-                        fontWeight: 600,
+                        fontWeight: 700,
                         textDecoration: "none",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        transition: "all 0.15s ease",
                       }}
                     >
-                      <span>{isMemberRoute ? "← Admin View" : "👤 Member Profile"}</span>
+                      <span>🏛️ Admin</span>
+                    </Link>
+
+                    {/* 2. Unit Command Center */}
+                    <Link
+                      href="/portal/unit"
+                      title={`${userUnit.name} Unit Command Center`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "5px 12px",
+                        borderRadius: "7px",
+                        backgroundColor: isUnitRoute ? "#1F46C8" : "transparent",
+                        color: isUnitRoute ? "#FFFFFF" : "#3730A3",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span>🛡️ {userUnit.name}</span>
+                    </Link>
+
+                    {/* 3. My Member Profile */}
+                    <Link
+                      href="/portal/member"
+                      title="Personal Member Profile & Spiritual Walk"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "5px 12px",
+                        borderRadius: "7px",
+                        backgroundColor: isMemberRoute ? "#1F46C8" : "transparent",
+                        color: isMemberRoute ? "#FFFFFF" : "#3730A3",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span>👤 Member</span>
                     </Link>
                   </div>
                 );
               }
 
-              if (isUnitHead) {
+              if (isUnitHead && userUnit) {
                 return (
                   <div className="portal-desktop-only" style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "14px" }}>
                     <Link
@@ -340,7 +373,7 @@ function PortalHeaderAndContent({
                         fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                       }}
                     >
-                      <span>{isUnitRoute ? "👤 Switch to Member Profile →" : `🛡️ Switch to ${userUnit?.name || "Unit"} Command →`}</span>
+                      <span>{isUnitRoute ? "👤 Switch to Member Profile →" : `🛡️ Switch to ${userUnit.name} Command →`}</span>
                     </Link>
                   </div>
                 );
@@ -638,17 +671,17 @@ function PortalHeaderAndContent({
             <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
               <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase" }}>Role:</span>
               <select
-                value={previewRole || ""}
+                value={previewRole ? (previewUnitId ? `${previewRole}_${previewUnitId}` : previewRole) : ""}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (!val) {
                     exitPreview();
-                  } else if (val === "unit_head_ushering") {
-                    startPreview("unit_head", "ushering");
-                  } else if (val === "unit_head_media") {
-                    startPreview("unit_head", "media_technical");
-                  } else if (val === "unit_head_worship") {
-                    startPreview("unit_head", "worship");
+                  } else if (val.startsWith("unit_head_")) {
+                    const unitId = val.replace("unit_head_", "");
+                    startPreview("unit_head", unitId);
+                  } else if (val.startsWith("member_")) {
+                    const unitId = val.replace("member_", "");
+                    startPreview("member", unitId);
                   } else {
                     startPreview(val as UserRole);
                   }
@@ -666,13 +699,25 @@ function PortalHeaderAndContent({
                 }}
               >
                 <option value="">👁️ Normal</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Administrator</option>
-                <option value="portal_manager">Portal Manager</option>
-                <option value="unit_head_ushering">Unit Head (Ushering)</option>
-                <option value="unit_head_media">Unit Head (Media)</option>
-                <option value="unit_head_worship">Unit Head (Worship)</option>
-                <option value="member">Regular Member</option>
+                <optgroup label="👑 Leadership">
+                  <option value="super_admin">Super Admin</option>
+                  <option value="admin">Administrator</option>
+                  <option value="portal_manager">Portal Manager</option>
+                </optgroup>
+                <optgroup label="🛡️ Preview as Unit Head (13 Units)">
+                  {UNITS.map((u) => (
+                    <option key={`m_head_${u.id}`} value={`unit_head_${u.id}`}>
+                      Head of {u.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="👥 Preview as Unit Worker (13 Units)">
+                  {UNITS.map((u) => (
+                    <option key={`m_mem_${u.id}`} value={`member_${u.id}`}>
+                      Worker in {u.name}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
             </div>
           </div>

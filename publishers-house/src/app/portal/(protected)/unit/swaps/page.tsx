@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
 import { UNITS, PortalUser } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc } from "firebase/firestore";
 
 interface SwapRequest {
   id?: string;
@@ -62,12 +60,18 @@ export default function UnitSwapsPage() {
       }
       setMembers(mList);
 
-      // Swaps — low-volume collection, client SDK is fine here
-      const sq = query(collection(db, "unit_swaps"), where("unitId", "==", unitId));
-      const ssnap = await getDocs(sq);
-      const list = ssnap.docs.map((d) => ({ id: d.id, ...d.data() } as SwapRequest));
-      list.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
-      setSwaps(list);
+      // Swaps — via Admin SDK API route (bypasses Firestore permission restrictions)
+      try {
+        const sRes = await fetch(`/api/portal/unit/swaps?unitId=${encodeURIComponent(unitId)}`);
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const list = (sData.swaps || []) as SwapRequest[];
+          list.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+          setSwaps(list);
+        }
+      } catch (e) {
+        console.error("Failed to load swaps:", e);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -81,18 +85,22 @@ export default function UnitSwapsPage() {
     setSubmitting(true);
     setMsg("");
     try {
-      const newSwap: SwapRequest = {
-        unitId: normUnitId,
-        requesterName: effectiveUser?.displayName || effectiveUser?.email || "Unit Member",
-        requesterUid: effectiveUser?.uid || "anon",
-        serviceDate,
-        dutyRole,
-        proposedSwapMember,
-        reason,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-      await addDoc(collection(db, "unit_swaps"), newSwap);
+      const res = await fetch("/api/portal/unit/swaps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: normUnitId,
+          requesterName: effectiveUser?.displayName || effectiveUser?.email || "Unit Member",
+          requesterUid: effectiveUser?.uid || "anon",
+          serviceDate,
+          dutyRole,
+          proposedSwapMember,
+          reason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit swap request");
+
       setMsg("Swap request submitted successfully ✓");
       setReason("");
       setDutyRole("");
@@ -108,7 +116,11 @@ export default function UnitSwapsPage() {
   const handleUpdateStatus = async (swapId?: string, newStatus?: "approved" | "rejected") => {
     if (!swapId || !newStatus) return;
     try {
-      await updateDoc(doc(db, "unit_swaps", swapId), { status: newStatus });
+      await fetch("/api/portal/unit/swaps", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ swapId, status: newStatus }),
+      });
       if (normUnitId) fetchUnitData(normUnitId);
     } catch (e) {
       console.error(e);

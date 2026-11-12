@@ -7,7 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser } from "@/lib/portalAuth";
-import { getRoleLabel, normalizeUnitId, UNITS } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId, UNITS, DUAL_ROLE_PASTORS } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 
 // ── Realistic Vector SVGs (Brand compliant, non-AI) ──────────────────────────
@@ -211,13 +211,17 @@ export default function Sidebar({
     activeRole === "portal_manager" ||
     isSecretariat;
 
-  const assignedUnit = UNITS.find((u) => u.id === normalizeUnitId(activeUser.assignedUnitId));
+  const emailClean = (activeUser.email || "").trim().toLowerCase();
+  const dualMatch = DUAL_ROLE_PASTORS[emailClean];
+  const resolvedUnitId = dualMatch ? dualMatch.unitId : normalizeUnitId(activeUser.assignedUnitId);
+  const assignedUnit = UNITS.find((u) => u.id === resolvedUnitId);
   const isUnitHead = Boolean(
     activeRole === "unit_head" ||
     activeUser.isUnitHead ||
-    activeUser.roles?.includes("unit_head")
+    activeUser.roles?.includes("unit_head") ||
+    dualMatch
   );
-  const isDualUnitHead = isSuperOrAdminOrManager && isUnitHead && Boolean(assignedUnit);
+  const isDualUnitHead = (isSuperOrAdminOrManager && isUnitHead && Boolean(assignedUnit)) || Boolean(dualMatch);
 
   // Active zone tracking
   const isUnitRoute = pathname.startsWith("/portal/unit");

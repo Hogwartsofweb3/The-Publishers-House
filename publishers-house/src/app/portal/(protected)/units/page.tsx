@@ -32,6 +32,7 @@ const UNIT_ICONS: Record<string, string> = {
   transportation: "🚌",
   prayer: "🙏",
   followup_hospitality: "🤝",
+  discipleship_evangelism: "📖",
 };
 
 const UNIT_SCHEDULES: Record<string, string> = {
@@ -48,6 +49,7 @@ const UNIT_SCHEDULES: Record<string, string> = {
   transportation: "Sundays 6:30 AM (Campus Shuttles)",
   prayer: "Fridays 6:00 PM & Sundays 6:30 AM (Intercession)",
   followup_hospitality: "Sundays after 2nd service & Tuesdays",
+  discipleship_evangelism: "Saturdays 10:00 AM (Foundation Classes) & Outreaches",
 };
 
 export default function UnitsPage() {

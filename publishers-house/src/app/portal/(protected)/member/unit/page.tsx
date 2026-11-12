@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePortal } from "@/lib/portalContext";
-import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { UNITS, PortalUser, normalizeUnitId, DESIGNATED_UNIT_HEADS } from "@/lib/portalAuth";
 import { getPortalUser } from "@/lib/portalAuth";
 
 interface UnitMemberInfo {
@@ -27,15 +27,16 @@ const UNIT_DESCRIPTIONS: Record<string, string> = {
   transportation: "Assembly logistics, convoy coordination, and bus transportation service.",
   prayer: "Intercessory altar, vigil preparations, and prayer coverage for church meetings.",
   followup_hospitality: "First-timer integration, new converts follow-up, and fellowship hospitality.",
+  discipleship_evangelism: "Spiritual formation, foundation classes, evangelistic outreaches, and disciple-making.",
 };
 
 export default function MemberUnitInfoPage() {
-  const { effectiveUser } = usePortal();
+  const { effectiveUser, currentUser, previewRole } = usePortal();
   const [unitMembers, setUnitMembers] = useState<UnitMemberInfo[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [unitHead, setUnitHead] = useState<{ name: string; email?: string; phone?: string } | null>(null);
 
-  const assignedUnitId = effectiveUser?.assignedUnitId?.toLowerCase() || "";
+  const assignedUnitId = normalizeUnitId(effectiveUser?.assignedUnitId);
   const unit = UNITS.find((u) => u.id === assignedUnitId);
 
   useEffect(() => {
@@ -52,54 +53,62 @@ export default function MemberUnitInfoPage() {
         if (res.ok) {
           const data = await res.json();
           membersList = (data.members || []).filter(
-            (m: any) => (m.assignedUnitId || "").toLowerCase() === assignedUnitId
+            (m: any) => normalizeUnitId(m.assignedUnitId) === assignedUnitId
           );
         }
 
-        // Include effectiveUser if previewing or belonging to this unit
-        if (effectiveUser && (effectiveUser.assignedUnitId || "").toLowerCase() === assignedUnitId) {
+        // Never inject the previewing super-admin or portal manager into unit members
+        const previewEmails = new Set(["thepublishershouse007@gmail.com", "joshuaagunbiade@gmail.com"]);
+        membersList = membersList.filter((m: any) => !previewEmails.has((m.email || "").toLowerCase()));
+
+        // If the real authenticated user genuinely belongs to this unit (and is NOT previewing a different role)
+        if (!previewRole && currentUser && normalizeUnitId(currentUser.assignedUnitId) === assignedUnitId) {
           const already = membersList.some(
-            (m: any) => (m.email && m.email.toLowerCase() === effectiveUser.email.toLowerCase()) || m.id === effectiveUser.uid
+            (m: any) => (m.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) || m.id === currentUser.uid
           );
           if (!already) {
             membersList.unshift({
-              id: effectiveUser.uid,
-              displayName: effectiveUser.displayName || effectiveUser.email,
-              email: effectiveUser.email,
-              phone: effectiveUser.phone,
-              isUnitHead: effectiveUser.role === "unit_head",
+              id: currentUser.uid,
+              displayName: currentUser.displayName || currentUser.email,
+              email: currentUser.email,
+              phone: currentUser.phone,
+              isUnitHead: Boolean(currentUser.isUnitHead || currentUser.role === "unit_head"),
             });
           }
         }
 
         setUnitMembers(membersList);
 
-        // Determine Unit Head
-        if (effectiveUser?.role === "unit_head" && (effectiveUser.assignedUnitId || "").toLowerCase() === assignedUnitId) {
+        // Determine Unit Head:
+        // Priority 1: Genuine unit head in database for this specific unit (excluding preview administrators)
+        const dbHead = membersList.find(
+          (m: any) =>
+            (m.role === "unit_head" || m.isUnitHead) &&
+            normalizeUnitId(m.assignedUnitId) === assignedUnitId &&
+            !previewEmails.has((m.email || "").toLowerCase())
+        );
+
+        if (dbHead) {
           setUnitHead({
-            name: effectiveUser.displayName || "Unit Head",
-            email: effectiveUser.email,
-            phone: effectiveUser.phone || "+234 813 906 3144",
+            name: dbHead.displayName || "Unit Head",
+            email: dbHead.email,
+            phone: dbHead.phone || "+234 813 906 3144",
+          });
+        } else if (DESIGNATED_UNIT_HEADS[assignedUnitId]) {
+          // Priority 2: Canonical designated lead for this unit
+          const designated = DESIGNATED_UNIT_HEADS[assignedUnitId];
+          setUnitHead({
+            name: designated.name,
+            email: designated.email,
+            phone: designated.phone || "+234 813 906 3144",
           });
         } else {
-          // Look strictly within this unit's roster for a designated head
-          const head = membersList.find(
-            (m: any) => (m.role === "unit_head" || m.isUnitHead) && (m.assignedUnitId || "").toLowerCase() === assignedUnitId
-          );
-          if (head) {
-            setUnitHead({
-              name: head.displayName || "Unit Head",
-              email: head.email,
-              phone: head.phone,
-            });
-          } else {
-            // General pastoral administration oversight for units without a distinct head yet
-            setUnitHead({
-              name: "Pastoral Oversight · The Publishers House",
-              email: "thepublishershouse007@gmail.com",
-              phone: "+234 813 906 3144",
-            });
-          }
+          // Priority 3: Pastoral Oversight
+          setUnitHead({
+            name: "Pastoral Oversight · The Publishers House",
+            email: "thepublishershouse007@gmail.com",
+            phone: "+234 813 906 3144",
+          });
         }
       } catch (err) {
         console.warn("Could not load unit team members:", err);
@@ -109,7 +118,7 @@ export default function MemberUnitInfoPage() {
     };
 
     fetchUnitTeam();
-  }, [assignedUnitId, effectiveUser?.role, effectiveUser?.assignedUnitId, effectiveUser?.email, effectiveUser?.displayName]);
+  }, [assignedUnitId, previewRole, currentUser?.assignedUnitId, currentUser?.email]);
 
   if (!unit) {
     return (

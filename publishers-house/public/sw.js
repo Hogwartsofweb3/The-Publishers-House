@@ -1,43 +1,78 @@
-// The Publishers House — PWA Service Worker
-const CACHE_NAME = "tph-portal-v1";
-const OFFLINE_URLS = ["/portal", "/portal/login", "/favicon.ico", "/icon-192x192.png"];
+// Service Worker for The Publishers House Portal Push Notifications
+const CACHE_NAME = 'tph-portal-v1';
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(OFFLINE_URLS).catch(() => {});
-    })
-  );
+// Install event
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
+// Activate event
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("fetch", (event) => {
-  // Let network handle API and auth requests directly
-  if (
-    event.request.method !== "GET" ||
-    event.request.url.includes("/api/") ||
-    event.request.url.includes("firebase") ||
-    event.request.url.includes("identitytoolkit")
-  ) {
-    return;
+// Push event — triggered when server sends a notification
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: 'The Publishers House', body: event.data.text() };
   }
 
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request).then((cached) => {
-        return cached || (event.request.mode === "navigate" ? caches.match("/portal") : null);
-      });
+  const {
+    title = 'The Publishers House',
+    body = 'You have a new update.',
+    icon = '/android-chrome-192x192.png',
+    badge = '/android-chrome-192x192.png',
+    link = '/portal/member',
+    tag = 'tph-notification',
+  } = payload;
+
+  const options = {
+    body,
+    icon,
+    badge,
+    tag,
+    data: { link },
+    vibrate: [100, 50, 100],
+    requireInteraction: false,
+    actions: [
+      { action: 'open', title: 'Open Portal' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// Notification click — open the deep link
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') return;
+
+  const link = (event.notification.data && event.notification.data.link) || '/portal/member';
+  const targetUrl = new URL(link, self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If portal is already open, focus it and navigate
+      for (const client of windowClients) {
+        if (client.url.includes('/portal') && 'focus' in client) {
+          client.focus();
+          if ('navigate' in client) client.navigate(targetUrl);
+          return;
+        }
+      }
+      // Otherwise open a new tab
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
     })
   );
 });

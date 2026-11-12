@@ -40,13 +40,50 @@ export const UNITS = [
   { id: "transportation", name: "Transportation" },
   { id: "prayer", name: "Prayer" },
   { id: "followup_hospitality", name: "Follow Up & Hospitality" },
+  { id: "discipleship_evangelism", name: "Discipleship & Evangelism" },
 ];
+
+/** Canonical designated unit leaders mapping */
+export const DESIGNATED_UNIT_HEADS: Record<string, { name: string; email: string; phone?: string }> = {
+  media_technical: { name: "Pastor Theophilus Makinde", email: "tmakind@gmail.com", phone: "+234 8162264549" },
+  editorial: { name: "Pastor Ngbede Odeh", email: "odehngbes@gmail.com", phone: "+234 8186335861" },
+  prayer: { name: "Pastor Ayodele Oluwadamilare", email: "Ayodeledare86@gmail.com", phone: "+234 8035036498" },
+  worship: { name: "Samson Adebayo", email: "adebayosamson888@gmail.com", phone: "+234 8116643403" },
+  welfare: { name: "Ifedayo Mary Agunbiade", email: "maryomoyele@gmail.com", phone: "+234 8108697026" },
+  protocol: { name: "David Jatto", email: "davidjatto2020@gmail.com", phone: "+234 8139063144" },
+  ushering: { name: "Ushering Leadership · TPH", email: "ushering@thepublishershouse.org", phone: "+234 8139063144" },
+  children: { name: "Children Ministry Lead", email: "children@thepublishershouse.org" },
+  secretariat: { name: "Secretariat & Registry Desk", email: "thepublishershouse007@gmail.com" },
+  transportation: { name: "Transportation Logistics Lead", email: "transport@thepublishershouse.org" },
+  sanctuary: { name: "Sanctuary Order Lead", email: "sanctuary@thepublishershouse.org" },
+  followup_hospitality: { name: "Follow Up & Hospitality Team", email: "followup@thepublishershouse.org" },
+  discipleship_evangelism: { name: "Discipleship & Evangelism Team", email: "discipleship@thepublishershouse.org" },
+};
+
+/** Dual-Role Admins who are also Unit Heads */
+export const DUAL_ROLE_PASTORS: Record<string, { name: string; unitId: string }> = {
+  "tmakind@gmail.com": { name: "Pastor Theophilus Makinde", unitId: "media_technical" },
+  "odehngbes@gmail.com": { name: "Pastor Ngbede Odeh", unitId: "editorial" },
+  "ayodeledare86@gmail.com": { name: "Pastor Ayodele Oluwadamilare", unitId: "prayer" },
+};
 
 export function normalizeUnitId(unitId?: string): string {
   if (!unitId) return "";
-  if (unitId === "registration") return "secretariat";
-  if (unitId === "media") return "media_technical";
-  return unitId;
+  const clean = unitId.trim().toLowerCase();
+  if (clean === "registration") return "secretariat";
+  if (clean === "media") return "media_technical";
+  if (clean === "discipleship" || clean === "evangelism") return "discipleship_evangelism";
+  if (clean === "followup" || clean === "hospitality" || clean === "follow_up") return "followup_hospitality";
+  return clean;
+}
+
+export function getDualRoleUnit(email?: string, assignedUnitId?: string): string {
+  if (!email) return normalizeUnitId(assignedUnitId);
+  const clean = email.trim().toLowerCase();
+  if (DUAL_ROLE_PASTORS[clean]) {
+    return DUAL_ROLE_PASTORS[clean].unitId;
+  }
+  return normalizeUnitId(assignedUnitId);
 }
 
 export async function getPortalUser(uid: string): Promise<PortalUser | null> {
@@ -157,14 +194,18 @@ export function isChurchAdmin(user?: PortalUser | null): boolean {
 /** Returns true if user is a Unit Head (either as their primary role or as an admin leading a unit) */
 export function isUserUnitHead(user?: PortalUser | null, unitId?: string): boolean {
   if (!user) return false;
+  const email = (user.email || "").trim().toLowerCase();
+  const dualUnit = DUAL_ROLE_PASTORS[email]?.unitId;
   const isHead =
     user.role === "unit_head" ||
     user.isUnitHead === true ||
-    Boolean(user.roles?.includes("unit_head"));
+    Boolean(user.roles?.includes("unit_head")) ||
+    Boolean(dualUnit);
 
   if (!isHead) return false;
   if (!unitId) return true;
-  return normalizeUnitId(user.assignedUnitId) === normalizeUnitId(unitId);
+  const effectiveUnit = dualUnit || normalizeUnitId(user.assignedUnitId);
+  return effectiveUnit === normalizeUnitId(unitId);
 }
 
 /** Returns all active role tags for a user (supporting dual-role e.g. Administrator + Unit Head) */

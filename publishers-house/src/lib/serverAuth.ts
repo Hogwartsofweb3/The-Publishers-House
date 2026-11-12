@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 import { SESSION_COOKIE } from "@/lib/sessionCookie";
 import type { ActivityTier, PortalUser, UserRole } from "@/lib/portalAuth";
-import { normalizeUnitId } from "@/lib/portalAuth";
+import { normalizeUnitId, DUAL_ROLE_PASTORS } from "@/lib/portalAuth";
 
 const ROLES: UserRole[] = ["super_admin", "admin", "portal_manager", "unit_head", "member"];
 const TIERS: ActivityTier[] = ["seeker", "regular", "active", "leader"];
@@ -58,6 +58,25 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
       ? rawTier
       : (isJoshua || isPortalManager ? "leader" : "regular");
 
+    const dualInfo = DUAL_ROLE_PASTORS[email];
+    const isDualPastor = Boolean(dualInfo);
+    const assignedUnitId = typeof data?.assignedUnitId === "string" && data.assignedUnitId
+      ? data.assignedUnitId
+      : (isDualPastor ? dualInfo.unitId : undefined);
+
+    const isUnitHead = Boolean(
+      data?.isUnitHead ||
+      data?.role === "unit_head" ||
+      (Array.isArray(data?.roles) && data.roles.includes("unit_head")) ||
+      isDualPastor
+    );
+
+    const roles: UserRole[] = Array.isArray(data?.roles) && data.roles.length > 0
+      ? data.roles
+      : (isDualPastor || isUnitHead) && role !== "unit_head"
+      ? [role, "unit_head"]
+      : [role];
+
     return {
       uid: decoded.uid,
       email: decoded.email || email,
@@ -66,7 +85,9 @@ export async function requirePortalUser(): Promise<PortalUser | null> {
         : (isJoshua ? "Rev. Joshua Agunbiade" : (isPortalManager ? "TPH Content Manager" : decoded.name || "Member")),
       phone: typeof data?.phone === "string" ? data.phone : undefined,
       role,
-      assignedUnitId: typeof data?.assignedUnitId === "string" ? data.assignedUnitId : undefined,
+      isUnitHead,
+      roles,
+      assignedUnitId,
       activityTier,
       campus: data?.campus || "jos",
       mustChangePassword: Boolean(data?.mustChangePassword),

@@ -74,15 +74,31 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const user = await requirePortalUser();
-    const isAdmin = user && (
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAdmin = Boolean(
       user.role === "admin" ||
       user.role === "super_admin" ||
       user.role === "portal_manager" ||
+      user.roles?.includes("admin") ||
       user.email === "joshuaagunbiade@gmail.com" ||
       user.email === "thepublishershouse007@gmail.com"
     );
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+
+    const isFollowupOrDiscipleshipWorker = Boolean(
+      user.isUnitHead ||
+      user.role === "unit_head" ||
+      user.roles?.includes("unit_head") ||
+      user.assignedUnitId === "followup_hospitality" ||
+      user.assignedUnitId === "follow_up" ||
+      user.assignedUnitId === "followup" ||
+      user.assignedUnitId === "discipleship_evangelism"
+    );
+
+    if (!isAdmin && !isFollowupOrDiscipleshipWorker) {
+      return NextResponse.json({ error: "Forbidden: Admin or Unit Leadership access required" }, { status: 403 });
     }
 
     const body = await req.json();

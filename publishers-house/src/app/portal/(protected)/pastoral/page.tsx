@@ -312,6 +312,29 @@ export default function PastoralCarePage() {
     }
   };
 
+  // Handover first-timer from Follow-Up to Discipleship & Evangelism unit
+  const handleHandoverToDiscipleship = async (visitor: Visitor) => {
+    if (!confirm(`Hand over ${visitor.name} to the Discipleship & Evangelism unit?\n\nThis will move them out of the Follow-Up pipeline.`)) return;
+    try {
+      await fetch("/api/portal/visitors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: visitor.id,
+          status: "handed_over_to_discipleship",
+          targetUnit: "discipleship_evangelism",
+          handoverDate: new Date().toISOString(),
+          handoverBy: assignedPastorInput || "Follow-Up Team",
+        }),
+      });
+      setVisitors((prev) => prev.filter((v) => v.id !== visitor.id));
+      setMsg(`${visitor.name} handed over to Discipleship & Evangelism ✦`);
+      setTimeout(() => setMsg(""), 4000);
+    } catch (err: any) {
+      setMsg(`✗ Error: ${err.message}`);
+    }
+  };
+
   // Save Pastoral Notes from Drawer
   const handleSaveDrawerNotes = async () => {
     if (!selectedDrawerMember) return;
@@ -1154,6 +1177,31 @@ export default function PastoralCarePage() {
                                 }}
                               >
                                 {col.key === "new" ? "To Follow-Up →" : "Establish ✓"}
+                              </button>
+                            )}
+
+                            {/* Handover to Discipleship — only on followup column */}
+                            {col.key === "followup" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleHandoverToDiscipleship(v);
+                                }}
+                                style={{
+                                  flex: 1.2,
+                                  padding: "6px 10px",
+                                  backgroundColor: "#7C3AED",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  color: "#FFFFFF",
+                                  cursor: "pointer",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title="Transfer this person to the Discipleship & Evangelism unit"
+                              >
+                                Handover ✦
                               </button>
                             )}
                           </div>

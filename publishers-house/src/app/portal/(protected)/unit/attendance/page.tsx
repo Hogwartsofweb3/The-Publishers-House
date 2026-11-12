@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { UNITS, PortalUser } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
-import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface UnitAttendanceRecord {
   id?: string;
@@ -92,11 +92,11 @@ export default function UnitAttendancePage() {
 
         // Attendance history for this unit
         try {
-          const aq = query(collection(db, "unit_attendance"), where("unitId", "==", normUnitId));
-          const asnap = await getDocs(aq);
-          const aList = asnap.docs.map((d) => ({ id: d.id, ...d.data() } as UnitAttendanceRecord));
-          aList.sort((a, b) => (a.serviceDate > b.serviceDate ? -1 : 1));
-          setAttendanceRecords(aList);
+          const aRes = await fetch(`/api/portal/unit/attendance?unitId=${encodeURIComponent(normUnitId)}`);
+          if (aRes.ok) {
+            const aData = await aRes.json();
+            setAttendanceRecords(aData.records || []);
+          }
         } catch (e) {
           console.warn("Could not load attendance history:", e);
         }
@@ -129,25 +129,29 @@ export default function UnitAttendancePage() {
         .filter(([, checked]) => checked)
         .map(([name]) => name);
 
-      const record: UnitAttendanceRecord = {
-        unitId: normUnitId,
-        serviceDate,
-        serviceName: resolvedService,
-        presentCount: presentNames.length,
-        totalMembers: members.length,
-        presentMembers: presentNames,
-        notes: notes.trim() || undefined,
-        recordedBy: effectiveUser?.displayName || effectiveUser?.email || "Unit Leadership",
-        createdAt: new Date().toISOString(),
-      };
+      const res = await fetch("/api/portal/unit/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: normUnitId,
+          unitName: activeUnit?.name || normUnitId,
+          serviceDate,
+          serviceName: resolvedService,
+          headcount: presentNames.length,
+          totalMembers: members.length,
+          presentMembers: presentNames,
+          notes: notes.trim() || "",
+          recordedBy: effectiveUser?.displayName || effectiveUser?.email || "Unit Leadership",
+        }),
+      });
 
-      await addDoc(collection(db, "unit_attendance"), record);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save attendance");
+
       setMsg("Unit service attendance recorded successfully ✓");
       setNotes("");
-      if (serviceName === "custom") {
-        setCustomServiceName("");
-      }
-      setAttendanceRecords((prev) => [record, ...prev]);
+      if (serviceName === "custom") setCustomServiceName("");
+      setAttendanceRecords((prev) => [data.record, ...prev]);
       setTimeout(() => setMsg(""), 4000);
     } catch (err: any) {
       alert("Error: " + err.message);
