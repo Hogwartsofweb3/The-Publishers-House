@@ -102,6 +102,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       "@farcaster/mini-app-solana": "./src/lib/empty.js",
+      "@solana-program/system": "./src/lib/empty.js",
+      "@solana-program/token": "./src/lib/empty.js",
+      "@solana-program/memo": "./src/lib/empty.js",
+      "@solana/kit": "./src/lib/empty.js",
+      "@solana/web3.js": "./src/lib/empty.js",
     },
   },
   webpack: (config, { isServer }) => {
@@ -109,6 +114,11 @@ const nextConfig: NextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@farcaster/mini-app-solana": false,
+      "@solana-program/system": false,
+      "@solana-program/token": false,
+      "@solana-program/memo": false,
+      "@solana/kit": false,
+      "@solana/web3.js": false,
     };
 
     // On the client bundle, stub out Node.js built-ins that firebase-admin
