@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
+import type { AttendanceRecordItem, AtRiskMember } from "@/lib/types/portal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,37 +11,7 @@ export const dynamic = "force-dynamic";
  * November 5th, 2026 marks the first official church gathering (Festival of Light).
  * All test entries prior to this baseline are excluded from failing/at-risk analytics.
  */
-export const ATTENDANCE_BASELINE_DATE = "2026-11-05";
-
-export interface AttendanceRecordItem {
-  id: string;
-  date: string;
-  mode: "in_person" | "online" | string;
-  location: string;
-  streamChannel?: string;
-  serviceCode?: string;
-  timestamp?: string;
-}
-
-export interface AtRiskMember {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  totalAttended: number;
-  lastAttendedDate: string;
-  consecutiveMissed: number;
-  riskLevel: "high" | "moderate";
-  primaryCampus: "Jos Headquarters" | "Abuja Campus" | "Online Community" | "Unknown";
-  primaryMode: "in_person" | "online";
-  attendanceHistory: AttendanceRecordItem[];
-  recentServiceDates: { date: string; attended: boolean }[];
-  inPipeline: boolean;
-  visitorId?: string;
-  pipelineStatus?: "new" | "followup" | "established";
-  assignedTo?: string;
-  notes?: string;
-}
+const ATTENDANCE_BASELINE_DATE = "2026-11-05";
 
 function normalizePhone(phone?: string): string {
   if (!phone) return "";

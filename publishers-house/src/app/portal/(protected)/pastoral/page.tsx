@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import type { AtRiskMember, AttendanceRecordItem } from "@/app/api/portal/pastoral/at-risk/route";
+import type { AtRiskMember, AttendanceRecordItem } from "@/lib/types/portal";
 
 // Dynamically import heavy comparison tab — only needed when "compare" tab is active
 const AttendanceCompareTab = dynamic(

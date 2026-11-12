@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
+import type { PlaybackRecord } from "@/lib/types/portal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export interface PlaybackRecord {
-  id: string;
-  title: string;
-  speaker?: string;
-  series?: string;
-  scripture?: string;
-  videoUrl?: string;
-  audioUrl?: string;
-  spotifyEpisodeId?: string;
-  thumbnailUrl?: string;
-  progressSeconds: number;
-  durationSeconds: number;
-  percent: number;
-  completed: boolean;
-  updatedAt: string;
-  type: "sermon" | "resource";
-  resourceSlug?: string;
-}
 
 export async function GET() {
   try {

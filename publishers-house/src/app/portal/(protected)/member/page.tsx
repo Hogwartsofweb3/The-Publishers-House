@@ -9,7 +9,7 @@ import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel } from "@/
 import { getSermons, getArticles, Sermon, Article } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAudio, resolveMediaThumbnail, getYouTubeVideoId } from "@/components/GlobalAudioPlayer";
-import type { PlaybackRecord } from "@/app/api/portal/playback/route";
+import type { PlaybackRecord } from "@/lib/types/portal";
 import AddToCalendarButton from "@/components/portal/AddToCalendarButton";
 
 function formatSeconds(secs: number): string {

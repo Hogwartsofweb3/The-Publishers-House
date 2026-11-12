@@ -119,6 +119,7 @@ const nextConfig: NextConfig = {
       "@solana-program/memo": false,
       "@solana/kit": false,
       "@solana/web3.js": false,
+      "web-push": false,
     };
 
     // On the client bundle, stub out Node.js built-ins that firebase-admin

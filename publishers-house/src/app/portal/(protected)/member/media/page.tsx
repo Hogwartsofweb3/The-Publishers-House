@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAudio, resolveMediaThumbnail, getYouTubeVideoId } from "@/components/GlobalAudioPlayer";
-import type { PlaybackRecord } from "@/app/api/portal/playback/route";
+import type { PlaybackRecord } from "@/lib/types/portal";
 
 function formatSeconds(secs: number): string {
   if (isNaN(secs) || secs < 0) return "00:00";

@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const DEFAULT_CONTACT_DATA = {
+const DEFAULT_CONTACT_DATA = {
   // Jos Campus
   josAddress: "The House of Bread, Korinjoh House, British, Jos, Plateau State",
   josMapUrl: "https://maps.google.com/?q=Korinjoh+House+British+Jos+Plateau+State+Nigeria",

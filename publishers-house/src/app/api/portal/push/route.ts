@@ -78,16 +78,25 @@ async function handleSend(body: any) {
     return NextResponse.json({ ok: false, error: "message is required" }, { status: 400 });
   }
 
-  // Lazy-load web-push only on server
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  let webpush: any;
+  // Lazy-load web-push dynamically so Webpack does not statically analyze the package at build time
+  let webpush: any = null;
   try {
-    // dynamic require so TS doesn't complain if package not yet installed
-    webpush = require("web-push");
-    webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    const dynamicRequire =
+      typeof (globalThis as any).__non_webpack_require__ !== "undefined"
+        ? (globalThis as any).__non_webpack_require__
+        // eslint-disable-next-line no-eval
+        : eval("require");
+    webpush = dynamicRequire("web-push");
+    if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+      webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    }
   } catch (e: any) {
-    console.warn("web-push not installed — push skipped:", e.message);
+    console.warn("web-push not available — push skipped:", e?.message);
     return NextResponse.json({ ok: true, skipped: true, reason: "web-push not installed" });
+  }
+
+  if (!webpush) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "web-push not available" });
   }
 
   const adminDb = getAdminDb();

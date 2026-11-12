@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
-import { compileWeeklyDigest } from "@/app/api/portal/pastoral/digest/route";
+import { compileWeeklyDigest } from "@/lib/pastoralDigest";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

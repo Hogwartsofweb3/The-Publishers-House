@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
+import type { PortalNotification } from "@/lib/types/portal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export interface PortalNotification {
-  id: string;
-  userId: string;
-  userEmail?: string;
-  title: string;
-  message: string;
-  type: "duty_assigned" | "prayer_prayed" | "testimony_approved" | "announcement" | "general";
-  link?: string;
-  read: boolean;
-  createdAt: string;
-}
 
 export async function GET(req: NextRequest) {
   try {

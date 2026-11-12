@@ -5,9 +5,6 @@ import { DEFAULT_GIVING_DATA } from "@/lib/cmsDefaults";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Re-export so existing callers (if any) don't break
-export { DEFAULT_GIVING_DATA };
-
 export async function GET() {
   try {
     const doc = await getAdminDb().collection("settings").doc("church_giving").get();

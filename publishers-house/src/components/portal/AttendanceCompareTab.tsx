@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { UNITS } from "@/lib/portalAuth";
-import type { ComparedAttendee } from "@/app/api/portal/attendance/compare/route";
+import type { ComparedAttendee } from "@/lib/types/portal";
 
 interface AttendanceCompareTabProps {
   initialCampus?: "all" | "jos" | "abuja" | "online";

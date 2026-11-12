@@ -1,37 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
+import type { AttendanceDetail, ComparedAttendee } from "@/lib/types/portal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export interface AttendanceDetail {
-  attended: boolean;
-  mode?: "in_person" | "online" | string;
-  location?: string;
-  time?: string;
-  codeUsed?: string;
-}
-
-export interface ComparedAttendee {
-  key: string;
-  name: string;
-  phone: string;
-  email: string;
-  isMember: boolean;
-  memberUserId?: string;
-  memberRole?: string;
-  memberUnit?: string;
-  statusTag: "Member" | "Walk-in";
-  campus: string;
-  date1Detail: AttendanceDetail;
-  date2Detail: AttendanceDetail;
-  date3Detail: AttendanceDetail;
-  totalAttendedOutOf3: number;
-  consistencyRate: number;
-  isCandidateForMembership: boolean;
-  recommendationNote: string;
-}
 
 function normalizePhone(phone?: string): string {
   if (!phone) return "";

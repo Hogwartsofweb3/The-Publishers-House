@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const DEFAULT_SEO_DATA = {
+const DEFAULT_SEO_DATA = {
   siteTitle: "The Publishers House",
   siteTagline: "Raising Believers Whose Lives Publish Christ",
   siteDescription: "The Publishers House is an apostolic ministry in Jos, Nigeria, committed to proclaiming God's Word and equipping believers to publish Christ across every sphere of society.",

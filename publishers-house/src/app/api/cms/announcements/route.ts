@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const DEFAULT_ANNOUNCEMENT = {
+const DEFAULT_ANNOUNCEMENT = {
   enabled: false,
   text: "",
   linkUrl: "",
