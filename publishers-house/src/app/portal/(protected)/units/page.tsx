@@ -286,7 +286,7 @@ export default function UnitsPage() {
               borderRadius: "8px",
             }}
           >
-            12 Official Units
+            {UNITS.length} Official Units
           </span>
         </div>
       </div>
@@ -308,7 +308,7 @@ export default function UnitsPage() {
           }}
         >
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Total Church Units</div>
-          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "28px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>12</div>
+          <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "28px", fontWeight: 800, color: "#141C6E", marginTop: "4px" }}>{UNITS.length}</div>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#4A5490", marginTop: "2px" }}>Active ministry departments</div>
         </div>
 
@@ -322,10 +322,10 @@ export default function UnitsPage() {
         >
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", fontWeight: 600, color: "#4A5490", textTransform: "uppercase" }}>Assigned Unit Heads</div>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "28px", fontWeight: 800, color: "#0F6B38", marginTop: "4px" }}>
-            {unitsWithHeads} <span style={{ fontSize: "16px", color: "#4A5490", fontWeight: 600 }}>/ 12</span>
+            {unitsWithHeads} <span style={{ fontSize: "16px", color: "#4A5490", fontWeight: 600 }}>/ {UNITS.length}</span>
           </div>
           <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "11px", color: "#0F6B38", marginTop: "2px" }}>
-            {12 - unitsWithHeads === 0 ? "All units have designated leaders" : `${12 - unitsWithHeads} units awaiting head`}
+            {UNITS.length - unitsWithHeads === 0 ? "All units have designated leaders" : `${UNITS.length - unitsWithHeads} units awaiting head`}
           </div>
         </div>
 
@@ -345,7 +345,7 @@ export default function UnitsPage() {
         </div>
       </div>
 
-      {/* 12 Units Grid (Figma Cards) */}
+      {/* Units Grid */}
       <div
         style={{
           display: "grid",

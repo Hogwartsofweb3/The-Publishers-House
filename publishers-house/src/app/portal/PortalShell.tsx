@@ -413,7 +413,7 @@ function PortalHeaderAndContent({
                   </select>
                 </div>
 
-                {/* Role Preview Mode Impersonation Dropdown (All 12 Units Available) */}
+                {/* Role Preview Mode Impersonation Dropdown (All Units Available) */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <select
                     value={previewRole ? (previewUnitId ? `${previewRole}_${previewUnitId}` : previewRole) : ""}
@@ -451,14 +451,14 @@ function PortalHeaderAndContent({
                       <option value="admin">Viewing as Administrator</option>
                       <option value="portal_manager">Viewing as Portal Manager (007)</option>
                     </optgroup>
-                    <optgroup label="── PREVIEW AS UNIT HEAD (12 UNITS) ──">
+                    <optgroup label={`── PREVIEW AS UNIT HEAD (${UNITS.length} UNITS) ──`}>
                       {UNITS.map((u) => (
                         <option key={`head_${u.id}`} value={`unit_head_${u.id}`}>
                           Head of {u.name}
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label="── PREVIEW AS UNIT WORKER (12 UNITS) ──">
+                    <optgroup label={`── PREVIEW AS UNIT WORKER (${UNITS.length} UNITS) ──`}>
                       {UNITS.map((u) => (
                         <option key={`mem_${u.id}`} value={`member_${u.id}`}>
                           Worker in {u.name}

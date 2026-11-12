@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePortal } from "@/lib/portalContext";
+import { UNITS } from "@/lib/portalAuth";
 
 interface KPIData {
   totalMembers: number;
@@ -428,7 +429,7 @@ export default function AdminDashboard() {
                 lineHeight: "40px",
               }}
             >
-              12 Units
+              {UNITS.length} Units
             </div>
             <div
               className="portal-kpi-sub"
@@ -777,7 +778,7 @@ export default function AdminDashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
                 { href: "/portal/members", label: "Directory & Roles", sub: "Add or edit member credentials", icon: "◉" },
-                { href: "/portal/units", label: "Church Units", sub: "Rosters, Unit Heads, 12 units", icon: "⬡" },
+                { href: "/portal/units", label: "Church Units", sub: `Rosters, Unit Heads, ${UNITS.length} units`, icon: "⬡" },
                 { href: "/portal/attendance", label: "Headcount & Stream", sub: "Live codes & usher tallying", icon: "✦" },
                 { href: "/portal/pastoral", label: "Pastoral Pipeline", sub: "Follow-up & visitor care", icon: "♡" },
                 { href: "/portal/finance", label: "Finances & Giving", sub: "Tithes, projects, reconciliation", icon: "◇" },
