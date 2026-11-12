@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { normalizeUnitId } from "@/lib/portalAuth";
+import { sendPushNotification } from "@/lib/pushUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,22 +54,15 @@ export async function POST(req: NextRequest) {
 
     const ref = await adminDb.collection("unit_rosters").add(docData);
 
-    // Fire push notification to the assigned member (best-effort, non-blocking)
-    if (memberUid || body.memberEmail) {
-      fetch(`${req.nextUrl.origin}/api/portal/push`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "send",
-          targetUid: memberUid || undefined,
-          targetEmail: body.memberEmail || undefined,
-          title: "Duty Assignment 📋",
-          message: `You've been scheduled for ${dutyRole} duty in the ${normalizeUnitId(unitId).replace(/_/g, " ")} unit on ${serviceDate} (${serviceName}).`,
-          link: "/portal/unit/roster",
-          tag: "duty-assigned",
-        }),
-      }).catch(() => {});
-    }
+    // Fire push notification directly — no internal HTTP fetch (doesn't work in Vercel serverless)
+    sendPushNotification({
+      targetUid: memberUid || undefined,
+      targetEmail: body.memberEmail || undefined,
+      title: "Duty Assignment 📋",
+      message: `You've been scheduled for ${dutyRole} duty on ${serviceDate} (${serviceName}).`,
+      link: "/portal/unit/roster",
+      tag: "duty-assigned",
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, id: ref.id, assignment: { id: ref.id, ...docData } });
   } catch (err: any) {

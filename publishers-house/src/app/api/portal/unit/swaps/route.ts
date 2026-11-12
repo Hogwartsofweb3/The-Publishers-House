@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { normalizeUnitId } from "@/lib/portalAuth";
+import { sendPushNotification } from "@/lib/pushUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +61,25 @@ export async function PATCH(req: NextRequest) {
     if (!swapId || !status) return NextResponse.json({ ok: false, error: "swapId and status required" }, { status: 400 });
 
     const adminDb = getAdminDb();
+    const swapDoc = await adminDb.collection("unit_swaps").doc(swapId).get();
     await adminDb.collection("unit_swaps").doc(swapId).update({ status, updatedAt: new Date().toISOString() });
+
+    // Notify requester when swap is approved or rejected
+    if (swapDoc.exists && (status === "approved" || status === "rejected")) {
+      const swap = swapDoc.data();
+      if (swap?.requesterUid) {
+        sendPushNotification({
+          targetUid: swap.requesterUid,
+          title: status === "approved" ? "Swap Request Approved ✅" : "Swap Request Declined",
+          message: status === "approved"
+            ? `Your duty swap request for ${swap.serviceDate} has been approved.`
+            : `Your duty swap request for ${swap.serviceDate} was not approved.`,
+          link: "/portal/unit/swaps",
+          tag: "swap-status",
+        }).catch(() => {});
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err?.message }, { status: 500 });
