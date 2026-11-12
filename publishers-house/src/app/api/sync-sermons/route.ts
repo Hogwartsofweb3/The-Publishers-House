@@ -376,7 +376,7 @@ async function upsertSermons(sermons: Partial<SermonDoc>[]): Promise<{ added: nu
 }
 
 // ─── API Route Handler ────────────────────────────────────────────────────────
-export async function handleSync(req: NextRequest) {
+async function handleSync(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET || "tph-cron-2026-secure";
   const keyParam = req.nextUrl.searchParams.get("key");
