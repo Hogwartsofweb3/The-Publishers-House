@@ -8,7 +8,9 @@ interface PortalContextType {
   setCampus: (c: "all" | Campus) => void;
   previewRole: UserRole | null;
   previewUnitId: string | null;
+  previewLeaderKey: string | null;
   startPreview: (role: UserRole, unitId?: string) => void;
+  startLeaderPreview: (leaderKey: string, profile: Partial<PortalUser>) => void;
   exitPreview: () => void;
   currentUser: PortalUser;
   updateCurrentUser: (partial: Partial<PortalUser>) => void;
@@ -29,6 +31,8 @@ export function PortalProvider({
   const [campus, setCampusState] = useState<"all" | Campus>("all");
   const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
   const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
+  const [previewLeaderKey, setPreviewLeaderKey] = useState<string | null>(null);
+  const [previewProfile, setPreviewProfile] = useState<Partial<PortalUser> | null>(null);
 
   // Sync if user prop updates
   useEffect(() => {
@@ -85,18 +89,36 @@ export function PortalProvider({
   const startPreview = (role: UserRole, unitId?: string) => {
     setPreviewRole(role);
     setPreviewUnitId(unitId || (role === "unit_head" ? "ushering" : null));
+    setPreviewLeaderKey(null);
+    setPreviewProfile(null);
+  };
+
+  const startLeaderPreview = (leaderKey: string, profile: Partial<PortalUser>) => {
+    setPreviewLeaderKey(leaderKey);
+    setPreviewProfile(profile);
+    setPreviewRole(profile.role || "unit_head");
+    setPreviewUnitId(profile.assignedUnitId || null);
   };
 
   const exitPreview = () => {
     setPreviewRole(null);
     setPreviewUnitId(null);
+    setPreviewLeaderKey(null);
+    setPreviewProfile(null);
   };
 
-  const effectiveUser: PortalUser = {
-    ...currentUser,
-    role: previewRole || currentUser.role,
-    assignedUnitId: previewUnitId || currentUser.assignedUnitId,
-  };
+  const effectiveUser: PortalUser = previewProfile
+    ? ({
+        ...currentUser,
+        ...previewProfile,
+        role: previewProfile.role || currentUser.role,
+        assignedUnitId: previewProfile.assignedUnitId || currentUser.assignedUnitId,
+      } as PortalUser)
+    : {
+        ...currentUser,
+        role: previewRole || currentUser.role,
+        assignedUnitId: previewUnitId || currentUser.assignedUnitId,
+      };
 
   return (
     <PortalContext.Provider
@@ -105,7 +127,9 @@ export function PortalProvider({
         setCampus,
         previewRole,
         previewUnitId,
+        previewLeaderKey,
         startPreview,
+        startLeaderPreview,
         exitPreview,
         currentUser,
         updateCurrentUser,

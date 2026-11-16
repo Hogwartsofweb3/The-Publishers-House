@@ -247,9 +247,16 @@ export default function MemberUnitInfoPage() {
           <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#1F46C8", textTransform: "uppercase", letterSpacing: "0.14em" }}>
             Unit Leadership
           </div>
-          <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "18px", fontWeight: 700, color: "#141C6E", margin: "4px 0 16px" }}>
+          <h2 style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "18px", fontWeight: 700, color: "#141C6E", margin: "4px 0 6px" }}>
             {unitHead ? unitHead.name : "Unit Head"}
           </h2>
+          {DESIGNATED_UNIT_HEADS[assignedUnitId]?.note && (
+            <div style={{ marginBottom: "12px" }}>
+              <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#FEF3C7", color: "#92400E", fontWeight: 600, display: "inline-block" }}>
+                {DESIGNATED_UNIT_HEADS[assignedUnitId].note}
+              </span>
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#4A5490" }}>
               <span style={{ fontSize: "15px" }}>📧</span>

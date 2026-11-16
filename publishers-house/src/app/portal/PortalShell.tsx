@@ -28,7 +28,9 @@ function PortalHeaderAndContent({
     setCampus,
     previewRole,
     previewUnitId,
+    previewLeaderKey,
     startPreview,
+    startLeaderPreview,
     exitPreview,
     effectiveUser,
     isSuperAdmin,
@@ -182,10 +184,10 @@ function PortalHeaderAndContent({
               zIndex: 35,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <span>👁️ Impersonation Mode Active:</span>
               <span style={{ backgroundColor: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "4px" }}>
-                Viewing as {getRoleLabel(previewRole)} {previewUnitId ? `(${previewUnitId})` : ""}
+                Viewing as {effectiveUser.displayName || getRoleLabel(previewRole)} ({getRoleLabel(effectiveUser.role)}{effectiveUser.assignedUnitId ? ` · ${effectiveUser.assignedUnitId}` : ""})
               </span>
             </div>
             <button
@@ -417,14 +419,91 @@ function PortalHeaderAndContent({
                   </select>
                 </div>
 
-                {/* Role Preview Mode Impersonation Dropdown (All Units Available) */}
+                {/* Role Preview Mode Impersonation Dropdown (All Units & Key Leadership Profiles) */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <select
-                    value={previewRole ? (previewUnitId ? `${previewRole}_${previewUnitId}` : previewRole) : ""}
+                    value={previewLeaderKey || (previewRole ? (previewUnitId ? `${previewRole}_${previewUnitId}` : previewRole) : "")}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (!val) {
                         exitPreview();
+                      } else if (val === "leader_theophilus") {
+                        startLeaderPreview("leader_theophilus", {
+                          displayName: "Pastor Theophilus Makinde",
+                          email: "tmakind@gmail.com",
+                          phone: "+234 8162264549",
+                          role: "admin",
+                          roles: ["admin", "unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "media_technical",
+                          headedUnitIds: ["media_technical"],
+                        });
+                      } else if (val === "leader_ngbede") {
+                        startLeaderPreview("leader_ngbede", {
+                          displayName: "Pastor Ngbede Odeh",
+                          email: "odehngbes@gmail.com",
+                          phone: "+234 8186335861",
+                          role: "admin",
+                          roles: ["admin", "unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "editorial",
+                          headedUnitIds: ["editorial"],
+                        });
+                      } else if (val === "leader_damilare") {
+                        startLeaderPreview("leader_damilare", {
+                          displayName: "Pastor Ayodele Oluwadamilare",
+                          email: "ayodeledare86@gmail.com",
+                          phone: "+234 8035036498",
+                          role: "admin",
+                          roles: ["admin", "unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "prayer",
+                          headedUnitIds: ["prayer"],
+                        });
+                      } else if (val === "leader_ifedayo") {
+                        startLeaderPreview("leader_ifedayo", {
+                          displayName: "Ifedayo Mary Agunbiade",
+                          email: "maryomoyele@gmail.com",
+                          phone: "+234 8108697026",
+                          role: "unit_head",
+                          roles: ["unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "welfare",
+                          headedUnitIds: ["welfare", "children"],
+                        });
+                      } else if (val === "leader_david_jatto") {
+                        startLeaderPreview("leader_david_jatto", {
+                          displayName: "David Jatto",
+                          email: "davidjatto2020@gmail.com",
+                          phone: "+234 8139063144",
+                          role: "unit_head",
+                          roles: ["unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "protocol",
+                          headedUnitIds: ["protocol", "transportation", "sanctuary"],
+                        });
+                      } else if (val === "leader_cyprian") {
+                        startLeaderPreview("leader_cyprian", {
+                          displayName: "Cyprian Dalong",
+                          email: "cyprian@thepublishershouse.org",
+                          phone: "+234 8139063144",
+                          role: "unit_head",
+                          roles: ["unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "followup_hospitality",
+                          headedUnitIds: ["followup_hospitality"],
+                        });
+                      } else if (val === "leader_alex") {
+                        startLeaderPreview("leader_alex", {
+                          displayName: "Alex Rindap",
+                          email: "alex@thepublishershouse.org",
+                          phone: "+234 8139063144",
+                          role: "unit_head",
+                          roles: ["unit_head"],
+                          isUnitHead: true,
+                          assignedUnitId: "discipleship_evangelism",
+                          headedUnitIds: ["discipleship_evangelism"],
+                        });
                       } else if (val.startsWith("unit_head_")) {
                         const unitId = val.replace("unit_head_", "");
                         startPreview("unit_head", unitId);
@@ -439,18 +518,27 @@ function PortalHeaderAndContent({
                       padding: "6px 12px",
                       borderRadius: "8px",
                       border: "1px solid #C4B5FD",
-                      backgroundColor: previewRole ? "#EDE9FE" : "#F4F6FB",
-                      color: previewRole ? "#6D28D9" : "#141C6E",
+                      backgroundColor: (previewRole || previewLeaderKey) ? "#EDE9FE" : "#F4F6FB",
+                      color: (previewRole || previewLeaderKey) ? "#6D28D9" : "#141C6E",
                       fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                       fontSize: "12px",
                       fontWeight: 600,
                       outline: "none",
                       cursor: "pointer",
-                      maxWidth: "230px",
+                      maxWidth: "260px",
                     }}
                   >
                     <option value="">👁️ Role Preview: Normal</option>
-                    <optgroup label="── LEADERSHIP ROLES ──">
+                    <optgroup label="── DUAL-ROLE PASTORS & SPECIFIC LEADERS ──">
+                      <option value="leader_theophilus">Pastor Theophilus Makinde (Admin · Media & Tech Head)</option>
+                      <option value="leader_ngbede">Pastor Ngbede Odeh (Admin · Editorial Head)</option>
+                      <option value="leader_damilare">Pastor Damilare Ayodele (Admin · Prayer Head)</option>
+                      <option value="leader_ifedayo">Ifedayo Mary Agunbiade (Head of Welfare & Children)</option>
+                      <option value="leader_david_jatto">David Jatto (Protocol, Transportation & Sanctuary)</option>
+                      <option value="leader_cyprian">Cyprian Dalong (Head of Follow-Up & Hospitality)</option>
+                      <option value="leader_alex">Alex Rindap (Head of Discipleship & Evangelism)</option>
+                    </optgroup>
+                    <optgroup label="── GENERIC LEADERSHIP TIERS ──">
                       <option value="super_admin">Viewing as Super Admin</option>
                       <option value="admin">Viewing as Administrator</option>
                       <option value="portal_manager">Viewing as Portal Manager (007)</option>

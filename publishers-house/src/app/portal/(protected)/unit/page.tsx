@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { PortalUser, UNITS, normalizeUnitId } from "@/lib/portalAuth";
+import { PortalUser, UNITS, normalizeUnitId, getHeadedUnits } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import FollowUpPipelineCard from "@/components/portal/FollowUpPipelineCard";
@@ -15,7 +15,22 @@ export default function UnitCommandCenter() {
   const user = effectiveUser;
   const authLoading = false;
 
-  const normUnitId = normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering";
+  const headedUnits = getHeadedUnits(effectiveUser);
+  const defaultUnitId = headedUnits.length > 0
+    ? headedUnits[0].id
+    : (normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering");
+
+  const [selectedUnitId, setSelectedUnitId] = useState<string>(defaultUnitId);
+
+  useEffect(() => {
+    if (headedUnits.length > 0 && !headedUnits.some((u) => u.id === selectedUnitId)) {
+      setSelectedUnitId(headedUnits[0].id);
+    } else if (!selectedUnitId && effectiveUser?.assignedUnitId) {
+      setSelectedUnitId(normalizeUnitId(effectiveUser.assignedUnitId));
+    }
+  }, [effectiveUser]);
+
+  const normUnitId = selectedUnitId || defaultUnitId;
   const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   const [members, setMembers] = useState<PortalUser[]>([]);
@@ -151,7 +166,8 @@ export default function UnitCommandCenter() {
 
   const handleRecordAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!headcount || !user?.assignedUnitId) return;
+    const targetUnitId = activeUnit?.id || user?.assignedUnitId;
+    if (!headcount || !targetUnitId) return;
 
     setSavingAttendance(true);
     setAttendanceMessage("");
@@ -161,7 +177,7 @@ export default function UnitCommandCenter() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          unitId: user.assignedUnitId,
+          unitId: targetUnitId,
           unitName: activeUnit?.name || "Unknown Unit",
           serviceDate: date,
           serviceName: "Sunday Service",
@@ -174,7 +190,7 @@ export default function UnitCommandCenter() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to record unit attendance");
 
-      setAttendanceMessage("Unit attendance recorded successfully ✓");
+      setAttendanceMessage(`Attendance for ${activeUnit?.name} recorded successfully ✓`);
       setHeadcount("");
       setNotes("");
     } catch (err: any) {
@@ -188,7 +204,8 @@ export default function UnitCommandCenter() {
 
   const handleSendAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!announceSubject.trim() || !announceMessage.trim() || !user?.assignedUnitId) return;
+    const targetUnitId = activeUnit?.id || user?.assignedUnitId;
+    if (!announceSubject.trim() || !announceMessage.trim() || !targetUnitId) return;
     setSendingAnnouncement(true);
     setAnnouncementResult("");
     try {
@@ -198,12 +215,12 @@ export default function UnitCommandCenter() {
         body: JSON.stringify({
           subject: announceSubject.trim(),
           message: announceMessage.trim(),
-          unitId: user.assignedUnitId,
+          unitId: targetUnitId,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        setAnnouncementResult(`✓ Announcement sent to ${data.sent ?? "your"} unit member(s).`);
+        setAnnouncementResult(`✓ Announcement sent to ${data.sent ?? "your"} ${activeUnit?.name} member(s).`);
         setAnnounceSubject("");
         setAnnounceMessage("");
       } else {
@@ -254,20 +271,141 @@ export default function UnitCommandCenter() {
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1
+      {/* Unit Switcher Tabs for Multi-Unit Heads & Cluster Leaders */}
+      {headedUnits.length > 1 && (
+        <div
           style={{
-            fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-            fontWeight: 800,
-            fontSize: "28px",
-            lineHeight: "34px",
-            color: "#141C6E",
-            margin: 0,
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "16px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            boxShadow: "0 2px 8px rgba(20, 28, 110, 0.04)",
           }}
         >
-          {activeUnit?.name || "Unit"} Command Center
-        </h1>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "14px" }}>🏛️</span>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#141C6E",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Multi-Unit Leadership & Oversight
+              </span>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                color: "#64748B",
+              }}
+            >
+              Select a unit to manage its roster, record attendance, and send notices
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "4px" }}>
+            {headedUnits.map((u) => {
+              const isSelected = u.id === normUnitId;
+              const isClusterOversight = ["transportation", "sanctuary"].includes(u.id);
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => setSelectedUnitId(u.id)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: isSelected ? "2px solid #1F46C8" : "1px solid #CBD5E1",
+                    backgroundColor: isSelected ? "#1F46C8" : "#F8FAFC",
+                    color: isSelected ? "#FFFFFF" : "#1E293B",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontWeight: isSelected ? 700 : 600,
+                    fontSize: "12.5px",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span>{u.name}</span>
+                  {isClusterOversight && (
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        backgroundColor: isSelected ? "rgba(255,255,255,0.22)" : "#FEF3C7",
+                        color: isSelected ? "#FFFFFF" : "#92400E",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Protocol Oversight
+                    </span>
+                  )}
+                  {isSelected && <span style={{ fontSize: "11px" }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <h1
+            style={{
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 800,
+              fontSize: "28px",
+              lineHeight: "34px",
+              color: "#141C6E",
+              margin: 0,
+            }}
+          >
+            {activeUnit?.name || "Unit"} Command Center
+          </h1>
+          {["transportation", "sanctuary"].includes(normUnitId) && (
+            <span
+              style={{
+                fontSize: "11px",
+                padding: "3px 10px",
+                borderRadius: "6px",
+                backgroundColor: "#FEF3C7",
+                color: "#92400E",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Under Protocol Department Oversight
+            </span>
+          )}
+          {normUnitId === "protocol" && (
+            <span
+              style={{
+                fontSize: "11px",
+                padding: "3px 10px",
+                borderRadius: "6px",
+                backgroundColor: "#EFF6FF",
+                color: "#1E40AF",
+                fontWeight: 700,
+              }}
+            >
+              Overseeing Protocol · Transportation · Sanctuary
+            </span>
+          )}
+        </div>
         <p
           style={{
             fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
@@ -277,7 +415,7 @@ export default function UnitCommandCenter() {
             margin: "6px 0 0",
           }}
         >
-          Welcome back, {user.displayName}. Unit leadership and Sunday duty management.
+          Welcome back, {user.displayName}. Unit leadership and Sunday duty management for {activeUnit?.name}.
         </p>
       </div>
 

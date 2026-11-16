@@ -5,7 +5,8 @@ import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel } from "@/lib/portalAuth";
+import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel, getHeadedUnits, isChurchAdmin, isUserUnitHead } from "@/lib/portalAuth";
+import { usePortal } from "@/lib/portalContext";
 import { getSermons, getArticles, Sermon, Article } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAudio, resolveMediaThumbnail, getYouTubeVideoId } from "@/components/GlobalAudioPlayer";
@@ -38,8 +39,11 @@ function resolveEventFlyer(title?: string, rawUrl?: string): string {
 }
 
 export default function FashionableMemberDashboard() {
-  const [user, setUser] = useState<PortalUser | null>(null);
+  const { effectiveUser, currentUser } = usePortal();
+  const [localUser, setLocalUser] = useState<PortalUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const user = effectiveUser || currentUser || localUser;
   const [recentSermons, setRecentSermons] = useState<Sermon[]>([]);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
   const [continueItem, setContinueItem] = useState<PlaybackRecord | null>(null);
@@ -213,12 +217,15 @@ export default function FashionableMemberDashboard() {
 
   // Load user & church feeds
   useEffect(() => {
+    if (effectiveUser) {
+      setLoading(false);
+    }
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const portalUser = await getPortalUser(firebaseUser.uid);
-        setUser(portalUser);
+        const pUser = await getPortalUser(firebaseUser.uid);
+        setLocalUser(pUser);
       } else {
-        setUser(null);
+        setLocalUser(null);
       }
       setLoading(false);
     });
@@ -454,9 +461,12 @@ export default function FashionableMemberDashboard() {
     );
   }
 
-  const unitName = user.assignedUnitId
-    ? UNITS.find((u) => u.id === user.assignedUnitId)?.name || user.assignedUnitId
-    : null;
+  const headedUnits = getHeadedUnits(user);
+  const unitName = headedUnits.length > 0
+    ? headedUnits.map((u) => u.name).join(" & ")
+    : (user.assignedUnitId
+      ? UNITS.find((u) => u.id === user.assignedUnitId)?.name || user.assignedUnitId
+      : null);
 
   const todayLabel = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -1082,18 +1092,21 @@ export default function FashionableMemberDashboard() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
             <div
               style={{
-                width: "36px",
-                height: "36px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "10px",
-                backgroundColor: "#EBF3FE",
-                color: "#0140C1",
+                backgroundColor: "#EFF6FF",
+                border: "1px solid #BFDBFE",
+                color: "#1D4ED8",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "17px",
               }}
             >
-              📖
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
             </div>
             <span
               style={{
@@ -1138,18 +1151,20 @@ export default function FashionableMemberDashboard() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
             <div
               style={{
-                width: "36px",
-                height: "36px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "10px",
                 backgroundColor: "#FEF3C7",
+                border: "1px solid #FDE68A",
                 color: "#D97706",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "17px",
               }}
             >
-              🙏
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+              </svg>
             </div>
             <span
               style={{
@@ -1194,18 +1209,22 @@ export default function FashionableMemberDashboard() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
             <div
               style={{
-                width: "36px",
-                height: "36px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "10px",
                 backgroundColor: "#DCFCE7",
+                border: "1px solid #BBF7D0",
                 color: "#16A34A",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "17px",
               }}
             >
-              ◇
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 6v12" />
+                <path d="M16 10h-5.5a2.5 2.5 0 0 0 0 5h3a2.5 2.5 0 0 1 0 5H8" />
+              </svg>
             </div>
             <span
               style={{
@@ -1250,18 +1269,21 @@ export default function FashionableMemberDashboard() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
             <div
               style={{
-                width: "36px",
-                height: "36px",
+                width: "38px",
+                height: "38px",
                 borderRadius: "10px",
                 backgroundColor: "#EDE9FE",
+                border: "1px solid #DDD6FE",
                 color: "#7C3AED",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "17px",
               }}
             >
-              ▶
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="10 8 16 12 10 16 10 8" fill="#7C3AED" />
+              </svg>
             </div>
             <span
               style={{
@@ -1309,19 +1331,21 @@ export default function FashionableMemberDashboard() {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "42px",
+              height: "42px",
               borderRadius: "10px",
               backgroundColor: "#FEF3C7",
+              border: "1px solid #FDE68A",
               color: "#D97706",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
               flexShrink: 0,
             }}
           >
-            🌟
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="rgba(217, 119, 6, 0.25)" />
+            </svg>
           </div>
           <div>
             <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#78350F" }}>
@@ -1351,19 +1375,23 @@ export default function FashionableMemberDashboard() {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "42px",
+              height: "42px",
               borderRadius: "10px",
               backgroundColor: "#DBEAFE",
+              border: "1px solid #BFDBFE",
               color: "#1D4ED8",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
               flexShrink: 0,
             }}
           >
-            📋
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <path d="m9 14 2 2 4-4" />
+            </svg>
           </div>
           <div>
             <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#1E3A8A" }}>
@@ -1393,19 +1421,21 @@ export default function FashionableMemberDashboard() {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "42px",
+              height: "42px",
               borderRadius: "10px",
               backgroundColor: "#DCFCE7",
+              border: "1px solid #BBF7D0",
               color: "#16A34A",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
               flexShrink: 0,
             }}
           >
-            💚
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="rgba(22, 163, 74, 0.18)" />
+            </svg>
           </div>
           <div>
             <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#14532D" }}>
@@ -1435,19 +1465,21 @@ export default function FashionableMemberDashboard() {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "42px",
+              height: "42px",
               borderRadius: "10px",
               backgroundColor: "#EDE9FE",
+              border: "1px solid #DDD6FE",
               color: "#7C3AED",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
               flexShrink: 0,
             }}
           >
-            💬
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
           </div>
           <div>
             <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontWeight: 700, fontSize: "13px", color: "#4C1D95" }}>
@@ -1790,6 +1822,30 @@ export default function FashionableMemberDashboard() {
                   09:00 AM • Main Sanctuary
                 </div>
               </div>
+
+              {(isUserUnitHead(user) || isChurchAdmin(user)) && (
+                <Link
+                  href="/portal/unit"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    padding: "9px 12px",
+                    backgroundColor: "#EEF2FF",
+                    border: "1.5px solid #C7D2FE",
+                    borderRadius: "8px",
+                    color: "#1F46C8",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    textAlign: "center",
+                  }}
+                >
+                  <span>⚡</span>
+                  <span>Unit Command Center →</span>
+                </Link>
+              )}
 
               <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
                 <Link

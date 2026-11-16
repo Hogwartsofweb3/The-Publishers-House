@@ -17,6 +17,8 @@ export interface PortalUser {
   roles?: UserRole[];
   isUnitHead?: boolean;
   assignedUnitId?: string;
+  assignedUnitIds?: string[];
+  headedUnitIds?: string[];
   activityTier: ActivityTier;
   campus?: Campus;
   mustChangePassword?: boolean;
@@ -43,21 +45,60 @@ export const UNITS = [
   { id: "discipleship_evangelism", name: "Discipleship & Evangelism" },
 ];
 
+/** Default schedules for ministry units */
+export const UNIT_SCHEDULES_DEFAULT: Record<string, string> = {
+  media_technical: "Sundays 7:00 AM & Thursdays 4:30 PM",
+  worship: "Saturdays 4:00 PM (Rehearsal) & Sundays 7:15 AM",
+  editorial: "Tuesdays 6:00 PM (Virtual Review)",
+  welfare: "1st & 3rd Saturdays 10:00 AM",
+  sanctuary: "Saturdays 9:00 AM (Clean & Prep)",
+  ushering: "Sundays 7:30 AM & Thursdays 5:00 PM",
+  protocol: "Sundays 7:30 AM (V.I.P. & Guest Lounge)",
+  children: "Sundays 8:00 AM (Curriculum & Setup)",
+  secretariat: "Sundays 7:45 AM (Foyer Desk)",
+  registration: "Sundays 7:45 AM (Foyer Desk)",
+  transportation: "Sundays 6:30 AM (Campus Shuttles)",
+  prayer: "Fridays 6:00 PM & Sundays 6:30 AM (Intercession)",
+  followup_hospitality: "Sundays after 2nd service & Tuesdays",
+  discipleship_evangelism: "Saturdays 10:00 AM (Foundation Classes) & Outreaches",
+};
+
+/** Department oversight clusters: Transportation and Sanctuary are under Protocol leadership */
+export const UNIT_OVERSIGHT_DEFAULT: Record<string, string[]> = {
+  protocol: ["protocol", "transportation", "sanctuary"],
+};
+
+/** Multi-Unit Heads: Leaders who head multiple units or department clusters */
+export const MULTI_UNIT_HEADS_DEFAULT: Record<string, { name: string; unitIds: string[]; primaryUnitId: string; title: string }> = {
+  "maryomoyele@gmail.com": {
+    name: "Ifedayo Mary Agunbiade",
+    unitIds: ["welfare", "children"],
+    primaryUnitId: "welfare",
+    title: "Head of Welfare & Children Ministries",
+  },
+  "davidjatto2020@gmail.com": {
+    name: "David Jatto",
+    unitIds: ["protocol", "transportation", "sanctuary"],
+    primaryUnitId: "protocol",
+    title: "Head of Protocol · Overseeing Transportation & Sanctuary",
+  },
+};
+
 /** Canonical designated unit leaders mapping */
-export const DESIGNATED_UNIT_HEADS: Record<string, { name: string; email: string; phone?: string }> = {
+export const DESIGNATED_UNIT_HEADS: Record<string, { name: string; email: string; phone?: string; note?: string }> = {
   media_technical: { name: "Pastor Theophilus Makinde", email: "tmakind@gmail.com", phone: "+234 8162264549" },
   editorial: { name: "Pastor Ngbede Odeh", email: "odehngbes@gmail.com", phone: "+234 8186335861" },
   prayer: { name: "Pastor Ayodele Oluwadamilare", email: "Ayodeledare86@gmail.com", phone: "+234 8035036498" },
   worship: { name: "Samson Adebayo", email: "adebayosamson888@gmail.com", phone: "+234 8116643403" },
-  welfare: { name: "Ifedayo Mary Agunbiade", email: "maryomoyele@gmail.com", phone: "+234 8108697026" },
-  protocol: { name: "David Jatto", email: "davidjatto2020@gmail.com", phone: "+234 8139063144" },
+  welfare: { name: "Ifedayo Mary Agunbiade", email: "maryomoyele@gmail.com", phone: "+234 8108697026", note: "Also Heads Children" },
+  children: { name: "Ifedayo Mary Agunbiade", email: "maryomoyele@gmail.com", phone: "+234 8108697026", note: "Also Heads Welfare" },
+  protocol: { name: "David Jatto", email: "davidjatto2020@gmail.com", phone: "+234 8139063144", note: "Oversees Transportation & Sanctuary" },
+  transportation: { name: "David Jatto (Protocol Oversight)", email: "davidjatto2020@gmail.com", phone: "+234 8139063144", note: "Protocol Cluster" },
+  sanctuary: { name: "David Jatto (Protocol Oversight)", email: "davidjatto2020@gmail.com", phone: "+234 8139063144", note: "Protocol Cluster" },
+  followup_hospitality: { name: "Cyprian Dalong", email: "cyprian@thepublishershouse.org", phone: "+234 8139063144" },
+  discipleship_evangelism: { name: "Alex Rindap", email: "alex@thepublishershouse.org", phone: "+234 8139063144" },
   ushering: { name: "Ushering Leadership · TPH", email: "ushering@thepublishershouse.org", phone: "+234 8139063144" },
-  children: { name: "Children Ministry Lead", email: "children@thepublishershouse.org" },
   secretariat: { name: "Secretariat & Registry Desk", email: "thepublishershouse007@gmail.com" },
-  transportation: { name: "Transportation Logistics Lead", email: "transport@thepublishershouse.org" },
-  sanctuary: { name: "Sanctuary Order Lead", email: "sanctuary@thepublishershouse.org" },
-  followup_hospitality: { name: "Follow Up & Hospitality Team", email: "followup@thepublishershouse.org" },
-  discipleship_evangelism: { name: "Discipleship & Evangelism Team", email: "discipleship@thepublishershouse.org" },
 };
 
 /** Dual-Role Admins who are also Unit Heads */
@@ -66,6 +107,47 @@ export const DUAL_ROLE_PASTORS: Record<string, { name: string; unitId: string }>
   "odehngbes@gmail.com": { name: "Pastor Ngbede Odeh", unitId: "editorial" },
   "ayodeledare86@gmail.com": { name: "Pastor Ayodele Oluwadamilare", unitId: "prayer" },
 };
+
+/** Helper to get all units a user heads (handling multi-unit leaders and clusters) */
+export function getHeadedUnits(user?: PortalUser | null): typeof UNITS {
+  if (!user) return [];
+  const email = (user.email || "").trim().toLowerCase();
+  const name = (user.displayName || "").trim().toLowerCase();
+  
+  // 1. Explicit multi-unit registry
+  if (MULTI_UNIT_HEADS_DEFAULT[email]) {
+    const ids = MULTI_UNIT_HEADS_DEFAULT[email].unitIds;
+    return UNITS.filter((u) => ids.includes(u.id));
+  }
+
+  // 2. Name-based match for David Jatto or Ifedayo Mary Agunbiade
+  if (name.includes("jatto") || email.includes("jatto")) {
+    return UNITS.filter((u) => ["protocol", "transportation", "sanctuary"].includes(u.id));
+  }
+  if (name.includes("ifedayo") || name.includes("agunbiade") && !name.includes("joshua")) {
+    return UNITS.filter((u) => ["welfare", "children"].includes(u.id));
+  }
+
+  // 3. User object headedUnitIds array
+  if (Array.isArray(user.headedUnitIds) && user.headedUnitIds.length > 0) {
+    return UNITS.filter((u) => user.headedUnitIds!.includes(u.id));
+  }
+
+  // 4. Dual-role pastors
+  if (DUAL_ROLE_PASTORS[email]) {
+    const u = UNITS.find((unit) => unit.id === DUAL_ROLE_PASTORS[email].unitId);
+    return u ? [u] : [];
+  }
+
+  // 5. Standard assigned unit
+  if (user.isUnitHead || user.role === "unit_head" || user.roles?.includes("unit_head")) {
+    const norm = normalizeUnitId(user.assignedUnitId);
+    const u = UNITS.find((unit) => unit.id === norm);
+    return u ? [u] : [];
+  }
+
+  return [];
+}
 
 export function normalizeUnitId(unitId?: string): string {
   if (!unitId) return "";
@@ -191,9 +273,16 @@ export function isChurchAdmin(user?: PortalUser | null): boolean {
   );
 }
 
-/** Returns true if user is a Unit Head (either as their primary role or as an admin leading a unit) */
+/** Returns true if user is a Unit Head (either as their primary role, an admin leading a unit, or multi-unit head) */
 export function isUserUnitHead(user?: PortalUser | null, unitId?: string): boolean {
   if (!user) return false;
+  const headed = getHeadedUnits(user);
+  if (headed.length > 0) {
+    if (!unitId) return true;
+    const targetNorm = normalizeUnitId(unitId);
+    return headed.some((u) => u.id === targetNorm);
+  }
+
   const email = (user.email || "").trim().toLowerCase();
   const dualUnit = DUAL_ROLE_PASTORS[email]?.unitId;
   const isHead =

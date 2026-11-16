@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePortal } from "@/lib/portalContext";
 import { UNITS } from "@/lib/portalAuth";
+import { parseStartAndEnd } from "@/lib/eventTimingUtils";
 
 interface KPIData {
   totalMembers: number;
@@ -51,6 +52,9 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nextEventSubtitle, setNextEventSubtitle] = useState("Loading events...");
+  const [givingDiffSubtitle, setGivingDiffSubtitle] = useState("Current month total");
+  const [givingDiffPositive, setGivingDiffPositive] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -85,25 +89,75 @@ export default function AdminDashboard() {
 
         let weeklyG = 0;
         let monthlyG = 0;
+        let lastMonthG = 0;
 
         if (financeRes.status === "fulfilled" && financeRes.value?.transactions) {
           const txList: any[] = financeRes.value.transactions || [];
           const now = new Date();
-          const monthStart2 = new Date();
-          monthStart2.setDate(1);
-          monthStart2.setHours(0, 0, 0, 0);
+          const monthStart2 = new Date(now.getFullYear(), now.getMonth(), 1);
           const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
           txList.forEach((data) => {
             const amt = Number(data.amountNGN) || 0;
             const txDate = data.timestamp ? new Date(data.timestamp) : null;
-            if (txDate && txDate >= monthStart2) monthlyG += amt;
-            if (txDate && txDate >= oneWeekAgo) weeklyG += amt;
+            if (txDate) {
+              if (txDate >= monthStart2) monthlyG += amt;
+              if (txDate >= oneWeekAgo) weeklyG += amt;
+              if (txDate >= prevMonthStart && txDate <= prevMonthEnd) lastMonthG += amt;
+            }
           });
+
+          if (lastMonthG > 0) {
+            const diff = monthlyG - lastMonthG;
+            if (diff >= 0) {
+              setGivingDiffSubtitle(`+₦${diff.toLocaleString()} above last month`);
+              setGivingDiffPositive(true);
+            } else {
+              setGivingDiffSubtitle(`-₦${Math.abs(diff).toLocaleString()} vs last month`);
+              setGivingDiffPositive(false);
+            }
+          } else if (monthlyG > 0) {
+            setGivingDiffSubtitle(`₦${monthlyG.toLocaleString()} recorded this month`);
+            setGivingDiffPositive(true);
+          } else {
+            setGivingDiffSubtitle("No giving recorded this month");
+            setGivingDiffPositive(true);
+          }
         }
 
         let loadedEvents: EventItem[] = [];
+        let upcomingCount = 0;
+
         if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value?.events)) {
-          loadedEvents = eventsRes.value.events.slice(0, 4).map((item: any) => {
+          const rawEvents = eventsRes.value.events;
+          // Today at midnight for accurate comparison
+          const todayMid = new Date();
+          todayMid.setHours(0, 0, 0, 0);
+          const todayMidMs = todayMid.getTime();
+
+          // Filter truly upcoming and published events
+          const upcomingEvents = rawEvents.filter((item: any) => {
+            if (item.published === false || item.status === "draft") return false;
+            const { startMs, endMs } = parseStartAndEnd(item);
+            return endMs >= todayMidMs || startMs >= todayMidMs;
+          });
+
+          upcomingEvents.sort((a: any, b: any) => parseStartAndEnd(a).startMs - parseStartAndEnd(b).startMs);
+          upcomingCount = upcomingEvents.length;
+
+          if (upcomingEvents.length > 0) {
+            const nextOne = upcomingEvents[0];
+            const { start } = parseStartAndEnd(nextOne);
+            const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(start);
+            setNextEventSubtitle(`Next: ${nextOne.title}, ${dateFmt}`);
+          } else {
+            setNextEventSubtitle("No upcoming events scheduled");
+          }
+
+          // Table shows up to 6 events (recent & upcoming)
+          loadedEvents = rawEvents.slice(0, 6).map((item: any) => {
             const startAt = item.startAt || "";
             const [dPart, tPart] = startAt.includes("T") ? startAt.split("T") : [startAt, ""];
             return {
@@ -158,7 +212,7 @@ export default function AdminDashboard() {
           weeklyGiving: weeklyG,
           monthlyGiving: monthlyG,
           attendanceLastWeek: attLastWeek,
-          upcomingEventsCount: loadedEvents.length,
+          upcomingEventsCount: upcomingCount,
           activeVolunteers,
           pendingTestimonies: pendingT,
           pendingPrayers: pendingP,
@@ -339,7 +393,7 @@ export default function AdminDashboard() {
                 lineHeight: "40px",
               }}
             >
-              {events.length}
+              {loading ? "..." : kpi.upcomingEventsCount}
             </div>
             <div
               className="portal-kpi-sub"
@@ -353,7 +407,7 @@ export default function AdminDashboard() {
                 textOverflow: "ellipsis",
               }}
             >
-              Next: Sunday Worship, 18 Oct
+              {nextEventSubtitle}
             </div>
           </div>
         </Link>
@@ -391,14 +445,14 @@ export default function AdminDashboard() {
                   display: "inline-block",
                   padding: "3px 8px",
                   borderRadius: "6px",
-                  backgroundColor: "#E4F5EA",
-                  color: "#0F6B38",
+                  backgroundColor: givingDiffPositive ? "#E4F5EA" : "#FEE2E2",
+                  color: givingDiffPositive ? "#0F6B38" : "#991B1B",
                   fontSize: "11px",
                   fontWeight: 600,
                   fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
                 }}
               >
-                ₦125,000 above last month
+                {givingDiffSubtitle}
               </span>
             </div>
           </div>
@@ -440,7 +494,7 @@ export default function AdminDashboard() {
                 fontWeight: 500,
               }}
             >
-              48 rostered volunteers
+              {kpi.activeVolunteers} rostered volunteers
             </div>
           </div>
         </Link>

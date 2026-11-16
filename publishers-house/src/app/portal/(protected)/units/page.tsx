@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { db } from "@/lib/firebase";
-import { UNITS, PortalUser, normalizeUnitId, isUserUnitHead } from "@/lib/portalAuth";
+import {
+  UNITS,
+  PortalUser,
+  normalizeUnitId,
+  isUserUnitHead,
+  UNIT_SCHEDULES_DEFAULT,
+  DESIGNATED_UNIT_HEADS,
+  getHeadedUnits,
+} from "@/lib/portalAuth";
 import {
   collection,
   getDocs,
@@ -16,6 +24,8 @@ interface UnitSummary {
   members: PortalUser[];
   unitHead: PortalUser | null;
   meetingTime: string;
+  venue?: string;
+  leadershipNote?: string;
 }
 
 const UNIT_ICONS: Record<string, string> = {
@@ -35,23 +45,6 @@ const UNIT_ICONS: Record<string, string> = {
   discipleship_evangelism: "📖",
 };
 
-const UNIT_SCHEDULES: Record<string, string> = {
-  media_technical: "Sundays 7:00 AM & Thursdays 4:30 PM",
-  worship: "Saturdays 4:00 PM (Rehearsal) & Sundays 7:15 AM",
-  editorial: "Tuesdays 6:00 PM (Virtual Review)",
-  welfare: "1st & 3rd Saturdays 10:00 AM",
-  sanctuary: "Saturdays 9:00 AM (Clean & Prep)",
-  ushering: "Sundays 7:30 AM & Thursdays 5:00 PM",
-  protocol: "Sundays 7:30 AM (V.I.P. & Guest Lounge)",
-  children: "Sundays 8:00 AM (Curriculum & Setup)",
-  secretariat: "Sundays 7:45 AM (Foyer Desk)",
-  registration: "Sundays 7:45 AM (Foyer Desk)",
-  transportation: "Sundays 6:30 AM (Campus Shuttles)",
-  prayer: "Fridays 6:00 PM & Sundays 6:30 AM (Intercession)",
-  followup_hospitality: "Sundays after 2nd service & Tuesdays",
-  discipleship_evangelism: "Saturdays 10:00 AM (Foundation Classes) & Outreaches",
-};
-
 export default function UnitsPage() {
   const [unitData, setUnitData] = useState<UnitSummary[]>([]);
   const [allUsers, setAllUsers] = useState<PortalUser[]>([]);
@@ -61,9 +54,15 @@ export default function UnitsPage() {
   const [selectedHeadId, setSelectedHeadId] = useState<string>("");
   const [savingHead, setSavingHead] = useState(false);
 
+  // Edit Schedule & Details Modal State
+  const [editingUnit, setEditingUnit] = useState<UnitSummary | null>(null);
+  const [editMeetingTime, setEditMeetingTime] = useState("");
+  const [editVenue, setEditVenue] = useState("");
+  const [savingUnitDetails, setSavingUnitDetails] = useState(false);
+
   // Lock page scroll when any modal is open
   useEffect(() => {
-    const anyOpen = Boolean(selectedUnit) || Boolean(assigningHeadUnit);
+    const anyOpen = Boolean(selectedUnit) || Boolean(assigningHeadUnit) || Boolean(editingUnit);
     if (anyOpen) {
       const origHtml = document.documentElement.style.overflow;
       const origBody = document.body.style.overflow;
@@ -74,7 +73,7 @@ export default function UnitsPage() {
         document.body.style.overflow = origBody;
       };
     }
-  }, [selectedUnit, assigningHeadUnit]);
+  }, [selectedUnit, assigningHeadUnit, editingUnit]);
   const [removingHeadUid, setRemovingHeadUid] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
@@ -107,18 +106,59 @@ export default function UnitsPage() {
       users.sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
       setAllUsers(users);
 
+      // Fetch saved unit metadata (schedules, venues, notes stamped in Firestore)
+      let customSchedules: Record<string, string> = {};
+      let customVenues: Record<string, string> = {};
+      try {
+        const metaRes = await fetch("/api/portal/units");
+        if (metaRes.ok) {
+          const metaData = await metaRes.json();
+          customSchedules = metaData.schedules || {};
+          customVenues = metaData.venues || {};
+        }
+      } catch {}
+
       const summaries: UnitSummary[] = UNITS.map((unit) => {
         const members = users.filter((u) => {
           const uUnit = normalizeUnitId(u.assignedUnitId);
           return uUnit === unit.id;
         });
-        const unitHead = members.find((u) => isUserUnitHead(u, unit.id)) ?? null;
+
+        // 1. Direct unit member marked as unit_head
+        let unitHead = members.find((u) => isUserUnitHead(u, unit.id)) ?? null;
+
+        // 2. Multi-unit head from general congregation (e.g. Ifedayo for Children, David Jatto for Protocol cluster)
+        if (!unitHead) {
+          unitHead = users.find((u) => isUserUnitHead(u, unit.id)) ?? null;
+        }
+
+        // 3. Fallback to canonical designated lead mapping
+        let leadershipNote: string | undefined;
+        if (DESIGNATED_UNIT_HEADS[unit.id]) {
+          leadershipNote = DESIGNATED_UNIT_HEADS[unit.id].note;
+          if (!unitHead) {
+            const des = DESIGNATED_UNIT_HEADS[unit.id];
+            unitHead = {
+              uid: `designated_${unit.id}`,
+              email: des.email,
+              displayName: des.name,
+              phone: des.phone || "",
+              role: "unit_head",
+              activityTier: "leader",
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+            } as PortalUser;
+          }
+        }
+
         return {
           id: unit.id,
           name: unit.name,
           members,
           unitHead,
-          meetingTime: UNIT_SCHEDULES[unit.id] || "Weekly on Service Days",
+          meetingTime: customSchedules[unit.id] || UNIT_SCHEDULES_DEFAULT[unit.id] || "Weekly on Service Days",
+          venue: customVenues[unit.id] || "",
+          leadershipNote,
         };
       });
 
@@ -130,7 +170,7 @@ export default function UnitsPage() {
         name: unit.name,
         members: [],
         unitHead: null,
-        meetingTime: UNIT_SCHEDULES[unit.id] || "Weekly on Service Days",
+        meetingTime: UNIT_SCHEDULES_DEFAULT[unit.id] || "Weekly on Service Days",
       }));
       setUnitData(summaries);
     } finally {
@@ -216,6 +256,50 @@ export default function UnitsPage() {
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return name.slice(0, 2).toUpperCase();
+  };
+
+  const handleStartEditUnit = (unit: UnitSummary) => {
+    setEditingUnit(unit);
+    setEditMeetingTime(unit.meetingTime || "");
+    setEditVenue(unit.venue || "");
+  };
+
+  const handleSaveUnitDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUnit) return;
+    setSavingUnitDetails(true);
+    const newSchedule = editMeetingTime.trim();
+    const newVenue = editVenue.trim();
+
+    // Optimistically update immediately
+    setUnitData((prev) =>
+      prev.map((u) => (u.id === editingUnit.id ? { ...u, meetingTime: newSchedule, venue: newVenue } : u))
+    );
+
+    try {
+      const res = await fetch("/api/portal/units", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unitId: editingUnit.id,
+          meetingTime: newSchedule,
+          venue: newVenue,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to save schedule to server");
+      }
+
+      setMsg(`Meeting schedule for ${editingUnit.name} updated and saved ✓`);
+      setEditingUnit(null);
+    } catch (err: any) {
+      setMsg("Error saving schedule: " + err.message);
+    } finally {
+      setSavingUnitDetails(false);
+      setTimeout(() => setMsg(""), 4000);
+    }
   };
 
   const totalVolunteers = unitData.reduce((acc, u) => acc + u.members.length, 0);
@@ -469,11 +553,16 @@ export default function UnitsPage() {
                           color: "#141C6E",
                         }}
                       >
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                           <span>{unit.unitHead ? unit.unitHead.displayName : "Unassigned Head"}</span>
                           {unit.unitHead && (unit.unitHead.role === "admin" || unit.unitHead.role === "super_admin" || unit.unitHead.roles?.includes("admin")) && (
                             <span style={{ fontSize: "9px", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#E8EDFB", color: "#1F46C8", fontWeight: 700, textTransform: "uppercase" }}>
                               Admin
+                            </span>
+                          )}
+                          {unit.leadershipNote && (
+                            <span style={{ fontSize: "9.5px", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#FEF3C7", color: "#92400E", fontWeight: 600 }}>
+                              {unit.leadershipNote}
                             </span>
                           )}
                         </span>
@@ -534,18 +623,57 @@ export default function UnitsPage() {
                   </div>
                 </div>
 
-                {/* Meeting Schedule */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "12px", color: "#747CA1" }}>⏰</span>
-                  <span
+                {/* Meeting Schedule & Preparation Time (Editable) */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "8px",
+                    background: "#F8FAFC",
+                    padding: "7px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: "12px", color: "#747CA1", flexShrink: 0 }}>⏰</span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                        fontSize: "11px",
+                        color: "#334155",
+                        fontWeight: 500,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={unit.meetingTime}
+                    >
+                      {unit.meetingTime || "No schedule configured"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleStartEditUnit(unit)}
+                    title="Edit meeting time and details"
                     style={{
+                      background: "#EEF2FF",
+                      border: "1px solid #C7D2FE",
+                      borderRadius: "6px",
+                      padding: "2px 7px",
                       fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
-                      fontSize: "11px",
-                      color: "#4A5490",
+                      fontSize: "10.5px",
+                      fontWeight: 600,
+                      color: "#1F46C8",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      flexShrink: 0,
                     }}
                   >
-                    {unit.meetingTime}
-                  </span>
+                    <span>✏️</span> Edit
+                  </button>
                 </div>
               </div>
 
@@ -953,6 +1081,183 @@ export default function UnitsPage() {
                 Close Roster
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Unit Meeting Schedule & Details Modal */}
+      {editingUnit && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(10, 15, 30, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              padding: "24px",
+              maxWidth: "480px",
+              width: "100%",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+              border: "1px solid #E2E8F0",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-cinzel-family, 'Cinzel', serif)",
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: "#141C6E",
+                    margin: 0,
+                  }}
+                >
+                  Edit Unit Schedule
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12px",
+                    color: "#64748B",
+                    margin: "4px 0 0 0",
+                  }}
+                >
+                  {editingUnit.name}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingUnit(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  color: "#94A3B8",
+                  cursor: "pointer",
+                  padding: "4px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUnitDetails}>
+              <div style={{ marginBottom: "16px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#1E293B",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Meeting & Preparation Time
+                </label>
+                <input
+                  type="text"
+                  value={editMeetingTime}
+                  onChange={(e) => setEditMeetingTime(e.target.value)}
+                  placeholder="e.g. Sundays 7:30 AM (V.I.P. & Guest Lounge)"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <span style={{ fontSize: "11px", color: "#64748B", marginTop: "4px", display: "block" }}>
+                  This reflects immediately across admin cards and member unit dashboards.
+                </span>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#1E293B",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Venue / Preparation Room (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={editVenue}
+                  onChange={(e) => setEditVenue(e.target.value)}
+                  placeholder="e.g. Main Sanctuary / Choir Loft"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingUnit(null)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    color: "#475569",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingUnitDetails}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#1F46C8",
+                    color: "#FFFFFF",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: savingUnitDetails ? "not-allowed" : "pointer",
+                    opacity: savingUnitDetails ? 0.7 : 1,
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  }}
+                >
+                  {savingUnitDetails ? "Saving & Stamping..." : "Save & Update Immediately"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
