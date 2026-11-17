@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { requirePortalUser } from "@/lib/serverAuth";
+import { sendPushNotification } from "@/lib/pushUtils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/portal/announce
- * Sends a bulk announcement email to all portal members via Resend.
- * Admin / super_admin / portal_manager only.
+ * Sends an announcement via Web Push to mobile devices, in-app notification center, and email.
+ * Admin / super_admin / portal_manager / unit_head permitted.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -16,14 +17,23 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (user.role !== "super_admin" && user.role !== "admin" && user.role !== "portal_manager") {
-      return NextResponse.json({ error: "Forbidden — admin access only" }, { status: 403 });
+
+    const isPermitted =
+      user.role === "super_admin" ||
+      user.role === "admin" ||
+      user.role === "portal_manager" ||
+      user.isUnitHead === true ||
+      user.role === "unit_head" ||
+      Boolean(user.roles?.includes("unit_head"));
+
+    if (!isPermitted) {
+      return NextResponse.json({ error: "Forbidden — leadership access only" }, { status: 403 });
     }
 
     const body = await req.json();
     // Support both `target` (new) and `targetRole` (legacy) fields
     const { subject, message, unitId } = body;
-    const target: string = body.target || body.targetRole || "all";
+    const target: string = body.target || body.targetRole || (unitId ? "unit" : "all");
 
     if (!subject?.trim() || !message?.trim()) {
       return NextResponse.json({ error: "subject and message are required" }, { status: 400 });
@@ -123,6 +133,46 @@ export async function POST(req: NextRequest) {
       } catch {
         failed += batch.length;
       }
+    }
+
+    // Dispatch Web Push notification to members' phones (reaches phone even when app is closed)
+    try {
+      const isBroadcast = target === "all" && !unitId;
+      const targetUids = recipientsSnap.docs.map((d: any) => d.id).filter(Boolean);
+      await sendPushNotification({
+        broadcast: isBroadcast,
+        targetUids: isBroadcast ? undefined : targetUids,
+        targetEmails: isBroadcast ? undefined : emails,
+        title: subject,
+        message: message.length > 120 ? `${message.slice(0, 117)}...` : message,
+        link: unitId ? "/portal/member/unit" : "/portal/member",
+        tag: `announcement-${unitId || "all"}`,
+      });
+    } catch (pushErr) {
+      console.warn("Failed to dispatch push notifications for announcement:", pushErr);
+    }
+
+    // Save in-app notifications in batch for notification bell dropdown
+    try {
+      const adminDb = getAdminDb();
+      const batch = adminDb.batch();
+      const now = new Date().toISOString();
+      recipientsSnap.docs.slice(0, 300).forEach((docSnap: any) => {
+        const notifRef = adminDb.collection("portal_notifications").doc();
+        batch.set(notifRef, {
+          userId: docSnap.id,
+          userEmail: (docSnap.data().email || "").toLowerCase().trim(),
+          title: subject,
+          message,
+          type: "announcement",
+          link: unitId ? "/portal/member/unit" : "/portal/member",
+          read: false,
+          createdAt: now,
+        });
+      });
+      await batch.commit();
+    } catch (notifErr) {
+      console.warn("Failed to write in-app notifications:", notifErr);
     }
 
     // Audit log

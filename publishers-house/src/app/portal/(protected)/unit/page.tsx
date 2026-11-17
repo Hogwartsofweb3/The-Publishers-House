@@ -36,6 +36,7 @@ export default function UnitCommandCenter() {
   const [members, setMembers] = useState<PortalUser[]>([]);
   const [allMembers, setAllMembers] = useState<PortalUser[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingAllMembers, setLoadingAllMembers] = useState(false);
 
   // Add Member to Unit State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -66,12 +67,11 @@ export default function UnitCommandCenter() {
       try {
         let mList: PortalUser[] = [];
         try {
-          const res = await fetch("/api/portal/members");
+          // Optimized: Fetch ONLY members of this specific unit for instant sub-second response
+          const res = await fetch(`/api/portal/members?unitId=${encodeURIComponent(normUnitId)}`);
           if (res.ok) {
             const data = await res.json();
-            const memberList: PortalUser[] = data.members || [];
-            setAllMembers(memberList);
-            mList = memberList.filter((u) => normalizeUnitId(u.assignedUnitId) === normUnitId);
+            mList = data.members || [];
           }
         } catch {
           // Fallback to client query
@@ -100,6 +100,25 @@ export default function UnitCommandCenter() {
 
     fetchMembers();
   }, [normUnitId]);
+
+  const handleOpenAddModal = async () => {
+    setShowAddModal(true);
+    setSearchTerm("");
+    if (allMembers.length === 0) {
+      setLoadingAllMembers(true);
+      try {
+        const res = await fetch("/api/portal/members");
+        if (res.ok) {
+          const data = await res.json();
+          setAllMembers(data.members || []);
+        }
+      } catch (err) {
+        console.warn("Could not fetch full directory:", err);
+      } finally {
+        setLoadingAllMembers(false);
+      }
+    }
+  };
 
   const handleAddMemberToUnit = async (targetMember: PortalUser) => {
     if (!activeUnit?.id) return;
@@ -469,10 +488,7 @@ export default function UnitCommandCenter() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                setShowAddModal(true);
-                setSearchTerm("");
-              }}
+              onClick={handleOpenAddModal}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -523,7 +539,7 @@ export default function UnitCommandCenter() {
               <p style={{ color: "#4A5490", fontSize: "13px", margin: "0 0 12px" }}>No members currently assigned to this unit.</p>
               <button
                 type="button"
-                onClick={() => { setShowAddModal(true); setSearchTerm(""); }}
+                onClick={handleOpenAddModal}
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#1F46C8",

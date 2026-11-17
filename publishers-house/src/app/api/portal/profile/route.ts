@@ -44,11 +44,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { displayName, phone, campus, photoURL } = body;
+    const { displayName, phone, campus, photoURL, notificationPreferences } = body;
 
     const updates: Record<string, any> = {
       updatedAt: new Date().toISOString(),
     };
+
+    if (notificationPreferences && typeof notificationPreferences === "object") {
+      updates.notificationPreferences = notificationPreferences;
+    }
 
     if (typeof displayName === "string" && displayName.trim()) {
       updates.displayName = displayName.trim();

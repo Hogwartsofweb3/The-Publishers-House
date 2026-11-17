@@ -32,12 +32,18 @@ const UNIT_DESCRIPTIONS: Record<string, string> = {
 
 export default function MemberUnitInfoPage() {
   const { effectiveUser, currentUser, previewRole } = usePortal();
-  const [unitMembers, setUnitMembers] = useState<UnitMemberInfo[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  const [unitHead, setUnitHead] = useState<{ name: string; email?: string; phone?: string } | null>(null);
-
   const assignedUnitId = normalizeUnitId(effectiveUser?.assignedUnitId);
   const unit = UNITS.find((u) => u.id === assignedUnitId);
+
+  const [unitMembers, setUnitMembers] = useState<UnitMemberInfo[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [unitHead, setUnitHead] = useState<{ name: string; email?: string; phone?: string } | null>(() => {
+    if (assignedUnitId && DESIGNATED_UNIT_HEADS[assignedUnitId]) {
+      const d = DESIGNATED_UNIT_HEADS[assignedUnitId];
+      return { name: d.name, email: d.email, phone: d.phone };
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (!assignedUnitId) {

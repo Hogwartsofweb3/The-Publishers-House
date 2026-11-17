@@ -5,7 +5,7 @@ import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { auth } from "@/lib/firebaseAuth";
 import { onAuthStateChanged } from "firebase/auth";
-import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel, getHeadedUnits, isChurchAdmin, isUserUnitHead } from "@/lib/portalAuth";
+import { getPortalUser, PortalUser, UNITS, getTierLabel, getRoleLabel, getHeadedUnits, isChurchAdmin, isUserUnitHead, DESIGNATED_UNIT_HEADS, normalizeUnitId } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 import { getSermons, getArticles, Sermon, Article } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
@@ -118,22 +118,31 @@ export default function FashionableMemberDashboard() {
   useEffect(() => {
     if (!user?.assignedUnitId) return;
     const rawUnitId = user.assignedUnitId;
+    const normId = normalizeUnitId(rawUnitId);
+
+    // Instant resolution from designated unit heads in 0ms (no blocking network scan)
+    const designated = DESIGNATED_UNIT_HEADS[normId];
+    if (designated) {
+      setUnitHead({ name: designated.name, email: designated.email, phone: designated.phone });
+    }
 
     const loadUnitData = async () => {
-      try {
-        // Find unit head from members list
-        const res = await fetch("/api/portal/members");
-        if (res.ok) {
-          const data = await res.json();
-          const members: any[] = data.members || [];
-          const head = members.find(
-            (m) => m.role === "unit_head" && (m.assignedUnitId === rawUnitId)
-          );
-          if (head) {
-            setUnitHead({ name: head.displayName, email: head.email, phone: head.phone });
+      // Background query for dynamically assigned unit heads only if not in designated list
+      if (!designated) {
+        try {
+          const res = await fetch(`/api/portal/members?unitId=${encodeURIComponent(normId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const members: any[] = data.members || [];
+            const head = members.find(
+              (m) => (m.role === "unit_head" || m.isUnitHead) && (normalizeUnitId(m.assignedUnitId) === normId)
+            );
+            if (head) {
+              setUnitHead({ name: head.displayName, email: head.email, phone: head.phone });
+            }
           }
-        }
-      } catch {}
+        } catch {}
+      }
 
       // Load next upcoming duty from unit_rosters
       try {
@@ -232,20 +241,21 @@ export default function FashionableMemberDashboard() {
 
     const loadChurchData = async () => {
       try {
-        const [sermonsData, articlesData] = await Promise.all([
+        // Parallel data loading for fast instantaneous initial render
+        const [sermonsData, articlesData, homeRes] = await Promise.all([
           getSermons(3, true),
           getArticles(3),
+          fetch("/api/home-data").catch(() => null),
         ]);
         setRecentSermons(sermonsData);
         setRecentArticles(articlesData);
 
-        // 1. Fetch dynamic Next Gatherings from home-data API (synced with CMS Next Gatherings)
+        // 1. Process dynamic Next Gatherings from home-data API
         let loadedDynamic = false;
         try {
-          const homeRes = await fetch("/api/home-data");
-          if (homeRes.ok) {
-            const homeData = await homeRes.json();
-            if (Array.isArray(homeData.gatherings) && homeData.gatherings.length > 0) {
+          if (homeRes && homeRes.ok) {
+            const homeData = await homeRes.json().catch(() => null);
+            if (homeData && Array.isArray(homeData.gatherings) && homeData.gatherings.length > 0) {
               const gradients = [
                 "linear-gradient(135deg, #0E1556 0%, #0369A1 50%, #0B0E14 100%)",
                 "linear-gradient(135deg, #0E1556 0%, #1E1B4B 50%, #0B0E14 100%)",

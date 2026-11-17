@@ -1,10 +1,44 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { updatePassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import { UNITS, getRoleLabel, getTierLabel, type PortalUser, type Campus } from "@/lib/portalAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+
+const NOTIFICATION_TOPICS = [
+  {
+    key: "services",
+    icon: "⛪",
+    title: "Church Services & Gatherings",
+    description: "Reminders for Sunday Word & Worship encounters, midweek services, and special conferences.",
+  },
+  {
+    key: "duties",
+    icon: "🛡️",
+    title: "Duty Roster & Unit Preparation Calls",
+    description: "Notifications about your duty dates, preparation call times, and unit head notices.",
+  },
+  {
+    key: "sermons",
+    icon: "📖",
+    title: "Pastoral Word & Fresh Teachings",
+    description: "Immediate alerts when Dr. Joshua Agunbiade or the pastorate releases new audio messages or essays.",
+  },
+  {
+    key: "prayers",
+    icon: "🔥",
+    title: "Altar Prayers & Testimonies",
+    description: "Updates on submitted prayer petitions, intercession alerts, and approved praise reports.",
+  },
+  {
+    key: "counsel",
+    icon: "💬",
+    title: "Pastoral Inquiries & Pastoral Care",
+    description: "Direct notifications when pastors or ministry coordinators respond to your inquiries.",
+  },
+];
 
 interface MemberSettingsProps {
   user: PortalUser;
@@ -33,6 +67,63 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const unitName = UNITS.find((u) => u.id === user.assignedUnitId)?.name || (user.assignedUnitId ? user.assignedUnitId : "No unit assigned");
+
+  // Push Notifications state
+  const {
+    permissionState,
+    isSubscribed,
+    loading: notifLoading,
+    statusMessage: notifStatusMsg,
+    requestPermissionAndSubscribe,
+    unsubscribe,
+    sendTestNotification,
+  } = usePushNotifications({
+    uid: user.uid,
+    email: user.email,
+    enabled: true,
+  });
+
+  const [topicPreferences, setTopicPreferences] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("tph_notif_topics");
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
+    return (user as any)?.notificationPreferences || {
+      services: true,
+      duties: true,
+      sermons: true,
+      prayers: true,
+      counsel: true,
+    };
+  });
+
+  const handleMasterToggle = async () => {
+    if (permissionState === "granted" && isSubscribed) {
+      await unsubscribe();
+    } else {
+      await requestPermissionAndSubscribe();
+    }
+  };
+
+  const handleToggleTopic = async (key: string) => {
+    const nextVal = !(topicPreferences[key] ?? true);
+    const updated = { ...topicPreferences, [key]: nextVal };
+    setTopicPreferences(updated);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tph_notif_topics", JSON.stringify(updated));
+    }
+
+    try {
+      await fetch("/api/portal/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationPreferences: updated }),
+      });
+    } catch {}
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -505,7 +596,217 @@ export default function MemberSettings({ user, onUserUpdated }: MemberSettingsPr
         </div>
       </div>
 
-      {/* 3. ACCOUNT SECURITY & PASSWORD */}
+      {/* 3. PUSH NOTIFICATIONS & MOBILE ALERTS */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <h2
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: "17px",
+                  color: "#141C6E",
+                  margin: 0,
+                }}
+              >
+                Push Notifications &amp; Alerts
+              </h2>
+              {/* Status Badge */}
+              {permissionState === "granted" && isSubscribed ? (
+                <span style={{ fontSize: "10.5px", padding: "3px 10px", borderRadius: "99px", backgroundColor: "#DCFCE7", color: "#166534", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#16A34A" }}></span>
+                  Active on this Device
+                </span>
+              ) : permissionState === "denied" ? (
+                <span style={{ fontSize: "10.5px", padding: "3px 10px", borderRadius: "99px", backgroundColor: "#FEE2E2", color: "#991B1B", fontWeight: 700 }}>
+                  Blocked in Phone/Browser
+                </span>
+              ) : (
+                <span style={{ fontSize: "10.5px", padding: "3px 10px", borderRadius: "99px", backgroundColor: "#F1F5F9", color: "#64748B", fontWeight: 700 }}>
+                  Turned Off
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: "12.5px", color: "#747CA1", margin: "4px 0 0" }}>
+              Manage phone push notifications and ministry alerts. Notifications are delivered even when this app is closed.
+            </p>
+          </div>
+
+          {/* Send Test Notification Button */}
+          {permissionState === "granted" && isSubscribed && (
+            <button
+              type="button"
+              onClick={sendTestNotification}
+              disabled={notifLoading}
+              style={{
+                padding: "8px 14px",
+                backgroundColor: "#EEF4FF",
+                color: "#0140C1",
+                border: "1px solid #C4D7FE",
+                borderRadius: "8px",
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11.5px",
+                fontWeight: 700,
+                cursor: notifLoading ? "not-allowed" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <span>📲</span>
+              <span>{notifLoading ? "Sending..." : "Send Test Notification"}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Master Toggle Column */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 20px",
+            backgroundColor: (permissionState === "granted" && isSubscribed) ? "#F0FDF4" : "#F8FAFD",
+            border: (permissionState === "granted" && isSubscribed) ? "1.5px solid #BBF7D0" : "1.5px solid #E2E8F0",
+            borderRadius: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0, paddingRight: "16px" }}>
+            <div style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "14px", fontWeight: 700, color: "#141C6E" }}>
+              Allow Notifications on this Phone/Device
+            </div>
+            <div style={{ fontSize: "12px", color: "#64748B", marginTop: "3px" }}>
+              {permissionState === "granted" && isSubscribed
+                ? "Active & Connected! Your phone will receive real-time alerts even when the portal is closed."
+                : permissionState === "denied"
+                ? "Notifications are blocked in your browser. Please tap the lock/tune icon in your address bar and select 'Allow Notifications'."
+                : "Toggle on to receive instant service reminders, duty preparation alerts, and pastoral messages."}
+            </div>
+          </div>
+
+          {/* Master Toggle Button */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={permissionState === "granted" && isSubscribed}
+            onClick={handleMasterToggle}
+            disabled={notifLoading}
+            title={permissionState === "granted" && isSubscribed ? "Turn off notifications" : "Turn on notifications"}
+            style={{
+              position: "relative",
+              width: "52px",
+              height: "28px",
+              borderRadius: "99px",
+              backgroundColor: (permissionState === "granted" && isSubscribed) ? "#16A34A" : "#CBD5E1",
+              border: "none",
+              cursor: notifLoading ? "not-allowed" : "pointer",
+              transition: "background-color 0.2s ease",
+              outline: "none",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                top: "3px",
+                left: (permissionState === "granted" && isSubscribed) ? "27px" : "3px",
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                backgroundColor: "#FFFFFF",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                transition: "left 0.2s ease",
+              }}
+            />
+          </button>
+        </div>
+
+        {/* Status Message */}
+        {notifStatusMsg && (
+          <div style={{ padding: "10px 14px", backgroundColor: "#EFF6FF", color: "#1E40AF", border: "1px solid #BFDBFE", borderRadius: "8px", fontSize: "12.5px", fontWeight: 600, marginBottom: "20px" }}>
+            {notifStatusMsg}
+          </div>
+        )}
+
+        {/* Notification Categories & Options */}
+        <div>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: "#4A5490", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
+            Turn Notifications On / Off For:
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {NOTIFICATION_TOPICS.map((topic) => {
+              const isChecked = topicPreferences[topic.key] ?? true;
+              return (
+                <div
+                  key={topic.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 18px",
+                    borderRadius: "10px",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    transition: "border-color 0.15s ease",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0, paddingRight: "14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "15px" }}>{topic.icon}</span>
+                      <span style={{ fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)", fontSize: "13px", fontWeight: 700, color: "#141C6E" }}>
+                        {topic.title}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px", paddingLeft: "23px" }}>
+                      {topic.description}
+                    </div>
+                  </div>
+
+                  {/* Category Toggle Switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isChecked}
+                    onClick={() => handleToggleTopic(topic.key)}
+                    style={{
+                      position: "relative",
+                      width: "44px",
+                      height: "24px",
+                      borderRadius: "99px",
+                      backgroundColor: isChecked ? "#1F46C8" : "#CBD5E1",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s ease",
+                      outline: "none",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "2px",
+                        left: isChecked ? "22px" : "2px",
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s ease",
+                      }}
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. ACCOUNT SECURITY & PASSWORD */}
       <div style={cardStyle}>
         <h2
           style={{

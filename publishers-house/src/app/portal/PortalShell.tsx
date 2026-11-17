@@ -11,6 +11,7 @@ import { getRoleLabel, normalizeUnitId, UNITS, DUAL_ROLE_PASTORS } from "@/lib/p
 import { PortalProvider, usePortal } from "@/lib/portalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
 import PwaInstallPrompt from "@/components/portal/PwaInstallPrompt";
+import PushNotificationPrompt from "@/components/portal/PushNotificationPrompt";
 import Sidebar from "@/components/portal/Sidebar";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -844,6 +845,9 @@ function PortalHeaderAndContent({
         <div className="portal-content-pad" style={{ maxWidth: "1600px", margin: "0 auto" }}>
           {children}
         </div>
+
+        {/* First-Time Mobile Push Notification Sheet */}
+        <PushNotificationPrompt user={effectiveUser} />
 
         {/* ── MOBILE APP BOTTOM NAVIGATION BAR (Role-Adaptive, Piggyvest Standard) ── */}
         <nav
