@@ -274,6 +274,29 @@ export default function AdminDashboard() {
 
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <Link
+            href="/portal/reports"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              backgroundColor: "#0E1556",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px 18px",
+              fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+              fontWeight: 600,
+              fontSize: "13px",
+              color: "#FFFFFF",
+              textDecoration: "none",
+              boxShadow: "0 2px 8px rgba(14, 21, 86, 0.25)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <span>📜</span>
+            <span>Monthly Report</span>
+          </Link>
+
+          <Link
             href="/portal/attendance"
             style={{
               display: "inline-flex",
@@ -831,6 +854,7 @@ export default function AdminDashboard() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
+                { href: "/portal/reports", label: "Executive Reports", sub: "Monthly activity dossier & PDF export", icon: "📜" },
                 { href: "/portal/members", label: "Directory & Roles", sub: "Add or edit member credentials", icon: "◉" },
                 { href: "/portal/units", label: "Church Units", sub: `Rosters, Unit Heads, ${UNITS.length} units`, icon: "⬡" },
                 { href: "/portal/attendance", label: "Headcount & Stream", sub: "Live codes & usher tallying", icon: "✦" },

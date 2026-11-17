@@ -1,8 +1,8 @@
-// The Publishers House — Service Worker v3
-// App shell caching for instant load + push notifications
+// The Publishers House — Service Worker v4
+// App shell caching for instant load + push notifications + network-first portal routes
 
-const CACHE_NAME = 'tph-shell-v3';
-const STATIC_CACHE = 'tph-static-v3';
+const CACHE_NAME = 'tph-shell-v4';
+const STATIC_CACHE = 'tph-static-v4';
 
 // App shell — cache these on install for instant load
 const APP_SHELL = [
@@ -53,6 +53,22 @@ self.addEventListener('fetch', (event) => {
           headers: { 'Content-Type': 'application/json' },
         })
       )
+    );
+    return;
+  }
+
+  // Dynamic portal routes — network first (so deployments & navigation are instantly fresh)
+  if (url.pathname.startsWith('/portal') && !url.pathname.startsWith('/_next/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
