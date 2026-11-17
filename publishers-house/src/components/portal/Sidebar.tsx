@@ -7,7 +7,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebaseAuth";
 import { clearSession } from "@/lib/clientSession";
 import type { PortalUser } from "@/lib/portalAuth";
-import { getRoleLabel, normalizeUnitId, UNITS, DUAL_ROLE_PASTORS } from "@/lib/portalAuth";
+import { getRoleLabel, normalizeUnitId, UNITS, DUAL_ROLE_PASTORS, getHeadedUnits } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 
 // ── Realistic Vector SVGs (Brand compliant, non-AI) ──────────────────────────
@@ -203,12 +203,16 @@ export default function Sidebar({
 
   let activeRole = user.role;
   let activeUser = user;
+  let ctxActiveUnitId: string | null = null;
+  let ctxSetActiveUnitId: ((id: string) => void) | null = null;
   try {
     const ctx = usePortal();
     if (ctx.effectiveUser) {
       activeRole = ctx.effectiveUser.role;
       activeUser = ctx.effectiveUser;
     }
+    ctxActiveUnitId = ctx.activeUnitId;
+    ctxSetActiveUnitId = ctx.setActiveUnitId;
   } catch {}
 
   const isSecretariat =
@@ -221,14 +225,16 @@ export default function Sidebar({
     activeRole === "portal_manager" ||
     isSecretariat;
 
+  const headedUnits = getHeadedUnits(activeUser);
   const emailClean = (activeUser.email || "").trim().toLowerCase();
   const dualMatch = DUAL_ROLE_PASTORS[emailClean];
-  const resolvedUnitId = dualMatch ? dualMatch.unitId : normalizeUnitId(activeUser.assignedUnitId);
-  const assignedUnit = UNITS.find((u) => u.id === resolvedUnitId);
+  const resolvedUnitId = ctxActiveUnitId || (dualMatch ? dualMatch.unitId : normalizeUnitId(activeUser.assignedUnitId));
+  const assignedUnit = UNITS.find((u) => u.id === resolvedUnitId) || (headedUnits.length > 0 ? headedUnits[0] : undefined);
   const isUnitHead = Boolean(
     activeRole === "unit_head" ||
     activeUser.isUnitHead ||
     activeUser.roles?.includes("unit_head") ||
+    headedUnits.length > 0 ||
     dualMatch
   );
   const isDualUnitHead = (isSuperOrAdminOrManager && isUnitHead && Boolean(assignedUnit)) || Boolean(dualMatch);
@@ -703,6 +709,39 @@ export default function Sidebar({
                   }}
                 >
                   {section.title}
+                </div>
+              )}
+
+              {/* Multi-Unit Switcher Pill if leader heads multiple units */}
+              {section.title && (section.title.includes("UNIT") || section.title.includes("COMMAND")) && headedUnits.length > 1 && !isCollapsed && (
+                <div style={{ display: "flex", gap: "4px", padding: "2px 8px 8px", flexWrap: "wrap" }}>
+                  {headedUnits.map((u: any) => {
+                    const isSelected = u.id === (assignedUnit?.id || resolvedUnitId);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => ctxSetActiveUnitId?.(u.id)}
+                        style={{
+                          flex: 1,
+                          padding: "4px 6px",
+                          textAlign: "center",
+                          borderRadius: "6px",
+                          border: isSelected ? "1px solid #38BDF8" : "1px solid rgba(255,255,255,0.12)",
+                          backgroundColor: isSelected ? "#1F46C8" : "rgba(255,255,255,0.06)",
+                          color: isSelected ? "#FFFFFF" : "#A9C2FF",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                          transition: "all 0.15s ease",
+                        }}
+                        title={`Switch view to ${u.name}`}
+                      >
+                        {u.name} {isSelected ? "✓" : ""}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

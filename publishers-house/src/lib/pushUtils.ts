@@ -120,7 +120,14 @@ export async function sendPushNotification({
       if (!subscription || !subscription.endpoint) continue;
 
       try {
-        await webpush.sendNotification(subscription, payload);
+        await webpush.sendNotification(subscription, payload, {
+          TTL: 86400,
+          urgency: "high",
+          headers: {
+            Urgency: "high",
+            Topic: "church-alerts",
+          },
+        });
         sent++;
       } catch (err: any) {
         failed++;

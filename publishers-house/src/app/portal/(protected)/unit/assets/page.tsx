@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { UNITS, PortalUser } from "@/lib/portalAuth";
+import { UNITS, PortalUser, normalizeUnitId, getHeadedUnits } from "@/lib/portalAuth";
 import { usePortal } from "@/lib/portalContext";
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
@@ -18,7 +18,7 @@ interface UnitAsset {
 }
 
 export default function UnitAssetsPage() {
-  const { effectiveUser } = usePortal();
+  const { effectiveUser, activeUnitId, setActiveUnitId } = usePortal();
   const user = effectiveUser;
   const [loading, setLoading] = useState(true);
   const [assets, setAssets] = useState<UnitAsset[]>([]);
@@ -33,7 +33,8 @@ export default function UnitAssetsPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const normUnitId = (effectiveUser?.assignedUnitId || "").toLowerCase();
+  const headedUnits = getHeadedUnits(effectiveUser);
+  const normUnitId = normalizeUnitId(activeUnitId || effectiveUser?.assignedUnitId) || (headedUnits[0]?.id || "ushering");
   const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   useEffect(() => {
@@ -98,6 +99,78 @@ export default function UnitAssetsPage() {
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "32px" }}>
+      {/* Multi-Unit Leadership Switcher */}
+      {headedUnits.length > 1 && (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "12px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px" }}>📦</span>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  color: "#0E1556",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Multi-Unit Leadership &amp; Asset Inventory
+              </span>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                color: "#64748B",
+              }}
+            >
+              Select which unit assets register you are auditing
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {headedUnits.map((u) => {
+              const isSelected = u.id === normUnitId;
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => setActiveUnitId(u.id)}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: "8px",
+                    border: isSelected ? "2px solid #1F46C8" : "1px solid #CBD5E1",
+                    backgroundColor: isSelected ? "#1F46C8" : "#F8FAFC",
+                    color: isSelected ? "#FFFFFF" : "#1E293B",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {u.name} {isSelected ? "✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#1F46C8", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "8px" }}>

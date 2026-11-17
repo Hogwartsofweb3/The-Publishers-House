@@ -1,8 +1,8 @@
-// The Publishers House — Service Worker v4
-// App shell caching for instant load + push notifications + network-first portal routes
+// The Publishers House — Service Worker v5
+// App shell caching for instant load + high-priority heads-up push notifications + network-first portal routes
 
-const CACHE_NAME = 'tph-shell-v4';
-const STATIC_CACHE = 'tph-static-v4';
+const CACHE_NAME = 'tph-shell-v5';
+const STATIC_CACHE = 'tph-static-v5';
 
 // App shell — cache these on install for instant load
 const APP_SHELL = [
@@ -148,10 +148,15 @@ self.addEventListener('push', (event) => {
       body,
       icon,
       badge,
-      tag,
+      // Fresh tag per alert guarantees Android promotes it to a Heads-Up popup banner on screen & lockscreen
+      tag: `${tag}-${Date.now()}`,
       data: { link },
-      vibrate: [100, 50, 100],
-      requireInteraction: false,
+      // High-priority vibration rhythm required by mobile OS to trigger heads-up peek banner
+      vibrate: [250, 100, 250, 100, 250],
+      requireInteraction: true,
+      renotify: true,
+      silent: false,
+      timestamp: Date.now(),
       actions: [
         { action: 'open', title: 'Open Portal' },
         { action: 'dismiss', title: 'Dismiss' },

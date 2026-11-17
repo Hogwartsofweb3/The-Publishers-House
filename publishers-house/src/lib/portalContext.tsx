@@ -16,6 +16,8 @@ interface PortalContextType {
   updateCurrentUser: (partial: Partial<PortalUser>) => void;
   effectiveUser: PortalUser;
   isSuperAdmin: boolean;
+  activeUnitId: string | null;
+  setActiveUnitId: (unitId: string) => void;
 }
 
 const PortalContext = createContext<PortalContextType | undefined>(undefined);
@@ -33,11 +35,62 @@ export function PortalProvider({
   const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   const [previewLeaderKey, setPreviewLeaderKey] = useState<string | null>(null);
   const [previewProfile, setPreviewProfile] = useState<Partial<PortalUser> | null>(null);
+  const [activeUnitIdState, setActiveUnitIdState] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("tph_active_unit_id");
+    }
+    return null;
+  });
 
   // Sync if user prop updates
   useEffect(() => {
     setCurrentUser(user);
   }, [user]);
+
+  // Real-time background sync with Firestore profile (solves Laptop vs Mobile sync disparity)
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await fetch("/api/portal/profile");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.profile) {
+            const p = data.profile;
+            setCurrentUser((prev) => {
+              const newUnit = p.assignedUnitId || undefined;
+              const newRole = p.role || prev.role;
+              if (prev.assignedUnitId !== newUnit || prev.role !== newRole) {
+                return {
+                  ...prev,
+                  ...p,
+                  assignedUnitId: newUnit,
+                  role: newRole,
+                  isUnitHead: Boolean(p.isUnitHead || newRole === "unit_head"),
+                };
+              }
+              return prev;
+            });
+          }
+        }
+      } catch {}
+    };
+
+    // Run on initial mount
+    syncProfile();
+
+    // Re-verify immediately whenever the user brings the tab/window into focus
+    window.addEventListener("focus", syncProfile);
+    window.addEventListener("online", syncProfile);
+
+    // Periodic check every 25 seconds
+    const interval = setInterval(syncProfile, 25000);
+
+    return () => {
+      window.removeEventListener("focus", syncProfile);
+      window.removeEventListener("online", syncProfile);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Listen for instant updates broadcast across components
   useEffect(() => {
@@ -86,9 +139,22 @@ export function PortalProvider({
     currentUser.role === "super_admin" ||
     currentUser.email.toLowerCase() === "joshuaagunbiade@gmail.com";
 
+  const setActiveUnitId = (unitId: string) => {
+    setActiveUnitIdState(unitId);
+    if (previewProfile) {
+      setPreviewProfile((prev) => (prev ? { ...prev, assignedUnitId: unitId } : prev));
+      setPreviewUnitId(unitId);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tph_active_unit_id", unitId);
+      window.dispatchEvent(new CustomEvent("tph_active_unit_changed", { detail: unitId }));
+    }
+  };
+
   const startPreview = (role: UserRole, unitId?: string) => {
     setPreviewRole(role);
     setPreviewUnitId(unitId || (role === "unit_head" ? "ushering" : null));
+    setActiveUnitIdState(unitId || null);
     setPreviewLeaderKey(null);
     setPreviewProfile(null);
   };
@@ -97,7 +163,12 @@ export function PortalProvider({
     setPreviewLeaderKey(leaderKey);
     setPreviewProfile(profile);
     setPreviewRole(profile.role || "unit_head");
-    setPreviewUnitId(profile.assignedUnitId || null);
+    const targetUnit = profile.assignedUnitId || null;
+    setPreviewUnitId(targetUnit);
+    setActiveUnitIdState(targetUnit);
+    if (typeof window !== "undefined" && targetUnit) {
+      localStorage.setItem("tph_active_unit_id", targetUnit);
+    }
   };
 
   const exitPreview = () => {
@@ -105,19 +176,26 @@ export function PortalProvider({
     setPreviewUnitId(null);
     setPreviewLeaderKey(null);
     setPreviewProfile(null);
+    setActiveUnitIdState(null);
   };
+
+  const effectiveUnitId =
+    activeUnitIdState ||
+    previewUnitId ||
+    (previewProfile?.assignedUnitId ? previewProfile.assignedUnitId : currentUser.assignedUnitId) ||
+    undefined;
 
   const effectiveUser: PortalUser = previewProfile
     ? ({
         ...currentUser,
         ...previewProfile,
         role: previewProfile.role || currentUser.role,
-        assignedUnitId: previewProfile.assignedUnitId || currentUser.assignedUnitId,
+        assignedUnitId: effectiveUnitId || previewProfile.assignedUnitId || currentUser.assignedUnitId,
       } as PortalUser)
     : {
         ...currentUser,
         role: previewRole || currentUser.role,
-        assignedUnitId: previewUnitId || currentUser.assignedUnitId,
+        assignedUnitId: effectiveUnitId || previewUnitId || currentUser.assignedUnitId,
       };
 
   return (
@@ -135,6 +213,8 @@ export function PortalProvider({
         updateCurrentUser,
         effectiveUser,
         isSuperAdmin,
+        activeUnitId: effectiveUnitId || null,
+        setActiveUnitId,
       }}
     >
       {children}

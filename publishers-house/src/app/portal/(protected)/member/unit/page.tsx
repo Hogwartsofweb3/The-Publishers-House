@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePortal } from "@/lib/portalContext";
-import { UNITS, PortalUser, normalizeUnitId, DESIGNATED_UNIT_HEADS } from "@/lib/portalAuth";
+import { UNITS, PortalUser, normalizeUnitId, DESIGNATED_UNIT_HEADS, getHeadedUnits } from "@/lib/portalAuth";
 import { getPortalUser } from "@/lib/portalAuth";
 
 interface UnitMemberInfo {
@@ -31,8 +31,9 @@ const UNIT_DESCRIPTIONS: Record<string, string> = {
 };
 
 export default function MemberUnitInfoPage() {
-  const { effectiveUser, currentUser, previewRole } = usePortal();
-  const assignedUnitId = normalizeUnitId(effectiveUser?.assignedUnitId);
+  const { effectiveUser, currentUser, previewRole, activeUnitId, setActiveUnitId } = usePortal();
+  const headedUnits = getHeadedUnits(effectiveUser);
+  const assignedUnitId = normalizeUnitId(activeUnitId || effectiveUser?.assignedUnitId) || (headedUnits[0]?.id || "ushering");
   const unit = UNITS.find((u) => u.id === assignedUnitId);
 
   const [unitMembers, setUnitMembers] = useState<UnitMemberInfo[]>([]);
@@ -189,6 +190,78 @@ export default function MemberUnitInfoPage() {
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* Multi-Unit Switcher Banner if Leader heads multiple units */}
+      {headedUnits.length > 1 && (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D5DCF2",
+            borderRadius: "14px",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "12px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px" }}>🏛️</span>
+              <span
+                style={{
+                  fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: "12px",
+                  color: "#0E1556",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Multi-Unit Leadership &amp; Oversight
+              </span>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                fontSize: "11px",
+                color: "#64748B",
+              }}
+            >
+              Select a unit to view its team info, meeting schedule, and ministry details
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {headedUnits.map((u) => {
+              const isSelected = u.id === assignedUnitId;
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => setActiveUnitId(u.id)}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: "8px",
+                    border: isSelected ? "2px solid #1F46C8" : "1px solid #CBD5E1",
+                    backgroundColor: isSelected ? "#1F46C8" : "#F8FAFC",
+                    color: isSelected ? "#FFFFFF" : "#1E293B",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-montserrat-family, 'Montserrat', sans-serif)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {u.name} {isSelected ? "✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#1F46C8", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "8px" }}>

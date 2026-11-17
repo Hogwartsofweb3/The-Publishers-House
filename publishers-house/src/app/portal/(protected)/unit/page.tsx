@@ -11,26 +11,16 @@ import DiscipleshipCohortCard from "@/components/portal/DiscipleshipCohortCard";
 
 export default function UnitCommandCenter() {
   const router = useRouter();
-  const { effectiveUser } = usePortal();
+  const { effectiveUser, activeUnitId, setActiveUnitId } = usePortal();
   const user = effectiveUser;
   const authLoading = false;
 
   const headedUnits = getHeadedUnits(effectiveUser);
-  const defaultUnitId = headedUnits.length > 0
+  const defaultUnitId = activeUnitId || (headedUnits.length > 0
     ? headedUnits[0].id
-    : (normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering");
+    : (normalizeUnitId(effectiveUser?.assignedUnitId) || "ushering"));
 
-  const [selectedUnitId, setSelectedUnitId] = useState<string>(defaultUnitId);
-
-  useEffect(() => {
-    if (headedUnits.length > 0 && !headedUnits.some((u) => u.id === selectedUnitId)) {
-      setSelectedUnitId(headedUnits[0].id);
-    } else if (!selectedUnitId && effectiveUser?.assignedUnitId) {
-      setSelectedUnitId(normalizeUnitId(effectiveUser.assignedUnitId));
-    }
-  }, [effectiveUser]);
-
-  const normUnitId = selectedUnitId || defaultUnitId;
+  const normUnitId = activeUnitId || defaultUnitId;
   const activeUnit = UNITS.find((u) => u.id === normUnitId) || UNITS[0];
 
   const [members, setMembers] = useState<PortalUser[]>([]);
@@ -339,7 +329,7 @@ export default function UnitCommandCenter() {
                 <button
                   key={u.id}
                   type="button"
-                  onClick={() => setSelectedUnitId(u.id)}
+                  onClick={() => setActiveUnitId(u.id)}
                   style={{
                     padding: "8px 16px",
                     borderRadius: "8px",
