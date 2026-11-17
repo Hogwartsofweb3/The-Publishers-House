@@ -98,8 +98,37 @@ export const DESIGNATED_UNIT_HEADS: Record<string, { name: string; email: string
   followup_hospitality: { name: "Cyprian Dalong", email: "cyprian@thepublishershouse.org", phone: "+234 8139063144" },
   discipleship_evangelism: { name: "Alex Rindap", email: "alex@thepublishershouse.org", phone: "+234 8139063144" },
   ushering: { name: "Ushering Leadership · TPH", email: "ushering@thepublishershouse.org", phone: "+234 8139063144" },
-  secretariat: { name: "Secretariat & Registry Desk", email: "thepublishershouse007@gmail.com" },
+  secretariat: { name: "Victoria Ogwuche", email: "secretariat@thepublishershouse.org", phone: "+234 8177435920", note: "Head of Secretariat & Registry" },
 };
+
+/** Permission helper: checks if a user is authorized to access Monthly Executive Reports */
+export function canAccessExecutiveReports(user?: PortalUser | null): boolean {
+  if (!user) return false;
+  const email = (user.email || "").trim().toLowerCase();
+  const role = user.role;
+  const normUnit = normalizeUnitId(user.assignedUnitId);
+
+  // Super Admins, Church Admins, and Portal Managers
+  if (role === "super_admin" || role === "admin" || role === "portal_manager") {
+    return true;
+  }
+
+  // Secretariat Unit Head or Secretariat Member
+  if (normUnit === "secretariat" || (user.assignedUnitIds && user.assignedUnitIds.some((id) => normalizeUnitId(id) === "secretariat"))) {
+    return true;
+  }
+
+  // Explicit secretariat and administrative email fallbacks
+  if (
+    email === "thepublishershouse007@gmail.com" ||
+    email.includes("secretariat") ||
+    email === "victoriaogwuche@gmail.com"
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 /** Dual-Role Admins who are also Unit Heads */
 export const DUAL_ROLE_PASTORS: Record<string, { name: string; unitId: string }> = {

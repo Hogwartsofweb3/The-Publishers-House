@@ -144,6 +144,7 @@ function PortalHeaderAndContent({
       case "courses": return "Theological Courses";
       case "facility": return "Facility & Assets";
       case "audit": return "Audit Log";
+      case "reports": return "Monthly Executive Reports";
       case "settings": return "Settings & Church Profile";
       case "unit": return "Unit Management";
       case "member": return "Member Portal";
